@@ -1,4 +1,4 @@
-# Kestra Plugin Template
+# Kestra JDBC Plugins
 
 <p align="center">
   <img width="460" src="https://github.com/kestra-io/kestra/raw/master/ui/src/assets/logo.svg?sanitize=true"  alt="Kestra workflow orchestrator" />
@@ -14,7 +14,7 @@ that you've set up the plugin correctly.
 ## Structure 
 
 ### Tasks
-There only one simple task in this template `org.kestra.task.jdbc.JdbcQuery`. 
+There only one simple task in this template `org.kestra.task.jdbc.AbstractJdbcQuery`. 
 This tasks will take a `format` options (that is an handlebar string) and will return 
 a reverse string in the `RunOutput` vars name `example` mostly to show how to create 
 a task for Kestra. The main logic will be in this task. This also show how to included 

@@ -1,0 +1,14 @@
+dependencies {
+    jdbcDriver group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
+
+    // modules
+    compile project(":core")
+
+    // test
+    testCompile project(':core').sourceSets.test.output
+}
+
+jar {
+    from configurations.jdbcDriver.collect { zipTree(it) }
+    from project(':core').sourceSets.main.output
+}

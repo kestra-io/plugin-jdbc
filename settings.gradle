@@ -1,1 +1,5 @@
-rootProject.name = 'plugin-template'
+rootProject.name = 'task-jdbc'
+include 'postgres'
+include 'core'
+include 'mysql'
+
