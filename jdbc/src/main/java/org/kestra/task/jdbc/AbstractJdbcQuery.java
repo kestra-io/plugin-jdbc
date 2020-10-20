@@ -1,24 +1,28 @@
 package org.kestra.task.jdbc;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FilenameUtils;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
+import org.kestra.core.serializers.JacksonMapper;
+import org.kestra.core.utils.Rethrow;
 import org.slf4j.Logger;
 
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.sql.*;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 
 @SuperBuilder
@@ -36,14 +40,28 @@ public abstract class AbstractJdbcQuery extends Task {
 
     @Builder.Default
     @InputProperty(
-        description = "Whether to Fetch only one data row from the query result to the task output",
+        description = "Whether to fetch data row from the query result to a file in internal storage." +
+            " File will be saved as Amazon Ion (text format)." +
+            " \n" +
+            " See <a href=\"http://amzn.github.io/ion-docs/\">Amazon Ion documentation</a>" +
+            " This parameter is evaluated after 'fetchOne' but before 'fetch'.",
+        dynamic = true
+    )
+    private boolean fetchToFile = false;
+
+    @Builder.Default
+    @InputProperty(
+        description = "Whether to fetch only one data row from the query result to the task output." +
+            " This parameter is evaluated before 'fetchToFile' and 'fetch'."
+        ,
         dynamic = false
     )
     private boolean fetchOne = false;
 
     @Builder.Default
     @InputProperty(
-        description = "Whether to Fetch the data from the query result to the task output",
+        description = "Whether to fetch the data from the query result to the task output" +
+            " This parameter is evaluated after 'fetchOne' and 'fetchToFile'.",
         dynamic = false
     )
     private boolean fetch = false;
@@ -72,8 +90,9 @@ public abstract class AbstractJdbcQuery extends Task {
     )
     private String timeZoneId;
 
-
     private AbstractCellConverter cellConverter;
+
+    private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
@@ -109,19 +128,21 @@ public abstract class AbstractJdbcQuery extends Task {
 
             if (isResult) {
                 if (this.fetchOne) {
-                    output.row(fetchResult(stmt, rs));
+                    output.row(fetchResult(rs));
+                } else if (this.fetchToFile) {
+                    File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+                    BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
+                    long size = fetchToFile(stmt, rs, fileWriter);
+                    fileWriter.close();
+                    output
+                        .uri(runContext.putTempFile(tempFile))
+                        .size(size);
                 } else if (this.fetch) {
-                    File tempFile = File.createTempFile(
-                        this.getClass().getSimpleName().toLowerCase() + "_",
-                        "." + FilenameUtils.getExtension("FETCH_FILE.ser") // FIXME : What format to use here ?
-                    );
-
-                    FileOutputStream fos = new FileOutputStream(tempFile);
-                    ObjectOutputStream oos = new ObjectOutputStream(fos);
-
-                    fetchResults(stmt, rs, oos);
-
-                    output.uri(runContext.putTempFile(tempFile));
+                    List<Map<String, Object>> maps = new ArrayList<>();
+                    long size = fetchResults(stmt, rs, maps);
+                    output
+                        .rows(maps)
+                        .size(size);
                 }
             }
 
@@ -131,19 +152,31 @@ public abstract class AbstractJdbcQuery extends Task {
         }
     }
 
-    private List<Map<String, Object>> fetchResult(Statement stmt, ResultSet rs) throws SQLException {
+    protected Map<String, Object> fetchResult(ResultSet rs) throws SQLException {
         rs.next();
-        return List.of(mapResultSetToMap(rs));
+        return mapResultSetToMap(rs);
     }
 
-    private int fetchResults(Statement stmt, ResultSet rs, ObjectOutputStream oos) throws SQLException, IOException {
+    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps) throws SQLException, IOException {
+        return fetch(stmt, rs, Rethrow.throwConsumer(maps::add));
+    }
+
+    private long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer) throws SQLException, IOException {
+        return fetch(stmt, rs, Rethrow.throwConsumer(map -> {
+            final String s = MAPPER.writeValueAsString(map);
+            writer.write(s);
+            writer.write("\n");
+        }));
+    }
+
+    private long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c) throws SQLException, IOException {
         boolean isResult = false;
-        int count = 0;
+        long count = 0;
 
         do {
             while (rs.next()) {
                 Map<String, Object> map = mapResultSetToMap(rs);
-                oos.writeObject(map);
+                c.accept(map);
                 count++;
             }
             isResult = stmt.getMoreResults();
@@ -178,12 +211,24 @@ public abstract class AbstractJdbcQuery extends Task {
             description = "Map containing the first row of fetched data",
             body = "Only populated if 'fetchOne' parameter is set to true."
         )
-        private List<Map<String, Object>> row;
+        private Map<String, Object> row;
 
         @OutputProperty(
-            description = "The url of the result file on kestra storage",
+            description = "Lit of map containing rows of fetched data",
             body = "Only populated if 'fetch' parameter is set to true."
         )
+        private List<Map<String, Object>> rows;
+
+        @OutputProperty(
+            description = "The url of the result file on kestra storage (.ion file / Amazon Ion text format)",
+            body = "Only populated if 'fetchToFile' is set to true."
+        )
         private URI uri;
+
+        @OutputProperty(
+            description = "The size of the fetched rows",
+            body = "Only populated if 'fetchToFile' or 'fetch' parameter is set to true."
+        )
+        private Long size;
     }
 }

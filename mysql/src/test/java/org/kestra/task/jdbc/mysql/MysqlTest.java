@@ -42,34 +42,34 @@ public class MysqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        assertThat(runOutput.getRow().get(0).get("concert_id"), is("1"));
+        assertThat(runOutput.getRow().get("concert_id"), is("1"));
 
         // May be boolean
-        assertThat(runOutput.getRow().get(0).get("available"), is(1));
-        assertThat(runOutput.getRow().get(0).get("a"), is("four"));
-        assertThat(runOutput.getRow().get(0).get("b"), is("This is a varchar"));
-        assertThat(runOutput.getRow().get(0).get("c"), is("This is a text column data"));
-        assertThat(runOutput.getRow().get(0).get("d"), nullValue());
+        assertThat(runOutput.getRow().get("available"), is(1));
+        assertThat(runOutput.getRow().get("a"), is("four"));
+        assertThat(runOutput.getRow().get("b"), is("This is a varchar"));
+        assertThat(runOutput.getRow().get("c"), is("This is a text column data"));
+        assertThat(runOutput.getRow().get("d"), nullValue());
 
-        assertThat(runOutput.getRow().get(0).get("play_time"), is(-9223372036854775808L));
-        assertThat(runOutput.getRow().get(0).get("library_record"), is(1844674407370955161L));
-        assertThat(runOutput.getRow().get(0).get("bitn_test"), is(new byte[]{0b000101}));
+        assertThat(runOutput.getRow().get("play_time"), is(-9223372036854775808L));
+        assertThat(runOutput.getRow().get("library_record"), is(1844674407370955161L));
+        assertThat(runOutput.getRow().get("bitn_test"), is(new byte[]{0b000101}));
 
         // Not equal to input value (Float and Double are for "Approximate Value"
-        assertThat(runOutput.getRow().get(0).get("floatn_test"), not(9223372036854776000F));
-        assertThat(runOutput.getRow().get(0).get("double_test"), is(9223372036854776000d));
-        assertThat(runOutput.getRow().get(0).get("doublen_test"), is(2147483645.1234d));
-        assertThat(runOutput.getRow().get(0).get("numeric_test"), is(new BigDecimal("5.36").toString()));
-        assertThat(runOutput.getRow().get(0).get("salary_decimal"), is(new BigDecimal("999.99").toString()));
+        assertThat(runOutput.getRow().get("floatn_test"), not(9223372036854776000F));
+        assertThat(runOutput.getRow().get("double_test"), is(9223372036854776000d));
+        assertThat(runOutput.getRow().get("doublen_test"), is(2147483645.1234d));
+        assertThat(runOutput.getRow().get("numeric_test"), is(new BigDecimal("5.36").toString()));
+        assertThat(runOutput.getRow().get("salary_decimal"), is(new BigDecimal("999.99").toString()));
 
-        assertThat(runOutput.getRow().get(0).get("date_type"), is(LocalDate.parse("2030-12-25")));
-        assertThat(runOutput.getRow().get(0).get("datetime_type"), is(Instant.parse("2050-12-31T22:59:57.150150Z")));
-        assertThat(runOutput.getRow().get(0).get("time_type"), is(LocalTime.parse("04:05:30")));
-        assertThat(runOutput.getRow().get(0).get("timestamp_type"), is(Instant.parse("2004-10-19T10:23:54.999999Z")));
-        assertThat(runOutput.getRow().get(0).get("year_type"), is(LocalDate.parse("2025-01-01")));
+        assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
+        assertThat(runOutput.getRow().get("datetime_type"), is(Instant.parse("2050-12-31T22:59:57.150150Z")));
+        assertThat(runOutput.getRow().get("time_type"), is(LocalTime.parse("04:05:30")));
+        assertThat(runOutput.getRow().get("timestamp_type"), is(Instant.parse("2004-10-19T10:23:54.999999Z")));
+        assertThat(runOutput.getRow().get("year_type"), is(LocalDate.parse("2025-01-01")));
 
-        assertThat(runOutput.getRow().get(0).get("json_type"), is("{\"color\": \"red\", \"value\": \"#f00\"}"));
-        assertThat(runOutput.getRow().get(0).get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
+        assertThat(runOutput.getRow().get("json_type"), is("{\"color\": \"red\", \"value\": \"#f00\"}"));
+        assertThat(runOutput.getRow().get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
     }
 
     @Test
@@ -98,7 +98,7 @@ public class MysqlTest extends AbstractRdbmsTest {
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
-        assertThat(runOutput.getRow().get(0).get("d"), is("D"));
+        assertThat(runOutput.getRow().get("d"), is("D"));
     }
 
     @Override

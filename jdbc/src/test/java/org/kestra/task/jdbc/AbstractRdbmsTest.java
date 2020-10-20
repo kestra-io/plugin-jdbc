@@ -35,7 +35,7 @@ public abstract class AbstractRdbmsTest {
     protected LocalFlowRepositoryLoader repositoryLoader;
 
     @Inject
-    StorageInterface storageInterface;
+    protected StorageInterface storageInterface;
 
     protected abstract String getUrl();
 

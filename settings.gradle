@@ -1,5 +1,5 @@
 rootProject.name = 'task-jdbc'
 include 'postgres'
-include 'core'
+include 'jdbc'
 include 'mysql'
 
