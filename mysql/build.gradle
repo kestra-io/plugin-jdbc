@@ -1,14 +1,4 @@
 dependencies {
     jdbcDriver group: 'mysql', name: 'mysql-connector-java', version: '8.0.21'
-
-    // modules
-    compile project(":jdbc")
-
-    // test
-    testCompile project(':jdbc').sourceSets.test.output
-}
-
-jar {
-    from configurations.jdbcDriver.collect { zipTree(it) }
-    from project(':jdbc').sourceSets.main.output
+    implementation project(':jdbc')
 }

@@ -9,15 +9,13 @@ buildscript {
 plugins {
     id 'java-library'
     id "idea"
-    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "com.adarshr.test-logger" version "2.1.1" apply(false)
+    id "com.github.johnrengelman.shadow" version "5.2.0" apply(false)
     id "maven-publish"
-    id 'ru.vyarus.java-lib' version '2.1.0'
-    id 'ru.vyarus.github-info' version '1.2.0'
-    id "com.jfrog.bintray" version "1.8.4"
+    id 'ru.vyarus.java-lib' version '2.1.0' apply(false)
+    id 'ru.vyarus.github-info' version '1.2.0' apply(false)
+    id "com.jfrog.bintray" version "1.8.4" apply(false)
     id 'net.researchgate.release' version '2.8.1'
-
-    // test
-    id "com.adarshr.test-logger" version "2.1.1"
 }
 
 tasks.withType(JavaCompile) {
@@ -25,7 +23,7 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add("-parameters")
 }
 
-allprojects {
+subprojects {
     group "org.kestra.task.jdbc"
     sourceCompatibility = 11
 
@@ -57,8 +55,8 @@ allprojects {
         // kestra
         compileOnly group: "org.kestra", name: "core", version: kestraVersion
 
-        // libs included in the final jar
-        // api group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+        // deps
+//        implementation project(':jdbc')
     }
 }
 
@@ -91,6 +89,7 @@ subprojects {
         testImplementation group: "org.kestra", name: "repository-memory", version: kestraVersion
         testImplementation group: "org.kestra", name: "runner-memory", version: kestraVersion
         testImplementation group: "org.kestra", name: "storage-local", version: kestraVersion
+//        testImplementation project(':jdbc').sourceSets.test.output
 
         // test
         testImplementation "org.junit.jupiter:junit-jupiter-engine:5.5.2"
@@ -105,31 +104,35 @@ subprojects {
 /**********************************************************************************************************************\
  * Publish
  **********************************************************************************************************************/
-subprojects {
+subprojects { Project subproject ->
+    apply plugin: "com.adarshr.test-logger"
+    apply plugin: "com.github.johnrengelman.shadow"
+    apply plugin: "maven-publish"
+    apply plugin: "com.jfrog.bintray"
+    apply plugin: 'ru.vyarus.java-lib'
+    apply plugin: 'ru.vyarus.github-info'
+
+    github {
+        user 'kestra-io'
+        repository 'tasks-jdbc'
+        license 'Apache'
+    }
+
     jar {
         manifest {
             attributes(
-                    "X-Kestra-Title": project.name,
+                    "X-Kestra-Title": project.name + "-" + subproject.name,
                     "X-Kestra-Group": project.group,
                     "X-Kestra-Version": project.version
             )
         }
-
-        archiveBaseName = rootProject.name + "-" + getArchivesBaseName()
     }
 
     shadowJar {
+        archiveBaseName.set(rootProject.name + "-" + subproject.name)
         archiveClassifier.set(null)
         mergeServiceFiles()
     }
-
-    github {
-        user 'kestra-io'
-        license 'Apache'
-    }
-
-    apply plugin: "maven-publish"
-    apply plugin: "com.jfrog.bintray"
 
     publishing {
         publications {
@@ -137,11 +140,11 @@ subprojects {
                 version project.version
 
                 groupId project.group
-                artifactId project.name
+                artifactId subproject.name
 
                 artifact shadowJar
                 artifact sourcesJar
-                //artifact javadocJar
+                artifact javadocJar
 
                 pom.withXml {
                     def dependenciesNode = asNode().getAt('dependencies')[0] ?: asNode().appendNode('dependencies')
@@ -166,7 +169,7 @@ subprojects {
         publish = true
         pkg {
             userOrg = 'kestra'
-            name = project.name
+            name = rootProject.name
             repo = 'maven'
             publicDownloadNumbers = true
             licenses = ['Apache-2.0']

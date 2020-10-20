@@ -24,8 +24,6 @@ import static org.hamcrest.Matchers.*;
  */
 @MicronautTest
 public class MysqlTest extends AbstractRdbmsTest {
-
-
     @Test
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());

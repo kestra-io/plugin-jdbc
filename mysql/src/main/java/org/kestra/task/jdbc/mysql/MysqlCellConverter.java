@@ -7,10 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
 
-
 public class MysqlCellConverter extends AbstractCellConverter {
-
-
     public MysqlCellConverter(ZoneId zoneId) {
         super(zoneId);
     }

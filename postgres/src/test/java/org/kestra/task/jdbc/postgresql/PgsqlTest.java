@@ -29,8 +29,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @MicronautTest
 public class PgsqlTest extends AbstractRdbmsTest {
-
-
     @Test
     void selectAndFetchOne() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -80,7 +78,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("pay_by_quarter"), is(new int[]{100, 200, 300}));
         assertThat(row.get("schedule"), is(new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}}));
 
-        assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
+assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
         assertThat(row.get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
     }
 
