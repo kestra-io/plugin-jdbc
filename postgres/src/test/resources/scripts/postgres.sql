@@ -1,3 +1,19 @@
+DROP TABLE IF EXISTS pl_store_distribute;
+
+CREATE TABLE pl_store_distribute
+(
+    id serial NOT NULL,
+    year_month numeric(6,0) NOT NULL,
+    store_code numeric NOT NULL,
+    is_building numeric(1,0) DEFAULT 0,
+    is_cgm_visible numeric(1,0) DEFAULT 0,
+    is_validate numeric(1,0) DEFAULT 0,
+    is_publish numeric(1,0) DEFAULT 0,
+    update_date timestamp(0) without time zone DEFAULT now(),
+    update_ldap character varying(80),
+    CONSTRAINT store_distribute_pkey PRIMARY KEY (id)
+);
+
 DROP TABLE IF EXISTS pgsql_types;
 
 DROP TYPE IF EXISTS inventory_item;
