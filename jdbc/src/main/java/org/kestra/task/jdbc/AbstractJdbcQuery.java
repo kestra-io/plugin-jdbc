@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -47,24 +46,21 @@ public abstract class AbstractJdbcQuery extends Task {
             " This parameter is evaluated after 'fetchOne' but before 'fetch'.",
         dynamic = true
     )
-    private boolean fetchToFile = false;
+    private final boolean store = false;
 
     @Builder.Default
     @InputProperty(
         description = "Whether to fetch only one data row from the query result to the task output." +
             " This parameter is evaluated before 'fetchToFile' and 'fetch'."
-        ,
-        dynamic = false
     )
-    private boolean fetchOne = false;
+    private final boolean fetchOne = false;
 
     @Builder.Default
     @InputProperty(
         description = "Whether to fetch the data from the query result to the task output" +
-            " This parameter is evaluated after 'fetchOne' and 'fetchToFile'.",
-        dynamic = false
+            " This parameter is evaluated after 'fetchOne' and 'fetchToFile'."
     )
-    private boolean fetch = false;
+    private final boolean fetch = false;
 
     @InputProperty(
         description = "The jdbc url to connect to the database",
@@ -85,12 +81,9 @@ public abstract class AbstractJdbcQuery extends Task {
     private String password;
 
     @InputProperty(
-        description = "The time zone id to use for date/time manipulation. Defaut value is Z (zulu / UTC)",
-        dynamic = false
+        description = "The time zone id to use for date/time manipulation. Defaut value is Z (zulu / UTC)"
     )
     private String timeZoneId;
-
-    private AbstractCellConverter cellConverter;
 
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
@@ -98,11 +91,8 @@ public abstract class AbstractJdbcQuery extends Task {
 
     /**
      * JDBC driver may be auto-registered. See https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html
-     *
-     * @throws SQLException
      */
     protected abstract void registerDriver() throws SQLException;
-
 
     public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
@@ -114,32 +104,35 @@ public abstract class AbstractJdbcQuery extends Task {
             zoneId = ZoneId.of(timeZoneId);
         }
 
-        this.cellConverter = getCellConverter(zoneId);
+        AbstractCellConverter  cellConverter = getCellConverter(zoneId);
 
-        Connection conn = DriverManager.getConnection(runContext.render(this.url), runContext.render(this.username), runContext.render(this.password));
-        Statement stmt = conn.createStatement();
+        try (
+            Connection conn = DriverManager.getConnection(runContext.render(this.url), runContext.render(this.username), runContext.render(this.password));
+            Statement stmt = conn.createStatement()
+        ) {
+            String sql = runContext.render(this.sql);
+            boolean isResult = stmt.execute(sql);
 
-        try {
+            logger.debug("Starting query: {}", sql);
 
-            boolean isResult = stmt.execute(runContext.render(this.sql));
             ResultSet rs = stmt.getResultSet();
 
             Output.OutputBuilder output = Output.builder();
 
             if (isResult) {
                 if (this.fetchOne) {
-                    output.row(fetchResult(rs));
-                } else if (this.fetchToFile) {
+                    output.row(fetchResult(rs, cellConverter));
+                } else if (this.store) {
                     File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
                     BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
-                    long size = fetchToFile(stmt, rs, fileWriter);
+                    long size = fetchToFile(stmt, rs, fileWriter, cellConverter);
                     fileWriter.close();
                     output
                         .uri(runContext.putTempFile(tempFile))
                         .size(size);
                 } else if (this.fetch) {
                     List<Map<String, Object>> maps = new ArrayList<>();
-                    long size = fetchResults(stmt, rs, maps);
+                    long size = fetchResults(stmt, rs, maps, cellConverter);
                     output
                         .rows(maps)
                         .size(size);
@@ -147,35 +140,38 @@ public abstract class AbstractJdbcQuery extends Task {
             }
 
             return output.build();
-        } finally {
-            stmt.close();
         }
     }
 
-    protected Map<String, Object> fetchResult(ResultSet rs) throws SQLException {
+    protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
         rs.next();
-        return mapResultSetToMap(rs);
+        return mapResultSetToMap(rs, cellConverter);
     }
 
-    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps) throws SQLException, IOException {
-        return fetch(stmt, rs, Rethrow.throwConsumer(maps::add));
+    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter) throws SQLException {
+        return fetch(stmt, rs, Rethrow.throwConsumer(maps::add), cellConverter);
     }
 
-    private long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer) throws SQLException, IOException {
-        return fetch(stmt, rs, Rethrow.throwConsumer(map -> {
-            final String s = MAPPER.writeValueAsString(map);
-            writer.write(s);
-            writer.write("\n");
-        }));
+    private long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter) throws SQLException, IOException {
+        return fetch(
+            stmt,
+            rs,
+            Rethrow.throwConsumer(map -> {
+                final String s = MAPPER.writeValueAsString(map);
+                writer.write(s);
+                writer.write("\n");
+            }),
+            cellConverter
+        );
     }
 
-    private long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c) throws SQLException, IOException {
-        boolean isResult = false;
+    private long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter) throws SQLException {
+        boolean isResult;
         long count = 0;
 
         do {
             while (rs.next()) {
-                Map<String, Object> map = mapResultSetToMap(rs);
+                Map<String, Object> map = mapResultSetToMap(rs, cellConverter);
                 c.accept(map);
                 count++;
             }
@@ -185,18 +181,18 @@ public abstract class AbstractJdbcQuery extends Task {
         return count;
     }
 
-    private Map<String, Object> mapResultSetToMap(ResultSet rs) throws SQLException {
+    private Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
         int columnsCount = rs.getMetaData().getColumnCount();
         Map<String, Object> map = new HashMap<>();
 
         for (int i = 1; i <= columnsCount; i++) {
-            map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs));
+            map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs, cellConverter));
         }
 
         return map;
     }
 
-    private Object convertCell(int columnIndex, ResultSet rs) throws SQLException {
+    private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
         return cellConverter.convertCell(columnIndex, rs);
     }
 
@@ -211,24 +207,24 @@ public abstract class AbstractJdbcQuery extends Task {
             description = "Map containing the first row of fetched data",
             body = "Only populated if 'fetchOne' parameter is set to true."
         )
-        private Map<String, Object> row;
+        private final Map<String, Object> row;
 
         @OutputProperty(
             description = "Lit of map containing rows of fetched data",
             body = "Only populated if 'fetch' parameter is set to true."
         )
-        private List<Map<String, Object>> rows;
+        private final List<Map<String, Object>> rows;
 
         @OutputProperty(
             description = "The url of the result file on kestra storage (.ion file / Amazon Ion text format)",
-            body = "Only populated if 'fetchToFile' is set to true."
+            body = "Only populated if 'store' is set to true."
         )
-        private URI uri;
+        private final URI uri;
 
         @OutputProperty(
             description = "The size of the fetched rows",
-            body = "Only populated if 'fetchToFile' or 'fetch' parameter is set to true."
+            body = "Only populated if 'store' or 'fetch' parameter is set to true."
         )
-        private Long size;
+        private final Long size;
     }
 }

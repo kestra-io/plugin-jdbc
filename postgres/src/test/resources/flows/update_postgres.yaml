@@ -3,7 +3,7 @@ namespace: org.kestra.jdbc.postgres
 
 tasks:
   - id: update
-    type: org.kestra.task.jdbc.postgresql.PostgresJdbcQuery
+    type: org.kestra.task.jdbc.postgresql.Query
     url: jdbc:postgresql://127.0.0.1:56982/
     username: postgres
     password: pg_passwd

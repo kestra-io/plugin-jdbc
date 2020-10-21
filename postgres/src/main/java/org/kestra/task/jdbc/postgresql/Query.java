@@ -1,4 +1,4 @@
-package org.kestra.task.jdbc.mysql;
+package org.kestra.task.jdbc.postgresql;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -21,18 +21,19 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Documentation(
-    description = "MYSQL Query Task",
-    body = "MYSQL Query Task"
+    description = "PostgresSQL Query Task",
+    body = "PostgresSQL Query Task"
 )
-public class MysqlJdbcQuery extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
-        return new MysqlCellConverter(zoneId);
+        return new PostgresCellConverter(zoneId);
     }
 
     @Override
     protected void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
+        DriverManager.registerDriver(new org.postgresql.Driver());
     }
 
     @Override

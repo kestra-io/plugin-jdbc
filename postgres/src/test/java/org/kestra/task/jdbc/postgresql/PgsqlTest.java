@@ -33,7 +33,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
     void selectAndFetchOne() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        PostgresJdbcQuery task = PostgresJdbcQuery.builder()
+        Query task = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -86,7 +86,7 @@ assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
     void selectAndFetch() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        PostgresJdbcQuery task = PostgresJdbcQuery.builder()
+        Query task = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -106,11 +106,11 @@ assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
     void selectAndFetchToFile() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        PostgresJdbcQuery task = PostgresJdbcQuery.builder()
+        Query task = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchToFile(true)
+            .store(true)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
             .build();
@@ -131,7 +131,7 @@ assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
         executeSqlScript("scripts/postgres.sql");
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        PostgresJdbcQuery task = PostgresJdbcQuery.builder()
+        Query task = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())

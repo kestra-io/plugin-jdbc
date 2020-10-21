@@ -3,7 +3,7 @@ namespace: org.kestra.jdbc.mysql
 
 tasks:
   - id: read
-    type: org.kestra.task.jdbc.mysql.MysqlJdbcQuery
+    type: org.kestra.task.jdbc.mysql.Query
     url: jdbc:postgresql://127.0.0.1:56982/
     username: postgres
     password: pg_passwd

@@ -28,7 +28,7 @@ public class MysqlTest extends AbstractRdbmsTest {
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        MysqlJdbcQuery task = MysqlJdbcQuery.builder()
+        Query task = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -74,7 +74,7 @@ public class MysqlTest extends AbstractRdbmsTest {
     void update() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        MysqlJdbcQuery taskUpdate = MysqlJdbcQuery.builder()
+        Query taskUpdate = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -85,7 +85,7 @@ public class MysqlTest extends AbstractRdbmsTest {
 
         taskUpdate.run(runContext);
 
-        MysqlJdbcQuery taskGet = MysqlJdbcQuery.builder()
+        Query taskGet = Query.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
