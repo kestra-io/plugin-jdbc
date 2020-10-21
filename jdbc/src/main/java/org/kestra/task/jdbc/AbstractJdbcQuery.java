@@ -18,10 +18,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.sql.*;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 
 @SuperBuilder
@@ -81,7 +78,7 @@ public abstract class AbstractJdbcQuery extends Task {
     private String password;
 
     @InputProperty(
-        description = "The time zone id to use for date/time manipulation. Defaut value is Z (zulu / UTC)"
+        description = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
     )
     private String timeZoneId;
 
@@ -99,12 +96,12 @@ public abstract class AbstractJdbcQuery extends Task {
 
         registerDriver();
 
-        ZoneId zoneId = ZoneId.of("Z");
+        ZoneId zoneId = TimeZone.getDefault().toZoneId();
         if (this.timeZoneId != null) {
             zoneId = ZoneId.of(timeZoneId);
         }
 
-        AbstractCellConverter  cellConverter = getCellConverter(zoneId);
+        AbstractCellConverter cellConverter = getCellConverter(zoneId);
 
         try (
             Connection conn = DriverManager.getConnection(runContext.render(this.url), runContext.render(this.username), runContext.render(this.password));
@@ -152,7 +149,7 @@ public abstract class AbstractJdbcQuery extends Task {
         return fetch(stmt, rs, Rethrow.throwConsumer(maps::add), cellConverter);
     }
 
-    private long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter) throws SQLException, IOException {
+    protected long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter) throws SQLException, IOException {
         return fetch(
             stmt,
             rs,
