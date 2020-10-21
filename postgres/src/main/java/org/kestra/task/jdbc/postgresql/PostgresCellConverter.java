@@ -11,7 +11,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 
 public class PostgresCellConverter extends AbstractCellConverter {
-
     public PostgresCellConverter(ZoneId zoneId) {
         super(zoneId);
     }
@@ -45,7 +44,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 return getISO8601Interval(interval.getYears(), interval.getMonths(), interval.getDays(), interval.getHours(), interval.getMinutes(), (int) interval.getSeconds());
         }
 
-        Class clazz = data.getClass();
+        Class<?> clazz = data.getClass();
         
         // PgArray
         if (clazz.equals(PgArray.class)) {

@@ -2,8 +2,6 @@ package org.kestra.task.jdbc;
 
 import com.google.common.collect.ImmutableList;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,7 +9,6 @@ import java.time.ZoneId;
 import java.util.List;
 
 public abstract class AbstractCellConverter {
-
     protected ZoneId zoneId;
 
     public AbstractCellConverter(ZoneId zoneId) {
@@ -20,7 +17,7 @@ public abstract class AbstractCellConverter {
 
     public abstract Object convertCell(int columnIndex, ResultSet rs) throws SQLException;
 
-    private static final List<Class> SIMPLE_TYPES = ImmutableList.of(
+    private static final List<Class<?>> SIMPLE_TYPES = ImmutableList.of(
         java.lang.String.class,
         java.lang.Boolean.class,
         java.lang.Integer.class,
@@ -38,7 +35,7 @@ public abstract class AbstractCellConverter {
             return null;
         }
 
-        final Class clazz = data.getClass();
+        final Class<?> clazz = data.getClass();
 
         // For "simple" types, we return the data as-is
         if (SIMPLE_TYPES.contains(clazz)) {
@@ -46,11 +43,11 @@ public abstract class AbstractCellConverter {
         }
 
         if (clazz.equals(java.math.BigInteger.class)) {
-            return ((BigInteger) data).toString();
+            return data.toString();
         }
 
         if (clazz.equals(java.math.BigDecimal.class)) {
-            return ((BigDecimal) data).toString();
+            return data.toString();
         }
 
         if (clazz.equals(java.sql.Date.class)) {
@@ -59,6 +56,4 @@ public abstract class AbstractCellConverter {
 
         throw new IllegalArgumentException("Data of type [" + clazz + "] is not supported");
     }
-
-
 }

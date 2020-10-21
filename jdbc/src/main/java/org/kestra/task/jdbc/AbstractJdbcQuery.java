@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.kestra.core.models.annotations.InputProperty;
 import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
 import org.kestra.core.serializers.JacksonMapper;
@@ -27,7 +28,6 @@ import java.util.function.Consumer;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcQuery extends Task {
-
     @InputProperty(
         description = "The sql query to run",
         dynamic = true
@@ -115,29 +115,43 @@ public abstract class AbstractJdbcQuery extends Task {
             ResultSet rs = stmt.getResultSet();
 
             Output.OutputBuilder output = Output.builder();
+            long size = 0;
 
             if (isResult) {
                 if (this.fetchOne) {
-                    output.row(fetchResult(rs, cellConverter));
+                    output
+                        .row(fetchResult(rs, cellConverter))
+                        .size(1L);
+                    size = 1;
+
                 } else if (this.store) {
                     File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
                     BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
-                    long size = fetchToFile(stmt, rs, fileWriter, cellConverter);
+                    size = fetchToFile(stmt, rs, fileWriter, cellConverter);
                     fileWriter.close();
                     output
                         .uri(runContext.putTempFile(tempFile))
                         .size(size);
                 } else if (this.fetch) {
                     List<Map<String, Object>> maps = new ArrayList<>();
-                    long size = fetchResults(stmt, rs, maps, cellConverter);
+                    size = fetchResults(stmt, rs, maps, cellConverter);
                     output
                         .rows(maps)
                         .size(size);
                 }
             }
 
+            runContext.metric(Counter.of("fetch.size",  size, this.tags()));
+
             return output.build();
         }
+    }
+
+    private String[] tags() {
+        return new String[]{
+            "fetch", this.fetch || this.fetchOne ? "true" : "false",
+            "store", this.store ? "true" : "false",
+        };
     }
 
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
@@ -193,9 +207,6 @@ public abstract class AbstractJdbcQuery extends Task {
         return cellConverter.convertCell(columnIndex, rs);
     }
 
-    /**
-     * Input or Output can nested as you need
-     */
     @Builder
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {

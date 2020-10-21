@@ -49,12 +49,6 @@ public abstract class AbstractRdbmsTest {
         return DriverManager.getConnection(getUrl(), getUsername(), getPassword());
     }
 
-    protected void executeQuery(String query) throws SQLException {
-        Statement stmt = getConnection().createStatement();
-        stmt.execute(query);
-        stmt.close();
-    }
-
     protected void executeSqlScript(String path) throws SQLException, URISyntaxException, FileNotFoundException {
         URL url = Objects.requireNonNull(AbstractRdbmsTest.class.getClassLoader().getResource(path));
         FileReader fileReader = new FileReader(new File(url.toURI()));

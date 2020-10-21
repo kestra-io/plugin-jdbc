@@ -11,7 +11,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 public abstract class AbstractJdbcDriverTest {
-
     protected abstract Class<? extends Driver> getDriverClass();
 
     @Test
