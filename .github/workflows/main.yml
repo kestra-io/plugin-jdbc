@@ -61,6 +61,7 @@ jobs:
         if: always()
         with:
           status: ${{ job.status }}
+          job_name: Check & Publish
           fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
           username: Github Actions
           icon_emoji: ':octocat:'
