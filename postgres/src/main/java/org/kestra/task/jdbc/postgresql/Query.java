@@ -1,12 +1,13 @@
 package org.kestra.task.jdbc.postgresql;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.Plugin;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.jdbc.AbstractCellConverter;
@@ -21,9 +22,9 @@ import java.time.ZoneId;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "PostgresSQL Query Task",
-    body = "Currently supported types are the following ones : \n" +
+@Schema(
+    title = "PostgresSQL Query Task",
+    description = "Currently supported types are the following ones : \n" +
         " - serial\n" +
         " - boolean\n" +
         " - char(4)\n" +
@@ -46,24 +47,28 @@ import java.time.ZoneId;
         " - json\n" +
         " - bytea"
 )
-@Example(
-    full = true,
-    title = "Execute a query and fetch results on another task to update another table",
-    code = {
-        "tasks:",
-        "- id: update",
-        "  type: org.kestra.task.jdbc.postgresql.Query",
-        "  url: jdbc:postgresql://127.0.0.1:56982/",
-        "  username: postgres",
-        "  password: pg_passwd",
-        "  sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types",
-        "  fetch: true",
-        "- id: use-fetched-data",
-        "  type: org.kestra.task.jdbc.postgresql.Query",
-        "  url: jdbc:postgresql://127.0.0.1:56982/",
-        "  username: postgres",
-        "  password: pg_passwd",
-        "  sql:  \"{{#each outputs.update.rows}} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{this.play_time}}, {{this.concert_id}}, TO_TIMESTAMP('{{this.timestamp_type}}', 'YYYY/MM/DDTHH24:MI:SS.US') ); {{/each}}\""}
+@Plugin(
+    examples = {
+        @Example(
+            full = true,
+            title = "Execute a query and fetch results on another task to update another table",
+            code = {
+                "tasks:",
+                "- id: update",
+                "  type: org.kestra.task.jdbc.postgresql.Query",
+                "  url: jdbc:postgresql://127.0.0.1:56982/",
+                "  username: postgres",
+                "  password: pg_passwd",
+                "  sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types",
+                "  fetch: true",
+                "- id: use-fetched-data",
+                "  type: org.kestra.task.jdbc.postgresql.Query",
+                "  url: jdbc:postgresql://127.0.0.1:56982/",
+                "  username: postgres",
+                "  password: pg_passwd",
+                "  sql:  \"{{#each outputs.update.rows}} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{this.play_time}}, {{this.concert_id}}, TO_TIMESTAMP('{{this.timestamp_type}}', 'YYYY/MM/DDTHH24:MI:SS.US') ); {{/each}}\""}
+        )
+    }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
     @Override

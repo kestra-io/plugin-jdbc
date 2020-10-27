@@ -2,5 +2,5 @@ dependencies {
     jdbcDriver group: 'mysql', name: 'mysql-connector-java', version: '8.0.21'
     implementation project(':jdbc')
 
-    testCompile project(':jdbc').sourceSets.test.output
+    testImplementation project(':jdbc').sourceSets.test.output
 }

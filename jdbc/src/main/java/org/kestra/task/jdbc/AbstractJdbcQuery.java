@@ -1,10 +1,10 @@
 package org.kestra.task.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.InputProperty;
-import org.kestra.core.models.annotations.OutputProperty;
+import org.kestra.core.models.annotations.PluginProperty;
 import org.kestra.core.models.executions.metrics.Counter;
 import org.kestra.core.models.tasks.Task;
 import org.kestra.core.runners.RunContext;
@@ -28,57 +28,57 @@ import java.util.function.Consumer;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcQuery extends Task {
-    @InputProperty(
-        description = "The sql query to run",
-        dynamic = true
+    @Schema(
+        title = "The sql query to run"
     )
+    @PluginProperty(dynamic = true)
     private String sql;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to fetch data row from the query result to a file in internal storage." +
+    @Schema(
+        title = "Whether to fetch data row from the query result to a file in internal storage." +
             " File will be saved as Amazon Ion (text format)." +
             " \n" +
             " See <a href=\"http://amzn.github.io/ion-docs/\">Amazon Ion documentation</a>" +
-            " This parameter is evaluated after 'fetchOne' but before 'fetch'.",
-        dynamic = true
+            " This parameter is evaluated after 'fetchOne' but before 'fetch'."
     )
+    @PluginProperty(dynamic = true)
     private final boolean store = false;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to fetch only one data row from the query result to the task output." +
+    @Schema(
+        title = "Whether to fetch only one data row from the query result to the task output." +
             " This parameter is evaluated before 'store' and 'fetch'."
     )
     private final boolean fetchOne = false;
 
     @Builder.Default
-    @InputProperty(
-        description = "Whether to fetch the data from the query result to the task output" +
+    @Schema(
+        title = "Whether to fetch the data from the query result to the task output" +
             " This parameter is evaluated after 'fetchOne' and 'store'."
     )
     private final boolean fetch = false;
 
-    @InputProperty(
-        description = "The jdbc url to connect to the database",
-        dynamic = true
+    @Schema(
+        title = "The jdbc url to connect to the database"
     )
+    @PluginProperty(dynamic = true)
     private String url;
 
-    @InputProperty(
-        description = "The database user",
-        dynamic = true
+    @Schema(
+        title = "The database user"
     )
+    @PluginProperty(dynamic = true)
     private String username;
 
-    @InputProperty(
-        description = "The database user's password",
-        dynamic = true
+    @Schema(
+        title = "The database user's password"
     )
+    @PluginProperty(dynamic = true)
     private String password;
 
-    @InputProperty(
-        description = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
+    @Schema(
+        title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
     )
     private String timeZoneId;
 
@@ -213,27 +213,27 @@ public abstract class AbstractJdbcQuery extends Task {
     @Getter
     public static class Output implements org.kestra.core.models.tasks.Output {
 
-        @OutputProperty(
-            description = "Map containing the first row of fetched data",
-            body = "Only populated if 'fetchOne' parameter is set to true."
+        @Schema(
+            title = "Map containing the first row of fetched data",
+            description = "Only populated if 'fetchOne' parameter is set to true."
         )
         private final Map<String, Object> row;
 
-        @OutputProperty(
-            description = "Lit of map containing rows of fetched data",
-            body = "Only populated if 'fetch' parameter is set to true."
+        @Schema(
+            title = "Lit of map containing rows of fetched data",
+            description = "Only populated if 'fetch' parameter is set to true."
         )
         private final List<Map<String, Object>> rows;
 
-        @OutputProperty(
-            description = "The url of the result file on kestra storage (.ion file / Amazon Ion text format)",
-            body = "Only populated if 'store' is set to true."
+        @Schema(
+            title = "The url of the result file on kestra storage (.ion file / Amazon Ion text format)",
+            description = "Only populated if 'store' is set to true."
         )
         private final URI uri;
 
-        @OutputProperty(
-            description = "The size of the fetched rows",
-            body = "Only populated if 'store' or 'fetch' parameter is set to true."
+        @Schema(
+            title = "The size of the fetched rows",
+            description = "Only populated if 'store' or 'fetch' parameter is set to true."
         )
         private final Long size;
     }

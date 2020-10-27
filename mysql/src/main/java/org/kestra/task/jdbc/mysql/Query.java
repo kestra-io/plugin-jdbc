@@ -1,12 +1,13 @@
 package org.kestra.task.jdbc.mysql;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import org.kestra.core.models.annotations.Documentation;
 import org.kestra.core.models.annotations.Example;
+import org.kestra.core.models.annotations.Plugin;
 import org.kestra.core.models.tasks.RunnableTask;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.jdbc.AbstractCellConverter;
@@ -21,9 +22,9 @@ import java.time.ZoneId;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-@Documentation(
-    description = "MySQL Query Task.",
-    body = "Currently supported types are the following ones : \n" +
+@Schema(
+    title = "MySQL Query Task.",
+    description = "Currently supported types are the following ones : \n" +
         " - serial,\n" +
         " - tinyint,\n" +
         " - char(n),\n" +
@@ -43,14 +44,18 @@ import java.time.ZoneId;
         " - json,\n" +
         " - blob"
 )
-@Example(
-    title = "Request a PostgresSQL Database and fetch a row as outputs",
-    code = {
-        "url: jdbc:postgresql://127.0.0.1:56982/",
-        "username: postgres",
-        "password: pg_passwd",
-        "sql: select * from mysql_types",
-        "fetchOne: true",
+@Plugin(
+    examples = {
+        @Example(
+            title = "Request a PostgresSQL Database and fetch a row as outputs",
+            code = {
+                "url: jdbc:postgresql://127.0.0.1:56982/",
+                "username: postgres",
+                "password: pg_passwd",
+                "sql: select * from mysql_types",
+                "fetchOne: true",
+            }
+        )
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
