@@ -19,10 +19,12 @@ subprojects {
     group "org.kestra.task.jdbc"
     sourceCompatibility = 11
 
+    def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
+
     repositories {
         mavenCentral()
         jcenter()
-        maven { url "https://dl.bintray.com/kestra/maven" }
+        maven { url "https://dl.bintray.com/kestra/maven" + (isBuildSnapshot ? "-snapshot" : "") }
     }
 
     apply plugin: "java-library"
@@ -95,7 +97,6 @@ subprojects {
  **********************************************************************************************************************/
 subprojects { Project subproject ->
     if (subproject.name != 'jdbc') {
-
         apply plugin: "com.adarshr.test-logger"
         apply plugin: "com.github.johnrengelman.shadow"
         apply plugin: "maven-publish"
@@ -107,6 +108,12 @@ subprojects { Project subproject ->
             user 'kestra-io'
             repository 'tasks-jdbc'
             license 'Apache'
+        }
+
+        def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
+
+        if (isBuildSnapshot) {
+            project.version = project.version.replaceAll(/-SNAPSHOT$/, "")
         }
 
         jar {
@@ -158,10 +165,11 @@ subprojects { Project subproject ->
             key = System.getenv('BINTRAY_KEY')
             publications = ['BintrayMavenPublication']
             publish = true
+            override = isBuildSnapshot
             pkg {
                 userOrg = 'kestra'
                 name = rootProject.name
-                repo = 'maven'
+                repo = isBuildSnapshot ? 'maven-snapshot' : 'maven'
                 publicDownloadNumbers = true
                 licenses = ['Apache-2.0']
                 version {
