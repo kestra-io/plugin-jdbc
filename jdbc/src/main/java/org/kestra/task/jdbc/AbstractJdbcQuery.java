@@ -43,21 +43,21 @@ public abstract class AbstractJdbcQuery extends Task {
             " This parameter is evaluated after 'fetchOne' but before 'fetch'."
     )
     @PluginProperty(dynamic = true)
-    private final boolean store = false;
+    private final Boolean store = false;
 
     @Builder.Default
     @Schema(
         title = "Whether to fetch only one data row from the query result to the task output." +
             " This parameter is evaluated before 'store' and 'fetch'."
     )
-    private final boolean fetchOne = false;
+    private final Boolean fetchOne = false;
 
     @Builder.Default
     @Schema(
         title = "Whether to fetch the data from the query result to the task output" +
             " This parameter is evaluated after 'fetchOne' and 'store'."
     )
-    private final boolean fetch = false;
+    private final Boolean fetch = false;
 
     @Schema(
         title = "The jdbc url to connect to the database"
