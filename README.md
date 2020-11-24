@@ -1,32 +1,20 @@
-# Kestra JDBC Plugins
+# Kestra JDBC Plugin
 
 <p align="center">
-  <img width="460" src="https://github.com/kestra-io/kestra/raw/master/ui/src/assets/logo.svg?sanitize=true"  alt="Kestra workflow orchestrator" />
+  <img width="460" src="https://kestra.io/logo.svg"  alt="Kestra workflow orchestrator" />
 </p>
 
-> Tasks to interact with SQL Databases via JDBC
+> Plugin to interact with SQL Databases via JDBC
 
-## Tasks 
+![Kestra orchestrator](https://kestra.io/ui.gif)
 
-### MySQL
-* `org.kestra.task.jdbc.mysql.Query`: Execute an sql query against a MySql database
 
-### PostgreSQL
-* `org.kestra.task.jdbc.postgresql.Query`: Execute an sql query against a PostgreSQL database
-
-### Documentation
-
-See plugin documentation for information about supported types for each database.
-
-## Structure
-* `jdbc`: contains common code regarding interaction with sql databases
-* `mysql`: specific to mysql, mainly for managing datatype transformation (database -> jdbc)
-* `postgres`: specific to postresql, mainly for managing datatype transformation (database -> jdbc)
-
-## Packaging
-
-A `fat` jar can be generated using the `shadowJar` plugin for `mysql` and `postgres` modules.
-This `fat` jar contains all required dependencies to be used in a Kestra environment.
+## Documentation
+* The official Kestra documentation can be found under: [kestra.io](https://kestra.io)
+* This plugin documentation is available here :
+  * [for MySQL](https://kestra.io/plugins/task-jdbc-mysql/)
+  * [for Postgres](https://kestra.io/plugins/task-jdbc-postgres/)
 
 ## License
 Apache 2.0 © [Nigh Tech](https://nigh.tech)
+
