@@ -57,8 +57,8 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("floatn_test"), not(9223372036854776000F));
         assertThat(runOutput.getRow().get("double_test"), is(9223372036854776000d));
         assertThat(runOutput.getRow().get("doublen_test"), is(2147483645.1234d));
-        assertThat(runOutput.getRow().get("numeric_test"), is(new BigDecimal("5.36").toString()));
-        assertThat(runOutput.getRow().get("salary_decimal"), is(new BigDecimal("999.99").toString()));
+        assertThat(runOutput.getRow().get("numeric_test"), is(new BigDecimal("5.36")));
+        assertThat(runOutput.getRow().get("salary_decimal"), is(new BigDecimal("999.99")));
 
         assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
         assertThat(runOutput.getRow().get("datetime_type"), is(Instant.parse("2050-12-31T22:59:57.150150Z")));
