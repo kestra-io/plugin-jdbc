@@ -18,3 +18,11 @@ services:
       POSTGRES_PASSWORD: pg_passwd
     ports:
       - "56982:5432"
+
+  vertica:
+    image: jbfavre/vertica:latest
+    restart: always
+    environment:
+      DATABASE_PASSWORD: vertica_passwd
+    ports:
+      - "25433:5433"

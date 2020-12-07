@@ -25,11 +25,12 @@ public abstract class AbstractCellConverter {
         java.lang.Long.class,
         java.lang.Float.class,
         java.lang.Double.class,
+        java.util.UUID.class,
+        java.math.BigDecimal.class,
         byte[].class
     );
 
     protected Object convert(int columnIndex, ResultSet rs) throws SQLException {
-
         Object data = rs.getObject(columnIndex);
         if (data == null) {
             return null;

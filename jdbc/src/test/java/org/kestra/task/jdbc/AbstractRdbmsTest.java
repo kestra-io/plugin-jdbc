@@ -60,10 +60,15 @@ public abstract class AbstractRdbmsTest {
         // We force the timezone to UTC to have consistent tests
         // TimeZone.setDefault(TimeZone.getTimeZone("Europe/Paris"));
 
-        repositoryLoader.load(Objects.requireNonNull(AbstractRdbmsTest.class.getClassLoader().getResource("flows")));
-        if (!this.runner.isRunning()) {
-            this.runner.run();
+        URL flows = AbstractRdbmsTest.class.getClassLoader().getResource("flows");
+
+        if (flows != null) {
+            repositoryLoader.load(flows);
+            if (!this.runner.isRunning()) {
+                this.runner.run();
+            }
         }
+
         initDatabase();
     }
 }

@@ -14,6 +14,7 @@ import org.kestra.task.jdbc.AbstractRdbmsTest;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.*;
@@ -66,7 +67,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("double_test"), is(9223372036854776000d));
         // Not equal to input value (Float and Double are for "Approximate Value"
         assertThat(row.get("real_test"), not(9223372036854776000d));
-        assertThat(row.get("numeric_test"), is("2147483645.1234"));
+        assertThat(row.get("numeric_test"), is(new BigDecimal("2147483645.1234")));
 
         assertThat(row.get("date_type"), is(LocalDate.parse("2030-12-25")));
         assertThat(row.get("time_type"), is(LocalTime.parse("04:05:30")));
