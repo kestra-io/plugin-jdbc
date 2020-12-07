@@ -26,3 +26,10 @@ services:
       DATABASE_PASSWORD: vertica_passwd
     ports:
       - "25433:5433"
+
+  clickhouse:
+    image: yandex/clickhouse-server
+    restart: always
+    ports:
+      - "28123:8123"
+      - "29000:9000"
