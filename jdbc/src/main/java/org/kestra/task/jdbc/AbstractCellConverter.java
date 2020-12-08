@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -53,6 +54,10 @@ public abstract class AbstractCellConverter {
 
         if (clazz.equals(java.sql.Date.class)) {
             return ((Date) data).toLocalDate();
+        }
+
+        if (clazz.equals(java.sql.Timestamp.class)) {
+            return ((Timestamp) data).toInstant().atZone(zoneId);
         }
 
         throw new IllegalArgumentException("Data of type [" + clazz + "] is not supported");

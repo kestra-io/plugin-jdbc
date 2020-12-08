@@ -3,4 +3,4 @@ include 'postgres'
 include 'jdbc'
 include 'mysql'
 include 'vertica'
-
+include 'clickhouse'
