@@ -74,6 +74,9 @@ public class ClickHouseTest extends AbstractRdbmsTest {
 
         taskUpdate.run(runContext);
 
+        // clickhouse need some to refresh
+        Thread.sleep(500);
+
         Query taskGet = Query.builder()
             .url(getUrl())
             .username(getUsername())
