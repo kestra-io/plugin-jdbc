@@ -111,10 +111,7 @@ subprojects { Project subproject ->
         }
 
         def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
-
-        if (isBuildSnapshot) {
-            project.version = project.version.replaceAll(/-SNAPSHOT$/, "")
-        }
+        def publishVersion = isBuildSnapshot ? project.version.replaceAll(/-SNAPSHOT$/, "") : project.version;
 
         jar {
             manifest {
@@ -135,7 +132,7 @@ subprojects { Project subproject ->
         publishing {
             publications {
                 BintrayMavenPublication(MavenPublication) {
-                    version project.version
+                    version publishVersion
 
                     groupId project.group
                     artifactId subproject.name
@@ -173,9 +170,9 @@ subprojects { Project subproject ->
                 publicDownloadNumbers = true
                 licenses = ['Apache-2.0']
                 version {
-                    name = project.version
+                    name = publishVersion
                     released = new Date().format("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-                    vcsTag = "v" + project.version
+                    vcsTag = "v" + publishVersion
                 }
             }
         }
