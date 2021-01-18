@@ -23,36 +23,36 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "MySQL Query Task.",
+    title = "Clickhouse Query Task.",
     description = "Currently supported types are the following ones : \n" +
-        " - serial,\n" +
-        " - tinyint,\n" +
-        " - char(n),\n" +
-        " - varchar(n),\n" +
-        " - text,\n" +
-        " - bigint,\n" +
-        " - bit(n),\n" +
-        " - float,\n" +
-        " - double,\n" +
-        " - numeric,\n" +
-        " - decimal,\n" +
-        " - date,\n" +
-        " - datetime(n),\n" +
-        " - time,\n" +
-        " - timestamp(n),\n" +
-        " - year(n),\n" +
-        " - json,\n" +
-        " - blob"
+        " - Int8,\n" +
+        " - Float32,\n" +
+        " - Float64,\n" +
+        " - Decimal(n, m),\n" +
+        " - String,\n" +
+        " - FixedString(n),\n" +
+        " - UUID,\n" +
+        " - Date,\n" +
+        " - DateTime(n),\n" +
+        " - DateTime64(n, m),\n" +
+        " - Enum,\n" +
+        " - LowCardinality(n),\n" +
+        " - Array(n),\n" +
+        " - Nested(),\n" +
+        " - Tuple(n, m),\n" +
+        " - Nullable(n),\n" +
+        " - Ipv4,\n" +
+        " - Ipv6"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Request a PostgresSQL Database and fetch a row as outputs",
+            title = "Request a Clickhouse Database and fetch a row as outputs",
             code = {
-                "url: jdbc:postgresql://127.0.0.1:56982/",
-                "username: postgres",
-                "password: pg_passwd",
-                "sql: select * from mysql_types",
+                "url: jdbc:clickhouse://127.0.0.1:56982/",
+                "username: clickhouse",
+                "password: ch_passwd",
+                "sql: select * from clickhouse_types",
                 "fetchOne: true",
             }
         )
