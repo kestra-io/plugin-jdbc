@@ -1,7 +1,7 @@
 package org.kestra.task.jdbc.mysql;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;

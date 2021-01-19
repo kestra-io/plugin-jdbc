@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver group: 'org.postgresql', name: 'postgresql', version: '42.2.16'
+    jdbcDriver 'org.postgresql:postgresql:42.2.18'
     implementation project(':jdbc')
 
     testImplementation project(':jdbc').sourceSets.test.output

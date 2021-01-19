@@ -1,7 +1,7 @@
 package org.kestra.task.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;

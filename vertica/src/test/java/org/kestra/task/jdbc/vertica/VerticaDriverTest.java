@@ -1,6 +1,6 @@
 package org.kestra.task.jdbc.vertica;
 
-import io.micronaut.test.annotation.MicronautTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.kestra.task.jdbc.AbstractJdbcDriverTest;
 
 import java.sql.Driver;

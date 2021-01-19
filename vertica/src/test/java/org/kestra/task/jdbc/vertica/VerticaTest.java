@@ -1,8 +1,7 @@
 package org.kestra.task.jdbc.vertica;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.annotation.MicronautTest;
-import org.apache.commons.codec.binary.Hex;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.jdbc.AbstractJdbcQuery;
@@ -14,11 +13,11 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.time.*;
-import java.util.Date;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 /**
  * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html

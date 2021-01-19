@@ -1,8 +1,7 @@
 package org.kestra.task.jdbc.clickhouse;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.annotation.MicronautTest;
-import org.apache.commons.codec.binary.Hex;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 import org.kestra.core.runners.RunContext;
 import org.kestra.task.jdbc.AbstractJdbcQuery;
@@ -12,9 +11,9 @@ import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.sql.Time;
-import java.time.*;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import static org.hamcrest.MatcherAssert.assertThat;
