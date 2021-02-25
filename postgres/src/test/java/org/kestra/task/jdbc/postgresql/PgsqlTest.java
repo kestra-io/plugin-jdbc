@@ -1,6 +1,5 @@
 package org.kestra.task.jdbc.postgresql;
 
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.DecoderException;
@@ -20,7 +19,6 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
