@@ -119,9 +119,18 @@ public class PgsqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getUri(), notNullValue());
 
+        String[] values = {
+            "{concert_id:1,available:true,a:\"four\",b:\"This is a varchar\",c:\"This is a text column data\",d:null,play_time:32767,library_record:9223372036854775807,floatn_test:9.223372036854776E18,double_test:9.223372036854776E18,real_test:9.223372036854776E18,numeric_test:2147483645.1234,date_type:\"2030-12-25\",time_type:\"04:05:30\",timez_type:\"13:05:06\",timestamp_type:\"2004-10-19T10:23:54.999999\",timestampz_type:\"2004-10-19T08:23:54.25+02:00\",interval_type:\"P10Y4M5DT0H0M10S\",pay_by_quarter:[100,200,300],schedule:[[\"meeting\",\"lunch\"],[\"training\",\"presentation\"]],json_type:\"{\\\"color\\\":\\\"red\\\",\\\"value\\\":\\\"#f00\\\"}\",blob_type:{{3q2+7w==}}}",
+            "{concert_id:2,available:true,a:\"four\",b:\"This is a varchar\",c:\"This is a text column data\",d:null,play_time:32767,library_record:9223372036854775807,floatn_test:9.223372036854776E18,double_test:9.223372036854776E18,real_test:9.223372036854776E18,numeric_test:2147483645.1234,date_type:\"2030-12-25\",time_type:\"04:05:30\",timez_type:\"13:05:06\",timestamp_type:\"2004-10-19T10:23:54.999999\",timestampz_type:\"2004-10-19T08:23:54.25+02:00\",interval_type:\"P10Y4M5DT0H0M10S\",pay_by_quarter:[100,200,300],schedule:[[\"meeting\",\"lunch\"],[\"training\",\"presentation\"]],json_type:\"{\\\"color\\\":\\\"red\\\",\\\"value\\\":\\\"#f00\\\"}\",blob_type:{{3q2+7w==}}}"
+        };
+
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(runOutput.getUri())));
         int lines = 0;
-        while (bufferedReader.readLine() != null) lines++;
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
+            assertThat(values[lines], is(line));
+            lines++;
+        }
         bufferedReader.close();
         assertThat(lines, is(2));
     }
