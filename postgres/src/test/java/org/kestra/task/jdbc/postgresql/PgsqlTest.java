@@ -121,7 +121,9 @@ public class PgsqlTest extends AbstractRdbmsTest {
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(runOutput.getUri())));
         int lines = 0;
-        while (bufferedReader.readLine() != null) lines++;
+        while (bufferedReader.readLine() != null) {
+            lines++;
+        }
         bufferedReader.close();
         assertThat(lines, is(2));
     }

@@ -196,7 +196,7 @@ public abstract class AbstractJdbcQuery extends Task {
 
     private Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
         int columnsCount = rs.getMetaData().getColumnCount();
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new LinkedHashMap<>();
 
         for (int i = 1; i <= columnsCount; i++) {
             map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs, cellConverter));
