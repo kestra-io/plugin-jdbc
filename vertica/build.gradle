@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver group: 'com.vertica.jdbc', name: 'vertica-jdbc', version: '10.0.1-0'
+    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:10.1.0-0'
     implementation project(':jdbc')
 
     testImplementation project(':jdbc').sourceSets.test.output
