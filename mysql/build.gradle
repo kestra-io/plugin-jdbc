@@ -1,6 +1,0 @@
-dependencies {
-    jdbcDriver 'mysql:mysql-connector-java:8.0.23'
-    implementation project(':jdbc')
-
-    testImplementation project(':jdbc').sourceSets.test.output
-}

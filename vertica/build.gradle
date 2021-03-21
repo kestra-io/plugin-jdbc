@@ -1,6 +1,0 @@
-dependencies {
-    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:10.1.0-0'
-    implementation project(':jdbc')
-
-    testImplementation project(':jdbc').sourceSets.test.output
-}

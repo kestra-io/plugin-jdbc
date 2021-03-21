@@ -1,0 +1,6 @@
+dependencies {
+    jdbcDriver 'org.postgresql:postgresql:42.2.19.jre7'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

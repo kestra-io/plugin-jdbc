@@ -1,0 +1,6 @@
+dependencies {
+    compile group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.2.6'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

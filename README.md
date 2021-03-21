@@ -12,10 +12,10 @@
 ## Documentation
 * The official Kestra documentation can be found under: [kestra.io](https://kestra.io)
 * This plugin documentation is available here :
-  * [for ClickHouse](https://kestra.io/plugins/task-jdbc-clickhouse/)
-  * [for MySQL](https://kestra.io/plugins/task-jdbc-mysql/)
-  * [for Postgres](https://kestra.io/plugins/task-jdbc-postgres/)
-  * [for Vertica](https://kestra.io/plugins/task-jdbc-vertica/)
+  * [for ClickHouse](https://kestra.io/plugins/plugin-jdbc-clickhouse/)
+  * [for MySQL](https://kestra.io/plugins/plugin-jdbc-mysql/)
+  * [for Postgres](https://kestra.io/plugins/plugin-jdbc-postgres/)
+  * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   
 ## License
 Apache 2.0 © [Nigh Tech](https://nigh.tech)
