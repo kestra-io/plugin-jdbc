@@ -82,6 +82,16 @@ public abstract class AbstractJdbcQuery extends Task {
     )
     private String timeZoneId;
 
+    @Schema(
+        title = "Number of rows that should be fetched",
+        description = "Gives the JDBC driver a hint as to the number of rows that should be fetched from the database " +
+            "when more rows are needed for this ResultSet object. If the fetch size specified is zero, the JDBC driver " +
+            "ignores the value and is free to make its own best guess as to what the fetch size should be. "
+    )
+    @PluginProperty(dynamic = false)
+    @Builder.Default
+    private final Integer fetchSize = 1000;
+
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
@@ -107,8 +117,13 @@ public abstract class AbstractJdbcQuery extends Task {
 
         try (
             Connection conn = DriverManager.getConnection(runContext.render(this.url), runContext.render(this.username), runContext.render(this.password));
-            Statement stmt = conn.createStatement()
+            Statement stmt = conn.createStatement(
+                ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY
+            )
         ) {
+            stmt.setFetchSize(fetchSize);
+
             String sql = runContext.render(this.sql);
             boolean isResult = stmt.execute(sql);
 
