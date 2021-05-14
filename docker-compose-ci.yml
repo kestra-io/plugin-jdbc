@@ -4,7 +4,6 @@ services:
   mysql:
     image: mysql:8
     #command: --default-authentication-plugin=mysql_native_password
-    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: mysql_passwd
       MYSQL_DATABASE: kestra
@@ -13,7 +12,6 @@ services:
 
   postgres:
     image: postgres:12
-    restart: always
     environment:
       POSTGRES_PASSWORD: pg_passwd
     ports:
@@ -21,7 +19,6 @@ services:
 
   vertica:
     image: jbfavre/vertica:latest
-    restart: always
     environment:
       DATABASE_PASSWORD: vertica_passwd
     ports:
@@ -29,7 +26,13 @@ services:
 
   clickhouse:
     image: yandex/clickhouse-server
-    restart: always
     ports:
       - "28123:8123"
       - "29000:9000"
+
+  oracle:
+    image: wnameless/oracle-xe-11g-r2
+    ports:
+      - "49161:1521"
+    environment:
+      ORACLE_ALLOW_REMOTE: "true"

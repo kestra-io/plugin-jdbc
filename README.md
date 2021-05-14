@@ -14,6 +14,7 @@
 * This plugin documentation is available here :
   * [for ClickHouse](https://kestra.io/plugins/plugin-jdbc-clickhouse/)
   * [for MySQL](https://kestra.io/plugins/plugin-jdbc-mysql/)
+  * [for Oracle](https://kestra.io/plugins/plugin-jdbc-oracle/)
   * [for Postgres](https://kestra.io/plugins/plugin-jdbc-postgres/)
   * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   

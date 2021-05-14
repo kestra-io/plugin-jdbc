@@ -1,0 +1,11 @@
+dependencies {
+    implementation("com.oracle.database.jdbc:ojdbc11:21.1.0.0")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
+
+// https://stackoverflow.com/questions/9156379/ora-01882-timezone-region-not-found
+test {
+    systemProperty "user.timezone", "Europe/Paris"
+}

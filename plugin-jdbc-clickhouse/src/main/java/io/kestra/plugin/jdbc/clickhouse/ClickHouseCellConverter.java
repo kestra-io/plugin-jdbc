@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import ru.yandex.clickhouse.ClickHouseArray;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
     }
 
     @Override
-    public Object convertCell(int columnIndex, ResultSet rs) throws SQLException {
+    public Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException {
         Object data = rs.getObject(columnIndex);
 
         if (data == null) {

@@ -2,10 +2,7 @@ package io.kestra.plugin.jdbc;
 
 import com.google.common.collect.ImmutableList;
 
-import java.sql.Date;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -16,7 +13,7 @@ public abstract class AbstractCellConverter {
         this.zoneId = zoneId;
     }
 
-    public abstract Object convertCell(int columnIndex, ResultSet rs) throws SQLException;
+    public abstract Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException;
 
     private static final List<Class<?>> SIMPLE_TYPES = ImmutableList.of(
         java.lang.String.class,

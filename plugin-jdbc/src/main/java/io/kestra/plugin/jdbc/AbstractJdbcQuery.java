@@ -154,21 +154,21 @@ public abstract class AbstractJdbcQuery extends Task {
                 if (isResult) {
                     if (this.fetchOne) {
                         output
-                            .row(fetchResult(rs, cellConverter))
+                            .row(fetchResult(rs, cellConverter, conn))
                             .size(1L);
                         size = 1;
 
                     } else if (this.store) {
                         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
                         BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
-                        size = fetchToFile(stmt, rs, fileWriter, cellConverter);
+                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
                         fileWriter.close();
                         output
                             .uri(runContext.putTempFile(tempFile))
                             .size(size);
                     } else if (this.fetch) {
                         List<Map<String, Object>> maps = new ArrayList<>();
-                        size = fetchResults(stmt, rs, maps, cellConverter);
+                        size = fetchResults(stmt, rs, maps, cellConverter, conn);
                         output
                             .rows(maps)
                             .size(size);
@@ -189,16 +189,16 @@ public abstract class AbstractJdbcQuery extends Task {
         };
     }
 
-    protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
+    protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         rs.next();
-        return mapResultSetToMap(rs, cellConverter);
+        return mapResultSetToMap(rs, cellConverter, connection);
     }
 
-    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter) throws SQLException {
-        return fetch(stmt, rs, Rethrow.throwConsumer(maps::add), cellConverter);
+    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
+        return fetch(stmt, rs, Rethrow.throwConsumer(maps::add), cellConverter, connection);
     }
 
-    protected long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter) throws SQLException, IOException {
+    protected long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter, Connection connection) throws SQLException, IOException {
         return fetch(
             stmt,
             rs,
@@ -207,17 +207,18 @@ public abstract class AbstractJdbcQuery extends Task {
                 writer.write(s);
                 writer.write("\n");
             }),
-            cellConverter
+            cellConverter,
+            connection
         );
     }
 
-    private long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter) throws SQLException {
+    private long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         boolean isResult;
         long count = 0;
 
         do {
             while (rs.next()) {
-                Map<String, Object> map = mapResultSetToMap(rs, cellConverter);
+                Map<String, Object> map = mapResultSetToMap(rs, cellConverter, connection);
                 c.accept(map);
                 count++;
             }
@@ -227,19 +228,19 @@ public abstract class AbstractJdbcQuery extends Task {
         return count;
     }
 
-    private Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
+    private Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         int columnsCount = rs.getMetaData().getColumnCount();
         Map<String, Object> map = new LinkedHashMap<>();
 
         for (int i = 1; i <= columnsCount; i++) {
-            map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs, cellConverter));
+            map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs, cellConverter, connection));
         }
 
         return map;
     }
 
-    private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter) throws SQLException {
-        return cellConverter.convertCell(columnIndex, rs);
+    private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
+        return cellConverter.convertCell(columnIndex, rs, connection);
     }
 
     @Builder

@@ -5,6 +5,7 @@ import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
@@ -16,7 +17,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
     }
 
     @Override
-    public Object convertCell(int columnIndex, ResultSet rs) throws SQLException {
+    public Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException {
 
         Object data = rs.getObject(columnIndex);
 

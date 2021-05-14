@@ -45,7 +45,7 @@ public abstract class AbstractRdbmsTest {
 
     protected abstract void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException;
 
-    private Connection getConnection() throws SQLException {
+    protected Connection getConnection() throws SQLException {
         return DriverManager.getConnection(getUrl(), getUsername(), getPassword());
     }
 

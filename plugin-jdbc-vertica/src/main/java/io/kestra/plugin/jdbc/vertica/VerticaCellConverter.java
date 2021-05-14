@@ -4,6 +4,7 @@ import com.vertica.jdbc.VerticaDayTimeInterval;
 import com.vertica.jdbc.VerticaYearMonthInterval;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -17,7 +18,7 @@ public class VerticaCellConverter extends AbstractCellConverter {
     }
 
     @Override
-    public Object convertCell(int columnIndex, ResultSet rs) throws SQLException {
+    public Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException {
         Object data = rs.getObject(columnIndex);
 
         if (data == null) {

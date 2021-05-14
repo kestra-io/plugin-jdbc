@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.mysql;
 import com.mysql.cj.jdbc.result.ResultSetImpl;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -13,7 +14,7 @@ public class MysqlCellConverter extends AbstractCellConverter {
     }
 
     @Override
-    public Object convertCell(int columnIndex, ResultSet rs) throws SQLException {
+    public Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException {
         Object data = rs.getObject(columnIndex);
 
         if (data == null) {
