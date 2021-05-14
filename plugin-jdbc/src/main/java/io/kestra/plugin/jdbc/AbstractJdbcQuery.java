@@ -86,11 +86,23 @@ public abstract class AbstractJdbcQuery extends Task {
         title = "Number of rows that should be fetched",
         description = "Gives the JDBC driver a hint as to the number of rows that should be fetched from the database " +
             "when more rows are needed for this ResultSet object. If the fetch size specified is zero, the JDBC driver " +
-            "ignores the value and is free to make its own best guess as to what the fetch size should be. "
+            "ignores the value and is free to make its own best guess as to what the fetch size should be. Ignored if " +
+            "`autoCommit` is false."
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
-    private final Integer fetchSize = 1000;
+    private final Integer fetchSize = 10000;
+
+    @Schema(
+        title = "Number of rows that should be fetched",
+        description = "Sets this connection's auto-commit mode to the given state. If a connection is in auto-commit " +
+            "mode, then all its SQL statements will be executed and committed as individual transactions. Otherwise, " +
+            "its SQL statements are grouped into transactions that are terminated by a call to either the method commit" +
+            "or the method rollback. By default, new connections are in auto-commit mode except if you are using a " +
+            "`store` properties that will disabled autocommit whenever this properties values."
+    )
+    @PluginProperty(dynamic = false)
+    private final Boolean autoCommit = true;
 
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
@@ -122,6 +134,12 @@ public abstract class AbstractJdbcQuery extends Task {
                 ResultSet.CONCUR_READ_ONLY
             )
         ) {
+            if (this.store) {
+                conn.setAutoCommit(false);
+            } else {
+                conn.setAutoCommit(this.autoCommit);
+            }
+
             stmt.setFetchSize(fetchSize);
 
             String sql = runContext.render(this.sql);
@@ -129,38 +147,38 @@ public abstract class AbstractJdbcQuery extends Task {
 
             logger.debug("Starting query: {}", sql);
 
-            ResultSet rs = stmt.getResultSet();
+            try(ResultSet rs = stmt.getResultSet()) {
+                Output.OutputBuilder output = Output.builder();
+                long size = 0;
 
-            Output.OutputBuilder output = Output.builder();
-            long size = 0;
+                if (isResult) {
+                    if (this.fetchOne) {
+                        output
+                            .row(fetchResult(rs, cellConverter))
+                            .size(1L);
+                        size = 1;
 
-            if (isResult) {
-                if (this.fetchOne) {
-                    output
-                        .row(fetchResult(rs, cellConverter))
-                        .size(1L);
-                    size = 1;
-
-                } else if (this.store) {
-                    File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
-                    BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
-                    size = fetchToFile(stmt, rs, fileWriter, cellConverter);
-                    fileWriter.close();
-                    output
-                        .uri(runContext.putTempFile(tempFile))
-                        .size(size);
-                } else if (this.fetch) {
-                    List<Map<String, Object>> maps = new ArrayList<>();
-                    size = fetchResults(stmt, rs, maps, cellConverter);
-                    output
-                        .rows(maps)
-                        .size(size);
+                    } else if (this.store) {
+                        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+                        BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
+                        size = fetchToFile(stmt, rs, fileWriter, cellConverter);
+                        fileWriter.close();
+                        output
+                            .uri(runContext.putTempFile(tempFile))
+                            .size(size);
+                    } else if (this.fetch) {
+                        List<Map<String, Object>> maps = new ArrayList<>();
+                        size = fetchResults(stmt, rs, maps, cellConverter);
+                        output
+                            .rows(maps)
+                            .size(size);
+                    }
                 }
+
+                runContext.metric(Counter.of("fetch.size",  size, this.tags()));
+
+                return output.build();
             }
-
-            runContext.metric(Counter.of("fetch.size",  size, this.tags()));
-
-            return output.build();
         }
     }
 
