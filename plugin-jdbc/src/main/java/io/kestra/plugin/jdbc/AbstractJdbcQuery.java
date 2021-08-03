@@ -1,15 +1,14 @@
 package io.kestra.plugin.jdbc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -27,7 +26,7 @@ import java.util.function.Consumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcQuery extends Task {
+public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
     @Schema(
         title = "The sql query to run"
     )
@@ -60,24 +59,6 @@ public abstract class AbstractJdbcQuery extends Task {
     private final Boolean fetch = false;
 
     @Schema(
-        title = "The jdbc url to connect to the database"
-    )
-    @PluginProperty(dynamic = true)
-    private String url;
-
-    @Schema(
-        title = "The database user"
-    )
-    @PluginProperty(dynamic = true)
-    private String username;
-
-    @Schema(
-        title = "The database user's password"
-    )
-    @PluginProperty(dynamic = true)
-    private String password;
-
-    @Schema(
         title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
     )
     private String timeZoneId;
@@ -93,32 +74,12 @@ public abstract class AbstractJdbcQuery extends Task {
     @Builder.Default
     private final Integer fetchSize = 10000;
 
-    @Schema(
-        title = "Number of rows that should be fetched",
-        description = "Sets this connection's auto-commit mode to the given state. If a connection is in auto-commit " +
-            "mode, then all its SQL statements will be executed and committed as individual transactions. Otherwise, " +
-            "its SQL statements are grouped into transactions that are terminated by a call to either the method commit" +
-            "or the method rollback. By default, new connections are in auto-commit mode except if you are using a " +
-            "`store` properties that will disabled autocommit whenever this properties values."
-    )
-    @PluginProperty(dynamic = false)
-    private final Boolean autoCommit = true;
-
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
-    /**
-     * JDBC driver may be auto-registered. See https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html
-     *
-     * @throws SQLException registerDrivers failed
-     */
-    protected abstract void registerDriver() throws SQLException;
-
     public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-
-        registerDriver();
 
         ZoneId zoneId = TimeZone.getDefault().toZoneId();
         if (this.timeZoneId != null) {
@@ -128,7 +89,7 @@ public abstract class AbstractJdbcQuery extends Task {
         AbstractCellConverter cellConverter = getCellConverter(zoneId);
 
         try (
-            Connection conn = DriverManager.getConnection(runContext.render(this.url), runContext.render(this.username), runContext.render(this.password));
+            Connection conn = this.connection(runContext);
             Statement stmt = conn.createStatement(
                 ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY
@@ -179,6 +140,8 @@ public abstract class AbstractJdbcQuery extends Task {
 
                 return output.build();
             }
+        } finally {
+            this.cleanup();
         }
     }
 
