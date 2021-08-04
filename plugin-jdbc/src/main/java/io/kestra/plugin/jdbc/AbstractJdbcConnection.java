@@ -100,10 +100,16 @@ public abstract class AbstractJdbcConnection extends Task {
         }
     }
 
+    public Path tempFile() throws IOException {
+        return this.tempFile(null);
+    }
+
     public Path tempFile(String content) throws IOException {
         Path tempFile = Files.createTempFile(this.tempDir(), null, null);
 
-        Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8));
+        if (content != null) {
+            Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8));
+        }
 
         return tempFile;
     }
