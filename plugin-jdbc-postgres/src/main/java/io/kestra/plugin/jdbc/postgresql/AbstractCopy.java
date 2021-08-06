@@ -17,6 +17,8 @@ import java.util.Locale;
 import java.util.Properties;
 import javax.validation.constraints.NotNull;
 
+import static io.kestra.core.utils.Rethrow.throwFunction;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -140,7 +142,7 @@ public abstract class AbstractCopy extends AbstractJdbcConnection implements Pos
     @Override
     protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         Properties properties = super.connectionProperties(runContext);
-        PostgresService.handleSsl(properties, runContext, this, this);
+        PostgresService.handleSsl(properties, runContext, this, throwFunction(runContext::tempFile));
 
         return properties;
     }

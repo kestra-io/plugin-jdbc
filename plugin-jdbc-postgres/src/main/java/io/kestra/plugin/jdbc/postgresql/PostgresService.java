@@ -2,14 +2,16 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.jdbc.AbstractJdbcConnection;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.function.Function;
 
 public abstract class PostgresService {
-    public static void handleSsl(Properties properties, RunContext runContext, PostgresConnectionInterface conn, AbstractJdbcConnection abstractJdbcConnection) throws IllegalVariableEvaluationException, IOException {
+    public static void handleSsl(Properties properties, RunContext runContext, PostgresConnectionInterface conn, Function<byte[], Path> temp) throws IllegalVariableEvaluationException, IOException {
         if (conn.getSsl() != null && conn.getSsl()) {
             properties.put("ssl", "true");
         }
@@ -19,15 +21,15 @@ public abstract class PostgresService {
         }
 
         if (conn.getSslRootCert() != null) {
-            properties.put("sslrootcert", abstractJdbcConnection.tempFile(runContext.render(conn.getSslRootCert())).toAbsolutePath().toString());
+            properties.put("sslrootcert", temp.apply(runContext.render(conn.getSslRootCert()).getBytes(StandardCharsets.UTF_8)).toAbsolutePath().toString());
         }
 
         if (conn.getSslCert() != null) {
-            properties.put("sslcert", abstractJdbcConnection.tempFile(runContext.render(conn.getSslCert())).toAbsolutePath().toString());
+            properties.put("sslcert", temp.apply(runContext.render(conn.getSslCert()).getBytes(StandardCharsets.UTF_8)).toAbsolutePath().toString());
         }
 
         if (conn.getSslKey() != null) {
-            properties.put("sslkey", abstractJdbcConnection.tempFile(runContext.render(conn.getSslKey())).toAbsolutePath().toString());
+            properties.put("sslkey", temp.apply(runContext.render(conn.getSslKey()).getBytes(StandardCharsets.UTF_8)).toAbsolutePath().toString());
         }
 
         if (conn.getSslKeyPassword() != null) {

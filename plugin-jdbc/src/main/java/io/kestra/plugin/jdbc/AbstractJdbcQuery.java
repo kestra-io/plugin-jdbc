@@ -120,7 +120,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
                         size = 1;
 
                     } else if (this.store) {
-                        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+                        File tempFile = runContext.tempFile(".ion").toFile();
                         BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
                         size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
                         fileWriter.close();
@@ -140,8 +140,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
 
                 return output.build();
             }
-        } finally {
-            this.cleanup();
         }
     }
 

@@ -17,6 +17,8 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Properties;
 
+import static io.kestra.core.utils.Rethrow.throwFunction;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -82,7 +84,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         Properties properties = super.connectionProperties(runContext);
-        PostgresService.handleSsl(properties, runContext, this, this);
+        PostgresService.handleSsl(properties, runContext, this, throwFunction(runContext::tempFile));
 
         return properties;
     }

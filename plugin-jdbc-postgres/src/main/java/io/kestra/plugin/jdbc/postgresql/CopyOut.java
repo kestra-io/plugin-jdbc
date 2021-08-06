@@ -54,7 +54,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        Path path = this.tempFile();
+        Path path = runContext.tempFile();
 
         try (
             Connection connection = this.connection(runContext);

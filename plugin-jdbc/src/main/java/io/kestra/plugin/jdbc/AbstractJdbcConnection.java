@@ -7,11 +7,8 @@ import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.io.FileUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -84,33 +81,5 @@ public abstract class AbstractJdbcConnection extends Task {
         Properties props = this.connectionProperties(runContext);
 
         return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
-    }
-
-    private Path tempDir() throws IOException {
-        if (this.cleanupDirectory == null) {
-            this.cleanupDirectory = Files.createTempDirectory("working-dir");
-        }
-
-        return this.cleanupDirectory;
-    }
-
-    protected void cleanup() throws IOException {
-        if (cleanupDirectory != null) {
-            FileUtils.deleteDirectory(cleanupDirectory.toFile());
-        }
-    }
-
-    public Path tempFile() throws IOException {
-        return this.tempFile(null);
-    }
-
-    public Path tempFile(String content) throws IOException {
-        Path tempFile = Files.createTempFile(this.tempDir(), null, null);
-
-        if (content != null) {
-            Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8));
-        }
-
-        return tempFile;
     }
 }
