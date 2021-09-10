@@ -37,7 +37,6 @@ public abstract class AbstractCopy extends AbstractJdbcConnection implements Pos
         title = "The name (optionally schema-qualified) of an existing table."
     )
     @PluginProperty(dynamic = true)
-    @NotNull
     protected String table;
 
     @Schema(
