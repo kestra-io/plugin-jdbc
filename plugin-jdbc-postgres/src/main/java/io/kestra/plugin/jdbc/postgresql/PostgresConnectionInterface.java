@@ -17,19 +17,22 @@ public interface PostgresConnectionInterface {
     SslMode getSslMode();
 
     @Schema(
-        title = "The ssl root cert"
+        title = "The ssl root cert",
+        description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(dynamic = true)
     String getSslRootCert();
 
     @Schema(
-        title = "The ssl cert"
+        title = "The ssl cert",
+        description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(dynamic = true)
     String getSslCert();
 
     @Schema(
-        title = "The ssl key"
+        title = "The ssl key",
+        description = "Must be a PEM encoded key"
     )
     @PluginProperty(dynamic = true)
     String getSslKey();

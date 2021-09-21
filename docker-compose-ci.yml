@@ -11,11 +11,20 @@ services:
       - "64790:3306"
 
   postgres:
-    image: postgres:12
+    image: bitnami/postgresql:latest
     environment:
-      POSTGRES_PASSWORD: pg_passwd
+      POSTGRESQL_PASSWORD: pg_passwd
+      POSTGRESQL_PGHBA_REMOVE_FILTERS: local, md5
+      POSTGRESQL_ENABLE_TLS: "yes"
+      POSTGRESQL_TLS_CERT_FILE: /var/lib/postgresql/server.crt
+      POSTGRESQL_TLS_KEY_FILE: /var/lib/postgresql/server.key
+      POSTGRESQL_TLS_CA_FILE: /var/lib/postgresql/ca.crt
     ports:
       - "56982:5432"
+    volumes:
+      - ./certs/ca.crt:/var/lib/postgresql/ca.crt
+      - ./certs/server/server.crt:/var/lib/postgresql/server.crt
+      - ./certs/server/server.key:/var/lib/postgresql/server.key
 
   vertica:
     image: jbfavre/vertica:latest

@@ -1,6 +1,8 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.micronaut.context.ApplicationContext;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -13,12 +15,18 @@ import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.Map;
+import java.util.Properties;
+
+import javax.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -30,14 +38,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @MicronautTest
 public class PgsqlTest extends AbstractRdbmsTest {
+    @Inject
+    private ApplicationContext applicationContext;
+
     @Test
     void selectAndFetchOne() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
             .fetchOne(true)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
@@ -88,9 +104,14 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
             .fetch(true)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
@@ -108,9 +129,14 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
             .store(true)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
@@ -135,9 +161,14 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
             .fetchOne(true)
             .sql("select item from pgsql_types") // PG SQL composite field are not supported
             .build();
@@ -148,7 +179,11 @@ public class PgsqlTest extends AbstractRdbmsTest {
         });
     }
 
-    public static final Map<String, String> INPUTS = ImmutableMap.of();
+    public static final Map<String, String> INPUTS = ImmutableMap.of(
+        "sslRootCert", TestUtils.ca(),
+        "sslCert", TestUtils.cert(),
+        "sslKey", TestUtils.keyNoPass()
+    );
 
     @Test
     void updateFromFlow() throws Exception {
@@ -166,17 +201,65 @@ public class PgsqlTest extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:postgresql://127.0.0.1:56982/";
+        return TestUtils.url();
     }
 
     @Override
     protected String getUsername() {
-        return "postgres";
+        return TestUtils.username();
     }
 
     @Override
     protected String getPassword() {
-        return "pg_passwd";
+        return TestUtils.password();
+    }
+
+    protected Connection getConnection() throws SQLException {
+        Properties props = new Properties();
+        props.put("jdbc.url", getUrl());
+        props.put("user", getUsername());
+        props.put("password", getPassword());
+
+        try {
+            PostgresService.handleSsl(props, new RunContext(applicationContext, Map.of()), new PostgresConnection());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
+    }
+
+    public static class PostgresConnection implements PostgresConnectionInterface {
+
+        @Override
+        public Boolean getSsl() {
+            return TestUtils.ssl();
+        }
+
+        @Override
+        public SslMode getSslMode() {
+            return TestUtils.sslMode();
+        }
+
+        @Override
+        public String getSslRootCert() {
+            return TestUtils.ca();
+        }
+
+        @Override
+        public String getSslCert() {
+            return TestUtils.cert();
+        }
+
+        @Override
+        public String getSslKey() {
+            return TestUtils.key();
+        }
+
+        @Override
+        public String getSslKeyPassword() {
+            return TestUtils.keyPass();
+        }
     }
 
     @Override

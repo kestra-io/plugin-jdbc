@@ -84,7 +84,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
         Properties properties = super.connectionProperties(runContext);
-        PostgresService.handleSsl(properties, runContext, this, throwFunction(runContext::tempFile));
+        PostgresService.handleSsl(properties, runContext, this);
 
         return properties;
     }

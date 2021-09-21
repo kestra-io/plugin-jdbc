@@ -104,9 +104,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
             stmt.setFetchSize(fetchSize);
 
             String sql = runContext.render(this.sql);
-            boolean isResult = stmt.execute(sql);
-
             logger.debug("Starting query: {}", sql);
+
+            boolean isResult = stmt.execute(sql);
 
             try(ResultSet rs = stmt.getResultSet()) {
                 Output.OutputBuilder output = Output.builder();

@@ -1,12 +1,24 @@
 id: update_postgres
 namespace: io.kestra.jdbc.postgres
 
+inputs:
+  - name: sslRootCert
+    type: STRING
+  - name: sslCert
+    type: STRING
+  - name: sslKey
+    type: STRING
+
 tasks:
   - id: update
     type: io.kestra.plugin.jdbc.postgresql.Query
     url: jdbc:postgresql://127.0.0.1:56982/
     username: postgres
     password: pg_passwd
+    sslMode: VERIFY_CA
+    sslRootCert: '{{ inputs.sslRootCert }}'
+    sslCert: '{{ inputs.sslCert }}'
+    sslKey: '{{ inputs.sslKey }}'
     sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types
     fetch: true
   - id: use-fetched-data
@@ -14,4 +26,8 @@ tasks:
     url: jdbc:postgresql://127.0.0.1:56982/
     username: postgres
     password: pg_passwd
-    sql:  "{{#each outputs.update.rows}} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{this.play_time}}, {{this.concert_id}}, TO_TIMESTAMP('{{this.timestamp_type}}', 'YYYY/MM/DDTHH24:MI:SS.US') ); {{/each}}"
+    sslMode: VERIFY_CA
+    sslRootCert: '{{ inputs.sslRootCert }}'
+    sslCert: '{{ inputs.sslCert }}'
+    sslKey: '{{ inputs.sslKey }}'
+    sql:  "{{#each outputs.update.rows}} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{this.play_time}}, {{this.concert_id}}, TO_TIMESTAMP('{{this.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {{/each}}"
