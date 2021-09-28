@@ -68,7 +68,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
                 "  url: jdbc:postgresql://127.0.0.1:56982/",
                 "  username: postgres",
                 "  password: pg_passwd",
-                "  sql:  \"{{#each outputs.update.rows}} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{this.play_time}}, {{this.concert_id}}, TO_TIMESTAMP('{{this.timestamp_type}}', 'YYYY/MM/DDTHH24:MI:SS.US') ); {{/each}}\""}
+                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
         )
     }
 )

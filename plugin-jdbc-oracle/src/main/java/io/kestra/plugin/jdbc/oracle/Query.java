@@ -60,7 +60,7 @@ import java.time.ZoneId;
                 "  url: jdbc:oracle:thin:@localhost:49161:XE",
                 "  username: oracle",
                 "  password: oracle_passwd",
-                "  sql:  \"{{#each outputs.update.rows}} INSERT INTO destination (year_month, store_code, update_date) values ({{this.year_month}}, {{this.store_code}}, TO_DATE('{{this.date}}', 'MONTH DD, YYYY') ); {{/each}}\""}
+                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ); {% endfor %}\""}
         )
     }
 )
