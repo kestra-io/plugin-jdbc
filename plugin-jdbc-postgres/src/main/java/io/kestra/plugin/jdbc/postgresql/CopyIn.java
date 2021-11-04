@@ -31,7 +31,7 @@ import javax.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            title = "Load csv from a postgres table",
+            title = "Load csv or tsv into a postgres table",
             code = {
                 "url: jdbc:postgresql://127.0.0.1:56982/",
                 "username: postgres",

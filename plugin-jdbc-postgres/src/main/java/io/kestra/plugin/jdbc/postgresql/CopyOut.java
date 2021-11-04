@@ -30,7 +30,7 @@ import java.sql.Connection;
 @Plugin(
     examples = {
         @Example(
-            title = "Save a tsv from a postgres table",
+            title = "Export a csv or tsv from a postgres table or query",
             code = {
                 "url: jdbc:postgresql://127.0.0.1:56982/",
                 "username: postgres",
