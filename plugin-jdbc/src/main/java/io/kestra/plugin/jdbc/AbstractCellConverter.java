@@ -53,10 +53,15 @@ public abstract class AbstractCellConverter {
             return ((Date) data).toLocalDate();
         }
 
+        if (clazz.equals(java.sql.Time.class)) {
+            return ((java.sql.Time) data).toLocalTime();
+        }
+
         if (clazz.equals(java.sql.Timestamp.class)) {
             return ((Timestamp) data).toInstant().atZone(zoneId);
         }
+        String columnName = rs.getMetaData().getColumnName(columnIndex);
 
-        throw new IllegalArgumentException("Data of type [" + clazz + "] is not supported");
+        throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported");
     }
 }

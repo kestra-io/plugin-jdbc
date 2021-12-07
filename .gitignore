@@ -13,6 +13,6 @@ out/
 .settings
 .classpath
 .attach*
-src/test/resources/application-test.yml
+plugin-jdbc-redshift/src/test/resources/application-test.yml
 certs/
 plugin-jdbc-postgres/src/test/resources/ssl/
