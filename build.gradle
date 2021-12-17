@@ -1,10 +1,10 @@
 plugins {
     id 'java-library'
     id "idea"
-    id "com.adarshr.test-logger" version "3.0.0" apply(false)
-    id "com.github.johnrengelman.shadow" version "7.0.0" apply(false)
+    id "com.adarshr.test-logger" version "3.1.0" apply(false)
+    id "com.github.johnrengelman.shadow" version "7.1.1" apply(false)
     id 'ru.vyarus.java-lib' version '2.1.0' apply(false)
-    id 'ru.vyarus.github-info' version '1.2.0' apply(false)
+    id 'ru.vyarus.github-info' version '1.3.0' apply(false)
     id 'signing'
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "com.github.ben-manes.versions" version "0.39.0"
@@ -93,7 +93,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest:2.2"
         testImplementation "org.hamcrest:hamcrest-library:2.2"
 
-        testImplementation group: 'com.h2database', name: 'h2', version: '1.4.200'
+        testImplementation group: 'com.h2database', name: 'h2', version: '2.0.202'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
     }
 }

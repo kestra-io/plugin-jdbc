@@ -26,7 +26,7 @@ import java.time.*;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;

@@ -8,7 +8,7 @@ import io.kestra.core.runners.RunnerUtils;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.runner.memory.MemoryRunner;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
