@@ -74,6 +74,10 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
     @Builder.Default
     private final Integer fetchSize = 10000;
 
+    @Builder.Default
+    @Getter(AccessLevel.NONE)
+    protected transient Map<String, Object> additionalVars = new HashMap<>();
+
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
@@ -103,7 +107,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
 
             stmt.setFetchSize(fetchSize);
 
-            String sql = runContext.render(this.sql);
+            String sql = runContext.render(this.sql, this.additionalVars);
             logger.debug("Starting query: {}", sql);
 
             boolean isResult = stmt.execute(sql);
@@ -207,7 +211,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-
         @Schema(
             title = "Map containing the first row of fetched data",
             description = "Only populated if 'fetchOne' parameter is set to true."
