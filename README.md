@@ -19,5 +19,5 @@
   * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   
 ## License
-Apache 2.0 © [Nigh Tech](https://nigh.tech)
+Apache 2.0 © [Kestra Technologies](https://kestra.io)
 
