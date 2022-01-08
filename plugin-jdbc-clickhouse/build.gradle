@@ -1,5 +1,5 @@
 dependencies {
-    implementation group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.3.1'
+    implementation group: 'ru.yandex.clickhouse', name: 'clickhouse-jdbc', version: '0.3.2'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
