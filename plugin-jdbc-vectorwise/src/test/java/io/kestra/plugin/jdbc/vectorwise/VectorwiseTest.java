@@ -11,22 +11,16 @@ import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.*;
-import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-/**
- * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
- */
+
 @MicronautTest
 public class VectorwiseTest extends AbstractRdbmsTest {
     @Value("jdbc:ingres://url:port/db")

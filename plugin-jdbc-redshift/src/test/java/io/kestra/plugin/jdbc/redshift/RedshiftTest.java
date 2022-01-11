@@ -20,9 +20,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-/**
- * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
- */
+
 @MicronautTest
 public class RedshiftTest extends AbstractRdbmsTest {
     @Value("${redshift.url}")
