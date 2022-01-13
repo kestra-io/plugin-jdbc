@@ -16,6 +16,7 @@ import javax.validation.constraints.NotNull;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.sql.*;
 import java.sql.Date;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcCopyIn extends AbstractJdbcConnection {
+public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
@@ -97,6 +98,12 @@ public abstract class AbstractJdbcCopyIn extends AbstractJdbcConnection {
         } else if (prop instanceof Long) {
             ps.setLong(index, (Long) prop);
             return ps;
+        } else if (prop instanceof BigInteger) {
+            ps.setLong(index, ((BigInteger) prop).longValue());
+            return ps;
+        } else if (prop instanceof Double) {
+            ps.setDouble(index, (Double) prop);
+            return ps;
         } else if (prop instanceof BigDecimal) {
             ps.setBigDecimal(index, (BigDecimal) prop);
             return ps;
@@ -109,14 +116,29 @@ public abstract class AbstractJdbcCopyIn extends AbstractJdbcConnection {
         } else if (prop instanceof LocalDate) {
             ps.setDate(index, Date.valueOf((LocalDate) prop));
             return ps;
+        } else if (prop instanceof OffsetTime) {
+            ps.setTime(index, (Time) prop, Calendar.getInstance());
+            return ps;
         } else if (prop instanceof LocalTime) {
             ps.setTime(index, Time.valueOf((LocalTime) prop));
             return ps;
         } else if (prop instanceof ZonedDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((((ZonedDateTime) prop)).toLocalDateTime()));
+            ps.setTimestamp(index, Timestamp.valueOf((((ZonedDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
+            return ps;
+        } else if (prop instanceof OffsetDateTime) {
+            ps.setTimestamp(index, Timestamp.valueOf((((OffsetDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
+            return ps;
+        } else if (prop instanceof Instant) {
+            ps.setTimestamp(index, Timestamp.valueOf(LocalDateTime.ofInstant((Instant) prop, ZoneOffset.UTC)));
             return ps;
         } else if (prop instanceof Boolean) {
             ps.setBoolean(index, (Boolean) prop);
+            return ps;
+        } else if (prop instanceof Byte){
+            ps.setByte(index, (Byte) prop);
+            return ps;
+        } else if (prop instanceof byte[]){
+            ps.setBytes(index, (byte[]) prop);
             return ps;
         }
         return ps;

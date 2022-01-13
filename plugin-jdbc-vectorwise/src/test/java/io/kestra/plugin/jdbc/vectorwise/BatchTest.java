@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.plugin.jdbc.AbstractJdbcCopyIn;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
@@ -15,7 +15,6 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @MicronautTest
-public class CopyInTest extends AbstractRdbmsTest {
+public class BatchTest extends AbstractRdbmsTest {
     @Value("jdbc:ingres://url/database")
     protected String url;
 
@@ -39,7 +38,6 @@ public class CopyInTest extends AbstractRdbmsTest {
     @Disabled
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -75,7 +73,7 @@ public class CopyInTest extends AbstractRdbmsTest {
 
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
-        CopyIn task = CopyIn.builder()
+        Batch task = Batch.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -83,7 +81,7 @@ public class CopyInTest extends AbstractRdbmsTest {
             .sql("insert into ingres.abdt_test values( ? , ? , ?, ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )")
             .build();
 
-        AbstractJdbcCopyIn.Output runOutput = task.run(runContext);
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
     }
 
     @Test
@@ -130,7 +128,7 @@ public class CopyInTest extends AbstractRdbmsTest {
         columns.add("datetime");
         columns.add("boolean");
 
-        CopyIn task = CopyIn.builder()
+        Batch task = Batch.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -138,7 +136,7 @@ public class CopyInTest extends AbstractRdbmsTest {
             .sql("insert into ingres.abdt_test values( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?)")
             .build();
 
-        AbstractJdbcCopyIn.Output runOutput = task.run(runContext);
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
     }
 
     @Test
@@ -185,7 +183,7 @@ public class CopyInTest extends AbstractRdbmsTest {
         columns.add("datetime");
         columns.add("boolean");
 
-        CopyIn task = CopyIn.builder()
+        Batch task = Batch.builder()
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
@@ -194,7 +192,7 @@ public class CopyInTest extends AbstractRdbmsTest {
             .columns(columns)
             .build();
 
-        AbstractJdbcCopyIn.Output runOutput = task.run(runContext);
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
     }
 
     @Override
