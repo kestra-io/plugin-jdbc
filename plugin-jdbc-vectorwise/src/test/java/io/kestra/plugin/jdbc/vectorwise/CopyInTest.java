@@ -8,6 +8,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcCopyIn;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -35,6 +36,7 @@ public class CopyInTest extends AbstractRdbmsTest {
     protected String password;
 
     @Test
+    @Disabled
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -85,6 +87,7 @@ public class CopyInTest extends AbstractRdbmsTest {
     }
 
     @Test
+    @Disabled
     public void namedInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -139,6 +142,7 @@ public class CopyInTest extends AbstractRdbmsTest {
     }
 
     @Test
+    @Disabled
     public void namedColumnsInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
