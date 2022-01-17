@@ -68,7 +68,7 @@ public abstract class AbstractJdbcConnection extends Task {
             props.put("user", runContext.render(this.username));
         }
 
-        if (this.username != null) {
+        if (this.password != null) {
             props.put("password", runContext.render(this.password));
         }
 
