@@ -1,7 +1,6 @@
-DROP TYPE IF EXISTS inventory_item;
 
 /* Composite Types */
-CREATE TYPE inventory_item AS (
+CREATE IF NOT EXISTS TYPE inventory_item AS (
     name            text,
     supplier_id     integer,
     price           numeric
