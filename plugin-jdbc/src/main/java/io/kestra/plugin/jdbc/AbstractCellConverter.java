@@ -135,7 +135,7 @@ public abstract class AbstractCellConverter {
             ps.setBytes(index, (byte[]) prop);
             return ps;
         } else if (prop instanceof ArrayList) {
-            ps.setArray(index, connection.createArrayOf("Object", ((ArrayList) prop).toArray()) ) ;
+            ps.setArray(index, connection.createArrayOf(String.valueOf(((ArrayList) prop).toArray().getClass().getComponentType()), ((ArrayList) prop).toArray()) ) ;
             return ps;
         }
         throw new Exception();
