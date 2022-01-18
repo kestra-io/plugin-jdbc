@@ -1,15 +1,10 @@
 package io.kestra.plugin.jdbc.oracle;
 
-import com.google.common.collect.ImmutableMap;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
 
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.ZoneId;
 
 public class OracleCellConverter extends AbstractCellConverter {
@@ -93,6 +88,10 @@ public class OracleCellConverter extends AbstractCellConverter {
 //        }
 
         return super.convert(columnIndex, rs);
+    }
+
+    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
+        return this.adaptStatement(ps, prop, index, connection);
     }
 
 }
