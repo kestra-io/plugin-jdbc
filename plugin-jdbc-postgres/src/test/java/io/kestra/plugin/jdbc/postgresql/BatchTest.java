@@ -20,10 +20,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -67,8 +64,15 @@ public class BatchTest extends AbstractRdbmsTest {
 
         Batch task = Batch.builder()
             .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.key())
+            .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .sql("insert into pgsql_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? )")
             .build();
@@ -103,9 +107,15 @@ public class BatchTest extends AbstractRdbmsTest {
         columns.add("address");
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.key())
+            .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .sql("insert into namedInsert values( ? , ? , ? )")
             .build();
@@ -139,9 +149,15 @@ public class BatchTest extends AbstractRdbmsTest {
         columns.add("name");
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.key())
+            .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
             .columns(columns)

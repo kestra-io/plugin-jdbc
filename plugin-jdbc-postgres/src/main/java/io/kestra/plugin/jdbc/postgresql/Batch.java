@@ -4,10 +4,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
@@ -19,7 +16,15 @@ import java.time.ZoneId;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, PostgresConnectionInterface{
+    @Builder.Default
+    protected Boolean ssl = false;
+    protected SslMode sslMode;
+    protected String sslRootCert;
+    protected String sslCert;
+    protected String sslKey;
+    protected String sslKeyPassword;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new PostgresCellConverter(zoneId);
