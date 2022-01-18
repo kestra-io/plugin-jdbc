@@ -4,7 +4,6 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.micronaut.http.hateoas.Link;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,11 +14,8 @@ import org.slf4j.Logger;
 import javax.validation.constraints.NotNull;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.net.URI;
 import java.sql.*;
-import java.sql.Date;
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,101 +58,55 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
     @PluginProperty(dynamic = true)
     private ArrayList<String> columns;
 
-    private PreparedStatement addInsert(PreparedStatement ps, Object o) throws Exception {
+    @Schema(
+        title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
+    )
+    private String timeZoneId;
+
+    protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
+
+    @SuppressWarnings("unchecked")
+    private PreparedStatement addInsert(PreparedStatement ps, Object o, AbstractCellConverter cellConverter, Connection connection) throws Exception {
         if (o instanceof Map) {
             Map m = ((Map<String, Object>) o);
             ListIterator iterKeys = new ArrayList<>(m.keySet()).listIterator();
-            Integer index = 0;
+            int index = 0;
             while (iterKeys.hasNext()) {
                 String col = (String) iterKeys.next();
                 if (this.columns == null || this.columns.contains(col)) {
                     index++;
-                    ps = addColumnValue(ps, m.get(col), index);
+                    ps = cellConverter.adaptStatement(ps, m.get(col), index, connection);
                 }
             }
         } else if (o instanceof Collection) {
             ListIterator iter = ((List<Object>) o).listIterator();
 
             while (iter.hasNext()) {
-                ps = addColumnValue(ps, iter.next(), iter.nextIndex());
+                ps = cellConverter.adaptStatement(ps, iter.next(), iter.nextIndex(), connection);
             }
         }
         ps.addBatch();
         return ps;
     }
 
-    private PreparedStatement addColumnValue(PreparedStatement ps, Object prop, Integer index) throws Exception {
-        if (prop instanceof Integer) {
-            ps.setInt(index, (Integer) prop);
-            return ps;
-        } else if (prop instanceof String) {
-            ps.setString(index, (String) prop);
-            return ps;
-        } else if (prop instanceof String) {
-            ps.setString(index, (String) prop);
-            return ps;
-        } else if (prop instanceof Long) {
-            ps.setLong(index, (Long) prop);
-            return ps;
-        } else if (prop instanceof BigInteger) {
-            ps.setLong(index, ((BigInteger) prop).longValue());
-            return ps;
-        } else if (prop instanceof Double) {
-            ps.setDouble(index, (Double) prop);
-            return ps;
-        } else if (prop instanceof BigDecimal) {
-            ps.setBigDecimal(index, (BigDecimal) prop);
-            return ps;
-        } else if (prop instanceof Double) {
-            ps.setDouble(index, (Double) prop);
-            return ps;
-        } else if (prop instanceof LocalDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) prop));
-            return ps;
-        } else if (prop instanceof LocalDate) {
-            ps.setDate(index, Date.valueOf((LocalDate) prop));
-            return ps;
-        } else if (prop instanceof OffsetTime) {
-            ps.setTime(index, (Time) prop, Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof LocalTime) {
-            ps.setTime(index, Time.valueOf((LocalTime) prop));
-            return ps;
-        } else if (prop instanceof ZonedDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((((ZonedDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof OffsetDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((((OffsetDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof Instant) {
-            ps.setTimestamp(index, Timestamp.valueOf(LocalDateTime.ofInstant((Instant) prop, ZoneOffset.UTC)));
-            return ps;
-        } else if (prop instanceof Boolean) {
-            ps.setBoolean(index, (Boolean) prop);
-            return ps;
-        } else if (prop instanceof Byte){
-            ps.setByte(index, (Byte) prop);
-            return ps;
-        } else if (prop instanceof byte[]){
-            ps.setBytes(index, (byte[]) prop);
-            return ps;
-        }
-        return ps;
-    }
-
-
-    @SuppressWarnings("unchecked")
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from));
 
         AtomicLong count = new AtomicLong();
 
+
+        ZoneId zoneId = TimeZone.getDefault().toZoneId();
+        if (this.timeZoneId != null) {
+            zoneId = ZoneId.of(timeZoneId);
+        }
+
+        AbstractCellConverter cellConverter = this.getCellConverter(zoneId);
+
         try (
             Connection connection = this.connection(runContext);
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)))
         ) {
-
             Flowable flowable = Flowable.create(FileSerde.reader(bufferedReader), BackpressureStrategy.BUFFER)
                 .doOnNext(docWriteRequest -> {
                     count.incrementAndGet();
@@ -164,8 +114,8 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
                 .buffer(this.chunk, this.chunk)
                 .map(o -> {
                     PreparedStatement ps = connection.prepareStatement(this.sql);
-                    for (int cpt = 0; cpt < o.size(); cpt++) {
-                        ps = this.addInsert(ps, o.get(cpt));
+                    for (Object value : o) {
+                        ps = this.addInsert(ps, value, cellConverter, connection);
                     }
                     ps.executeBatch();
                     return o;

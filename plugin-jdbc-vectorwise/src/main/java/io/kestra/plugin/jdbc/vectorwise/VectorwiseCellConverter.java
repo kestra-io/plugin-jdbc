@@ -3,10 +3,7 @@ package io.kestra.plugin.jdbc.vectorwise;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -51,5 +48,9 @@ public class VectorwiseCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
+        return this.adaptStatement(ps, prop, index, connection);
     }
 }

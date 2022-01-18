@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.vectorwise;
+package io.kestra.plugin.jdbc.clickhouse;
 
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -19,12 +19,12 @@ import java.time.ZoneId;
 public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
-        return new VectorwiseCellConverter(zoneId);
+        return new ClickHouseCellConverter(zoneId);
     }
 
     @Override
     protected void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.ingres.jdbc.IngresDriver());
+        DriverManager.registerDriver(new ru.yandex.clickhouse.ClickHouseDriver());
     }
 
     @Override
@@ -33,5 +33,3 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     }
 
 }
-
-

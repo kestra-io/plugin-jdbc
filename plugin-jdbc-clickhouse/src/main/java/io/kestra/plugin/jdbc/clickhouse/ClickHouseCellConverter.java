@@ -3,9 +3,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import ru.yandex.clickhouse.ClickHouseArray;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -51,5 +49,9 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
+        return this.adaptStatement(ps, prop, index, connection);
     }
 }
