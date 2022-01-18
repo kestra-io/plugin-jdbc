@@ -1,3 +1,12 @@
+DROP TYPE IF EXISTS inventory_item;
+
+/* Composite Types */
+CREATE TYPE inventory_item AS (
+    name            text,
+    supplier_id     integer,
+    price           numeric
+);
+
 DROP TABLE IF EXISTS pgsql_types;
 
 CREATE TABLE pgsql_types (
