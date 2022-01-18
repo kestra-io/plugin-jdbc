@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.mysql;
 
-
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -9,7 +8,6 @@ import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.binary.Hex;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
