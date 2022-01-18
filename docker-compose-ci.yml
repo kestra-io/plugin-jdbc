@@ -34,7 +34,7 @@ services:
       - "25433:5433"
 
   clickhouse:
-    image: yandex/clickhouse-server
+    image: clickhouse/clickhouse-server
     ports:
       - "28123:8123"
       - "29000:9000"

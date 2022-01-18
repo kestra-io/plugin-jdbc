@@ -20,6 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      # JDK
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: 11
+
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
       # Services
       - name: Build the docker-compose stack
         run: |
@@ -57,12 +67,6 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle*.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-
-      # JDK
-      - name: Set up JDK
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
 
       # Gradle check
       - name: Build with Gradle
