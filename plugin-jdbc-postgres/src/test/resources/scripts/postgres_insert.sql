@@ -1,12 +1,14 @@
 
+DROP TABLE IF EXISTS pgsql_types;
+DROP TABLE IF EXISTS namedInsert;
+DROP TYPE IF EXISTS inventory_item;
+
 /* Composite Types */
-CREATE IF NOT EXISTS TYPE inventory_item AS (
+CREATE TYPE inventory_item AS (
     name            text,
     supplier_id     integer,
     price           numeric
 );
-
-DROP TABLE IF EXISTS pgsql_types;
 
 CREATE TABLE pgsql_types (
  concert_id serial NOT NULL,
@@ -35,7 +37,6 @@ CREATE TABLE pgsql_types (
  blob_type bytea not null
 );
 
-DROP TABLE IF EXISTS namedInsert;
 
 CREATE TABLE namedInsert (
  id integer,
