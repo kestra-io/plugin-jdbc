@@ -6,8 +6,9 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.context.annotation.Value;
+import io.micronaut.context.ApplicationContext;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Inject;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -15,14 +16,19 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Time;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
+    @Inject
+    private ApplicationContext applicationContext;
 
     @Test
     void insert() throws Exception {
@@ -147,21 +153,69 @@ public class BatchTest extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:vertica://127.0.0.1:25433/docker";
+        return TestUtils.url();
     }
 
     @Override
     protected String getUsername() {
-        return "dbadmin";
+        return TestUtils.username();
     }
 
     @Override
     protected String getPassword() {
-        return "vertica_passwd";
+        return TestUtils.password();
+    }
+
+    protected Connection getConnection() throws SQLException {
+        Properties props = new Properties();
+        props.put("jdbc.url", getUrl());
+        props.put("user", getUsername());
+        props.put("password", getPassword());
+
+        try {
+            PostgresService.handleSsl(props, new RunContext(applicationContext, Map.of()), new PgsqlTest.PostgresConnection());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
+    }
+
+    public static class PostgresConnection implements PostgresConnectionInterface {
+
+        @Override
+        public Boolean getSsl() {
+            return TestUtils.ssl();
+        }
+
+        @Override
+        public SslMode getSslMode() {
+            return TestUtils.sslMode();
+        }
+
+        @Override
+        public String getSslRootCert() {
+            return TestUtils.ca();
+        }
+
+        @Override
+        public String getSslCert() {
+            return TestUtils.cert();
+        }
+
+        @Override
+        public String getSslKey() {
+            return TestUtils.key();
+        }
+
+        @Override
+        public String getSslKeyPassword() {
+            return TestUtils.keyPass();
+        }
     }
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        executeSqlScript("scripts/postgres_insert.sql");
+        executeSqlScript("scripts/postgres.sql");
     }
 }
