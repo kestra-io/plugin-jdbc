@@ -36,14 +36,14 @@ public class ClickHouseTest extends AbstractRdbmsTest {
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
-        
+
         assertThat(runOutput.getRow().get("Int8"), is(123));
         assertThat(runOutput.getRow().get("Float32"), is(2147483645.1234F));
         assertThat(runOutput.getRow().get("Float64"), is(2147483645.1234D));
         assertThat(runOutput.getRow().get("Decimal"), is(new BigDecimal("2147483645.1234")));
         assertThat(runOutput.getRow().get("String"), is("four"));
         assertThat(runOutput.getRow().get("FixedString"), is("four"));
-        assertThat(runOutput.getRow().get("Uuid"), is(UUID.fromString("6bbf0744-74b4-46b9-bb05-53905d4538e7")));
+        assertThat(runOutput.getRow().get("Uuid"), is("6bbf0744-74b4-46b9-bb05-53905d4538e7"));
         assertThat(runOutput.getRow().get("Date"), is(LocalDate.parse("2030-12-25")));
         assertThat(runOutput.getRow().get("DateTime"), is(LocalDateTime.parse("2004-10-19T08:23:54").atZone(ZoneId.of("Europe/Paris"))));
         assertThat(runOutput.getRow().get("DateTime64"), is(LocalDateTime.parse("2004-10-19T08:23:54.999").atZone(ZoneId.of("Europe/Paris"))));
