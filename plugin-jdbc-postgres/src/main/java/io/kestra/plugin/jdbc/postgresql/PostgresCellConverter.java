@@ -6,6 +6,7 @@ import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
@@ -46,7 +47,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
         }
 
         Class<?> clazz = data.getClass();
-        
+
         // PgArray
         if (clazz.equals(PgArray.class)) {
             return ((PgArray) data).getArray();
@@ -69,5 +70,9 @@ public class PostgresCellConverter extends AbstractCellConverter {
 
     private String getISO8601Interval(int years, int months, int days, int hours, int minutes, int seconds) {
         return "P" + years + "Y" + months + "M" + days + "DT" + hours + "H" + minutes + "M" + seconds + "S";
+    }
+
+    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
+        return this.adaptStatement(ps, prop, index, connection);
     }
 }
