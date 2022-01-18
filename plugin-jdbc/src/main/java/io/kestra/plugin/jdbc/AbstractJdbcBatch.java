@@ -75,14 +75,14 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
                 String col = (String) iterKeys.next();
                 if (this.columns == null || this.columns.contains(col)) {
                     index++;
-                    ps = cellConverter.adaptStatement(ps, m.get(col), index, connection);
+                    ps = cellConverter.adaptedStatement(ps, m.get(col), index, connection);
                 }
             }
         } else if (o instanceof Collection) {
             ListIterator iter = ((List<Object>) o).listIterator();
 
             while (iter.hasNext()) {
-                ps = cellConverter.adaptStatement(ps, iter.next(), iter.nextIndex(), connection);
+                ps = cellConverter.adaptedStatement(ps, iter.next(), iter.nextIndex(), connection);
             }
         }
         ps.addBatch();
