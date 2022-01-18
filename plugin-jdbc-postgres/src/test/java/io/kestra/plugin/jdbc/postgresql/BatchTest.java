@@ -216,6 +216,6 @@ public class BatchTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        executeSqlScript("scripts/postgres.sql");
+        executeSqlScript("scripts/postgres_insert.sql");
     }
 }
