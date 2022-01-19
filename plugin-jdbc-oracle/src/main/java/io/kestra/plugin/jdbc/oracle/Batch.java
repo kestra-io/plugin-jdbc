@@ -1,10 +1,12 @@
 package io.kestra.plugin.jdbc.oracle;
 
-import io.kestra.core.runners.RunContext;
+import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
-import io.kestra.core.models.tasks.RunnableTask;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
@@ -25,10 +27,5 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     @Override
     protected void registerDriver() throws SQLException {
         DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
-    }
-
-    @Override
-    public AbstractJdbcBatch.Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }

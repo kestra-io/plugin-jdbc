@@ -45,10 +45,4 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     protected void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.postgresql.Driver());
     }
-
-    @Override
-    public AbstractJdbcBatch.Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
-
 }

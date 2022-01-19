@@ -1,7 +1,6 @@
 package io.kestra.plugin.jdbc.vertica;
 
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import lombok.EqualsAndHashCode;
@@ -29,10 +28,4 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     protected void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.vertica.jdbc.Driver());
     }
-
-    @Override
-    public AbstractJdbcBatch.Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
-
 }

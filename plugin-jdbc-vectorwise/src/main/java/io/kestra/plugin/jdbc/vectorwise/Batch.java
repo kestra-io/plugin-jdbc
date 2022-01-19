@@ -1,10 +1,12 @@
 package io.kestra.plugin.jdbc.vectorwise;
 
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
@@ -26,12 +28,6 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     protected void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.ingres.jdbc.IngresDriver());
     }
-
-    @Override
-    public AbstractJdbcBatch.Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
-
 }
 
 
