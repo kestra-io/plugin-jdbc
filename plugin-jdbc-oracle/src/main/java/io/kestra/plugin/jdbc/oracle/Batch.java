@@ -31,6 +31,4 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     public AbstractJdbcBatch.Output run(RunContext runContext) throws Exception {
         return super.run(runContext);
     }
-
-
 }

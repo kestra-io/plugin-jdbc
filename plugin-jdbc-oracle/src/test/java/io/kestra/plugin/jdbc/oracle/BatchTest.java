@@ -34,7 +34,7 @@ public class BatchTest extends AbstractRdbmsTest {
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             FileSerde.write(output, List.of(
                 "aa",
                 "",
@@ -74,7 +74,6 @@ public class BatchTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRowCount(), is(5L));
     }
-
 
     @Test
     public void namedInsert() throws Exception {

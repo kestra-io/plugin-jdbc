@@ -112,8 +112,13 @@ public abstract class AbstractCellConverter {
                     return ps;
                 }
             } else if (cls == BigDecimal.class) {
-                ps.setBigDecimal(index, (BigDecimal) value);
-                return ps;
+                if (value instanceof Integer) {
+                    ps.setBigDecimal(index, new BigDecimal((Integer) value));
+                    return ps;
+                } else {
+                    ps.setBigDecimal(index, (BigDecimal) value);
+                    return ps;
+                }
             } else if (cls == java.sql.Date.class) {
                 if (value instanceof LocalDate) {
                     ps.setDate(index, Date.valueOf((LocalDate) value));
@@ -147,6 +152,9 @@ public abstract class AbstractCellConverter {
                 } else if (value instanceof Instant) {
                     ps.setTimestamp(index, Timestamp.valueOf(LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC)));
                     return ps;
+                } else if (value instanceof LocalDate) {
+                    ps.setTimestamp(index, Timestamp.valueOf(((LocalDate) value).atStartOfDay()));
+                    return ps;
                 }
             } else if (cls == Boolean.class) {
                 ps.setBoolean(index, (Boolean) value);
@@ -163,6 +171,30 @@ public abstract class AbstractCellConverter {
                 );
 
                 return ps;
+            } else if (Blob.class.isAssignableFrom(cls)) {
+                if (value.getClass().getName().equals("[B")) {
+                    Blob blob = connection.createBlob();
+                    blob.setBytes(1, (byte[]) value);
+
+                    ps.setBlob(index, blob);
+                    return ps;
+                }
+            } else if (Clob.class.isAssignableFrom(cls)) {
+                if (value instanceof String) {
+                    Clob blob = connection.createClob();
+                    blob.setString(1, (String) value);
+
+                    ps.setClob(index, blob);
+                    return ps;
+                }
+            } else if (NClob.class.isAssignableFrom(cls)) {
+                if (value instanceof String) {
+                    NClob blob = connection.createNClob();
+                    blob.setString(1, (String) value);
+
+                    ps.setClob(index, blob);
+                    return ps;
+                }
             }
         } catch (Exception e) {
             throw addPreparedStatementException(parameterType, index, value, e);
