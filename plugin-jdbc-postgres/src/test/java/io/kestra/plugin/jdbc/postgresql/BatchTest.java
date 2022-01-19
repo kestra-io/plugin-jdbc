@@ -179,7 +179,6 @@ public class BatchTest extends AbstractRdbmsTest {
     public void namedColumnsInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
 
@@ -190,7 +189,6 @@ public class BatchTest extends AbstractRdbmsTest {
                 .put("address", "here")
                 .build()
             );
-
         }
 
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
@@ -207,14 +205,13 @@ public class BatchTest extends AbstractRdbmsTest {
             .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
+            .columns(Arrays.asList("id", "name"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getRowCount(), is(5L));
     }
-
 
     @Override
     protected String getUrl() {
