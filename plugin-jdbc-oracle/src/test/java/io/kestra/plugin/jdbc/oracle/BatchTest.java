@@ -15,22 +15,18 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
-
     @Test
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -75,13 +71,14 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
 
     @Test
     public void namedInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -106,6 +103,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
@@ -140,6 +139,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Override

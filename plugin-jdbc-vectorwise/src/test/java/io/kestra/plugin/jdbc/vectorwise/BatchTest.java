@@ -20,8 +20,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -82,6 +85,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
@@ -123,11 +128,6 @@ public class BatchTest extends AbstractRdbmsTest {
 
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("tinyint");
-        columns.add("datetime");
-        columns.add("boolean");
-
         Batch task = Batch.builder()
             .url(getUrl())
             .username(getUsername())
@@ -137,6 +137,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
@@ -175,13 +177,7 @@ public class BatchTest extends AbstractRdbmsTest {
 
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("tinyint");
-        columns.add("datetime");
-        columns.add("boolean");
 
         Batch task = Batch.builder()
             .url(getUrl())
@@ -189,10 +185,12 @@ public class BatchTest extends AbstractRdbmsTest {
             .password(getPassword())
             .from(uri.toString())
             .sql("insert into ingres.abdt_test(\"tinyint\",\"datetime\",\"boolean\") values( ? , ? , ? )")
-            .columns(columns)
+            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Override

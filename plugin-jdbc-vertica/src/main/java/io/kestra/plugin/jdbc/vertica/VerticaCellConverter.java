@@ -5,7 +5,6 @@ import com.vertica.jdbc.VerticaYearMonthInterval;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -66,9 +65,5 @@ public class VerticaCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
-    }
-
-    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
-        return this.adaptStatement(ps, prop, index, connection);
     }
 }

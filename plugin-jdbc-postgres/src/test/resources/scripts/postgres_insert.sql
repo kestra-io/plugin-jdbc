@@ -1,14 +1,6 @@
 
 DROP TABLE IF EXISTS pgsql_types;
 DROP TABLE IF EXISTS namedInsert;
-DROP TYPE IF EXISTS inventory_item;
-
-/* Composite Types */
-CREATE TYPE inventory_item AS (
-    name            text,
-    supplier_id     integer,
-    price           numeric
-);
 
 CREATE TABLE pgsql_types (
  concert_id serial NOT NULL,
@@ -33,7 +25,6 @@ CREATE TABLE pgsql_types (
  pay_by_quarter integer[] not null,
  schedule text[][] not null,
  json_type JSON not null,
- item inventory_item not null,
  blob_type bytea not null
 );
 

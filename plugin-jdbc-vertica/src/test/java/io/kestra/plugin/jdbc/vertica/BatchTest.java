@@ -6,7 +6,6 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.context.annotation.Value;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 
@@ -17,8 +16,11 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.time.*;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -80,6 +82,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
@@ -97,16 +101,9 @@ public class BatchTest extends AbstractRdbmsTest {
                 .put("address", "here")
                 .build()
             );
-
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("id");
-        columns.add("name");
-        columns.add("address");
 
         Batch task = Batch.builder()
             .url(getUrl())
@@ -117,12 +114,13 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
     public void namedColumnsInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -134,15 +132,9 @@ public class BatchTest extends AbstractRdbmsTest {
                 .put("address", "here")
                 .build()
             );
-
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("id");
-        columns.add("name");
 
         Batch task = Batch.builder()
             .url(getUrl())
@@ -150,10 +142,12 @@ public class BatchTest extends AbstractRdbmsTest {
             .password(getPassword())
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(columns)
+            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
 

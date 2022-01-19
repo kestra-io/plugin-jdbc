@@ -1,16 +1,13 @@
 package io.kestra.plugin.jdbc;
 
 import com.google.common.collect.ImmutableList;
-import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Date;
 import java.sql.*;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class AbstractCellConverter {
     protected ZoneId zoneId;
@@ -75,69 +72,103 @@ public abstract class AbstractCellConverter {
         throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported");
     }
 
-    public abstract PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception;
+    protected PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {
+        Class<?> cls = parameterType.getClass(index);
 
-    protected PreparedStatement adaptStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
-        if (prop instanceof Integer) {
-            ps.setInt(index, (Integer) prop);
-            return ps;
-        } else if (prop instanceof String) {
-            ps.setString(index, (String) prop);
-            return ps;
-        } else if (prop instanceof UUID) {
-            ps.setObject(index, prop);
-            return ps;
-        } else if (prop instanceof Long) {
-            ps.setLong(index, (Long) prop);
-            return ps;
-        } else if (prop instanceof BigInteger) {
-            ps.setLong(index, ((BigInteger) prop).longValue());
-            return ps;
-        } else if (prop instanceof Float) {
-            ps.setFloat(index, (Float) prop);
-            return ps;
-        } else if (prop instanceof BigDecimal) {
-            ps.setBigDecimal(index, (BigDecimal) prop);
-            return ps;
-        } else if (prop instanceof Double) {
-            ps.setDouble(index, (Double) prop);
-            return ps;
-        } else if (prop instanceof LocalDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) prop));
-            return ps;
-        } else if (prop instanceof LocalDate) {
-            ps.setDate(index, Date.valueOf((LocalDate) prop));
-            return ps;
-        } else if (prop instanceof OffsetTime) {
-            ps.setTime(index,
-                Time.valueOf( ((OffsetTime) prop).toLocalTime()),
-                Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof LocalTime) {
-            ps.setTime(index, Time.valueOf((LocalTime) prop));
-            return ps;
-        } else if (prop instanceof ZonedDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((((ZonedDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof OffsetDateTime) {
-            ps.setTimestamp(index, Timestamp.valueOf((((OffsetDateTime) prop)).toLocalDateTime()), Calendar.getInstance());
-            return ps;
-        } else if (prop instanceof Instant) {
-            ps.setTimestamp(index, Timestamp.valueOf(LocalDateTime.ofInstant((Instant) prop, ZoneOffset.UTC)));
-            return ps;
-        } else if (prop instanceof Boolean) {
-            ps.setBoolean(index, (Boolean) prop);
-            return ps;
-        } else if (prop instanceof Byte){
-            ps.setByte(index, (Byte) prop);
-            return ps;
-        } else if (prop instanceof byte[]){
-            ps.setBytes(index, (byte[]) prop);
-            return ps;
-        } else if (prop instanceof ArrayList) {
-            ps.setArray(index, connection.createArrayOf(String.valueOf(((ArrayList) prop).toArray().getClass().getComponentType()), ((ArrayList) prop).toArray()) ) ;
-            return ps;
+        try {
+            if (value == null) {
+                ps.setNull(index, parameterType.getType(index));
+                return ps;
+            } else if (cls == Integer.class) {
+                ps.setInt(index, (Integer) value);
+                return ps;
+            } else if (cls == String.class) {
+                ps.setString(index, (String) value);
+                return ps;
+            } else if (cls == UUID.class) {
+                ps.setObject(index, value);
+                return ps;
+            } else if (cls == Long.class) {
+                ps.setLong(index, (Long) value);
+                return ps;
+            } else if (cls == BigInteger.class) {
+                ps.setLong(index, ((BigInteger) value).longValue());
+                return ps;
+            } else if (cls == Double.class) {
+                ps.setDouble(index, (Double) value);
+                return ps;
+            } else if (cls == Float.class) {
+                if (value instanceof Double) {
+                    ps.setFloat(index, ((Double) value).floatValue());
+                    return ps;
+                } else {
+                    ps.setFloat(index, (Float) value);
+                    return ps;
+                }
+            } else if (cls == BigDecimal.class) {
+                ps.setBigDecimal(index, (BigDecimal) value);
+                return ps;
+            } else if (cls == java.sql.Date.class) {
+                if (value instanceof LocalDate) {
+                    ps.setDate(index, Date.valueOf((LocalDate) value));
+                    return ps;
+                }
+            } else if (cls == java.sql.Time.class) {
+                if (value instanceof LocalTime) {
+                    ps.setTime(index, Time.valueOf((LocalTime) value));
+                    return ps;
+                } else if (value instanceof OffsetTime) {
+                    OffsetTime current = (OffsetTime) value;
+                    ps.setTime(index, Time.valueOf(current.toLocalTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getOffset())));
+                    return ps;
+                }
+            } else if (cls == java.sql.Timestamp.class) {
+                if (value instanceof LocalDateTime) {
+                    ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+                    return ps;
+                } else if (value instanceof ZonedDateTime) {
+                    ZonedDateTime current = ((ZonedDateTime) value);
+                    ps.setTimestamp(index, Timestamp.valueOf(current.toLocalDateTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getZone())));
+                    return ps;
+                } else if (value instanceof OffsetDateTime) {
+                    OffsetDateTime current = ((OffsetDateTime) value);
+                    ps.setTimestamp(index, Timestamp.valueOf(current.toLocalDateTime()), Calendar.getInstance(TimeZone.getTimeZone(current.toZonedDateTime().getZone())));
+                    return ps;
+                } else if (value instanceof Instant) {
+                    ps.setTimestamp(index, Timestamp.valueOf(LocalDateTime.ofInstant((Instant) value, ZoneOffset.UTC)));
+                    return ps;
+                }
+            } else if (cls == Boolean.class) {
+                ps.setBoolean(index, (Boolean) value);
+                return ps;
+            } else if (parameterType.getTypeName(index).equals("bytea")) {
+                ps.setBytes(index, (byte[]) value);
+                return ps;
+            } else if (cls == java.sql.Array.class) {
+                Collection<?> collection = ((Collection<?>) value);
+
+                ps.setArray(index, connection.createArrayOf(
+                    parameterType.getTypeName(index).substring(1),
+                    collection.toArray())
+                );
+
+                return ps;
+            }
+        } catch (Exception e) {
+            throw adaptStatementException(parameterType, index, value, e);
         }
-        throw new Exception();
+
+        throw adaptStatementException(parameterType, index, value, null);
+    }
+
+    protected Exception adaptStatementException(AbstractJdbcBatch.ParameterType parameterType, int index, Object value, Throwable e) {
+        return new Exception("Unable to transform data with " +
+            "type '" + parameterType.getTypeName(index) + "', " +
+            "class '" + parameterType.getClass(index) + "', " +
+            "index '" + index + "', " +
+            "value '" + (value != null ? value.toString() : "null") + "', " +
+            "valueClass '" + (value != null ? value.getClass() : "null") + "'",
+            e
+        );
     }
 }

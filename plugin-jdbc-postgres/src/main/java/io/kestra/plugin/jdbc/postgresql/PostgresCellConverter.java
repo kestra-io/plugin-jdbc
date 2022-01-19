@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
@@ -9,6 +10,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZoneId;
 
@@ -72,7 +74,29 @@ public class PostgresCellConverter extends AbstractCellConverter {
         return "P" + years + "Y" + months + "M" + days + "DT" + hours + "H" + minutes + "M" + seconds + "S";
     }
 
-    public PreparedStatement adaptedStatement(PreparedStatement ps, Object prop, int index, Connection connection) throws Exception {
-        return this.adaptStatement(ps, prop, index, connection);
+    @Override
+    public PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {
+        Class<?> cls = parameterType.getClass(index);
+
+        if (cls == PGInterval.class) {
+            if (value instanceof Duration) {
+                ps.setObject(index, new PGInterval(((Duration) value).toString()));
+                return ps;
+            } else if (value instanceof String) {
+                ps.setObject(index, new PGInterval((String) value));
+                return ps;
+            }
+        } else if (cls == PGobject.class) {
+            if (value instanceof String) {
+                PGobject jsonObject = new PGobject();
+                jsonObject.setType("json");
+                jsonObject.setValue((String) value);
+
+                ps.setObject(index, jsonObject);
+                return ps;
+            }
+        }
+
+        return super.addPreparedStatementValue(ps, parameterType, value, index, connection);
     }
 }

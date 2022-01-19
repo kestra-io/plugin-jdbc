@@ -20,7 +20,12 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -35,12 +40,13 @@ public class BatchTest extends AbstractRdbmsTest {
         OutputStream output = new FileOutputStream(tempFile);
 
         for (int i = 0; i < 5; i++) {
-            FileSerde.write(output, List.of(
+            FileSerde.write(output, Arrays.asList(
                 i,
                 true,
                 "four",
-                "This is a varchar",
-                "This is a text column data",
+                "Here is a varchar",
+                "Here is a text column data",
+                null,
                 32767,
                 9223372036854775807L,
                 9223372036854776000F,
@@ -49,7 +55,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 new BigDecimal("2147483645.1234"),
                 LocalDate.parse("2030-12-25"),
                 LocalTime.parse("04:05:30"),
-                LocalTime.parse("13:05:06"),
+                OffsetTime.parse("13:05:06+01:00"),
                 LocalDateTime.parse("2004-10-19T10:23:54.999999"),
                 ZonedDateTime.parse("2004-10-19T08:23:54.250+02:00[Europe/Paris]"),
                 "P10Y4M5DT0H0M10S",
@@ -74,16 +80,67 @@ public class BatchTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.key())
             .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
-            .sql("insert into pgsql_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? )")
+            .sql("insert into pgsql_types\n" +
+                "(\n" +
+                "  concert_id,\n" +
+                "  available,\n" +
+                "  a,\n" +
+                "  b,\n" +
+                "  c,\n" +
+                 "  d,\n" +
+                "  play_time,\n" +
+                "  library_record,\n" +
+                "  floatn_test,\n" +
+                "  double_test,\n" +
+                "  real_test,\n" +
+                "  numeric_test,\n" +
+                "  date_type,\n" +
+                "  time_type,\n" +
+                "  timez_type,\n" +
+                "  timestamp_type,\n" +
+                "  timestampz_type,\n" +
+                "  interval_type,\n"+
+                "  pay_by_quarter,\n" +
+                "  schedule,\n" +
+                "  json_type,\n" +
+                "  blob_type" +
+                ")\n" +
+                "values\n" +
+                "(\n " +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?,\n" +
+                "  ?\n" +
+                ")"
+            )
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
     public void namedInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -95,16 +152,9 @@ public class BatchTest extends AbstractRdbmsTest {
                 .put("address", "here")
                 .build()
             );
-
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("id");
-        columns.add("name");
-        columns.add("address");
 
         Batch task = Batch.builder()
             .url(TestUtils.url())
@@ -121,6 +171,8 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
@@ -141,12 +193,7 @@ public class BatchTest extends AbstractRdbmsTest {
 
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("id");
-        columns.add("name");
 
         Batch task = Batch.builder()
             .url(TestUtils.url())
@@ -160,10 +207,12 @@ public class BatchTest extends AbstractRdbmsTest {
             .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(columns)
+            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
 

@@ -15,16 +15,20 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.time.*;
-import java.util.ArrayList;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Arrays;
 import java.util.List;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 public class BatchTest extends AbstractRdbmsTest {
     @Test
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -63,12 +67,13 @@ public class BatchTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Test
     public void namedInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
 
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
@@ -110,12 +115,7 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-
         URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
-
-        ArrayList<String> columns = new ArrayList<>();
-        columns.add("id");
-        columns.add("name");
 
         Batch task = Batch.builder()
             .url(getUrl())
@@ -123,10 +123,12 @@ public class BatchTest extends AbstractRdbmsTest {
             .password(getPassword())
             .from(uri.toString())
             .sql("insert into namedInsert (id,name) values( ? , ? )")
-            .columns(columns)
+            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Override
