@@ -18,9 +18,9 @@ CREATE TABLE vertica_types (
    time_with_timezone TIME WITH TIMEZONE,
    timestamp TIMESTAMP,
    timestamp_with_timezone TIMESTAMP WITH TIMEZONE,
---   "interval" INTERVAL,
---   interval_day_to_second INTERVAL DAY TO SECOND,
---   interval_year_to_month INTERVAL YEAR TO MONTH,
+   "interval" INTERVAL,
+   interval_day_to_second INTERVAL DAY TO SECOND,
+   interval_year_to_month INTERVAL YEAR TO MONTH,
    double_precision DOUBLE PRECISION,
    float FLOAT,
    float_n FLOAT(8),
@@ -45,4 +45,4 @@ CREATE TABLE namedInsert (
  id integer,
  name VARCHAR,
  address VARCHAR
- );
+);

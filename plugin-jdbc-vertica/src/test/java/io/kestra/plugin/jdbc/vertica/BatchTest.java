@@ -50,9 +50,9 @@ public class BatchTest extends AbstractRdbmsTest {
                 OffsetTime.parse("13:05:06+01:00"),
                 LocalDateTime.parse("2004-10-19T10:23:54.999999"),
                 ZonedDateTime.parse("1999-01-08T13:05:06+01:00[Europe/Paris]"),
-//                Duration.parse("PT719H59M59S"),
-//                Duration.parse("PT4H54.000775807S"),
-//                Period.parse("P1Y6M"),
+                Duration.parse("PT719H59M59S"),
+                Duration.parse("PT4H54.000775807S"),
+                Period.parse("P1Y6M"),
                 1.2F,
                 2147483645.1234,
                 2147483645.1234,
@@ -78,7 +78,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .username(getUsername())
             .password(getPassword())
             .from(uri.toString())
-            .sql("insert into vertica_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ?  , ? , ? , ? , ? , ?  , ? ,  ?  , ? , ? , ? )")
+            .sql("insert into vertica_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ?  , ? , ? , ? , ? , ?  , ? ,  ?  , ? , ? , ?, ? , ? , ? )")
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -142,7 +142,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .password(getPassword())
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
+            .columns(Arrays.asList("id", "name"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

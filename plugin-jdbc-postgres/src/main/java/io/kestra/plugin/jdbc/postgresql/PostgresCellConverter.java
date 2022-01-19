@@ -79,10 +79,12 @@ public class PostgresCellConverter extends AbstractCellConverter {
         Class<?> cls = parameterType.getClass(index);
 
         if (cls == PGInterval.class) {
-            if (value instanceof Duration) {
-                ps.setObject(index, new PGInterval(((Duration) value).toString()));
+            Duration duration = this.parseDuration(value);
+
+            if (duration != null) {
+                ps.setObject(index, new PGInterval(duration.toString()));
                 return ps;
-            } else if (value instanceof String) {
+            } if (value instanceof String) {
                 ps.setObject(index, new PGInterval((String) value));
                 return ps;
             }

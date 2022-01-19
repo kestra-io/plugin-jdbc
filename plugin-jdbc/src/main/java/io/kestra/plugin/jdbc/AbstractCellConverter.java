@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.*;
 import java.time.*;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 public abstract class AbstractCellConverter {
@@ -89,8 +90,13 @@ public abstract class AbstractCellConverter {
                 ps.setObject(index, value);
                 return ps;
             } else if (cls == Long.class) {
-                ps.setLong(index, (Long) value);
-                return ps;
+                if (value instanceof Integer) {
+                    ps.setLong(index, ((Integer) value).longValue());
+                    return ps;
+                } else {
+                    ps.setLong(index, (Long) value);
+                    return ps;
+                }
             } else if (cls == BigInteger.class) {
                 ps.setLong(index, ((BigInteger) value).longValue());
                 return ps;
@@ -121,6 +127,10 @@ public abstract class AbstractCellConverter {
                     OffsetTime current = (OffsetTime) value;
                     ps.setTime(index, Time.valueOf(current.toLocalTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getOffset())));
                     return ps;
+                } else if (value instanceof Instant) {
+                    Instant current = (Instant) value;
+                    ps.setTime(index, Time.valueOf(LocalTime.from(current.atZone(this.zoneId))));
+                    return ps;
                 }
             } else if (cls == java.sql.Timestamp.class) {
                 if (value instanceof LocalDateTime) {
@@ -141,7 +151,7 @@ public abstract class AbstractCellConverter {
             } else if (cls == Boolean.class) {
                 ps.setBoolean(index, (Boolean) value);
                 return ps;
-            } else if (parameterType.getTypeName(index).equals("bytea")) {
+            } else if (cls.getName().equals("[B")) {
                 ps.setBytes(index, (byte[]) value);
                 return ps;
             } else if (cls == java.sql.Array.class) {
@@ -155,13 +165,33 @@ public abstract class AbstractCellConverter {
                 return ps;
             }
         } catch (Exception e) {
-            throw adaptStatementException(parameterType, index, value, e);
+            throw addPreparedStatementException(parameterType, index, value, e);
         }
 
-        throw adaptStatementException(parameterType, index, value, null);
+        throw addPreparedStatementException(parameterType, index, value, null);
     }
 
-    protected Exception adaptStatementException(AbstractJdbcBatch.ParameterType parameterType, int index, Object value, Throwable e) {
+    protected Duration parseDuration(Object value) {
+        if (value instanceof Duration) {
+            return (Duration) value;
+        } else if (value instanceof String) {
+            try {
+                return Duration.parse((String) value);
+            } catch (DateTimeParseException ignored) {
+
+            }
+        } else if (value instanceof BigDecimal) {
+            BigDecimal current = (BigDecimal) value;
+            return Duration.ofSeconds(
+                current.longValue(),
+                current.subtract(new BigDecimal(current.longValue())).multiply(new BigDecimal(1000000000L)).intValue()
+            );
+        }
+
+        return null;
+    }
+
+    protected Exception addPreparedStatementException(AbstractJdbcBatch.ParameterType parameterType, int index, Object value, Throwable e) {
         return new Exception("Unable to transform data with " +
             "type '" + parameterType.getTypeName(index) + "', " +
             "class '" + parameterType.getClass(index) + "', " +

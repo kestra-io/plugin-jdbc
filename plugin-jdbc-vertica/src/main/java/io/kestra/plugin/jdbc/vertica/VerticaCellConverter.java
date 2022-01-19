@@ -1,16 +1,21 @@
 package io.kestra.plugin.jdbc.vertica;
 
+import com.google.common.base.Strings;
 import com.vertica.jdbc.VerticaDayTimeInterval;
 import com.vertica.jdbc.VerticaYearMonthInterval;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.OffsetTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.util.Locale;
 
 public class VerticaCellConverter extends AbstractCellConverter {
     public VerticaCellConverter(ZoneId zoneId) {
@@ -65,5 +70,42 @@ public class VerticaCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    @Override
+    protected PreparedStatement addPreparedStatementValue(
+        PreparedStatement ps,
+        AbstractJdbcBatch.ParameterType parameterType,
+        Object value,
+        int index,
+        Connection connection
+    ) throws Exception {
+        String type = parameterType.getTypeName(index).toLowerCase(Locale.ROOT);
+
+        if (type.equals("interval day to second")) {
+            Duration duration = this.parseDuration(value);
+
+            if (duration != null) {
+                ps.setString(index, DurationFormatUtils.formatDuration(
+                    duration.toMillis(),
+                    "dd HH:mm:SS",
+                    true
+                ));
+                return ps;
+            }
+        } else if (type.equals("interval year to month")) {
+            if (value instanceof String) {
+                Period period = Period.parse((String) value);
+
+                ps.setString(
+                    index,
+                    Strings.padStart(String.valueOf(period.getMonths()), 2, '0') + "-" +
+                        Strings.padStart(String.valueOf(period.getDays()), 2, '0')
+                );
+                return ps;
+            }
+        }
+
+        return super.addPreparedStatementValue(ps, parameterType, value, index, connection);
     }
 }
