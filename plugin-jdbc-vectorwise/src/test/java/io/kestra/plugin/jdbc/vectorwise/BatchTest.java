@@ -45,7 +45,7 @@ public class BatchTest extends AbstractRdbmsTest {
         File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
         OutputStream output = new FileOutputStream(tempFile);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 5; i++) {
             FileSerde.write(output, List.of(
                 125,
                 32000,
@@ -54,7 +54,6 @@ public class BatchTest extends AbstractRdbmsTest {
                 new BigDecimal("1.55"),
                 1.12365125789541,
                 1.2F,
-//                new BigDecimal("100.50"), pas de money
                 "y",
                 "yoplait",
                 "tes",
@@ -68,8 +67,6 @@ public class BatchTest extends AbstractRdbmsTest {
                 LocalDateTime.parse("2006-05-16T00:00:00.000"),
                 ZonedDateTime.parse("2006-05-16T02:00:00.000+02:00[Europe/Paris]"),
                 ZonedDateTime.parse("2006-05-16T02:00:00.000+02:00[Europe/Paris]"),
-//                "2007-10", pas d'interval ?
-//                "4 00:00:00.000000", pas d'interval ?
                 true
             ));
         }

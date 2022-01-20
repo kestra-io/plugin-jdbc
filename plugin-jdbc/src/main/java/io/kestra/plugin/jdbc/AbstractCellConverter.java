@@ -124,6 +124,10 @@ public abstract class AbstractCellConverter {
                     ps.setDate(index, Date.valueOf((LocalDate) value));
                     return ps;
                 }
+                if (value instanceof LocalDateTime) {
+                    ps.setDate(index, Date.valueOf(((LocalDateTime) value).toLocalDate()));
+                    return ps;
+                }
             } else if (cls == java.sql.Time.class) {
                 if (value instanceof LocalTime) {
                     ps.setTime(index, Time.valueOf((LocalTime) value));

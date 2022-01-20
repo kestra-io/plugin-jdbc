@@ -83,6 +83,9 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
 
         AbstractCellConverter cellConverter = this.getCellConverter(zoneId);
 
+        String sql = runContext.render(this.sql);
+        logger.debug("Starting prepared statement: {}", sql);
+
         try (
             Connection connection = this.connection(runContext);
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)))
@@ -95,7 +98,7 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
                 })
                 .buffer(this.chunk, this.chunk)
                 .map(o -> {
-                    PreparedStatement ps = connection.prepareStatement(runContext.render(this.sql));
+                    PreparedStatement ps = connection.prepareStatement(sql);
                     ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
 
                     for (Object value : o) {
