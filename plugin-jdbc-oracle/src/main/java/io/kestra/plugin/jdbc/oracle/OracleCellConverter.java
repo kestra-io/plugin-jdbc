@@ -1,16 +1,21 @@
 package io.kestra.plugin.jdbc.oracle;
 
-import com.google.common.collect.ImmutableMap;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import lombok.SneakyThrows;
-import org.apache.commons.io.IOUtils;
+import oracle.jdbc.OracleBlob;
+import oracle.jdbc.OracleClob;
+import oracle.jdbc.OracleConnection;
+import oracle.jdbc.OracleNClob;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class OracleCellConverter extends AbstractCellConverter {
     public OracleCellConverter(ZoneId zoneId) {
@@ -95,4 +100,35 @@ public class OracleCellConverter extends AbstractCellConverter {
         return super.convert(columnIndex, rs);
     }
 
+    @Override
+    protected PreparedStatement addPreparedStatementValue(
+        PreparedStatement ps,
+        AbstractJdbcBatch.ParameterType parameterType,
+        Object value,
+        int index,
+        Connection connection
+    ) throws Exception {
+        Class<?> cls = parameterType.getClass(index);
+
+        if (cls ==  oracle.sql.TIMESTAMP.class) {
+            if (value instanceof LocalDateTime) {
+                ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+                return ps;
+            }
+        } else if (cls ==  oracle.sql.TIMESTAMPTZ.class) {
+            if (value instanceof ZonedDateTime) {
+                ZonedDateTime current = (ZonedDateTime) value;
+
+                ps.setTimestamp(index, Timestamp.valueOf(current.toLocalDateTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getZone())));
+                return ps;
+            }
+        } else if (cls ==  oracle.sql.TIMESTAMPLTZ.class) {
+            if (value instanceof LocalDateTime) {
+                ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+                return ps;
+            }
+        }
+
+        return super.addPreparedStatementValue(ps, parameterType, value, index, connection);
+    }
 }

@@ -77,7 +77,7 @@ public class VerticaTest extends AbstractRdbmsTest {
         // @TODO: find a way to test, return byte[]
         // assertThat(runOutput.getRow().get("geometry"), is("POLYGON((1 1, 1 2, 2 2, 2 1, 1 1))"));
         // assertThat(runOutput.getRow().get("geography"), is("POLYGON((1 2,3 4,2 3,1 2))"));
-        assertThat(runOutput.getRow().get("uuid"), is(UUID.fromString("6bbf0744-74b4-46b9-bb05-53905d4538e7")));
+        assertThat(runOutput.getRow().get("uuid"), is("6bbf0744-74b4-46b9-bb05-53905d4538e7"));
     }
 
     @Test

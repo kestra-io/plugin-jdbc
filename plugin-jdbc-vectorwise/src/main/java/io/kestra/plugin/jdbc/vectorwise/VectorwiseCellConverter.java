@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.vectorwise;
 
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
