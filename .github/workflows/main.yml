@@ -104,6 +104,15 @@ jobs:
           echo ${SONATYPE_GPG_FILE} | base64 -d > ~/.gradle/secring.gpg
           ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
 
+      # GitHub Release
+      - name: Create GitHub release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          files: |
+            build/libs/*.jar
+
       # Slack
       - name: Slack notification
         uses: 8398a7/action-slack@v3
