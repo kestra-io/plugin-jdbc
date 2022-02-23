@@ -45,3 +45,12 @@ services:
       - "49161:1521"
     environment:
       ORACLE_ALLOW_REMOTE: "true"
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "41433:1433"
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: Sqls3rv3r_Pa55word!
+

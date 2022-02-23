@@ -83,6 +83,9 @@ public abstract class AbstractCellConverter {
             } else if (cls == Integer.class) {
                 ps.setInt(index, (Integer) value);
                 return ps;
+            } else if (cls == Short.class) {
+                ps.setShort(index, Short.parseShort(value.toString()));
+                return ps;
             } else if (cls == String.class) {
                 ps.setString(index, (String) value);
                 return ps;
