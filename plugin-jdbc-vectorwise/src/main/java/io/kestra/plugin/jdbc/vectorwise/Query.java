@@ -23,7 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a vectorwise database."
+    title = "Query a Vectorwise database."
 )
 @Plugin(
     examples = {

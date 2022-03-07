@@ -23,31 +23,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Clickhouse Query Task.",
-    description = "Currently supported types are the following ones : \n" +
-        " - Int8,\n" +
-        " - Float32,\n" +
-        " - Float64,\n" +
-        " - Decimal(n, m),\n" +
-        " - String,\n" +
-        " - FixedString(n),\n" +
-        " - UUID,\n" +
-        " - Date,\n" +
-        " - DateTime(n),\n" +
-        " - DateTime64(n, m),\n" +
-        " - Enum,\n" +
-        " - LowCardinality(n),\n" +
-        " - Array(n),\n" +
-        " - Nested(),\n" +
-        " - Tuple(n, m),\n" +
-        " - Nullable(n),\n" +
-        " - Ipv4,\n" +
-        " - Ipv6"
+    title = "Query a Clickhouse database."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Request a Clickhouse Database and fetch a row as outputs",
+            title = "Send a sql query to a Clickhouse database and fetch a row as outputs",
             code = {
                 "url: jdbc:clickhouse://127.0.0.1:56982/",
                 "username: clickhouse",

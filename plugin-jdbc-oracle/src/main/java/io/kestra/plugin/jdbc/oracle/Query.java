@@ -23,23 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Oracle Query Task",
-    description = "Currently supported types are the following ones : \n" +
-        " -  VARCHAR2\n" +
-        " -  CHAR\n" +
-        " -  VARCHAR2\n" +
-        " -  VARCHAR\n" +
-        " -  NCHAR\n" +
-        " -  NVARCHAR2\n" +
-        " -  BLOB\n" +
-        " -  CLOB\n" +
-        " -  NCLOB\n" +
-        " -  NUMBER\n" +
-        " -  BINARY_FLOAT\n" +
-        " -  BINARY_DOUBLE\n" +
-        " -  DATE\n" +
-        " -  TIMESTAMP\n" +
-        " -  TIMESTAMP WITH TIME ZONE\n"
+    title = "Query a Oracle server"
 )
 @Plugin(
     examples = {

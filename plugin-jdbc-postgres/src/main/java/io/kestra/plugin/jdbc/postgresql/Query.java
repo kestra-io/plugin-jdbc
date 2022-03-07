@@ -17,7 +17,6 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Properties;
 
-import static io.kestra.core.utils.Rethrow.throwFunction;
 
 @SuperBuilder
 @ToString
@@ -25,29 +24,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "PostgresSQL Query Task",
-    description = "Currently supported types are the following ones : \n" +
-        " - serial\n" +
-        " - boolean\n" +
-        " - char(4)\n" +
-        " - varchar(n)\n" +
-        " - text\n" +
-        " - smallint\n" +
-        " - bigint\n" +
-        " - float(n)\n" +
-        " - double precision\n" +
-        " - real\n" +
-        " - numeric\n" +
-        " - date\n" +
-        " - time\n" +
-        " - timez / time with time zone (avoid this type as it can lead to some gap. See <a href=\"https://www.postgresql.org/message-id/4C968069.4050801@opencloud.com/\">this PostgreSQL issue</a>)\n" +
-        " - timestamp\n" +
-        " - timestampz / timestamp with time zone\n" +
-        " - interval\n" +
-        " - integer[]\n" +
-        " - text[][] (ie. array of array ... it may be of another supported type)\n" +
-        " - json\n" +
-        " - bytea"
+    title = "Query a PostgresSQL server"
 )
 @Plugin(
     examples = {

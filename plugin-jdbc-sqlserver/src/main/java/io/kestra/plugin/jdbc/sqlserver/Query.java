@@ -23,7 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Microsoft SQL Server Query Task"
+    title = "Query a Microsoft SQL Server server"
 )
 @Plugin(
     examples = {
@@ -33,14 +33,14 @@ import java.time.ZoneId;
             code = {
                 "tasks:",
                 "- id: select",
-                "  type: io.kestra.plugin.jdbc.oracle.Query",
+                "  type: io.kestra.plugin.jdbc.sqlserver.Query",
                 "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
                 "  username: sa",
                 "  password: Sqls3rv3r_Pa55word!",
                 "  sql: select * from source",
                 "  fetch: true",
                 "- id: generate-update",
-                "  type: io.kestra.plugin.jdbc.oracle.Query",
+                "  type: io.kestra.plugin.jdbc.sqlserver.Query",
                 "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
                 "  username: sa",
                 "  password: Sqls3rv3r_Pa55word!",

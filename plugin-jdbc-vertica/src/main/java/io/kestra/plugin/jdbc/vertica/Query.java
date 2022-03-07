@@ -23,12 +23,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Vertica Query Task."
+    title = "Query a Vertica server"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Request a Vertical Database and fetch a row as outputs",
+            title = "Request a Vertica database and fetch a row as outputs",
             code = {
                 "url: jdbc:vertica://127.0.0.1:56982/db",
                 "username: dbadmin",

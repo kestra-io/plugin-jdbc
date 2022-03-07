@@ -1,8 +1,11 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,6 +21,38 @@ import java.time.ZoneId;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
+@Schema(
+    title = "Execute a batch query to a Microsoft SQL Server server"
+)
+@Plugin(
+    examples = {
+        @Example(
+            title = "Fetch rows from a table and bulk insert to another one",
+            full = true,
+            code = {
+                "tasks:",
+                "  - id: query",
+                "    type: io.kestra.plugin.jdbc.sqlserver.Query",
+                "    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true",
+                "    username: sa",
+                "    password: Sqls3rv3r_Pa55word!",
+                "    sql: |",
+                "      SELECT *",
+                "      FROM xref",
+                "      LIMIT 1500;",
+                "    store: true",
+                "  - id: update",
+                "    type: io.kestra.plugin.jdbc.sqlserver.Batch",
+                "    from: \"{{ outputs.query.uri }}\"",
+                "    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true",
+                "    username: sa",
+                "    password: Sqls3rv3r_Pa55word!",
+                "    sql: |",
+                "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
+            }
+        )
+    }
+)
 public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

@@ -24,31 +24,12 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "MySQL Query Task.",
-    description = "Currently supported types are the following ones : \n" +
-        " - serial,\n" +
-        " - tinyint,\n" +
-        " - char(n),\n" +
-        " - varchar(n),\n" +
-        " - text,\n" +
-        " - bigint,\n" +
-        " - bit(n),\n" +
-        " - float,\n" +
-        " - double,\n" +
-        " - numeric,\n" +
-        " - decimal,\n" +
-        " - date,\n" +
-        " - datetime(n),\n" +
-        " - time,\n" +
-        " - timestamp(n),\n" +
-        " - year(n),\n" +
-        " - json,\n" +
-        " - blob"
+    title = "Query a MySQL database."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Request a MySQL Database and fetch a row as outputs",
+            title = "Send a sql query to a MySQL Database and fetch a row as outputs",
             code = {
                 "url: jdbc:mysql://127.0.0.1:56982/",
                 "username: mysql_user",
