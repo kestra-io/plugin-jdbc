@@ -30,6 +30,17 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
 
+      # Caches
+      - name: Gradle cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle*.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       # Services
       - name: Build the docker-compose stack
         run: |
@@ -57,17 +68,6 @@ jobs:
           docker-compose -f docker-compose-ci.yml up -d sqlserver
           docker-compose -f docker-compose-ci.yml up -d
           sleep 3
-
-      # Caches
-      - name: Gradle cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle*.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
 
       # Gradle check
       - name: Build with Gradle
@@ -113,6 +113,11 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           files: |
             build/libs/*.jar
+
+      # Cleanup services
+      - name: Cleanup services
+        if: ${{ always() }}
+        run: sudo rm -rf certs
 
       # Slack
       - name: Slack notification
