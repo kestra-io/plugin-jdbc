@@ -10,6 +10,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import name.neuhalfen.projects.crypto.bouncycastle.openpgp.BouncyGPG;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -54,11 +55,15 @@ public abstract class PostgresService {
         }
     }
 
-    private static String convertPrivateKey(RunContext runContext, String vars, String password) throws IOException, IllegalVariableEvaluationException {
+    private static synchronized void addProvider() {
         Provider bc = Security.getProvider("BC");
         if (bc == null) {
-            Security.addProvider(new BouncyCastleProvider());
+            BouncyGPG.registerProvider();
         }
+    }
+
+    private static String convertPrivateKey(RunContext runContext, String vars, String password) throws IOException, IllegalVariableEvaluationException {
+        PostgresService.addProvider();
 
         Object pemObject = readPem(runContext, vars);
 

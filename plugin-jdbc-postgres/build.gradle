@@ -3,6 +3,7 @@ dependencies {
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk15on:1.70'
     api 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }
