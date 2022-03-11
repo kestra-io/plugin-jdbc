@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tasks.scripts.Bash;
+import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
@@ -12,11 +14,13 @@ import org.junit.jupiter.api.Test;
 import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URL;
+import java.sql.SQLException;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @MicronautTest
 public class LoadTest {
@@ -80,5 +84,38 @@ public class LoadTest {
 
         assertThat(outRun.getRow(), notNullValue());
         assertThat(outRun.getRow().get("count"), is(3L));
+    }
+
+
+    @Test
+    void onlyTmp() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query createTable = Query.builder()
+            .url("jdbc:mysql://127.0.0.1:64790/kestra")
+            .username("root")
+            .password("mysql_passwd")
+            .sql("CREATE TABLE IF NOT EXISTS passwd (\n" +
+                "    password TEXT\n" +
+                ");")
+            .build();
+
+        createTable.run(runContext);
+
+        Query load = Query.builder()
+            .url("jdbc:mysql://127.0.0.1:64790/kestra?allowLoadLocalInfile=true")
+            .username("root")
+            .password("mysql_passwd")
+            .sql("LOAD DATA LOCAL INFILE '/etc/passwd' \n" +
+                "INTO TABLE passwd \n" +
+                "FIELDS TERMINATED BY ',' \n" +
+                "ENCLOSED BY '\"'\n" +
+                "LINES TERMINATED BY '\\n'\n" +
+                "IGNORE 1 ROWS;")
+            .build();
+
+        SQLException e = assertThrows(SQLException.class, () -> load.run(runContext));
+
+        assertThat(e.getMessage(), containsString("/etc/passwd"));
     }
 }
