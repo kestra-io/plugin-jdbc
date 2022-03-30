@@ -1,0 +1,6 @@
+dependencies {
+    implementation("net.snowflake:snowflake-jdbc:3.13.14")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
