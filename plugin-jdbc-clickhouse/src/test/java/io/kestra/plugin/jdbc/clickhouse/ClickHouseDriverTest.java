@@ -9,6 +9,6 @@ import java.sql.Driver;
 public class ClickHouseDriverTest extends AbstractJdbcDriverTest {
     @Override
     protected Class<? extends Driver> getDriverClass() {
-        return ru.yandex.clickhouse.ClickHouseDriver.class;
+        return com.clickhouse.jdbc.ClickHouseDriver.class;
     }
 }

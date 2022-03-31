@@ -76,27 +76,6 @@ public class OracleCellConverter extends AbstractCellConverter {
             return ((Timestamp) data).toLocalDateTime().toLocalDate();
         }
 
-
-//        if (columnVal instanceof ClickHouseArray) {
-//            ClickHouseArray col = (ClickHouseArray) columnVal;
-//            return col.getArray();
-//        }
-//
-//        if (columnTypeName.startsWith("DateTime")) {
-//            Matcher matcher = PATTERN.matcher(columnTypeName);
-//            if (!matcher.find() || matcher.groupCount() < 3) {
-//                throw new IllegalArgumentException("Invalid Column Type '" + columnTypeName + "'");
-//            }
-//
-//            return LocalDateTime
-//                .parse(
-//                    rs.getString(columnIndex),
-//                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]")
-//                )
-//                .atZone(ZoneId.of(matcher.group(3)))
-//                .withZoneSameInstant(zoneId);
-//        }
-
         return super.convert(columnIndex, rs);
     }
 

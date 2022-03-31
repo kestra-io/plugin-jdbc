@@ -47,7 +47,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     protected void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new ru.yandex.clickhouse.ClickHouseDriver());
+        DriverManager.registerDriver(new com.clickhouse.jdbc.ClickHouseDriver());
     }
 
     @Override

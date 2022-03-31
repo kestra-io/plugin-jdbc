@@ -1,11 +1,11 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -14,13 +14,14 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.UUID;
+import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @MicronautTest
 public class ClickHouseTest extends AbstractRdbmsTest {
+    @SuppressWarnings("unchecked")
     @Test
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -50,12 +51,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("Enum"), is("hello"));
         assertThat(runOutput.getRow().get("LowCardinality"), is("four"));
         assertThat(runOutput.getRow().get("Array"), is(new String[]{"a", "b"}));
-        assertThat(runOutput.getRow().get("Nested.NestedId"), is(new Integer[]{123}));
+        assertThat(runOutput.getRow().get("Nested.NestedId"), is(new Byte[]{Byte.valueOf("123")}));
         assertThat(runOutput.getRow().get("Nested.NestedString"), is(new String[]{"four"}));
-        assertThat(runOutput.getRow().get("Tuple"), is("('a',1)"));
+        assertThat((List<Object>) runOutput.getRow().get("Tuple"), containsInAnyOrder("a", Byte.valueOf("1")));
         assertThat(runOutput.getRow().get("Nullable"), is(nullValue()));
         assertThat(runOutput.getRow().get("Ipv4"), is("116.253.40.133"));
-        assertThat(runOutput.getRow().get("Ipv6"), is("2a02:aa08:e000:3100::2"));
+        assertThat(runOutput.getRow().get("Ipv6"), is("2a02:aa08:e000:3100:0:0:0:2"));
     }
 
     @Test
