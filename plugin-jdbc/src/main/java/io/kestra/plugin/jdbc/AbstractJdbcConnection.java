@@ -5,11 +5,13 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -39,22 +41,8 @@ public abstract class AbstractJdbcConnection extends Task {
     @PluginProperty(dynamic = true)
     protected String password;
 
-    @Schema(
-        title = "If autocommit is enabled",
-        description = "Sets this connection's auto-commit mode to the given state. If a connection is in auto-commit " +
-            "mode, then all its SQL statements will be executed and committed as individual transactions. Otherwise, " +
-            "its SQL statements are grouped into transactions that are terminated by a call to either the method commit" +
-            "or the method rollback. By default, new connections are in auto-commit mode except if you are using a " +
-            "`store` properties that will disabled autocommit whenever this properties values."
-    )
-    @PluginProperty(dynamic = false)
-    protected final Boolean autoCommit = true;
-
-    @Getter(AccessLevel.NONE)
-    private transient Path cleanupDirectory;
-
     /**
-     * JDBC driver may be auto-registered. See https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html
+     * JDBC driver may be auto-registered. See <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html">DriverManager</a>
      *
      * @throws SQLException registerDrivers failed
      */

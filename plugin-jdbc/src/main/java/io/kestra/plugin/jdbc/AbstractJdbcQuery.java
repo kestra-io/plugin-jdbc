@@ -16,7 +16,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Consumer;
@@ -26,7 +29,7 @@ import java.util.function.Consumer;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
+public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
     @Schema(
         title = "The sql query to run"
     )
@@ -59,9 +62,15 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
     private final Boolean fetch = false;
 
     @Schema(
-        title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
+        title = "If autocommit is enabled",
+        description = "Sets this connection's auto-commit mode to the given state. If a connection is in auto-commit " +
+            "mode, then all its SQL statements will be executed and committed as individual transactions. Otherwise, " +
+            "its SQL statements are grouped into transactions that are terminated by a call to either the method commit" +
+            "or the method rollback. By default, new connections are in auto-commit mode except if you are using a " +
+            "`store` properties that will disabled autocommit whenever this properties values."
     )
-    private String timeZoneId;
+    @PluginProperty(dynamic = false)
+    protected final Boolean autoCommit = true;
 
     @Schema(
         title = "Number of rows that should be fetched",
@@ -84,13 +93,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcConnection {
 
     public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-
-        ZoneId zoneId = TimeZone.getDefault().toZoneId();
-        if (this.timeZoneId != null) {
-            zoneId = ZoneId.of(timeZoneId);
-        }
-
-        AbstractCellConverter cellConverter = getCellConverter(zoneId);
+        AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
 
         try (
             Connection conn = this.connection(runContext);

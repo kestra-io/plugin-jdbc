@@ -29,7 +29,7 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
+public abstract class AbstractJdbcBatch extends AbstractJdbcStatement {
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
@@ -63,11 +63,6 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
     @PluginProperty(dynamic = true)
     private List<String> columns;
 
-    @Schema(
-        title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
-    )
-    private String timeZoneId;
-
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
     public Output run(RunContext runContext) throws Exception {
@@ -76,12 +71,7 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcConnection {
 
         AtomicLong count = new AtomicLong();
 
-        ZoneId zoneId = TimeZone.getDefault().toZoneId();
-        if (this.timeZoneId != null) {
-            zoneId = ZoneId.of(timeZoneId);
-        }
-
-        AbstractCellConverter cellConverter = this.getCellConverter(zoneId);
+        AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId());
 
         String sql = runContext.render(this.sql);
         logger.debug("Starting prepared statement: {}", sql);

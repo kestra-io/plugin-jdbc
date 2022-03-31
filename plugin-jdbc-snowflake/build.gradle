@@ -1,6 +1,7 @@
 dependencies {
     implementation("net.snowflake:snowflake-jdbc:3.13.14")
     implementation project(':plugin-jdbc')
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }

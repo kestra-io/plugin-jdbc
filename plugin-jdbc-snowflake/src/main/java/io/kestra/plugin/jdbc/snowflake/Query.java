@@ -1,18 +1,18 @@
 package io.kestra.plugin.jdbc.snowflake;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 import java.io.IOException;
 import java.sql.DriverManager;
@@ -74,10 +74,5 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     protected void registerDriver() throws SQLException {
         DriverManager.registerDriver(new net.snowflake.client.jdbc.SnowflakeDriver());
-    }
-
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }
