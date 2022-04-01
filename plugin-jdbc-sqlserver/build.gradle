@@ -1,5 +1,5 @@
 dependencies {
-    implementation("com.microsoft.sqlserver:mssql-jdbc:10.2.0.jre11")
+    implementation("com.microsoft.sqlserver:mssql-jdbc:11.1.0.jre11-preview")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
