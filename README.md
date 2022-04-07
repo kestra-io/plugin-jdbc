@@ -16,6 +16,10 @@
   * [for MySQL](https://kestra.io/plugins/plugin-jdbc-mysql/)
   * [for Oracle](https://kestra.io/plugins/plugin-jdbc-oracle/)
   * [for Postgres](https://kestra.io/plugins/plugin-jdbc-postgres/)
+  * [for Redshift](https://kestra.io/plugins/plugin-jdbc-redshift/)
+  * [for Snowflake](https://kestra.io/plugins/plugin-jdbc-snowflake/)
+  * [for SQL Server](https://kestra.io/plugins/plugin-jdbc-sqlserver/)
+  * [for Vectorwise](https://kestra.io/plugins/plugin-jdbc-vectorwise/)
   * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   
 ## License
