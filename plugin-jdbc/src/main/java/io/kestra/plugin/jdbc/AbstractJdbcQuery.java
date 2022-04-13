@@ -130,6 +130,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
                         File tempFile = runContext.tempFile(".ion").toFile();
                         BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
                         size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                        fileWriter.flush();
                         fileWriter.close();
                         output
                             .uri(runContext.putTempFile(tempFile))
