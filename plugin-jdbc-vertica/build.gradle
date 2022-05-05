@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:11.1.0-0'
+    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:11.1.1-0'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
