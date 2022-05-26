@@ -1,5 +1,5 @@
 dependencies {
-    implementation("net.snowflake:snowflake-jdbc:3.13.18")
+    implementation("net.snowflake:snowflake-jdbc:3.13.19")
     implementation project(':plugin-jdbc')
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 
