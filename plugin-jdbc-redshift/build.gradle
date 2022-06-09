@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.1.0.7'
+    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.1.0.8'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
