@@ -160,7 +160,7 @@ public abstract class AbstractCopy extends AbstractJdbcConnection implements Pos
                 sql.add("(" + String.join(", ", this.columns) + ")");
             }
         } else {
-            sql.add("(" + query + ")");
+            sql.add("(" + runContext.render(query) + ")");
         }
 
         sql.add(dest);
