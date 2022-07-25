@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver 'mysql:mysql-connector-java:8.0.29'
+    jdbcDriver 'mysql:mysql-connector-java:8.0.30'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
