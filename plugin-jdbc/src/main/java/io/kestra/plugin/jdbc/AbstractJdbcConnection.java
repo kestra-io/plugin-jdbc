@@ -67,7 +67,9 @@ public abstract class AbstractJdbcConnection extends Task {
         registerDriver();
 
         Properties props = this.connectionProperties(runContext);
+        String jdbcUrl = props.getProperty("jdbc.url");
+        props.remove("jdbc.url");
 
-        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
+        return DriverManager.getConnection(jdbcUrl, props);
     }
 }

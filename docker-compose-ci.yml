@@ -54,3 +54,8 @@ services:
       ACCEPT_EULA: Y
       SA_PASSWORD: Sqls3rv3r_Pa55word!
 
+  trino:
+    image: trinodb/trino
+    ports:
+      - "48080:8080"
+

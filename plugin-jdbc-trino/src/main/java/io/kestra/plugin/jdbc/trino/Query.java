@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.sqlserver;
+package io.kestra.plugin.jdbc.trino;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -23,7 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Microsoft SQL Server"
+    title = "Query a Trino server"
 )
 @Plugin(
     examples = {
@@ -33,30 +33,28 @@ import java.time.ZoneId;
             code = {
                 "tasks:",
                 "- id: select",
-                "  type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "  username: sa",
-                "  password: Sqls3rv3r_Pa55word!",
-                "  sql: select * from source",
+                "  type: io.kestra.plugin.jdbc.trino.Query",
+                "  url: jdbc:trino://localhost:8080/tpch/sf1",
+                "  sql: |",
+                "    SELECT *",
+                "    FROM nation",
                 "  fetch: true",
                 "- id: generate-update",
-                "  type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "  username: sa",
-                "  password: Sqls3rv3r_Pa55word!",
-                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}\""}
+                "  type: io.kestra.plugin.jdbc.trino.Query",
+                "  url: jdbc:trino://localhost:8080/memory/default",
+                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (nationkey, name, regionkey, comment) values ({{row.nationkey}}, {{row.name}}, '{{row.regionkey}}', '{{row.comment}}'); {% endfor %}\""}
         )
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
-        return new SqlServerCellConverter(zoneId);
+        return new TrinoCellConverter(zoneId);
     }
 
     @Override
     protected void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
+        DriverManager.registerDriver(new io.trino.jdbc.TrinoDriver());
     }
 
     @Override
