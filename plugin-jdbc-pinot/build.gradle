@@ -1,0 +1,8 @@
+dependencies {
+    implementation("org.apache.pinot:pinot-jdbc-client:0.8.0") {
+        exclude group: 'org.slf4j'
+    }
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

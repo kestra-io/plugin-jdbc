@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.oracle;
 
+import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -48,7 +49,9 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+    protected final Boolean autoCommit = true;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new OracleCellConverter(zoneId);

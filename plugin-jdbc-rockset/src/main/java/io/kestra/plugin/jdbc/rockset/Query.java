@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.rockset;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -48,7 +49,8 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+    protected final Boolean autoCommit = true;
 
     protected String apiKey;
     protected String apiServer;

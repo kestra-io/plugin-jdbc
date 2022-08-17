@@ -62,17 +62,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
     private final Boolean fetch = false;
 
     @Schema(
-        title = "If autocommit is enabled",
-        description = "Sets this connection's auto-commit mode to the given state. If a connection is in auto-commit " +
-            "mode, then all its SQL statements will be executed and committed as individual transactions. Otherwise, " +
-            "its SQL statements are grouped into transactions that are terminated by a call to either the method commit" +
-            "or the method rollback. By default, new connections are in auto-commit mode except if you are using a " +
-            "`store` properties that will disabled autocommit whenever this properties values."
-    )
-    @PluginProperty(dynamic = false)
-    protected final Boolean autoCommit = true;
-
-    @Schema(
         title = "Number of rows that should be fetched",
         description = "Gives the JDBC driver a hint as to the number of rows that should be fetched from the database " +
             "when more rows are needed for this ResultSet object. If the fetch size specified is zero, the JDBC driver " +
@@ -91,21 +80,28 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
+
+    protected Statement createStatement(Connection conn) throws SQLException {
+        return conn.createStatement(
+            ResultSet.TYPE_FORWARD_ONLY,
+            ResultSet.CONCUR_READ_ONLY
+        );
+    }
+
     public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
 
         try (
             Connection conn = this.connection(runContext);
-            Statement stmt = conn.createStatement(
-                ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY
-            )
+            Statement stmt = this.createStatement(conn);
         ) {
-            if (this.store) {
-                conn.setAutoCommit(false);
-            } else {
-                conn.setAutoCommit(this.autoCommit);
+            if (this instanceof AutoCommitInterface) {
+                if (this.store) {
+                    conn.setAutoCommit(false);
+                } else {
+                    conn.setAutoCommit(((AutoCommitInterface) this).getAutoCommit());
+                }
             }
 
             stmt.setFetchSize(fetchSize);

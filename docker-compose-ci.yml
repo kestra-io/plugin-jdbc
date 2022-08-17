@@ -59,3 +59,11 @@ services:
     ports:
       - "48080:8080"
 
+  pinot:
+    image: apachepinot/pinot
+    ports:
+      - "49000:9000"
+    command:
+      - QuickStart
+      - -type
+      - batch
