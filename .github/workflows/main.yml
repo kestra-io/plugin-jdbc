@@ -71,6 +71,8 @@ jobs:
 
       # Gradle check
       - name: Build with Gradle
+        env:
+          ROCKSET_APIKEY: ${{ secrets.ROCKSET_APIKEY }}
         run: ./gradlew check
 
       # Publish

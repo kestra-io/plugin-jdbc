@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import javax.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -27,6 +28,7 @@ public abstract class AbstractJdbcConnection extends Task {
         title = "The jdbc url to connect to the database"
     )
     @PluginProperty(dynamic = true)
+    @NotNull
     protected String url;
 
     @Schema(
