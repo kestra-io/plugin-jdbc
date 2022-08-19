@@ -1,8 +1,8 @@
 package com.rockset.jdbc;
 
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.*;
+import rockset.com.fasterxml.jackson.databind.JsonNode;
+import rockset.com.fasterxml.jackson.databind.node.*;
 import io.kestra.core.utils.Rethrow;
 
 import java.io.IOException;
