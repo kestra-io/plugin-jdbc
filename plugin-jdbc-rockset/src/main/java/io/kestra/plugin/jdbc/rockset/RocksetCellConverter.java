@@ -1,17 +1,22 @@
 package io.kestra.plugin.jdbc.rockset;
 
-import com.fasterxml.jackson.databind.node.*;
 import com.rockset.jdbc.RocksetArrayOverride;
-import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
+import rockset.com.fasterxml.jackson.core.type.TypeReference;
+import rockset.com.fasterxml.jackson.databind.ObjectMapper;
+import rockset.com.fasterxml.jackson.databind.node.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.Map;
 
 public class RocksetCellConverter extends AbstractCellConverter {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final TypeReference<Map<String, Object>> TYPE_REFERENCE = new TypeReference<>() {};
+
     public RocksetCellConverter(ZoneId zoneId) {
         super(zoneId);
     }
@@ -40,7 +45,7 @@ public class RocksetCellConverter extends AbstractCellConverter {
         }
 
         if (data instanceof ObjectNode) {
-            return JacksonMapper.toMap(data);
+            return MAPPER.convertValue(data, TYPE_REFERENCE);
         }
 
         if (data instanceof NullNode) {
