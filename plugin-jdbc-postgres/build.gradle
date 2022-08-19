@@ -1,5 +1,5 @@
 dependencies {
-    jdbcDriver 'org.postgresql:postgresql:42.4.1'
+    jdbcDriver 'org.postgresql:postgresql:42.5.0'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk15on:1.70'
     api 'org.bouncycastle:bcpkix-jdk15on:1.70'
