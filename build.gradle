@@ -136,6 +136,13 @@ subprojects { Project subproject ->
         license 'Apache'
     }
 
+
+    if (subproject.name != "plugin-jdbc") {
+        shadowJar {
+            dependsOn(":plugin-jdbc:shadowJar")
+        }
+    }
+
     jar {
         manifest {
             attributes(
