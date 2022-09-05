@@ -115,7 +115,7 @@ jobs:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
           files: |
-            build/libs/*.jar
+            plugin-jdbc-*/build/libs/*.jar
 
       # Cleanup services
       - name: Cleanup services
