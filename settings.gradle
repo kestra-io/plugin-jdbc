@@ -2,7 +2,7 @@ rootProject.name = 'plugin-jdbcs'
 
 include 'plugin-jdbc'
 include 'plugin-jdbc-clickhouse'
-//include 'plugin-jdbc-mysql'
+include 'plugin-jdbc-mysql'
 include 'plugin-jdbc-oracle'
 include 'plugin-jdbc-pinot'
 include 'plugin-jdbc-postgres'
