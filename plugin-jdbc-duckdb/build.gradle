@@ -1,0 +1,6 @@
+dependencies {
+    implementation("org.duckdb:duckdb_jdbc:0.5.0")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

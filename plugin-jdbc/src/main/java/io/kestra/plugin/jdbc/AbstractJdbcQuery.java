@@ -112,7 +112,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
             boolean isResult = stmt.execute(sql);
 
             try(ResultSet rs = stmt.getResultSet()) {
-                Output.OutputBuilder output = Output.builder();
+                Output.OutputBuilder<?, ?> output = Output.builder();
                 long size = 0;
 
                 if (isResult) {
@@ -208,7 +208,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
         return cellConverter.convertCell(columnIndex, rs, connection);
     }
 
-    @Builder
+    @SuperBuilder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
