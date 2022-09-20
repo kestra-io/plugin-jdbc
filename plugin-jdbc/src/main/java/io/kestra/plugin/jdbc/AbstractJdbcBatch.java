@@ -109,7 +109,7 @@ public abstract class AbstractJdbcBatch extends AbstractJdbcStatement {
                 .blockingGet();
 
             runContext.metric(Counter.of("records", count.get()));
-            runContext.metric(Counter.of("updated", updated));
+            runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
 
             logger.info("Successfully bulk {} queries with {} updated rows", count.get(), updated);
 
