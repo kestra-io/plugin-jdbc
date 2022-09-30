@@ -65,7 +65,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         additionalProperties = String.class,
         dynamic = true
     )
-    protected Map<String, String> inputFiles;
+    protected Object inputFiles;
 
     @Schema(
         title = "Output file list that will be uploaded to internal storage",
@@ -98,12 +98,16 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
 
         // inputFiles
-        BashService.createInputFiles(
-            runContext,
-            runContext.tempDir(),
-            this.inputFiles,
-            additionalVars
-        );
+        if (this.inputFiles != null) {
+            Map<String, String> finalInputFiles = BashService.transformInputFiles(runContext, this.inputFiles);
+
+            BashService.createInputFiles(
+                runContext,
+                runContext.tempDir(),
+                finalInputFiles,
+                additionalVars
+            );
+        }
 
         // outputFiles
         if (this.outputFiles != null && this.outputFiles.size() > 0) {
