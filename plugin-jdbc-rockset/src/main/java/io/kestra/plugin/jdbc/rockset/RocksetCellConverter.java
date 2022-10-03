@@ -1,11 +1,12 @@
 package io.kestra.plugin.jdbc.rockset;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.*;
 import com.rockset.jdbc.RocksetArrayOverride;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
-import rockset.com.fasterxml.jackson.core.type.TypeReference;
-import rockset.com.fasterxml.jackson.databind.ObjectMapper;
-import rockset.com.fasterxml.jackson.databind.node.*;
+
 
 import java.sql.Connection;
 import java.sql.ResultSet;
