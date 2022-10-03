@@ -94,7 +94,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         UriBuilder builder = UriBuilder.of(url);
 
         builder.queryParam("allowLoadLocalInfileInPath", this.workingDirectory.toAbsolutePath().toString());
-        builder.replaceQueryParam("allowLoadLocalInfile", (Object)null);
+        builder.replaceQueryParam("allowLoadLocalInfile", false);
         builder.scheme("jdbc:mysql");
 
         props.put("jdbc.url", builder.build().toString());
