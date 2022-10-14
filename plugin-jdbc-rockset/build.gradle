@@ -1,5 +1,5 @@
 dependencies {
-    implementation("com.rockset:rockset-java:0.9.3")
+    implementation("com.rockset:rockset-java:0.9.4")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
