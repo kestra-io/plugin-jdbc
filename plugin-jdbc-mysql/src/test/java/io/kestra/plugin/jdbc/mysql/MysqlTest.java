@@ -54,7 +54,7 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("bitn_test"), is(new byte[]{0b000101}));
 
         // Not equal to input value (Float and Double are for "Approximate Value"
-        assertThat(runOutput.getRow().get("floatn_test"), not(9223372036854776000F));
+        assertThat(runOutput.getRow().get("floatn_test"), is(9223372036854776000F));
         assertThat(runOutput.getRow().get("double_test"), is(9223372036854776000d));
         assertThat(runOutput.getRow().get("doublen_test"), is(2147483645.1234d));
         assertThat(runOutput.getRow().get("numeric_test"), is(new BigDecimal("5.36")));

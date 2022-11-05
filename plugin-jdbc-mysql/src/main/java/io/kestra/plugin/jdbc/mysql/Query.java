@@ -93,8 +93,14 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
         UriBuilder builder = UriBuilder.of(url);
 
+        // allow local in file for current worker and prevent the global one
         builder.queryParam("allowLoadLocalInfileInPath", this.workingDirectory.toAbsolutePath().toString());
         builder.replaceQueryParam("allowLoadLocalInfile", false);
+
+        // see https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-implementation-notes.html
+        // By default, ResultSets are completely retrieved and stored in memory.
+        builder.replaceQueryParam("useCursorFetch", true);
+
         builder.scheme("jdbc:mysql");
 
         props.put("jdbc.url", builder.build().toString());
