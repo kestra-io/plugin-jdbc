@@ -164,7 +164,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
         // assertThat(runOutput.getRow().get("t_time"), is(LocalTime.parse("'01:02:03.456"))); null is returned
         assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T" +  hour + ":55:23.383345+02:00[Europe/Paris]")));
-        assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T03:04:05.321Z")));
+        assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
         assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_uinteger"), is(2147483647L));
