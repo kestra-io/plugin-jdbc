@@ -50,7 +50,7 @@ public abstract class AbstractJdbcConnection extends Task {
      */
     protected abstract void registerDriver() throws SQLException;
 
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties props = new Properties();
         props.put("jdbc.url", runContext.render(this.url));
 
@@ -65,7 +65,7 @@ public abstract class AbstractJdbcConnection extends Task {
         return props;
     }
 
-    protected Connection connection(RunContext runContext) throws IllegalVariableEvaluationException, SQLException, IOException {
+    protected Connection connection(RunContext runContext) throws Exception {
         registerDriver();
 
         Properties props = this.connectionProperties(runContext);

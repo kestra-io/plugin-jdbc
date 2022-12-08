@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.mysql;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -15,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.sql.DriverManager;
@@ -85,7 +83,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
     }
 
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties props = super.connectionProperties(runContext);
 
         URI url = URI.create((String) props.get("jdbc.url"));

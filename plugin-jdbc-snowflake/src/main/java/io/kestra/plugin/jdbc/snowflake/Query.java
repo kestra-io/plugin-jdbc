@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.snowflake;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -15,7 +14,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -61,7 +59,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     private String role;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         this.renderProperties(runContext, properties);

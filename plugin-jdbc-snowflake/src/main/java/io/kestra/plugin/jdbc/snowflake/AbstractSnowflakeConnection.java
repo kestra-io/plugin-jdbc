@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.snowflake;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcConnection;
 import lombok.EqualsAndHashCode;
@@ -9,7 +8,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -26,7 +24,7 @@ public abstract class AbstractSnowflakeConnection extends AbstractJdbcConnection
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         this.renderProperties(runContext, properties);

@@ -69,7 +69,7 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 

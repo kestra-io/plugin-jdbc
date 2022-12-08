@@ -61,7 +61,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     protected String sslKeyPassword;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 

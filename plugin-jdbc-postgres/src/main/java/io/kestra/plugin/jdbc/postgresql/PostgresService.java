@@ -2,25 +2,32 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
+import name.neuhalfen.projects.crypto.bouncycastle.openpgp.BouncyGPG;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
-import name.neuhalfen.projects.crypto.bouncycastle.openpgp.BouncyGPG;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Locale;
 import java.util.Properties;
 
 public abstract class PostgresService {
-    public static void handleSsl(Properties properties, RunContext runContext, PostgresConnectionInterface conn) throws IllegalVariableEvaluationException, IOException {
+    public static void handleSsl(Properties properties, RunContext runContext, PostgresConnectionInterface conn) throws Exception {
         if (conn.getSsl() != null && conn.getSsl()) {
             properties.put("ssl", "true");
         }
@@ -62,7 +69,7 @@ public abstract class PostgresService {
         }
     }
 
-    private static String convertPrivateKey(RunContext runContext, String vars, String password) throws IOException, IllegalVariableEvaluationException {
+    private static String convertPrivateKey(RunContext runContext, String vars, String password) throws IOException, IllegalVariableEvaluationException, PKCSException, OperatorCreationException {
         PostgresService.addProvider();
 
         Object pemObject = readPem(runContext, vars);
@@ -79,6 +86,18 @@ public abstract class PostgresService {
 
             PEMKeyPair decryptedKeyPair = ((PEMEncryptedKeyPair) pemObject).decryptKeyPair(decrypter);
             keyInfo = decryptedKeyPair.getPrivateKeyInfo();
+        } else if (pemObject instanceof PKCS8EncryptedPrivateKeyInfo) {
+            if (password == null) {
+                throw new IOException("Unable to import private key. Key is encrypted, but no password was provided.");
+            }
+
+            InputDecryptorProvider inputDecryptorProvider = new JceOpenSSLPKCS8DecryptorProviderBuilder()
+                .setProvider("BC")
+                .build(password.toCharArray());
+
+            keyInfo = ((PKCS8EncryptedPrivateKeyInfo) pemObject).decryptPrivateKeyInfo(inputDecryptorProvider);
+        } else if (pemObject instanceof PrivateKeyInfo) {
+            keyInfo = ((PrivateKeyInfo) pemObject);
         } else {
             keyInfo = ((PEMKeyPair) pemObject).getPrivateKeyInfo();
         }

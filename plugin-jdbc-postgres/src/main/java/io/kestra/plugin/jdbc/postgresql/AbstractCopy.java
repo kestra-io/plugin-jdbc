@@ -7,6 +7,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcConnection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.bouncycastle.pkcs.PKCSException;
 
 import java.io.IOException;
 import java.sql.DriverManager;
@@ -135,7 +136,7 @@ public abstract class AbstractCopy extends AbstractJdbcConnection implements Pos
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws IllegalVariableEvaluationException, IOException {
+    protected Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 
