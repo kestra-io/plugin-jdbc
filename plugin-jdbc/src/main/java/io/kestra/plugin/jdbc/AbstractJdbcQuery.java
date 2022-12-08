@@ -70,7 +70,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
     )
     @PluginProperty(dynamic = false)
     @Builder.Default
-    private final Integer fetchSize = 10000;
+    protected final Integer fetchSize = 10000;
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -104,7 +104,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcStatement {
                 }
             }
 
-            stmt.setFetchSize(fetchSize);
+            stmt.setFetchSize(this.getFetchSize());
 
             String sql = runContext.render(this.sql, this.additionalVars);
             logger.debug("Starting query: {}", sql);
