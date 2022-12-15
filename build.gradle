@@ -23,6 +23,7 @@ group "io.kestra.plugin"
 subprojects {
     group "io.kestra.plugin"
     sourceCompatibility = 11
+    targetCompatibility = 11
 
     repositories {
         mavenCentral()
