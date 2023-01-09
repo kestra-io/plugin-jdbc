@@ -1,5 +1,5 @@
 dependencies {
-    implementation("com.oracle.database.jdbc:ojdbc11:21.7.0.0")
+    implementation("com.oracle.database.jdbc:ojdbc11:21.8.0.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
