@@ -72,6 +72,10 @@ subprojects {
 
     test {
         useJUnitPlatform()
+
+        // configure en_US default locale for tests
+        systemProperty 'user.language', 'en'
+        systemProperty 'user.country', 'US'
     }
 
     testlogger {
