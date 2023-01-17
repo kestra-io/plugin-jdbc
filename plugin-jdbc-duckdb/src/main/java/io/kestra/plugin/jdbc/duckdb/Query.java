@@ -77,24 +77,30 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @PluginProperty(dynamic = false)
     protected List<String> outputFiles;
 
+    private Path databaseFile;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DuckDbCellConverter(zoneId);
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.duckdb.DuckDBDriver());
+    }
+
+    @Override
+    public String getUrl() {
+        return "jdbc:duckdb:" + databaseFile;
     }
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
         Map<String, String> outputFiles = null;
 
-        Path databaseFile = runContext.tempFile();
-        Files.delete(databaseFile);
+        this.databaseFile = runContext.tempFile();
+        Files.delete(this.databaseFile);
 
-        this.url = "jdbc:duckdb:" + databaseFile;
         additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
 
         // inputFiles

@@ -1,9 +1,10 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public interface PostgresConnectionInterface {
+public interface PostgresConnectionInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Is the connection ssl"
     )

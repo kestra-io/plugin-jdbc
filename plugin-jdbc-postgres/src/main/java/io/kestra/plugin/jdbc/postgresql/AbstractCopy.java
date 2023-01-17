@@ -2,14 +2,13 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.jdbc.AbstractJdbcConnection;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.bouncycastle.pkcs.PKCSException;
 
-import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,7 +20,10 @@ import java.util.Properties;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractCopy extends AbstractJdbcConnection implements PostgresConnectionInterface {
+public abstract class AbstractCopy extends Task implements PostgresConnectionInterface {
+    private String url;
+    private String username;
+    private String password;
     @Builder.Default
     protected Boolean ssl = false;
     protected SslMode sslMode;
@@ -136,15 +138,15 @@ public abstract class AbstractCopy extends AbstractJdbcConnection implements Pos
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
-        Properties properties = super.connectionProperties(runContext);
+    public Properties connectionProperties(RunContext runContext) throws Exception {
+        Properties properties = PostgresConnectionInterface.super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 
         return properties;
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.postgresql.Driver());
     }
 

@@ -49,7 +49,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.amazon.redshift.jdbc.Driver());
     }
 

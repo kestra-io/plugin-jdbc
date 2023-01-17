@@ -1,7 +1,8 @@
 package io.kestra.plugin.jdbc.snowflake;
 
+import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.jdbc.AbstractJdbcConnection;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,15 +18,19 @@ import java.util.Properties;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractSnowflakeConnection extends AbstractJdbcConnection implements SnowflakeInterface {
+public abstract class AbstractSnowflakeConnection extends Task implements JdbcConnectionInterface, SnowflakeInterface {
+    private String url;
+    private String username;
+    private String password;
+
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new net.snowflake.client.jdbc.SnowflakeDriver());
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
-        Properties properties = super.connectionProperties(runContext);
+    public Properties connectionProperties(RunContext runContext) throws Exception {
+        Properties properties = JdbcConnectionInterface.super.connectionProperties(runContext);
 
         this.renderProperties(runContext, properties);
 

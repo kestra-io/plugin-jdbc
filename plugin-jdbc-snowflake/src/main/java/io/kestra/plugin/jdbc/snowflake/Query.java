@@ -59,7 +59,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     private String role;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         this.renderProperties(runContext, properties);
@@ -73,7 +73,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new net.snowflake.client.jdbc.SnowflakeDriver());
     }
 }

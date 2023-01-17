@@ -54,7 +54,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     protected String apiServer;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         properties.put("jdbc.url",  "jdbc:rockset://");
@@ -70,7 +70,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.rockset.jdbc.RocksetDriver());
     }
 

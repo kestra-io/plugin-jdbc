@@ -244,6 +244,20 @@ public class BatchTest extends AbstractRdbmsTest {
     }
 
     public static class PostgresConnection implements PostgresConnectionInterface {
+        @Override
+        public String getUrl() {
+            return TestUtils.url();
+        }
+
+        @Override
+        public String getUsername() {
+            return TestUtils.username();
+        }
+
+        @Override
+        public String getPassword() {
+            return TestUtils.password();
+        }
 
         @Override
         public Boolean getSsl() {
@@ -273,6 +287,11 @@ public class BatchTest extends AbstractRdbmsTest {
         @Override
         public String getSslKeyPassword() {
             return TestUtils.keyPass();
+        }
+
+        @Override
+        public void registerDriver() throws SQLException {
+
         }
     }
 
