@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS trino_types;
+
 CREATE TABLE trino_types (
     t_null VARCHAR(2),
     t_boolean BOOLEAN,

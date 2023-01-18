@@ -1,0 +1,18 @@
+# not used as we cannot run it locally
+id: vectorwise-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.vectorwise.Trigger
+    sql: SELECT * FROM vectorwise_types
+    url: ???
+    username: ???
+    password: ???
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

@@ -81,18 +81,7 @@ public class TrinoTest extends AbstractRdbmsTest {
     }
 
     @Override
-    protected String getPassword() {
-        return null;
-    }
-
-    @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        try {
-            RunScript.execute(getConnection(), new StringReader("DROP TABLE trino_types;"));
-        } catch (Exception ignored) {
-
-        }
-
         executeSqlScript("scripts/trino.sql");
     }
 }

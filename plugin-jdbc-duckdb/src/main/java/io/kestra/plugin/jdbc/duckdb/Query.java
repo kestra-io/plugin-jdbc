@@ -77,7 +77,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @PluginProperty(dynamic = false)
     protected List<String> outputFiles;
 
-    private Path databaseFile;
+    @Getter(AccessLevel.NONE)
+    private transient Path databaseFile;
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

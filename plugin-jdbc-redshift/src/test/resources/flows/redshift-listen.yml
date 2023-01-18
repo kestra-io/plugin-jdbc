@@ -1,0 +1,18 @@
+# Not used as we cannot run redshift locally
+id: redshift-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.redshift.Trigger
+    sql: SELECT * FROM pgsql_types
+    url: ???
+    username: ???
+    password: ???
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

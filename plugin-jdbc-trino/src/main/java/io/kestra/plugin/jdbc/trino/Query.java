@@ -60,8 +60,4 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         DriverManager.registerDriver(new io.trino.jdbc.TrinoDriver());
     }
 
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
 }

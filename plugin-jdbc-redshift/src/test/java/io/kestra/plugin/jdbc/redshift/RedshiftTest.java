@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.*;
 
 
 @MicronautTest
+@Disabled("no server for unit test")
 public class RedshiftTest extends AbstractRdbmsTest {
     @Value("${redshift.url}")
     protected String url;
@@ -35,7 +36,6 @@ public class RedshiftTest extends AbstractRdbmsTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    @Disabled("no server for unit test")
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -79,7 +79,6 @@ public class RedshiftTest extends AbstractRdbmsTest {
     }
 
     @Test
-    @Disabled("no server for unit test")
     void update() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 

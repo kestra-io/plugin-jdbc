@@ -97,16 +97,6 @@ public class ClickHouseTest extends AbstractRdbmsTest {
     }
 
     @Override
-    protected String getUsername() {
-        return null;
-    }
-
-    @Override
-    protected String getPassword() {
-        return null;
-    }
-
-    @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
         executeSqlScript("scripts/clickhouse.sql");
     }

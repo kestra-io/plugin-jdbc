@@ -55,8 +55,4 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         return conn.createStatement();
     }
 
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
 }

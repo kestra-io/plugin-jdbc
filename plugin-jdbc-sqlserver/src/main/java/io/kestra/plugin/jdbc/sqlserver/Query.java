@@ -62,8 +62,4 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
     }
 
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
 }
