@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.postgresql;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -61,7 +59,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     protected String sslKeyPassword;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 
@@ -74,12 +72,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.postgresql.Driver());
     }
 
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
 }

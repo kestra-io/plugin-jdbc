@@ -39,9 +39,13 @@ public abstract class AbstractRdbmsTest {
 
     protected abstract String getUrl();
 
-    protected abstract String getUsername();
+    protected String getUsername() {
+        return null;
+    }
 
-    protected abstract String getPassword();
+    protected String getPassword() {
+        return null;
+    }
 
     protected abstract void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException;
 

@@ -1,0 +1,17 @@
+id: pgsql-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.postgresql.Trigger
+    sql: SELECT * FROM pgsql_types
+    url: jdbc:postgresql://127.0.0.1:56982/
+    username: postgres
+    password: pg_passwd
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.reactivex.BackpressureStrategy;
@@ -29,7 +30,15 @@ import javax.validation.constraints.NotNull;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcBatch extends AbstractJdbcStatement {
+public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInterface {
+    private String url;
+
+    private String username;
+
+    private String password;
+
+    private String timeZoneId;
+
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"

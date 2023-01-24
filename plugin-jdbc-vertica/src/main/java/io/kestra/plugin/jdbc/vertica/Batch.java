@@ -60,7 +60,7 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.vertica.jdbc.Driver());
     }
 }

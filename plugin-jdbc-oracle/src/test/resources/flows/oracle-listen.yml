@@ -1,0 +1,17 @@
+id: oracle-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.oracle.Trigger
+    sql: SELECT * FROM oracle_types
+    url: jdbc:oracle:thin:@localhost:49161:XE
+    username: system
+    password: oracle
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

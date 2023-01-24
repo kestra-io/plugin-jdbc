@@ -1,0 +1,12 @@
+kestra:
+  repository:
+    type: memory
+  queue:
+    type: memory
+  storage:
+    type: local
+    local:
+      base-path: /tmp/unittest
+  variables:
+    globals:
+      apikey: "${ROCKSET_APIKEY}"

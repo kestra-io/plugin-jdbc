@@ -29,6 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @MicronautTest
+@Disabled("no server for unit test")
 public class SnowflakeTest extends AbstractRdbmsTest {
     @Value("${snowflake.host}")
     protected String host;
@@ -40,7 +41,6 @@ public class SnowflakeTest extends AbstractRdbmsTest {
     protected String password;
 
     @Test
-    @Disabled("no server for unit test")
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -109,6 +109,7 @@ public class SnowflakeTest extends AbstractRdbmsTest {
         return this.password;
     }
 
+    @Override
     protected Connection getConnection() throws SQLException {
         Properties properties = new Properties();
         properties.put("user", getUsername());

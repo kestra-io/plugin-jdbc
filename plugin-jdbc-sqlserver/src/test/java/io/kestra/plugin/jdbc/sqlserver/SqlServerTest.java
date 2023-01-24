@@ -116,12 +116,6 @@ public class SqlServerTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        try {
-            RunScript.execute(getConnection(), new StringReader("DROP TABLE sqlserver_types;"));
-        } catch (Exception ignored) {
-
-        }
-
         executeSqlScript("scripts/sqlserver.sql");
     }
 }

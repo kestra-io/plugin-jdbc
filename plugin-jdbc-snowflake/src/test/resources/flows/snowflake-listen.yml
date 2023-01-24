@@ -1,0 +1,21 @@
+# Not used as we cannot run snowflake locally
+id: snowflake-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.snowflake.Trigger
+    sql: SELECT * FROM snowflake_types
+    wharehouse: COMPUTE_WH
+    database: UNITTEST
+    schema: public
+    url: ???
+    username: ???
+    password: ???
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

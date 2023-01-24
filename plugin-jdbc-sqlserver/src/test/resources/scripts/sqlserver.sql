@@ -1,4 +1,5 @@
 -- noinspection SqlNoDataSourceInspectionForFile
+DROP TABLE IF EXISTS sqlserver_types;
 
 CREATE TABLE sqlserver_types (
     t_null VARCHAR(2),

@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.rockset;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -47,19 +48,20 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, RocksetConnection {
     protected final Boolean autoCommit = true;
 
     protected String apiKey;
+
     protected String apiServer;
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
-        properties.put("jdbc.url",  "jdbc:rockset://");
-        properties.setProperty("apiKey", apiKey);
-        properties.setProperty("apiServer", apiServer);
+        properties.setProperty("jdbc.url",  "jdbc:rockset://");
+        properties.setProperty("apiKey", runContext.render(apiKey));
+        properties.setProperty("apiServer", runContext.render(apiServer));
 
         return properties;
     }
@@ -70,12 +72,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.rockset.jdbc.RocksetDriver());
     }
 
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
-    }
 }

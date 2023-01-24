@@ -1,0 +1,15 @@
+id: clickhouse-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.clickhouse.Trigger
+    sql: SELECT * FROM clickhouse_types
+    url: jdbc:clickhouse://127.0.0.1:28123/default
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

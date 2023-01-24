@@ -22,6 +22,7 @@ import static org.hamcrest.Matchers.*;
 
 
 @MicronautTest
+@Disabled("no server for unit test")
 public class VectorwiseTest extends AbstractRdbmsTest {
     @Value("jdbc:ingres://url:port/db")
     protected String url;
@@ -33,7 +34,6 @@ public class VectorwiseTest extends AbstractRdbmsTest {
     protected String password;
 
     @Test
-    @Disabled("no server for unit test")
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
         Query task = Query.builder()

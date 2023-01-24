@@ -1,0 +1,28 @@
+id: pinot-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.pinot.Trigger
+    sql: |
+      select
+        -- NULL as t_null,
+        'string' AS t_string,
+        CAST(2147483647 AS INT) as t_integer,
+        CAST(9223372036854775807 AS LONG) as t_long,
+        CAST(12345.124 AS FLOAT) as t_float,
+        CAST(12345.124 AS DOUBLE) as t_double,
+        CAST(123.45600 AS BIG_DECIMAL) as t_bigdecimal,
+        ST_GeogFromText('LINESTRING (30 10, 10 30, 40 40)') as t_geo,
+        ToDateTime(1639137263000, 'yyyy-MM-dd')  as t_date,
+        ToEpochSeconds(1613472303000) AS t_epoch
+      from airlineStats
+      limit 1
+    url: jdbc:pinot://localhost:49000
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

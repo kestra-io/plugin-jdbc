@@ -69,7 +69,7 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
 
@@ -77,7 +77,7 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.postgresql.Driver());
     }
 }

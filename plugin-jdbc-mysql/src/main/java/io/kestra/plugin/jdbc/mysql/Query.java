@@ -79,11 +79,12 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    protected void registerDriver() throws SQLException {
+    public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
     }
 
-    protected Properties connectionProperties(RunContext runContext) throws Exception {
+    @Override
+    public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties props = super.connectionProperties(runContext);
 
         URI url = URI.create((String) props.get("jdbc.url"));
@@ -110,7 +111,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on MySql DB instance side.
         // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.
         // It actually just disables client-side caching of the entire response and gives you responses as they arrive as a result it has no effect on the DB
-        return this.getStore() ? Integer.MIN_VALUE : this.fetchSize;
+        return this.isStore() ? Integer.MIN_VALUE : this.fetchSize;
     }
 
     @Override

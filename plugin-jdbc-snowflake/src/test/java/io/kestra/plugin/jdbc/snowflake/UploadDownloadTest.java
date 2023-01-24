@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 @MicronautTest
+@Disabled("no server for unit test")
 public class UploadDownloadTest {
     @Value("${snowflake.host}")
     protected String host;
@@ -40,7 +41,6 @@ public class UploadDownloadTest {
     protected StorageInterface storageInterface;
 
     @Test
-    @Disabled("no server for unit test")
     void success() throws Exception {
         URL resource = UploadDownloadTest.class.getClassLoader().getResource("scripts/snowflake.sql");
 
