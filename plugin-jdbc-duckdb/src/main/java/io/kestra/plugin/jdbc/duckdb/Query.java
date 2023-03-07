@@ -72,7 +72,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         description = "List of key that will generate temporary files.\n" +
             "On the sql query, just can use with special variable named `outputFiles.key`.\n" +
             "If you add a files with `[\"first\"]`, you can use the special vars `COPY tbl TO '{[ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
-            " and you used on others tasks using `{{ outputs.task-id.files.first }}`"
+            " and you used on others tasks using `{{ outputs.taskId.outputFiles.first }}`"
     )
     @PluginProperty(dynamic = false)
     protected List<String> outputFiles;
