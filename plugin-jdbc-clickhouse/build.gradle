@@ -1,5 +1,5 @@
 dependencies {
-    implementation group: 'com.clickhouse', name: 'clickhouse-jdbc', version: '0.3.2'
+    implementation("com.clickhouse:clickhouse-jdbc:0.4.1:all")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
