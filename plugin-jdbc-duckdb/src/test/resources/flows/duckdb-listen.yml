@@ -4,8 +4,7 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.duckdb.Trigger
-    sql: SELECT * FROM duckdb_types
-    url: jdbc:clickhouse://127.0.0.1:28123/default
+    sql: SHOW DATABASES;
     fetch: true
     interval: PT10S
 
