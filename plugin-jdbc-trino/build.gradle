@@ -1,5 +1,5 @@
 dependencies {
-    implementation("io.trino:trino-jdbc:409")
+    implementation("io.trino:trino-jdbc:410")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
