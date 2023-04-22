@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Apache Pinot",
+                "X-Kestra-Group": project.group + ".jdbc.pinot",
+                "X-Kestra-Description": 'Apache Pinot plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     implementation("org.apache.pinot:pinot-jdbc-client:0.12.1") {
         exclude group: 'org.slf4j'

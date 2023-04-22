@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Vertica",
+                "X-Kestra-Group": project.group + ".jdbc.vertica",
+                "X-Kestra-Description": 'Vertica plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     jdbcDriver 'com.vertica.jdbc:vertica-jdbc:12.0.3-0'
     implementation project(':plugin-jdbc')

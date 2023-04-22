@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Actian Vector",
+                "X-Kestra-Group": project.group + ".jdbc.vectorwise",
+                "X-Kestra-Description": 'Actian Vector plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 repositories {
     maven { url "https://talend-update.talend.com/nexus/content/repositories/libraries/" }
 }

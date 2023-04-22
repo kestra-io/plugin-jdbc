@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Snowflake",
+                "X-Kestra-Group": project.group + ".jdbc.snowflake",
+                "X-Kestra-Description": 'Snowflake plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     implementation("net.snowflake:snowflake-jdbc:3.13.29")
     implementation project(':plugin-jdbc')

@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "ClickHouse",
+                "X-Kestra-Group": project.group + ".jdbc.clickhouse",
+                "X-Kestra-Description": 'ClickHouse plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     implementation("com.clickhouse:clickhouse-jdbc:0.4.1:all")
     implementation project(':plugin-jdbc')

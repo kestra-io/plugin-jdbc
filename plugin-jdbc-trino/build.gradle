@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Trino",
+                "X-Kestra-Group": project.group + ".jdbc.trino",
+                "X-Kestra-Description": 'Trino plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     implementation("io.trino:trino-jdbc:410")
     implementation project(':plugin-jdbc')

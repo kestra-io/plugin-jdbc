@@ -131,37 +131,15 @@ subprojects { Project subproject ->
     apply plugin: 'ru.vyarus.github-info'
     apply plugin: 'ru.vyarus.java-lib'
 
-    def group;
-
-    if (subproject.name == "plugin-jdbc") {
-        subproject.description = 'Abstract JDBC plugin for Kestra';
-        group = project.group + ".jdbc"
-    } else {
-        subproject.description = subproject.name.substring(12, 13).toUpperCase() + subproject.name.substring(13)  + ' JDBC plugin for Kestra'
-        group = project.group + ".jdbc." + subproject.name.replace('plugin-jdbc-', '')
-    }
-
     github {
         user 'kestra-io'
         repository 'plugin-jdbc'
         license 'Apache'
     }
 
-
     if (subproject.name != "plugin-jdbc") {
         shadowJar {
             dependsOn(":plugin-jdbc:shadowJar")
-        }
-    }
-
-    jar {
-        manifest {
-            attributes(
-                    "X-Kestra-Title": subproject.name,
-                    "X-Kestra-Group": group,
-                    "X-Kestra-Description": subproject.description,
-                    "X-Kestra-Version": project.version
-            )
         }
     }
 

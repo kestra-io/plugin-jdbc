@@ -1,0 +1,11 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Abstract JDBC",
+                "X-Kestra-Group": project.group + ".jdbc",
+                "X-Kestra-Description": 'Abstract JDBC plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}

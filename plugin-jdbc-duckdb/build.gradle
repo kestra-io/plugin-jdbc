@@ -1,3 +1,15 @@
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "DuckDB",
+                "X-Kestra-Group": project.group + ".jdbc.duckdb",
+                "X-Kestra-Description": 'DuckDB plugin for Kestra',
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
 dependencies {
     implementation("org.duckdb:duckdb_jdbc:0.7.1")
     implementation project(':plugin-jdbc')
