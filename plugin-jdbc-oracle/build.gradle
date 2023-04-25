@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Oracle",
                 "X-Kestra-Group": project.group + ".jdbc.oracle",
-                "X-Kestra-Description": 'Oracle plugin for Kestra',
+                "X-Kestra-Description": 'Access Oracle databases with Kestra\'s JDBC plugin integration.',
                 "X-Kestra-Version": project.version
         )
     }

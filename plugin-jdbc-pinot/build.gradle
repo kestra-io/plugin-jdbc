@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Apache Pinot",
                 "X-Kestra-Group": project.group + ".jdbc.pinot",
-                "X-Kestra-Description": 'Apache Pinot plugin for Kestra',
+                "X-Kestra-Description": 'Connect and query Apache Pinot databases using Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

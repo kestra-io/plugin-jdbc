@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Actian Vector",
                 "X-Kestra-Group": project.group + ".jdbc.vectorwise",
-                "X-Kestra-Description": 'Actian Vector plugin for Kestra',
+                "X-Kestra-Description": 'Integrate Vectorwise analytical databases with Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Amazon Redshift",
                 "X-Kestra-Group": project.group + ".jdbc.redshift",
-                "X-Kestra-Description": 'Amazon Redshift plugin for Kestra',
+                "X-Kestra-Description": 'Connect to Redshift databases using Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

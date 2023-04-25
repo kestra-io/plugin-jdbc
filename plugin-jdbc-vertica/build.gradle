@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Vertica",
                 "X-Kestra-Group": project.group + ".jdbc.vertica",
-                "X-Kestra-Description": 'Vertica plugin for Kestra',
+                "X-Kestra-Description": 'Manage data in Vertica databases with Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

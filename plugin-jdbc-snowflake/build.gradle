@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Snowflake",
                 "X-Kestra-Group": project.group + ".jdbc.snowflake",
-                "X-Kestra-Description": 'Snowflake plugin for Kestra',
+                "X-Kestra-Description": 'Leverage Snowflake data warehouse using Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

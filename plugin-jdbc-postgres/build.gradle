@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "PostgreSQL",
                 "X-Kestra-Group": project.group + ".jdbc.postgresql",
-                "X-Kestra-Description": 'PostgreSQL plugin for Kestra',
+                "X-Kestra-Description": 'Access PostgreSQL databases using Kestra\'s JDBC plugin integration.',
                 "X-Kestra-Version": project.version
         )
     }

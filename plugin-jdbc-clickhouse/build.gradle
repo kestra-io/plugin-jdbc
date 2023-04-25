@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "ClickHouse",
                 "X-Kestra-Group": project.group + ".jdbc.clickhouse",
-                "X-Kestra-Description": 'ClickHouse plugin for Kestra',
+                "X-Kestra-Description": 'Query ClickHouse databases using Kestra\'s JDBC plugin integration.',
                 "X-Kestra-Version": project.version
         )
     }

@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Rockset",
                 "X-Kestra-Group": project.group + ".jdbc.rockset",
-                "X-Kestra-Description": 'Rockset plugin for Kestra',
+                "X-Kestra-Description": 'Integrate Rockset real-time indexing with Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

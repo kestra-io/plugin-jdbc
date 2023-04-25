@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "MySQL",
                 "X-Kestra-Group": project.group + ".jdbc.mysql",
-                "X-Kestra-Description": 'MySQL plugin for Kestra',
+                "X-Kestra-Description": 'Query MySQL databases using the Kestra JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }

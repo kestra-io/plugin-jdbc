@@ -4,7 +4,7 @@ jar {
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Microsoft SQL Server",
                 "X-Kestra-Group": project.group + ".jdbc.sqlserver",
-                "X-Kestra-Description": 'Microsoft SQL Server plugin for Kestra',
+                "X-Kestra-Description": 'Query SQL Server databases with Kestra\'s JDBC plugin.',
                 "X-Kestra-Version": project.version
         )
     }
