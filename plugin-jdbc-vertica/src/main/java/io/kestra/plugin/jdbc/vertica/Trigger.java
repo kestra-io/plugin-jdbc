@@ -38,7 +38,7 @@ import java.sql.SQLException;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json taskrun.value}}\"",
+                "        format: \"{{json(taskrun.value)}}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
