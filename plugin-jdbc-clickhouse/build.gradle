@@ -11,7 +11,7 @@ jar {
 }
 
 dependencies {
-    implementation("com.clickhouse:clickhouse-jdbc:0.4.1:all")
+    implementation("com.clickhouse:clickhouse-jdbc:0.4.5:all")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
