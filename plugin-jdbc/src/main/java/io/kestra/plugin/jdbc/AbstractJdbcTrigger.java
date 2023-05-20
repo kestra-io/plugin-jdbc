@@ -67,15 +67,13 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
             return Optional.empty();
         }
 
-        String executionId = IdUtils.create();
-
         ExecutionTrigger executionTrigger = ExecutionTrigger.of(
             this,
             run
         );
 
         Execution execution = Execution.builder()
-            .id(executionId)
+            .id(runContext.getTriggerExecutionId())
             .namespace(context.getNamespace())
             .flowId(context.getFlowId())
             .flowRevision(context.getFlowRevision())
