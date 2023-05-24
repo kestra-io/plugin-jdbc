@@ -1,10 +1,12 @@
+project.description = 'Integrate Rockset real-time indexing with Kestra\'s JDBC plugin.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Rockset",
                 "X-Kestra-Group": project.group + ".jdbc.rockset",
-                "X-Kestra-Description": 'Integrate Rockset real-time indexing with Kestra\'s JDBC plugin.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }

@@ -1,10 +1,12 @@
+project.description = 'Leverage Snowflake data warehouse using Kestra\'s JDBC plugin.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Snowflake",
                 "X-Kestra-Group": project.group + ".jdbc.snowflake",
-                "X-Kestra-Description": 'Leverage Snowflake data warehouse using Kestra\'s JDBC plugin.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }

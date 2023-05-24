@@ -1,10 +1,12 @@
+project.description = 'Connect and query Apache Pinot databases using Kestra\'s JDBC plugin.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Apache Pinot",
                 "X-Kestra-Group": project.group + ".jdbc.pinot",
-                "X-Kestra-Description": 'Connect and query Apache Pinot databases using Kestra\'s JDBC plugin.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }

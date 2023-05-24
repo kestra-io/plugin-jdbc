@@ -1,10 +1,12 @@
+project.description = 'Access Oracle databases with Kestra\'s JDBC plugin integration.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Oracle",
                 "X-Kestra-Group": project.group + ".jdbc.oracle",
-                "X-Kestra-Description": 'Access Oracle databases with Kestra\'s JDBC plugin integration.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }

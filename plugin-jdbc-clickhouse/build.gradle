@@ -1,10 +1,12 @@
+project.description = 'Query ClickHouse databases using Kestra\'s JDBC plugin integration.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "ClickHouse",
                 "X-Kestra-Group": project.group + ".jdbc.clickhouse",
-                "X-Kestra-Description": 'Query ClickHouse databases using Kestra\'s JDBC plugin integration.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }

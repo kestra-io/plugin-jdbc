@@ -1,10 +1,12 @@
+project.description = 'Query SQL Server databases with Kestra\'s JDBC plugin.'
+
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
                 "X-Kestra-Title": "Microsoft SQL Server",
                 "X-Kestra-Group": project.group + ".jdbc.sqlserver",
-                "X-Kestra-Description": 'Query SQL Server databases with Kestra\'s JDBC plugin.',
+                "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
         )
     }
