@@ -68,6 +68,14 @@ public abstract class AbstractCellConverter {
             return data.toString();
         }
 
+        if (data instanceof LocalDate) {
+            return data;
+        }
+
+        if (data instanceof LocalTime) {
+            return data;
+        }
+
         String columnName = rs.getMetaData().getColumnName(columnIndex);
 
         throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported");
