@@ -63,7 +63,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
 
-        if (run.getSize() == 0) {
+        if (Optional.ofNullable(run.getSize()).orElse(0L) == 0) {
             return Optional.empty();
         }
 
