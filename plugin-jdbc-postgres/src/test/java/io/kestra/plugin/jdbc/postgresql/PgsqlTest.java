@@ -1,21 +1,20 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.micronaut.context.ApplicationContext;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.flows.State;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.micronaut.context.ApplicationContext;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import jakarta.inject.Inject;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
@@ -25,8 +24,6 @@ import java.sql.SQLException;
 import java.time.*;
 import java.util.Map;
 import java.util.Properties;
-
-import jakarta.inject.Inject;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -62,6 +59,29 @@ public class PgsqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
         checkRow(runOutput.getRow(), 1);
+    }
+
+    @Test
+    void selectWithVoidObject() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
+            .fetchOne(true)
+            .sql("SELECT 'someString' as stringvalue, pg_sleep(0) as voidvalue")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("voidvalue"), nullValue());
+        assertThat(runOutput.getRow().get("stringvalue"), is("someString"));
     }
 
     private void checkRow(Map<String, Object> row, int concertId) throws DecoderException {
