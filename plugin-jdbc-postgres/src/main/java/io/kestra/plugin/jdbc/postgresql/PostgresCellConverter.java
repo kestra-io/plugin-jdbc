@@ -62,6 +62,8 @@ public class PostgresCellConverter extends AbstractCellConverter {
             switch (type.toLowerCase()) {
                 case "json":
                     return o.getValue();
+                case "void":
+                    return null;
                 default:
                     throw new IllegalArgumentException("PGobject of type [" + type + "] is not supported");
             }
