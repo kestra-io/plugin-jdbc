@@ -24,26 +24,28 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Trino server"
+    title = "Query data using Trino Query Engine. Make sure NOT to include semicolon at the end of your SQL query. Adding semicolon at the end will result in an error. If you want to test this integration, search for Trino in Blueprints - you'll find detailed instructions there."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results on another task to update another table",
+            title = "Execute a query and fetch results to pass it to downstream tasks.",
             code = {
-                "tasks:",
-                "- id: select",
-                "  type: io.kestra.plugin.jdbc.trino.Query",
-                "  url: jdbc:trino://localhost:8080/tpch/sf1",
-                "  sql: |",
-                "    SELECT *",
-                "    FROM nation",
-                "  fetch: true",
-                "- id: generate-update",
-                "  type: io.kestra.plugin.jdbc.trino.Query",
-                "  url: jdbc:trino://localhost:8080/memory/default",
-                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (nationkey, name, regionkey, comment) values ({{row.nationkey}}, {{row.name}}, '{{row.regionkey}}', '{{row.comment}}'); {% endfor %}\""}
+                    "tasks:",
+                    "- id: analyzeOrders",
+                    "  type: io.kestra.plugin.jdbc.trino.Query",
+                    "  url: jdbc:trino://localhost:8080/tpch",
+                    "  username: trino",
+                    "  sql: |",
+                    "    select orderpriority as priority, sum(totalprice) as total",
+                    "    from tpch.tiny.orders",
+                    "    group by orderpriority",
+                    "    order by orderpriority",
+                    "  store: true",
+                    "- id: csvReport",
+                    "  type: io.kestra.plugin.serdes.csv.CsvWriter",
+                    "  from: \"{{outputs.analyzeOrders.uri}}\""}
         )
     }
 )
