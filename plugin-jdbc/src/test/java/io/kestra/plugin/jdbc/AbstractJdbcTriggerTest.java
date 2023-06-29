@@ -5,8 +5,9 @@ import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.FlowListeners;
+import io.kestra.core.runners.Worker;
+import io.kestra.core.schedulers.AbstractScheduler;
 import io.kestra.core.schedulers.DefaultScheduler;
-import io.kestra.core.schedulers.SchedulerExecutionStateInterface;
 import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
 import io.micronaut.context.ApplicationContext;
 import jakarta.inject.Inject;
@@ -39,9 +40,6 @@ public abstract class AbstractJdbcTriggerTest {
     protected SchedulerTriggerStateInterface triggerState;
 
     @Inject
-    protected SchedulerExecutionStateInterface executionState;
-
-    @Inject
     protected FlowListeners flowListenersService;
 
     @Inject
@@ -56,7 +54,14 @@ public abstract class AbstractJdbcTriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        try (var scheduler = new DefaultScheduler(this.applicationContext, this.flowListenersService, this.executionState, this.triggerState)) {
+        try (
+            AbstractScheduler scheduler = new DefaultScheduler(
+                this.applicationContext,
+                this.flowListenersService,
+                this.triggerState
+            );
+            Worker worker = new Worker(applicationContext, 8, null);
+        ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
             // wait for execution
@@ -67,6 +72,7 @@ public abstract class AbstractJdbcTriggerTest {
                 assertThat(execution.getFlowId(), is(flow));
             });
 
+            worker.run();
             scheduler.run();
             repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
 
