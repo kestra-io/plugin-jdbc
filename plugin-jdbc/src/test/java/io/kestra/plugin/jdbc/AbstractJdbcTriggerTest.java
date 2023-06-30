@@ -54,13 +54,13 @@ public abstract class AbstractJdbcTriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
+        Worker worker = new Worker(applicationContext, 8, null);
         try (
             AbstractScheduler scheduler = new DefaultScheduler(
                 this.applicationContext,
                 this.flowListenersService,
                 this.triggerState
             );
-            Worker worker = new Worker(applicationContext, 8, null);
         ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
