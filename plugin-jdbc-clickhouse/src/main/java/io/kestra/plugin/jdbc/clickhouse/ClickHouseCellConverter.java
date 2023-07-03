@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 public class ClickHouseCellConverter extends AbstractCellConverter {
     private static final Pattern PATTERN = Pattern.compile("DateTime(64)?\\((.*)'(.*)'\\)");
+    private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]");
 
     public ClickHouseCellConverter(ZoneId zoneId) {
         super(zoneId);
@@ -35,7 +36,14 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         Object columnVal = rs.getObject(columnIndex);
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
-        if (columnTypeName.startsWith("DateTime")) {
+        if (columnTypeName.equals("DateTime")) {
+            // date with no TZ, we use the server default one
+            return LocalDateTime
+                .parse(
+                    rs.getString(columnIndex),
+                    DATE_TIME_FORMAT
+                );
+        } else if (columnTypeName.startsWith("DateTime")) {
             Matcher matcher = PATTERN.matcher(columnTypeName);
             if (!matcher.find() || matcher.groupCount() < 3) {
                 throw new IllegalArgumentException("Invalid Column Type '" + columnTypeName + "'");
@@ -44,7 +52,7 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
             return LocalDateTime
                 .parse(
                     rs.getString(columnIndex),
-                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss[.SSSSSS][.SSSSS][.SSSS][.SSS][.SS][.S]")
+                    DATE_TIME_FORMAT
                 )
                 .atZone(ZoneId.of(matcher.group(3)))
                 .withZoneSameInstant(zoneId);
