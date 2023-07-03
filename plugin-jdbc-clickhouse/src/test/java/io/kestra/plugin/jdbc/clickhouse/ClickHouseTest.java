@@ -47,6 +47,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("Uuid"), is("6bbf0744-74b4-46b9-bb05-53905d4538e7"));
         assertThat(runOutput.getRow().get("Date"), is(LocalDate.parse("2030-12-25")));
         assertThat(runOutput.getRow().get("DateTime"), is(LocalDateTime.parse("2004-10-19T08:23:54").atZone(ZoneId.of("Europe/Paris"))));
+        assertThat(runOutput.getRow().get("DateTimeNoTZ"), is(LocalDateTime.parse("2004-10-19T10:23:54")));
         assertThat(runOutput.getRow().get("DateTime64"), is(LocalDateTime.parse("2004-10-19T08:23:54.999").atZone(ZoneId.of("Europe/Paris"))));
         assertThat(runOutput.getRow().get("Enum"), is("hello"));
         assertThat(runOutput.getRow().get("LowCardinality"), is("four"));
