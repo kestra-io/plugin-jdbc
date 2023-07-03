@@ -22,12 +22,12 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Snowflake database."
+    title = "Wait for a query on a Snowflake database."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
+            title = "Wait for a SQL query to return results and iterate through rows",
             full = true,
             code = {
                 "id: jdbc-trigger",

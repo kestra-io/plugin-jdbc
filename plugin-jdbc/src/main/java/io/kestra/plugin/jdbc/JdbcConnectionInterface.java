@@ -13,7 +13,7 @@ import javax.validation.constraints.NotNull;
 
 public interface JdbcConnectionInterface {
     @Schema(
-        title = "The jdbc url to connect to the database"
+        title = "The JDBC URL to connect to the database"
     )
     @PluginProperty(dynamic = true)
     @NotNull
