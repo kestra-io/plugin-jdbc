@@ -34,7 +34,7 @@ import javax.validation.constraints.NotNull;
                 "prefix: raw",
                 "stageName: @demo_db.public.%mytable",
                 "url: jdbc:snowflake://myAccountID.snowflakecomputing.com?warehouse=COMPUTE_WH&db=DEMO_DB&schema=PUBLIC&role=SYSADMIN",
-                "username: myusername",
+                "username: yourUsername",
                 "password: 'yourSnowflakePassword'",
             }
         )
