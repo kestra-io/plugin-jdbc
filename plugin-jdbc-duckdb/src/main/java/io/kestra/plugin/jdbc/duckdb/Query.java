@@ -101,7 +101,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @Override
     @Schema(
         title = "The JDBC URL to connect to the database",
-        description = "The default value, `jdbc:duckdb:`, will use a local database. \nSet this property only when connecting to a MotherDuck instance, for example with `jdbc:duckdb:md:my_database?motherduck_token=<my_token>`.",
+        description = "The default value, `jdbc:duckdb:`, will use a local in-memory database. \nSet this property when connecting to a persisted database instance, for example `jdbc:duckdb:md:my_database?motherduck_token=<my_token>` to connect to [MotherDuck](https://motherduck.com/).",
         defaultValue = DEFAULT_URL
     )
     @NotNull
