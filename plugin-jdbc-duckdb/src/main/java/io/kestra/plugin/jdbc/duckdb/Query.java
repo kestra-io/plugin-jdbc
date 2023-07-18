@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.constraints.NotNull;
+
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 @SuperBuilder
@@ -54,6 +56,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, AutoCommitInterface {
+    private static final String DEFAULT_URL = "jdbc:duckdb:";
+
     protected final Boolean autoCommit = true;
 
     @Schema(
@@ -74,11 +78,15 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             "If you add a files with `[\"first\"]`, you can use the special vars `COPY tbl TO '{[ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
             " and you used on others tasks using `{{ outputs.taskId.outputFiles.first }}`"
     )
-    @PluginProperty(dynamic = false)
+    @PluginProperty
     protected List<String> outputFiles;
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
+
+    @Builder.Default
+    @PluginProperty(dynamic = true)
+    private String url = DEFAULT_URL;
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -91,18 +99,30 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     }
 
     @Override
+    @Schema(
+        title = "The JDBC URL to connect to the database",
+        description = "The default value, `jdbc:duckdb:`, will use a local in-memory database. \nSet this property when connecting to a persisted database instance, for example `jdbc:duckdb:md:my_database?motherduck_token=<my_token>` to connect to [MotherDuck](https://motherduck.com/).",
+        defaultValue = DEFAULT_URL
+    )
+    @NotNull
     public String getUrl() {
-        return "jdbc:duckdb:" + databaseFile;
+        if (DEFAULT_URL.equals(this.url)) {
+            return DEFAULT_URL + this.databaseFile;
+        }
+        return this.url;
     }
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
         Map<String, String> outputFiles = null;
 
-        this.databaseFile = runContext.tempFile();
-        Files.delete(this.databaseFile);
+        // we only create the database file if the default URL is used.
+        if (DEFAULT_URL.equals(this.url)) {
+            this.databaseFile = runContext.tempFile();
+            Files.delete(this.databaseFile);
 
-        additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
+            additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
+        }
 
         // inputFiles
         if (this.inputFiles != null) {
