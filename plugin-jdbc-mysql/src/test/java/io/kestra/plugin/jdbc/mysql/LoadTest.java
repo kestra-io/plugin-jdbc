@@ -4,8 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.tasks.scripts.Bash;
-import io.kestra.core.utils.TestsUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
@@ -15,7 +13,6 @@ import java.io.FileInputStream;
 import java.net.URI;
 import java.net.URL;
 import java.sql.SQLException;
-import java.util.Map;
 import java.util.Objects;
 
 import static org.hamcrest.MatcherAssert.assertThat;
