@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.tasks.scripts.BashService;
+import io.kestra.core.tasks.PluginUtilsService;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -126,9 +126,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
         // inputFiles
         if (this.inputFiles != null) {
-            Map<String, String> finalInputFiles = BashService.transformInputFiles(runContext, this.inputFiles);
+            Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
-            BashService.createInputFiles(
+            PluginUtilsService.createInputFiles(
                 runContext,
                 runContext.tempDir(),
                 finalInputFiles,
@@ -138,7 +138,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
         // outputFiles
         if (this.outputFiles != null && this.outputFiles.size() > 0) {
-            outputFiles = BashService.createOutputFiles(
+            outputFiles = PluginUtilsService.createOutputFiles(
                 runContext.tempDir(),
                 this.outputFiles,
                 additionalVars

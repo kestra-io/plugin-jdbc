@@ -5,7 +5,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.tasks.scripts.BashService;
+import io.kestra.core.tasks.PluginUtilsService;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
@@ -119,7 +119,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         this.workingDirectory = runContext.tempDir();
 
         if (this.inputFile != null) {
-            BashService.createInputFiles(
+            PluginUtilsService.createInputFiles(
                 runContext,
                 workingDirectory,
                 Map.of("inputFile", this.inputFile),
