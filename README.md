@@ -13,6 +13,7 @@
 * The official Kestra documentation can be found under: [kestra.io](https://kestra.io)
 * This plugin documentation is available here :
   * [for ClickHouse](https://kestra.io/plugins/plugin-jdbc-clickhouse/)
+  * [for DuckDb](https://kestra.io/plugins/plugin-jdbc-duckdb/)
   * [for MySQL](https://kestra.io/plugins/plugin-jdbc-mysql/)
   * [for Oracle](https://kestra.io/plugins/plugin-jdbc-oracle/)
   * [for Pinot](https://kestra.io/plugins/plugin-jdbc-pinot/)
