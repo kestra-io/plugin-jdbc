@@ -45,11 +45,11 @@
 <polygon
    points="257.8,267 257.8,267 226.4,322.5 195.1,267 180.2,267 226.5,348.9 265.4,280 313.6,280 313.6,267 257.8,267 "
    id="polygon2"
-   transform="translate(-180.2,-264.1)" />
+   transform="translate(-180.2,-264.1)" fill="currentColor" />
 <polygon
    points="258.2,300 258.2,345.3 313.6,345.3 313.6,332.3 271.2,332.3 271.2,313 313.6,313 313.6,300 "
    id="polygon4"
-   transform="translate(-180.2,-264.1)" />
+   transform="translate(-180.2,-264.1)" fill="currentColor" />
 <rect
    x="270.5"
    y="2.9000001"
@@ -59,13 +59,13 @@
 <path
    d="M 265.4,2.9 H 199 v 0.2 c 4.1,3.3 7.2,7.7 9,12.8 h 17.7 v 65.3 h 13 V 15.9 h 26.7 z"
    id="path8"
-   inkscape:connector-curvature="0" />
+   inkscape:connector-curvature="0" fill="currentColor" />
 <path
    d="m 195.8,81.2 h 13 L 189.6,46 c 8.2,-3.3 14,-11.4 14,-20.7 0,-12.4 -10,-22.4 -22.4,-22.4 h -29.4 -8.7 -4.3 v 78.3 h 13 V 47.6 h 25.7 z m -44,-65.3 h 29.4 c 5.2,0 9.4,4.2 9.4,9.4 0,5.2 -4.2,9.4 -9.4,9.4 h -29.4 z"
    id="path10"
-   inkscape:connector-curvature="0" />
+   inkscape:connector-curvature="0" fill="currentColor" />
 <path
    d="m 383.9,0 v 0 l -33.4,55.6 v 0.1 0 c -4.7,7.8 -13.2,13 -22.9,13 -14.8,0 -26.8,-12 -26.8,-26.8 0,-14.8 12,-26.8 26.8,-26.8 9.1,0 17.1,4.5 22,11.5 l 7,-11.7 C 349.4,7.1 339.1,2.3 327.6,2.3 305.7,2.3 288,20 288,41.9 c 0,21.9 17.7,39.6 39.6,39.6 14.4,0 27,-7.7 34,-19.2 v 0 l 22.3,-37.2 33.8,56.3 15,-0.2 z"
    id="path12"
-   inkscape:connector-curvature="0" />
+   inkscape:connector-curvature="0" fill="currentColor" />
 </svg>
