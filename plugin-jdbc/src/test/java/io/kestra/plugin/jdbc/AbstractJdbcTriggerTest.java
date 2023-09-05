@@ -66,10 +66,10 @@ public abstract class AbstractJdbcTriggerTest {
 
             // wait for execution
             executionQueue.receive(execution -> {
-                last.set(execution);
+                last.set(execution.getLeft());
 
                 queueCount.countDown();
-                assertThat(execution.getFlowId(), is(flow));
+                assertThat(execution.getLeft().getFlowId(), is(flow));
             });
 
             worker.run();
