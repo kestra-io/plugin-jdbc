@@ -56,7 +56,7 @@ public class PinotTest {
         assertThat(runOutput.getRow().get("t_string"), is("string"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647L));
         assertThat(runOutput.getRow().get("t_long"), is(9223372036854775807L));
-        assertThat(runOutput.getRow().get("t_float"), is(12345.1240234375D));
+        assertThat(runOutput.getRow().get("t_float"), is(12345.124));
         assertThat(runOutput.getRow().get("t_double"), is(12345.124D));
         assertThat(runOutput.getRow().get("t_bigdecimal"), is("123.456"));
         assertThat(runOutput.getRow().get("t_geo"), is("82000000010000000300000000403e00000000000040240000000000004024000000000000403e00000000000040440000000000004044000000000000"));
