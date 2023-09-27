@@ -199,7 +199,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         });
     }
 
-    public static final Map<String, String> INPUTS = ImmutableMap.of(
+    public static final Map<String, Object> INPUTS = ImmutableMap.of(
         "sslRootCert", TestUtils.ca(),
         "sslCert", TestUtils.cert(),
         "sslKey", TestUtils.keyNoPass()
