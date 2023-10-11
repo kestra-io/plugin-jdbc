@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.Task;
@@ -195,6 +196,7 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
             title = "Map containing the first row of fetched data",
             description = "Only populated if 'fetchOne' parameter is set to true."
         )
+        @JsonInclude
         private final Map<String, Object> row;
 
         @Schema(
