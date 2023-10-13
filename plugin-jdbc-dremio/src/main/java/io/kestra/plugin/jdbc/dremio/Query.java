@@ -34,7 +34,7 @@ import java.time.ZoneId;
                 "url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
                 "username: $token",
                 "password: samplePersonalAccessToken",
-                "sql: select user",
+                "sql: select * FROM source.database.table",
                 "fetchOne: true",
             }
         )

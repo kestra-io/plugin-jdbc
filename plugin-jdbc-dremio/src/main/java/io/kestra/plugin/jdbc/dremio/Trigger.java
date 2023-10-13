@@ -45,7 +45,7 @@ import java.sql.SQLException;
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.clickhouse.Trigger",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM source.database.my_table\""
             }
         )
     }
