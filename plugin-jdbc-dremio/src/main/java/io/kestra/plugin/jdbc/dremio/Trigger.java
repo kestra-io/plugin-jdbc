@@ -61,8 +61,8 @@ public class Trigger extends AbstractJdbcTrigger {
             .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
-            .fetch(this.isFetch())
             .store(this.isStore())
+            .fetch(this.isStore() || this.isFetch())
             .fetchOne(this.isFetchOne())
             .additionalVars(this.additionalVars)
             .build();
