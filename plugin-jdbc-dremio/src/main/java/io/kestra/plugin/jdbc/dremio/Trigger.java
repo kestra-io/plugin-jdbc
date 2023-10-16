@@ -62,7 +62,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
             .store(this.isStore())
-            .fetch(this.isStore() || this.isFetch())
+            .fetch(this.isFetch())
             .fetchOne(this.isFetchOne())
             .additionalVars(this.additionalVars)
             .build();
