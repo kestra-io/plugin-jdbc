@@ -6,8 +6,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.regex.Pattern;
 
 public class DremioCellConverter extends AbstractCellConverter {
 
