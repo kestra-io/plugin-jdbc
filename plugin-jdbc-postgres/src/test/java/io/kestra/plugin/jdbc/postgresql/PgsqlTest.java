@@ -165,7 +165,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getUri(), notNullValue());
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(runOutput.getUri())));
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(null, runOutput.getUri())));
         int lines = 0;
         while (bufferedReader.readLine() != null) {
             lines++;
@@ -208,6 +208,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
     @Test
     void updateFromFlow() throws Exception {
         Execution execution = runnerUtils.runOne(
+            null,
             "io.kestra.jdbc.postgres",
             "update_postgres",
             null,

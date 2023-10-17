@@ -45,6 +45,7 @@ public class UploadDownloadTest {
         URL resource = UploadDownloadTest.class.getClassLoader().getResource("scripts/snowflake.sql");
 
         URI put = storageInterface.put(
+            null,
             new URI("/file/storage/snowflake.sql"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())
         );
@@ -82,8 +83,8 @@ public class UploadDownloadTest {
         assertThat(downloadRun.getUri(), notNullValue());
 
         assertThat(
-            IOUtils.toString(this.storageInterface.get(downloadRun.getUri()), Charsets.UTF_8),
-            is(IOUtils.toString(this.storageInterface.get(put), Charsets.UTF_8))
+            IOUtils.toString(this.storageInterface.get(null, downloadRun.getUri()), Charsets.UTF_8),
+            is(IOUtils.toString(this.storageInterface.get(null, put), Charsets.UTF_8))
         );
     }
 }
