@@ -34,6 +34,7 @@ public class LoadTest {
         URL resource = LoadTest.class.getClassLoader().getResource("load.csv");
 
         URI put = storageInterface.put(
+            null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())
         );

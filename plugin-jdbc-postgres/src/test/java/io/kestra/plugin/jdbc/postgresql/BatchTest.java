@@ -66,7 +66,7 @@ public class BatchTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(getUrl())
@@ -154,7 +154,7 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-        URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(TestUtils.url())
@@ -191,7 +191,7 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-        URI uri = storageInterface.put(URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(TestUtils.url())
