@@ -177,6 +177,7 @@ public class DuckDbTest {
     @Test
     void inputOutputFiles() throws Exception {
         URI source = storageInterface.put(
+            null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
                     .getResource("full.csv"))
@@ -199,7 +200,7 @@ public class DuckDbTest {
         System.out.println(JacksonMapper.ofYaml().writeValueAsString(task));
 
         assertThat(
-            IOUtils.toString(storageInterface.get(runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
+            IOUtils.toString(storageInterface.get(null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +

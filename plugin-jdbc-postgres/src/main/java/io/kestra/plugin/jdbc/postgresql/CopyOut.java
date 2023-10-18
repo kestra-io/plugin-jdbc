@@ -25,12 +25,12 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy from a file to PostgreSQL table"
+    title = "Copy tabular data from a Postgres table to a file"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Export a csv or tsv from a postgres table or query",
+            title = "Export a Postgres table or query to a CSV or TSV file",
             code = {
                 "url: jdbc:postgresql://127.0.0.1:56982/",
                 "username: postgres",
