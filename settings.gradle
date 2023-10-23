@@ -15,3 +15,5 @@ include 'plugin-jdbc-trino'
 include 'plugin-jdbc-vectorwise'
 include 'plugin-jdbc-vertica'
 include 'plugin-jdbc-dremio'
+include 'plugin-jdbc-arrow-flight'
+

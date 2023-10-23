@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.dremio;
+package io.kestra.plugin.jdbc.arrowflight;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -24,12 +24,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Dremio database through Apache Arrow Flight sql driver."
+    title = "Query a databases through Apache Arrow Flight SQL driver."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a Dremio direct database and fetch a row as outputs using Apache Arrow Flight sql driver",
+            title = "Send a sql query to a Dremio direct database and fetch a row as outputs using Apache Arrow Flight SQL driver",
             code = {
                 "url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false",
                 "username: dremio",
@@ -39,7 +39,7 @@ import java.time.ZoneId;
             }
         ),
         @Example(
-            title = "Send a sql query to a Dremio coordinator and fetch a row as outputs using Apache Arrow Flight sql driver",
+            title = "Send a sql query to a Dremio coordinator and fetch a row as outputs using Apache Arrow Flight SQL driver",
             code = {
                 "url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "username: $token",
@@ -50,10 +50,10 @@ import java.time.ZoneId;
         )
     }
 )
-public class ArrowFlightQuery extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
-        return new DremioCellConverter(zoneId);
+        return new ArrowFlightCellConverter(zoneId);
     }
 
     @Override

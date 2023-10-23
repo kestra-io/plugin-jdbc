@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.dremio;
+package io.kestra.plugin.jdbc.arrowflight;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.apache.arrow.driver.jdbc.ArrowFlightJdbcDriver;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -21,7 +22,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Dremio database."
+    title = "Wait for query on a Arrow Flight database."
 )
 @Plugin(
     examples = {
@@ -43,9 +44,10 @@ import java.sql.SQLException;
                 "",
                 "triggers:",
                 "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.dremio.Trigger",
+                "    type: io.kestra.plugin.jdbc.arrowflight.Trigger",
+                "    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM source.database.my_table\""
+                "    sql: \"SELECT * FROM my_table\""
             }
         )
     }
@@ -71,6 +73,6 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.dremio.jdbc.Driver());
+        DriverManager.registerDriver(new ArrowFlightJdbcDriver());
     }
 }
