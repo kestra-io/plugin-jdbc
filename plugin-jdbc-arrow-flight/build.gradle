@@ -1,0 +1,20 @@
+project.description = 'Query a compatible database using the Kestra Apache Arrow Flight SQL JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Arrow Flight SQL",
+                "X-Kestra-Group": project.group + ".jdbc.arrowflight",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    implementation("org.apache.arrow:flight-sql-jdbc-driver:12.0.1")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

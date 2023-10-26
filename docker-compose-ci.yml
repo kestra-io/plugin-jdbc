@@ -67,3 +67,10 @@ services:
       - QuickStart
       - -type
       - batch
+
+  dremio:
+    image: dremio/dremio-oss
+    ports:
+      - "9047:9047"
+      - "31010:31010"
+      - "45678:45678"

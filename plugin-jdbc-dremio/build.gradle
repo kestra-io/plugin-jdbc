@@ -1,0 +1,20 @@
+project.description = 'Query Dremio database using the Kestra JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Dremio",
+                "X-Kestra-Group": project.group + ".jdbc.dremio",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    implementation("com.dremio.distribution:dremio-jdbc-driver:3.0.6-201812082352540436-1f684f9")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
