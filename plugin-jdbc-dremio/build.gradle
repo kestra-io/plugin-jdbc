@@ -1,4 +1,4 @@
-project.description = 'Query Dremio databases using the Kestra JDBC plugin.'
+project.description = 'Query Dremio database using the Kestra JDBC plugin.'
 
 jar {
     manifest {

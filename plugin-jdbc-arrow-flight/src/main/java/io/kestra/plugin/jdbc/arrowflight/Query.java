@@ -24,17 +24,17 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a databases through Apache Arrow Flight SQL driver."
+    title = "Query a database through Apache Arrow Flight SQL driver."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a Dremio direct database and fetch a row as outputs using Apache Arrow Flight SQL driver",
+            title = "Send a SQL query to a database and fetch a row as outputs using Apache Arrow Flight SQL driver",
             code = {
                 "url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false",
                 "username: dremio",
                 "password: dremio123",
-                "sql: select * FROM \"postgres.public\".departments",
+                "sql: select * FROM departments",
                 "fetch: true",
             }
         ),

@@ -28,7 +28,7 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a Dremio database and fetch a row as outputs",
+            title = "Send a SQL query to a Dremio database and fetch a row as outputs",
             code = {
                 "url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
                 "username: $token",
