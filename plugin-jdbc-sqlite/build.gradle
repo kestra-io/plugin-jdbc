@@ -1,4 +1,4 @@
-project.description = 'Access SQLite databases using Kestra\'s JDBC plugin integration.'
+project.description = 'Interact with SQLite databases using Kestra\'s JDBC plugin integration.'
 
 jar {
     manifest {

@@ -23,7 +23,7 @@ import java.sql.SQLException;
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
+            title = "Wait for a SQL query to return results and iterate through rows",
             full = true,
             code = {
                 "id: jdbc-trigger",

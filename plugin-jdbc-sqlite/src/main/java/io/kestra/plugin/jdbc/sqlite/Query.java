@@ -29,7 +29,7 @@ import java.util.Properties;
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results on another task to update another table",
+            title = "Execute a query and pass the results to another task",
             code = {
                 "tasks:",
                 "- id: update",
