@@ -1,0 +1,23 @@
+project.description = 'Access SQLite databases using Kestra\'s JDBC plugin integration.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "SQLite",
+                "X-Kestra-Group": project.group + ".jdbc.sqlite",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    jdbcDriver 'org.xerial:sqlite-jdbc:3.42.0.0'
+    implementation project(':plugin-jdbc')
+    api 'org.bouncycastle:bcprov-jdk15on:1.70'
+    api 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

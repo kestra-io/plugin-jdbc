@@ -1,0 +1,15 @@
+id: sqlite-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.sqlite.Trigger
+    sql: SELECT * FROM lite_types
+    url: jdbc:sqlite:temp
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"
