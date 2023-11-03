@@ -26,12 +26,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Bulk Insert into Clickhouse database."
+    title = "Bulk Insert new rows into a ClickHouse database."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Insert data through sql query to a Clickhouse database using asynchronous",
+            title = "Insert rows from another table to a Clickhouse database using asynchronous inserts",
             code = {
                 "from: \"{{ outputs.query.uri }}\"",
                 "url: jdbc:clickhouse://127.0.0.1:56982/",
@@ -41,7 +41,7 @@ import java.time.ZoneId;
             }
         ),
         @Example(
-            title = "Insert data into specific fields through sql query to a Clickhouse database using asynchronous",
+            title = "Insert data into specific columns via a SQL query to a ClickHouse database using asynchronous inserts",
             code = {
                 "from: \"{{ outputs.query.uri }}\"",
                 "url: jdbc:clickhouse://127.0.0.1:56982/",
