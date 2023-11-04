@@ -2,13 +2,16 @@ package io.kestra.plugin.jdbc.clickhouse;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -90,6 +93,51 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
         assertThat(runOutput.getRow().get("String"), is("D"));
+    }
+
+    @Test
+    void updateBatch() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 0; i < 1000; i++) {
+            FileSerde.write(output, ImmutableMap.builder()
+                .put("String", "kestra")
+                .build()
+                           );
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        BulkInsert taskUpdate = BulkInsert.builder()
+            .from(uri.toString())
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .timeZoneId("Europe/Paris")
+            .sql("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )")
+            .build();
+
+        taskUpdate.run(runContext);
+
+        // clickhouse need some to refresh
+        Thread.sleep(500);
+
+        Query taskGet = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetch(true)
+            .timeZoneId("Europe/Paris")
+            .sql("select String from clickhouse_types")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getSize(), is(1001L));
+        assertThat(runOutput.getRows().stream().anyMatch(map -> map.get("String").equals("kestra")), is(true));
     }
 
     @Override
