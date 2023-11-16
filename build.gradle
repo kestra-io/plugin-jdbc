@@ -27,9 +27,9 @@ subprojects {
 
     repositories {
         mavenCentral()
+        maven { url "https://maven.dremio.com/free/" }
         if (isBuildSnapshot) {
             maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
-            maven { url "https://maven.dremio.com/free/" }
         }
     }
 
