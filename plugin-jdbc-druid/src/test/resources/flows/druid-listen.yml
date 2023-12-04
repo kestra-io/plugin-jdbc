@@ -1,0 +1,23 @@
+id: druid-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.druid.Trigger
+    sql: |
+      select
+        -- NULL as t_null,
+        'string' AS t_string,
+        CAST(2147483647 AS INT) as t_integer,
+        CAST(12345.124 AS FLOAT) as t_float,
+        CAST(12345.124 AS DOUBLE) as t_double
+      from products
+      limit 1
+    url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true
+    fetch: true
+    interval: PT30S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"
