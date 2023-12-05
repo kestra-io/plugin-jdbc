@@ -1,0 +1,20 @@
+project.description = 'Connect and query Apache Druid databases using Kestra\'s JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Apache Druid",
+                "X-Kestra-Group": project.group + ".jdbc.druid",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    implementation("org.apache.calcite.avatica:avatica-core:1.23.0")
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
