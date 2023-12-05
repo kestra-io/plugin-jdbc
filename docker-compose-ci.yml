@@ -85,19 +85,18 @@ services:
       - "45678:45678"
 
   druid_postgres:
-    image: postgres:latest
-    ports:
-      - "5432:5432"
+    image: bitnami/postgresql:latest
+    container_name: druid_postgres
+    environment:
+      POSTGRESQL_PASSWORD: FoolishPassword
+      POSTGRESQL_DATABASE: druid
+      POSTGRESQL_USERNAME: druid
     volumes:
       - metadata_data:/var/lib/postgresql/data
-    environment:
-      - postgres_PASSWORD=FoolishPassword
-      - postgres_USER=druid
-      - postgres_DB=druid
 
   # Need 3.5 or later for druid container nodes
-  zookeeper:
-    container_name: zookeeper
+  druid_zookeeper:
+    container_name: druid_zookeeper
     image: zookeeper:3.5.10
     ports:
       - "2181:2181"
@@ -111,7 +110,7 @@ services:
       - druid_shared:/opt/shared
       - coordinator_var:/opt/druid/var
     depends_on:
-      - zookeeper
+      - druid_zookeeper
       - druid_postgres
     ports:
       - "11081:8081"
@@ -126,7 +125,7 @@ services:
     volumes:
       - broker_var:/opt/druid/var
     depends_on:
-      - zookeeper
+      - druid_zookeeper
       - druid_postgres
       - druid_coordinator
     ports:
@@ -143,7 +142,7 @@ services:
       - druid_shared:/opt/shared
       - historical_var:/opt/druid/var
     depends_on:
-      - zookeeper
+      - druid_zookeeper
       - druid_postgres
       - druid_coordinator
     ports:
@@ -160,7 +159,7 @@ services:
       - druid_shared:/opt/shared
       - middle_var:/opt/druid/var
     depends_on:
-      - zookeeper
+      - druid_zookeeper
       - druid_postgres
       - druid_coordinator
     ports:
@@ -177,7 +176,7 @@ services:
     volumes:
       - router_var:/opt/druid/var
     depends_on:
-      - zookeeper
+      - druid_zookeeper
       - druid_postgres
       - druid_coordinator
     ports:

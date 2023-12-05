@@ -17,5 +17,4 @@ dependencies {
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
-    testImplementation("org.json:json:20210307")
 }
