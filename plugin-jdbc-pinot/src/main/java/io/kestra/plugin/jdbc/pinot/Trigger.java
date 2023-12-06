@@ -13,10 +13,8 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import org.apache.pinot.client.PinotDriver;
 
-import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 @SuperBuilder
 @ToString
@@ -24,7 +22,7 @@ import java.sql.Statement;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Clickhouse database."
+    title = "Wait for query on a Pinot database."
 )
 @Plugin(
     examples = {
