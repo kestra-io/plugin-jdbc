@@ -106,7 +106,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library:2.2"
 
         testImplementation group: 'com.h2database', name: 'h2', version: '2.2.224'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.16.0'
     }
 }
 
