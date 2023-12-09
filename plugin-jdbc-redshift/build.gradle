@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.1.0.16'
+    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.1.0.23'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
