@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.apache.calcite.avatica:avatica-core:1.23.0")
+    implementation("org.apache.calcite.avatica:avatica-core:1.24.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
