@@ -48,17 +48,17 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
-        title = "Insert query to be executed",
-        description = "The query must have as much question mark as column in the files." +
-            "\nExample: 'insert into database values( ? , ? , ? )' for 3 columns" +
-            "\nIn case you do not want all columns, you need to precise it in the query and in the columns property" +
-            "\nExample: 'insert into(id,name) database values( ? , ? )' to select 2 columns"
+        title = "Insert query to be executed.",
+        description = "The query must have as many question marks as the number of columns in the table." +
+            "\nExample: 'insert into <table_name> values( ? , ? , ? )' for 3 columns." +
+            "\nIn case you do not want all columns, you need to specify it in the query in the columns property" +
+            "\nExample: 'insert into <table_name> (id, name) values( ? , ? )' for inserting data into 2 columns: 'id' and 'name'."
     )
     @PluginProperty(dynamic = true)
     private String sql;
 
     @Schema(
-        title = "The size of chunk for every bulk request"
+        title = "The size of chunk for every bulk request."
     )
     @PluginProperty(dynamic = true)
     @Builder.Default
@@ -66,8 +66,8 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     private Integer chunk = 1000;
 
     @Schema(
-        title = "The columns to be insert",
-        description = "If not provided, `?` count need to match the `from` number of cols"
+        title = "The columns to be inserted.",
+        description = "If not provided, `?` count need to match the `from` number of columns."
     )
     @PluginProperty(dynamic = true)
     private List<String> columns;
@@ -120,7 +120,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
 
-            logger.info("Successfully bulk {} queries with {} updated rows", count.get(), updated);
+            logger.info("Successfully executed {} bulk queries and updated {} rows", count.get(), updated);
 
             return Output
                 .builder()
@@ -163,10 +163,10 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The rows count")
+        @Schema(title = "The rows count.")
         private final Long rowCount;
 
-        @Schema(title = "The updated rows count")
+        @Schema(title = "The updated rows count.")
         private final Integer updatedCount;
     }
 

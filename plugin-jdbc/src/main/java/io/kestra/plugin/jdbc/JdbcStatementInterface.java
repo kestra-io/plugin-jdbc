@@ -8,7 +8,7 @@ import java.util.TimeZone;
 
 public interface JdbcStatementInterface extends JdbcConnectionInterface {
     @Schema(
-        title = "The time zone id to use for date/time manipulation. Default value is the worker default zone id."
+        title = "The time zone id to use for date/time manipulation. Default value is the worker's default time zone id."
     )
     @PluginProperty(dynamic = false)
     String getTimeZoneId();

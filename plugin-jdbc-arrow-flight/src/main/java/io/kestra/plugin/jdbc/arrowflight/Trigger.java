@@ -22,7 +22,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Arrow Flight database."
+    title = "Wait for query to a database through Arrow Flight SQL driver."
 )
 @Plugin(
     examples = {
@@ -45,9 +45,12 @@ import java.sql.SQLException;
                 "triggers:",
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.arrowflight.Trigger",
+                "    username: dremio_user",
+                "    password: dremio_password",
                 "    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true"
             }
         )
     }
