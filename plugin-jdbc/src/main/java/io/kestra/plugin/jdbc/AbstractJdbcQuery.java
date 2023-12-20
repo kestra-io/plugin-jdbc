@@ -193,26 +193,26 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Map containing the first row of fetched data",
+            title = "Map containing the first row of fetched data.",
             description = "Only populated if 'fetchOne' parameter is set to true."
         )
         @JsonInclude
         private final Map<String, Object> row;
 
         @Schema(
-            title = "Lit of map containing rows of fetched data",
+            title = "List of map containing rows of fetched data.",
             description = "Only populated if 'fetch' parameter is set to true."
         )
         private final List<Map<String, Object>> rows;
 
         @Schema(
-            title = "The url of the result file on kestra storage (.ion file / Amazon Ion text format)",
+            title = "The URI of the result file on Kestra's internal storage (.ion file / Amazon Ion formatted text file).",
             description = "Only populated if 'store' is set to true."
         )
         private final URI uri;
 
         @Schema(
-            title = "The size of the fetched rows",
+            title = "The size of the fetched rows.",
             description = "Only populated if 'store' or 'fetch' parameter is set to true."
         )
         private final Long size;

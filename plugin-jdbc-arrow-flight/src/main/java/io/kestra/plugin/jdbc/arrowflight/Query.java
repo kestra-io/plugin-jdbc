@@ -29,21 +29,21 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a SQL query to a database and fetch a row as outputs using Apache Arrow Flight SQL driver",
+            title = "Send a SQL query to a database and fetch row(s) using Apache Arrow Flight SQL driver",
             code = {
                 "url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false",
-                "username: dremio",
-                "password: dremio123",
+                "username: db_user",
+                "password: db_password",
                 "sql: select * FROM departments",
                 "fetch: true",
             }
         ),
         @Example(
-            title = "Send a sql query to a Dremio coordinator and fetch a row as outputs using Apache Arrow Flight SQL driver",
+            title = "Send a sql query to a Dremio coordinator and fetch rows as outputs using Apache Arrow Flight SQL driver",
             code = {
                 "url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
-                "username: $token",
-                "password: samplePersonalAccessToken",
+                "username: dremio_user",
+                "password: dremio_password",
                 "sql: select * FROM departments",
                 "fetch: true",
             }

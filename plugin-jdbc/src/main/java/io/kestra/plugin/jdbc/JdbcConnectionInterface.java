@@ -13,20 +13,20 @@ import javax.validation.constraints.NotNull;
 
 public interface JdbcConnectionInterface {
     @Schema(
-        title = "The JDBC URL to connect to the database"
+        title = "The JDBC URL to connect to the database."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     String getUrl();
 
     @Schema(
-        title = "The database user"
+        title = "The database user."
     )
     @PluginProperty(dynamic = true)
     String getUsername();
 
     @Schema(
-        title = "The database user's password"
+        title = "The database user's password."
     )
     @PluginProperty(dynamic = true)
     String getPassword();
