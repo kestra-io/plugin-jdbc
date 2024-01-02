@@ -45,7 +45,7 @@ import java.util.Properties;
                                 "  url: jdbc:postgresql://127.0.0.1:56982/",
                                 "  username: pg_user",
                                 "  password: pg_passwd",
-                                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
+                                "  sql:  \"{% for row in outputs.fetch.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
                 )
         }
 )

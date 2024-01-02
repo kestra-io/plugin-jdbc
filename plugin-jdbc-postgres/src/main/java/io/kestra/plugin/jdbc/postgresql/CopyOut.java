@@ -84,7 +84,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URI of the result file on Kestra internal storage."
+            title = "The URI of the result file on Kestra's internal storage."
         )
         private final URI uri;
 
