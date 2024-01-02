@@ -23,19 +23,19 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a PostgresSQL server"
+    title = "Execute a batch query to a PostgreSQL server."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch rows from a table and bulk insert to another one",
+            title = "Fetch rows from a table, and bulk insert them to another one.",
             full = true,
             code = {
                 "tasks:",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.postgresql.Query",
                 "    url: jdbc:postgresql://dev:56982/",
-                "    username: postgres",
+                "    username: pg_user",
                 "    password: pg_passwd",
                 "    sql: |",
                 "      SELECT *",
@@ -46,7 +46,7 @@ import java.util.Properties;
                 "    type: io.kestra.plugin.jdbc.postgresql.Batch",
                 "    from: \"{{ outputs.query.uri }}\"",
                 "    url: jdbc:postgresql://prod:56982/",
-                "    username: postgres",
+                "    username: pg_user",
                 "    password: pg_passwd",
                 "    sql: |",
                 "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",

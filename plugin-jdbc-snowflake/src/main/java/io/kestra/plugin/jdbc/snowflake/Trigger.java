@@ -27,7 +27,7 @@ import java.util.Properties;
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a SQL query to return results and iterate through rows",
+            title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
             code = {
                 "id: jdbc-trigger",
@@ -39,13 +39,16 @@ import java.util.Properties;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json(taskrun.value)}}\"",
+                "        format: \"{{ json(taskrun.value) }}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.snowflake.Trigger",
                 "    interval: \"PT5M\"",
+                "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
+                "    username: snowflake_user",
+                "    password: snowflake_passwd",
                 "    sql: \"SELECT * FROM my_table\""
             }
         )

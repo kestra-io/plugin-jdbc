@@ -11,16 +11,16 @@ public interface SnowflakeInterface {
     @Schema(
         title = "Specifies the virtual warehouse to use once connected.",
         description = "The specified warehouse should be an existing warehouse for which the specified default role has privileges.\n" +
-            "If you need to use a different warehouse after connecting, execute the USE WAREHOUSE command can be executed to set a different warehouse for the session."
+            "If you need to use a different warehouse after connecting, execute the `USE WAREHOUSE` command to set a different warehouse for the session."
     )
     @PluginProperty(dynamic = true)
     String getWarehouse();
 
 
     @Schema(
-        title = "Specifies the default database to use once connected, or specifies an empty string.",
+        title = "Specifies the default database to use once connected.",
         description = "The specified database should be an existing database for which the specified default role has privileges.\n" +
-            "If you need to use a different database after connecting, execute the USE DATABASE command."
+            "If you need to use a different database after connecting, execute the `USE DATABASE` command."
     )
     @PluginProperty(dynamic = true)
     String getDatabase();
@@ -28,7 +28,7 @@ public interface SnowflakeInterface {
     @Schema(
         title = "Specifies the default schema to use for the specified database once connected.",
         description = "The specified schema should be an existing schema for which the specified default role has privileges.\n" +
-            "If you need to use a different schema after connecting, execute the USE SCHEMA command."
+            "If you need to use a different schema after connecting, execute the `USE SCHEMA` command."
     )
     @PluginProperty(dynamic = true)
     String getSchema();
@@ -38,7 +38,7 @@ public interface SnowflakeInterface {
         description = "The specified role should be an existing role that has already been assigned to the specified user " +
             "for the driver. If the specified role has not already been assigned to the user, the role is not used when " +
             "the session is initiated by the driver.\n" +
-            "If you need to use a different role after connecting, execute the USE ROLE command."
+            "If you need to use a different role after connecting, execute the `USE ROLE` command."
     )
     @PluginProperty(dynamic = true)
     String getRole();

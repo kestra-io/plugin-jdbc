@@ -25,16 +25,16 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy a PostgreSQL table or a query to a file",
-    description = "Moves data between PostgreSQL tables or query to a file"
+    title = "Copy a PostgreSQL table or a query to a file.",
+    description = "Moves data between PostgreSQL tables or query to a file."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Load csv or tsv into a postgres table",
+            title = "Load CSV or TSV into a Postgres table.",
             code = {
                 "url: jdbc:postgresql://127.0.0.1:56982/",
-                "username: postgres",
+                "username: pg_user",
                 "password: pg_passwd",
                 "format: CSV",
                 "from: {{ outputs.export.uri }}",
@@ -48,7 +48,7 @@ import javax.validation.constraints.NotNull;
 public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>, PostgresConnectionInterface {
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
-        title = "Source file URI"
+        title = "Source file URI."
     )
     @PluginProperty(dynamic = true)
     private String from;
@@ -83,7 +83,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The rows count from this `COPY`"
+            title = "The rows count from this `COPY`."
         )
         private final Long rowCount;
     }

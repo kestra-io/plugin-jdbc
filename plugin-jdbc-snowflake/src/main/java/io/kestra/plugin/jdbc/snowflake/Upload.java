@@ -29,13 +29,13 @@ import javax.validation.constraints.NotNull;
     examples = {
         @Example(
             code = {
-                "from: '{{outputs.extract.uri}}'",
+                "url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
+                "username: snowflake_user",
+                "password: snowflake_passwd",
+                "from: '{{ outputs.extract.uri }}'",
                 "fileName: data.csv",
                 "prefix: raw",
                 "stageName: @demo_db.public.%mytable",
-                "url: jdbc:snowflake://myAccountID.snowflakecomputing.com?warehouse=COMPUTE_WH&db=DEMO_DB&schema=PUBLIC&role=SYSADMIN",
-                "username: yourUsername",
-                "password: 'yourSnowflakePassword'",
             }
         )
     }

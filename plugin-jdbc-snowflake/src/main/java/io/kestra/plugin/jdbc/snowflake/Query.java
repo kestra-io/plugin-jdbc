@@ -25,26 +25,26 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Snowflake server"
+    title = "Query a Snowflake server."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results on another task to update another table",
+            title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
             code = {
                 "tasks:",
                 "- id: select",
                 "  type: io.kestra.plugin.jdbc.snowflake.Query",
                 "  url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "  username: snowflake",
+                "  username: snowflake_user",
                 "  password: snowflake_passwd",
                 "  sql: select * from source",
                 "  fetch: true",
                 "- id: generate-update",
                 "  type: io.kestra.plugin.jdbc.snowflake.Query",
                 "  url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "  username: snowflake",
+                "  username: snowflake_user",
                 "  password: snowflake_passwd",
                 "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ); {% endfor %}\""}
         )

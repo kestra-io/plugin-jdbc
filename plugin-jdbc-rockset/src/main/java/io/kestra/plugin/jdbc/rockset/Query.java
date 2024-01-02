@@ -26,13 +26,13 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Rockset server"
+    title = "Query a Rockset server."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results",
+            title = "Execute a query and fetch results.",
             code = {
                 "tasks:",
                 "- id: select",

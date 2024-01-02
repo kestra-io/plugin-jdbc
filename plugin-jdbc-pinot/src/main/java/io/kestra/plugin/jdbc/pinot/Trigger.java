@@ -27,7 +27,7 @@ import java.sql.SQLException;
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
+            title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
             code = {
                 "id: jdbc-trigger",
@@ -39,13 +39,14 @@ import java.sql.SQLException;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json(taskrun.value)}}\"",
+                "        format: \"{{ json(taskrun.value) }}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.pinot.Trigger",
                 "    interval: \"PT5M\"",
+                "    url: jdbc:pinot://localhost:9000",
                 "    sql: \"SELECT * FROM my_table\""
             }
         )

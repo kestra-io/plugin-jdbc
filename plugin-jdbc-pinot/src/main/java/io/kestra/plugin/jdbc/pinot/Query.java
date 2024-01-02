@@ -24,7 +24,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Apache Pinot server"
+    title = "Query a Apache Pinot server."
 )
 @Plugin(
     examples = {
