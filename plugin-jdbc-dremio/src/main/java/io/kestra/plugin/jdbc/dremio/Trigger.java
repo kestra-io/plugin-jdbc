@@ -26,7 +26,7 @@ import java.sql.SQLException;
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a SQL query to return results and iterate through rows",
+            title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
             code = {
                 "id: jdbc-trigger",
@@ -38,13 +38,16 @@ import java.sql.SQLException;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json(taskrun.value)}}\"",
+                "        format: \"{{ json(taskrun.value) }}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.dremio.Trigger",
                 "    interval: \"PT5M\"",
+                "    url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
+                "    username: $token",
+                "    password: samplePersonalAccessToken",
                 "    sql: \"SELECT * FROM source.database.my_table\""
             }
         )

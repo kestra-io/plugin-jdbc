@@ -33,9 +33,9 @@ import java.util.Properties;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a MySQL Database and fetch a row as outputs",
+            title = "Send a sql query to a MySQL Database and fetch a row as output.",
             code = {
-                "url: jdbc:mysql://127.0.0.1:56982/",
+                "url: jdbc:mysql://127.0.0.1:3306/",
                 "username: mysql_user",
                 "password: mysql_passwd",
                 "sql: select * from mysql_types",
@@ -43,9 +43,9 @@ import java.util.Properties;
             }
         ),
         @Example(
-            title = "Load a csv file into a MySQL table",
+            title = "Load a csv file into a MySQL table.",
             code = {
-                "url: jdbc:mysql://127.0.0.1:56982/",
+                "url: jdbc:mysql://127.0.0.1:3306/",
                 "username: mysql_user",
                 "password: mysql_passwd",
                 "inputFile: \"{{ outputs.taskId.file }}\"",

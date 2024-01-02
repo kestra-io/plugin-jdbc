@@ -21,12 +21,12 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Oracle database."
+    title = "Wait for query on an Oracle database."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Wait for a sql query to return results and iterate through rows",
+            title = "Wait for a sql query to return results, and then iterate through rows.",
             full = true,
             code = {
                 "id: jdbc-trigger",
@@ -38,13 +38,16 @@ import java.sql.SQLException;
                 "    tasks:",
                 "      - id: return",
                 "        type: io.kestra.core.tasks.debugs.Return",
-                "        format: \"{{json(taskrun.value)}}\"",
+                "        format: \"{{ json(taskrun.value) }}\"",
                 "    value: \"{{ trigger.rows }}\"",
                 "",
                 "triggers:",
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.oracle.Trigger",
                 "    interval: \"PT5M\"",
+                "    url: jdbc:oracle:thin:@localhost:49161:XE",
+                "    username: oracle_user",
+                "    password: oracle_passwd",
                 "    sql: \"SELECT * FROM my_table\""
             }
         )

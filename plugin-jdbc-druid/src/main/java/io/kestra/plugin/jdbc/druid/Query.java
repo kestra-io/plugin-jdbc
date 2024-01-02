@@ -22,17 +22,18 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Query a Apache Druid server"
+        title = "Query a Apache Druid database."
 )
 @Plugin(
     examples = {
         @Example(
+            title = "Send a SQL query to Apache Druid database, and fetch a row as output.",
             code = {
                 "url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true",
                 "sql: |",
                 "  SELECT *",
                 "  FROM wikiticker",
-                "fetch: true"
+                "fetchOne: true"
             }
         )
     }
