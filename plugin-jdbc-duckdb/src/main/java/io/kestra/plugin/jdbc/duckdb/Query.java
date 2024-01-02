@@ -34,17 +34,17 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a local DuckDb"
+    title = "Query a local DuckDb."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Execute a query that read a csv and output another one",
+            title = "Execute a query that reads a csv, and outputs another csv.",
             code = {
                 "url: 'jdbc:duckdb:'",
                 "timeZoneId: Europe/Paris",
                 "sql: |-",
-                "  CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);",
+                "  CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);",
                 "",
                 "  COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');",
                 "inputFiles:",
@@ -63,7 +63,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @Schema(
         title = "Input files to be loaded from DuckDb.",
         description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{workingDir}}/myfile.csv');` "
+            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{ workingDir }}/myfile.csv');` "
     )
     @PluginProperty(
         additionalProperties = String.class,
@@ -72,11 +72,11 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     protected Object inputFiles;
 
     @Schema(
-        title = "Output file list that will be uploaded to internal storage",
-        description = "List of key that will generate temporary files.\n" +
-            "On the sql query, just can use with special variable named `outputFiles.key`.\n" +
-            "If you add a files with `[\"first\"]`, you can use the special vars `COPY tbl TO '{[ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
-            " and you used on others tasks using `{{ outputs.taskId.outputFiles.first }}`"
+        title = "Output file list that will be uploaded to internal storage.",
+        description = "List of keys that will generate temporary files.\n" +
+            "On the sql query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
+            "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
+            " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
     )
     @PluginProperty
     protected List<String> outputFiles;
@@ -100,7 +100,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Override
     @Schema(
-        title = "The JDBC URL to connect to the database",
+        title = "The JDBC URL to connect to the database.",
         description = "The default value, `jdbc:duckdb:`, will use a local in-memory database. \nSet this property when connecting to a persisted database instance, for example `jdbc:duckdb:md:my_database?motherduck_token=<my_token>` to connect to [MotherDuck](https://motherduck.com/).",
         defaultValue = DEFAULT_URL
     )
@@ -168,7 +168,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @Getter
     public static class Output extends AbstractJdbcQuery.Output {
         @Schema(
-            title = "The output files uri in Kestra internal storage"
+            title = "The output files' URI in Kestra internal storage."
         )
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;

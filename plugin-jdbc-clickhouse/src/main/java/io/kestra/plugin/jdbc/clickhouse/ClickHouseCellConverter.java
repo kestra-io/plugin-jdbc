@@ -46,7 +46,7 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         } else if (columnTypeName.startsWith("DateTime")) {
             Matcher matcher = PATTERN.matcher(columnTypeName);
             if (!matcher.find() || matcher.groupCount() < 3) {
-                throw new IllegalArgumentException("Invalid Column Type '" + columnTypeName + "'");
+                throw new IllegalArgumentException("Invalid column type '" + columnTypeName + "'");
             }
 
             return LocalDateTime

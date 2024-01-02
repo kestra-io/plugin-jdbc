@@ -24,28 +24,28 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Oracle server"
+    title = "Query an Oracle database."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results on another task to update another table",
+            title = "Execute a query and fetch results on another task to update another table.",
             code = {
                 "tasks:",
                 "- id: select",
                 "  type: io.kestra.plugin.jdbc.oracle.Query",
                 "  url: jdbc:oracle:thin:@localhost:49161:XE",
-                "  username: oracle",
+                "  username: oracle_user",
                 "  password: oracle_passwd",
                 "  sql: select * from source",
                 "  fetch: true",
                 "- id: generate-update",
                 "  type: io.kestra.plugin.jdbc.oracle.Query",
                 "  url: jdbc:oracle:thin:@localhost:49161:XE",
-                "  username: oracle",
+                "  username: oracle_user",
                 "  password: oracle_passwd",
-                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ); {% endfor %}\""}
+                "  sql: \"{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ); {% endfor %}\""}
         )
     }
 )
