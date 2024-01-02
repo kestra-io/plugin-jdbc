@@ -6,40 +6,40 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface PostgresConnectionInterface extends JdbcConnectionInterface {
     @Schema(
-        title = "Is the connection ssl"
+        title = "Is the connection SSL?"
     )
     @PluginProperty(dynamic = false)
     Boolean getSsl();
 
     @Schema(
-        title = "The ssl mode"
+        title = "The SSL mode."
     )
     @PluginProperty(dynamic = false)
     SslMode getSslMode();
 
     @Schema(
-        title = "The ssl root cert",
+        title = "The SSL root cert.",
         description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(dynamic = true)
     String getSslRootCert();
 
     @Schema(
-        title = "The ssl cert",
+        title = "The SSL cert.",
         description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(dynamic = true)
     String getSslCert();
 
     @Schema(
-        title = "The ssl key",
+        title = "The SSL key.",
         description = "Must be a PEM encoded key"
     )
     @PluginProperty(dynamic = true)
     String getSslKey();
 
     @Schema(
-        title = "The ssl key password"
+        title = "The SSL key password."
     )
     @PluginProperty(dynamic = true)
     String getSslKeyPassword();

@@ -29,7 +29,7 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a Redshift database and fetch a row as outputs",
+            title = "Send a SQL query to a Redshift database and fetch a row as output.",
             code = {
                 "url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev",
                 "username: admin",

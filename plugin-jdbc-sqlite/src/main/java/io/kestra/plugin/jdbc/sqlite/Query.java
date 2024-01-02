@@ -23,24 +23,24 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a SQLite"
+    title = "Query a SQLite server."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and pass the results to another task",
+            title = "Execute a query and pass the results to another task.",
             code = {
                 "tasks:",
                 "- id: update",
                 "  type: io.kestra.plugin.jdbc.sqlite.Query",
-                "  url: jdbc:sqlite:myfile:db",
+                "  url: jdbc:sqlite:myfile.db",
                 "  sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types",
                 "  fetch: true",
                 "- id: use-fetched-data",
                 "  type: io.kestra.plugin.jdbc.sqlite.Query",
-                "  url: jdbc:sqlite:myfile:db",
-                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
+                "  url: jdbc:sqlite:myfile.db",
+                "  sql: \"{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
         )
     }
 )

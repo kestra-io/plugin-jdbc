@@ -26,12 +26,15 @@ import javax.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Download data to an internal stage"
+    title = "Download data to an internal stage."
 )
 @Plugin(
     examples = {
         @Example(
             code = {
+                "url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
+                "username: snowflake_user",
+                "password: snowflake_passwd",
                 "stageName: MYSTAGE",
                 "fileName: prefix/destFile.csv"
             }
@@ -45,22 +48,22 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     private String role;
 
     @Schema(
-        title = "The stage name",
-        description = "~ or table name or stage name"
+        title = "The stage name.",
+        description = "~ or table name or stage name."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String stageName;
 
     @Schema(
-        title = "destination file name to use"
+        title = "Destination file name to use."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String fileName;
 
     @Schema(
-        title = "compress data or not before uploading stream"
+        title = "Whether to compress data before uploading stream."
     )
     @PluginProperty(dynamic = false)
     @NotNull
@@ -104,7 +107,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The url of the file on kestra storage"
+            title = "The URI of the file on Kestra internal storage."
         )
         private final URI uri;
     }

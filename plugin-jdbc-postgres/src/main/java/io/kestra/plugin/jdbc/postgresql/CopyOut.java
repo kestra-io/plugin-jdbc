@@ -25,15 +25,15 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy tabular data from a Postgres table to a file"
+    title = "Copy tabular data from a Postgres table to a file."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Export a Postgres table or query to a CSV or TSV file",
+            title = "Export a Postgres table or query to a CSV or TSV file.",
             code = {
                 "url: jdbc:postgresql://127.0.0.1:56982/",
-                "username: postgres",
+                "username: pg_user",
                 "password: pg_passwd",
                 "format: CSV",
                 "sql: SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool",
@@ -84,12 +84,12 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The url of the result file on kestra storage"
+            title = "The URI of the result file on Kestra's internal storage."
         )
         private final URI uri;
 
         @Schema(
-            title = "The rows count from this `COPY`"
+            title = "The rows count from this `COPY`."
         )
         private final Long rowCount;
     }
