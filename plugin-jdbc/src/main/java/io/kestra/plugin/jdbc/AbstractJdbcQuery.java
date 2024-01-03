@@ -212,7 +212,7 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
         private final URI uri;
 
         @Schema(
-            title = "The number of rows to be fetched.",
+            title = "The number of fetched rows.",
             description = "Only populated if `store` or `fetch` parameter is set to true."
         )
         private final Long size;
