@@ -65,7 +65,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
-        description = "The file must be from Kestra internal storage"
+        description = "The file must be from Kestra's internal storage"
     )
     @PluginProperty(dynamic = true)
     protected String inputFile;

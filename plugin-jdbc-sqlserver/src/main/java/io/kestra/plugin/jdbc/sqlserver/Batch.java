@@ -22,20 +22,20 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a Microsoft SQL Server"
+    title = "Execute a batch query on a Microsoft SQL Server."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch rows from a table and bulk insert to another one",
+            title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
             code = {
                 "tasks:",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.sqlserver.Query",
                 "    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true",
-                "    username: sa",
-                "    password: Sqls3rv3r_Pa55word!",
+                "    username: sql_server_user",
+                "    password: sql_server_passwd",
                 "    sql: |",
                 "      SELECT *",
                 "      FROM xref",
@@ -45,8 +45,8 @@ import java.time.ZoneId;
                 "    type: io.kestra.plugin.jdbc.sqlserver.Batch",
                 "    from: \"{{ outputs.query.uri }}\"",
                 "    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true",
-                "    username: sa",
-                "    password: Sqls3rv3r_Pa55word!",
+                "    username: sql_server_user",
+                "    password: sql_server_passwd",
                 "    sql: |",
                 "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }

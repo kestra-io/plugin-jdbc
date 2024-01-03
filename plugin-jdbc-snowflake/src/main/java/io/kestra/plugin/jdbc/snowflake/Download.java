@@ -107,7 +107,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URI of the file on Kestra internal storage."
+            title = "The URI of the file on Kestra's internal storage."
         )
         private final URI uri;
     }

@@ -22,33 +22,33 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a Vertica server"
+    title = "Execute a batch query on a Vertica server."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch rows from a table and bulk insert to another one",
+            title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
             code = {
                 "tasks:",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.vertica.Query",
                 "    url: jdbc:vertica://dev:56982/db",
-                "    username: dbadmin",
+                "    username: vertica_user",
                 "    password: vertica_passwd",
                 "    sql: |",
                 "      SELECT *",
                 "      FROM xref",
                 "      LIMIT 1500;",
+                "    fetch: true",
                 "    store: true",
                 "  - id: update",
                 "    type: io.kestra.plugin.jdbc.vertica.Batch",
                 "    from: \"{{ outputs.query.uri }}\"",
                 "    url: jdbc:vertica://prod:56982/db",
-                "    username: dbadmin",
+                "    username: vertica_user",
                 "    password: vertica_passwd",
-                "    sql: |",
-                "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
+                "    sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }
         )
     }
