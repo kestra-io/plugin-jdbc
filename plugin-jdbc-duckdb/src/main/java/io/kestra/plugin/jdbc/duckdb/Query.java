@@ -168,7 +168,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @Getter
     public static class Output extends AbstractJdbcQuery.Output {
         @Schema(
-            title = "The output files' URI in Kestra internal storage."
+            title = "The output files' URI in Kestra's internal storage."
         )
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;

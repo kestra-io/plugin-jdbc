@@ -24,27 +24,27 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Microsoft SQL Server"
+    title = "Query a Microsoft SQL Server."
 )
 @Plugin(
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results on another task to update another table",
+            title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
             code = {
                 "tasks:",
                 "- id: select",
                 "  type: io.kestra.plugin.jdbc.sqlserver.Query",
                 "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "  username: sa",
-                "  password: Sqls3rv3r_Pa55word!",
+                "  username: sql_server_user",
+                "  password: sql_server_passwd",
                 "  sql: select * from source",
                 "  fetch: true",
                 "- id: generate-update",
                 "  type: io.kestra.plugin.jdbc.sqlserver.Query",
                 "  url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "  username: sa",
-                "  password: Sqls3rv3r_Pa55word!",
+                "  username: sql_server_user",
+                "  password: sql_server_passwd",
                 "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}\""}
         )
     }

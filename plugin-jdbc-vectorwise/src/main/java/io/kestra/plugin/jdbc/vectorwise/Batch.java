@@ -22,12 +22,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a Vertica server"
+    title = "Execute a batch query on a Vectorwise server."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Fetch rows from a table and bulk insert to another one",
+            title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
             code = {
                 "tasks:",
@@ -47,8 +47,7 @@ import java.time.ZoneId;
                 "    url: jdbc:vectorwise://prod:port/base",
                 "    username: admin",
                 "    password: admin_passwd",
-                "    sql: |",
-                "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
+                "    sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }
         )
     }

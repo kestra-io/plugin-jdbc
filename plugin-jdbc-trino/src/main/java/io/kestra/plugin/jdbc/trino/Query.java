@@ -36,16 +36,18 @@ import java.time.ZoneId;
                     "- id: analyzeOrders",
                     "  type: io.kestra.plugin.jdbc.trino.Query",
                     "  url: jdbc:trino://localhost:8080/tpch",
-                    "  username: trino",
+                    "  username: trino_user",
+                    "  password: trino_passwd",
                     "  sql: |",
                     "    select orderpriority as priority, sum(totalprice) as total",
                     "    from tpch.tiny.orders",
                     "    group by orderpriority",
                     "    order by orderpriority",
+                    "  fetch: true",
                     "  store: true",
                     "- id: csvReport",
                     "  type: io.kestra.plugin.serdes.csv.CsvWriter",
-                    "  from: \"{{outputs.analyzeOrders.uri}}\""}
+                    "  from: \"{{ outputs.analyzeOrders.uri }}\""}
         )
     }
 )

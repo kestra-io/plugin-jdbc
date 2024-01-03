@@ -29,7 +29,7 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a vectorwise database and fetch a row as outputs",
+            title = "Send a SQL query to a Vectorwise database and fetch a row as output.",
             code = {
                 "url: jdbc:vectorwise://url:port/base",
                 "username: admin",
