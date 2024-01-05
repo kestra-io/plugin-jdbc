@@ -5,8 +5,6 @@ import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -23,6 +21,10 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import jakarta.validation.constraints.NotNull;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
+
+import static io.kestra.core.utils.Rethrow.throwFunction;
 
 
 @SuperBuilder
@@ -91,12 +93,12 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         ) {
             connection.setAutoCommit(false);
 
-            Flowable<Integer> flowable = Flowable.create(FileSerde.reader(bufferedReader), BackpressureStrategy.BUFFER)
+            Flux<Integer> flowable = Flux.create(FileSerde.reader(bufferedReader), FluxSink.OverflowStrategy.BUFFER)
                 .doOnNext(docWriteRequest -> {
                     count.incrementAndGet();
                 })
                 .buffer(this.chunk, this.chunk)
-                .map(o -> {
+                .map(throwFunction(o -> {
                     PreparedStatement ps = connection.prepareStatement(sql);
                     ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
 
@@ -111,11 +113,11 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                     connection.commit();
 
                     return Arrays.stream(updatedRows).sum();
-                });
+                }));
 
             Integer updated = flowable
                 .reduce(Integer::sum)
-                .blockingGet();
+                .block();
 
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
