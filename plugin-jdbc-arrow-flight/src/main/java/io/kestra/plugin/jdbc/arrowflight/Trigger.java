@@ -46,7 +46,7 @@ import java.sql.SQLException;
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.arrowflight.Trigger",
                 "    username: dremio_user",
-                "    password: dremio_password",
+                "    password: dremio_passwd",
                 "    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "    interval: \"PT5M\"",
                 "    sql: \"SELECT * FROM my_table\"",

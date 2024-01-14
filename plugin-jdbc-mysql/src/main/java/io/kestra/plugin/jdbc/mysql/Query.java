@@ -33,7 +33,7 @@ import java.util.Properties;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a sql query to a MySQL Database and fetch a row as output.",
+            title = "Send a SQL query to a MySQL Database and fetch a row as output.",
             code = {
                 "url: jdbc:mysql://127.0.0.1:3306/",
                 "username: mysql_user",

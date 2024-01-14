@@ -33,17 +33,17 @@ import java.time.ZoneId;
             code = {
                 "url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false",
                 "username: db_user",
-                "password: db_password",
+                "password: db_passwd",
                 "sql: select * FROM departments",
                 "fetch: true",
             }
         ),
         @Example(
-            title = "Send a sql query to a Dremio coordinator and fetch rows as outputs using Apache Arrow Flight SQL driver.",
+            title = "Send a SQL query to a Dremio coordinator and fetch rows as outputs using Apache Arrow Flight SQL driver.",
             code = {
                 "url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "username: dremio_user",
-                "password: dremio_password",
+                "password: dremio_passwd",
                 "sql: select * FROM departments",
                 "fetch: true",
             }
