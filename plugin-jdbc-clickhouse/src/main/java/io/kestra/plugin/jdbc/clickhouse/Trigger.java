@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:clickhouse://127.0.0.1:56982/",
                 "    username: ch_user",
                 "    password: ch_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

@@ -47,7 +47,8 @@ import java.sql.SQLException;
                                 "    type: io.kestra.plugin.jdbc.druid.Trigger",
                                 "    interval: \"PT5M\"",
                                 "    url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true",
-                                "    sql: \"SELECT * FROM my_table\""
+                                "    sql: \"SELECT * FROM my_table\"",
+                                "    fetch: true",
                         }
                 )
         }

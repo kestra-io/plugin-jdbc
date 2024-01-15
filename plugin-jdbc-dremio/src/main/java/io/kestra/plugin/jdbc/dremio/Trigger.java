@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
                 "    username: $token",
                 "    password: samplePersonalAccessToken",
-                "    sql: \"SELECT * FROM source.database.my_table\""
+                "    sql: \"SELECT * FROM source.database.my_table\"",
+                "    fetch: true",
             }
         )
     }

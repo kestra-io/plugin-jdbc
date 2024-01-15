@@ -46,7 +46,8 @@ import java.sql.SQLException;
                 "    url: jdbc:mysql://127.0.0.1:3306/",
                 "    username: mysql_user",
                 "    password: mysql_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

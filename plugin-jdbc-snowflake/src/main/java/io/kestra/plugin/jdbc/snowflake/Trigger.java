@@ -49,7 +49,8 @@ import java.util.Properties;
                 "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
                 "    username: snowflake_user",
                 "    password: snowflake_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true"
             }
         )
     }

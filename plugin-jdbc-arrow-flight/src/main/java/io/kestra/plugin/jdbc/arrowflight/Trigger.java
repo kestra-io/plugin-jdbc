@@ -50,7 +50,7 @@ import java.sql.SQLException;
                 "    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "    interval: \"PT5M\"",
                 "    sql: \"SELECT * FROM my_table\"",
-                "    fetch: true"
+                "    fetch: true",
             }
         )
     }

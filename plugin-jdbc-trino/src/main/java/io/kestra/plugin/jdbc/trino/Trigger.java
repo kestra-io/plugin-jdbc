@@ -45,7 +45,8 @@ import java.sql.SQLException;
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.trino.Trigger",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

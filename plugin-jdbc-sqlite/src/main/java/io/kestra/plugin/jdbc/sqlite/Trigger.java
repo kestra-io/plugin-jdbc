@@ -43,7 +43,8 @@ import java.sql.SQLException;
                 "    type: io.kestra.plugin.jdbc.sqlite.Trigger",
                 "    interval: \"PT5M\"",
                 "    url: jdbc:sqlite:myfile.db",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

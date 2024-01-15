@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:vertica://127.0.0.1:56982/db",
                 "    username: vertica_user",
                 "    password: vertica_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

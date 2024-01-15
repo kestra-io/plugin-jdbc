@@ -45,7 +45,11 @@ import java.sql.SQLException;
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.redshift.Trigger",
                 "    interval: \"PT5M\"",
-                "    sql: \"SELECT * FROM my_table\""
+                "    url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev",
+                "    username: admin",
+                "    password: admin_passwd",
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

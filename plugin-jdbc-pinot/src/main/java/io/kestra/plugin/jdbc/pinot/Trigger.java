@@ -47,7 +47,8 @@ import java.sql.SQLException;
                 "    type: io.kestra.plugin.jdbc.pinot.Trigger",
                 "    interval: \"PT5M\"",
                 "    url: jdbc:pinot://localhost:9000",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

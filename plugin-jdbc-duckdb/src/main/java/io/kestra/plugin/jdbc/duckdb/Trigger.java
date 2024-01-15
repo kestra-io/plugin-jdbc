@@ -45,7 +45,8 @@ import java.sql.SQLException;
                 "    type: io.kestra.plugin.jdbc.duckdb.Trigger",
                 "    interval: \"PT5M\"",
                 "    url: 'jdbc:duckdb:'",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }
