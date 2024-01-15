@@ -6,14 +6,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
-        title = "The sql query to run."
+        title = "The SQL query to run."
     )
     @PluginProperty(dynamic = true)
     String getSql();
 
     @Schema(
         title = "Whether to fetch the data from the query result to the task output." +
-            " This parameter is evaluated after 'fetchOne' and 'store'."
+            " This parameter is evaluated after `fetchOne` and `store`."
     )
     @PluginProperty(dynamic = false)
     boolean isFetch();
@@ -23,14 +23,14 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
             " File will be saved as Amazon Ion (text format)." +
             " \n" +
             " See <a href=\"http://amzn.github.io/ion-docs/\">Amazon Ion documentation</a>" +
-            " This parameter is evaluated after 'fetchOne' but before 'fetch'."
+            " This parameter is evaluated after `fetchOne` but before `fetch`."
     )
     @PluginProperty(dynamic = false)
     boolean isStore();
 
     @Schema(
         title = "Whether to fetch only one data row from the query result to the task output." +
-            " This parameter is evaluated before 'store' and 'fetch'."
+            " This parameter is evaluated before `store` and `fetch`."
     )
     @PluginProperty(dynamic = false)
     boolean isFetchOne();
