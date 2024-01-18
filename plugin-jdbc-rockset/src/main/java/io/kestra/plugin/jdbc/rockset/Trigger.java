@@ -50,7 +50,8 @@ import java.util.Properties;
                 "    url: jdbc:rockset://",
                 "    apiKey: \"[apiKey]\"",
                 "    apiServer: \"[apiServer]\"",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

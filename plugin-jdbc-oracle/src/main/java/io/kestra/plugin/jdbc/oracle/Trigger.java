@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:oracle:thin:@localhost:49161:XE",
                 "    username: oracle_user",
                 "    password: oracle_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

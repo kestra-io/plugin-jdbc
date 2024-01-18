@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:vectorwise://url:port/base",
                 "    username: admin",
                 "    password: admin_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

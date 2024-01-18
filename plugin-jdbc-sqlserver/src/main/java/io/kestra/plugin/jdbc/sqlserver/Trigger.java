@@ -48,7 +48,8 @@ import java.sql.SQLException;
                 "    url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
                 "    username: sql_server_user",
                 "    password: sql_server_passwd",
-                "    sql: \"SELECT * FROM my_table\""
+                "    sql: \"SELECT * FROM my_table\"",
+                "    fetch: true",
             }
         )
     }

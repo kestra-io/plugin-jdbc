@@ -39,7 +39,7 @@ import java.time.ZoneId;
             }
         ),
         @Example(
-            title = "Send a SQL query to a Dremio coordinator and fetch rows as outputs using Apache Arrow Flight SQL driver.",
+            title = "Send a SQL query to a Dremio coordinator and fetch rows as output using Apache Arrow Flight SQL driver.",
             code = {
                 "url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
                 "username: dremio_user",
