@@ -40,17 +40,26 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
     examples = {
         @Example(
             title = "Execute a query that reads a csv, and outputs another csv.",
+            full = true,
             code = {
-                "url: 'jdbc:duckdb:'",
-                "timeZoneId: Europe/Paris",
-                "sql: |-",
-                "  CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);",
+                "id: query-duckdb",
+                "namespace: dev",
+                "tasks:",
+                "  - id: http_download",
+                "    type: io.kestra.plugin.fs.http.Download",
+                "    uri: \"https://raw.githubusercontent.com/kestra-io/datasets/main/csv/orders.csv\"",
+                "  - id: query",
+                "    type: io.kestra.plugin.jdbc.duckdb.Query",
+                "    url: 'jdbc:duckdb:'",
+                "    timeZoneId: Europe/Paris",
+                "    sql: |-",
+                "      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);",
                 "",
-                "  COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');",
-                "inputFiles:",
-                "  in.csv: {{ inputs.csv }}",
-                "outputFiles:",
-                "- out"
+                "      COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');",
+                "    inputFiles:",
+                "      in.csv: \"{{ outputs.http_download.uri }}\"",
+                "    outputFiles:",
+                "       - out"
             }
         )
     }
