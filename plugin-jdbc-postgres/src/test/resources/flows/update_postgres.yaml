@@ -2,11 +2,11 @@ id: update_postgres
 namespace: io.kestra.jdbc.postgres
 
 inputs:
-  - name: sslRootCert
+  - id: sslRootCert
     type: STRING
-  - name: sslCert
+  - id: sslCert
     type: STRING
-  - name: sslKey
+  - id: sslKey
     type: STRING
 
 tasks:
