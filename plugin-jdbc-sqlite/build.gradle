@@ -12,11 +12,19 @@ jar {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        // ugly bug on crypto plugin
+        force('org.bouncycastle:bcprov-jdk18on:1.77')
+        force('org.bouncycastle:bcpkix-jdk18on:1.77')
+    }
+}
+
 dependencies {
     jdbcDriver 'org.xerial:sqlite-jdbc:3.42.0.0'
     implementation project(':plugin-jdbc')
-    api 'org.bouncycastle:bcprov-jdk18on:1.77'
-    api 'org.bouncycastle:bcpkix-jdk18on:1.77'
+    api 'org.bouncycastle:bcprov-jdk18on'
+    api 'org.bouncycastle:bcpkix-jdk18on'
     api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
