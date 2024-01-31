@@ -45,6 +45,9 @@ import java.sql.SQLException;
                 "  - id: watch",
                 "    type: io.kestra.plugin.jdbc.trino.Trigger",
                 "    interval: \"PT5M\"",
+                "    url: jdbc:trino://localhost:8080/tpch",
+                "    username: trino_user",
+                "    password: trino_passwd",
                 "    sql: \"SELECT * FROM my_table\"",
                 "    fetch: true",
             }
