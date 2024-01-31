@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("com.dremio.distribution:dremio-jdbc-driver:4.9.1-202010230218060541-2e764ed0")
+    implementation("com.dremio.distribution:dremio-jdbc-driver:3.0.6-201812082352540436-1f684f9")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
