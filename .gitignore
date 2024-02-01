@@ -16,5 +16,7 @@ out/
 plugin-jdbc-redshift/src/test/resources/application-test.yml
 plugin-jdbc-snowflake/src/test/resources/application-test.yml
 plugin-jdbc-rockset/src/test/resources/application-test.yml
+certs/
+plugin-jdbc-postgres/src/test/resources/ssl/
 
 plugin-jdbc-sqlite/temp
