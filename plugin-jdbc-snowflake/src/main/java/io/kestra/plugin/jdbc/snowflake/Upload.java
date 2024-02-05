@@ -23,7 +23,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Upload data to an internal stage. Make sure that the `stageName` follows the naming convention of `@databaseName.schemaName.%stageOrTableName`. For usage examples, check the Blueprints tagged with `Snowflake`."
+    title = "Upload data from an internal storage file to Snowflake stage. Make sure that the `stageName` follows the naming convention of `@databaseName.schemaName.%stageOrTableName`. For usage examples, check the Blueprints tagged with `Snowflake`."
 )
 @Plugin(
     examples = {
@@ -35,7 +35,7 @@ import jakarta.validation.constraints.NotNull;
                 "from: '{{ outputs.extract.uri }}'",
                 "fileName: data.csv",
                 "prefix: raw",
-                "stageName: @demo_db.public.%mytable",
+                "stageName: \"@demo_db.public.%myStage\"",
             }
         )
     }
@@ -47,36 +47,36 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     private String role;
 
     @Schema(
-        title = "Path to the file to load to internal stage in Snowflake"
+        title = "Path to the file to load to Snowflake stage."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String from;
 
     @Schema(
-        title = "The stage name",
-        description = "This can either be a stage name or a table name"
+        title = "Snowflake stage name.",
+        description = "This can either be a stage name or a table name."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String stageName;
 
     @Schema(
-        title = "The prefix under which the file will be uploaded to the internal stage"
+        title = "The prefix under which the file will be uploaded to Snowflake stage."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String prefix;
 
     @Schema(
-        title = "Destination file name to use"
+        title = "Destination file name to use."
     )
     @PluginProperty(dynamic = true)
     @NotNull
     private String fileName;
 
     @Schema(
-        title = "Whether to compress the file or not before uploading it to the internal stage"
+        title = "Whether to compress the file or not before uploading it to the Snowflake stage."
     )
     @PluginProperty(dynamic = false)
     @NotNull
@@ -119,7 +119,7 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URL of the staged files"
+            title = "The URI of the staged file."
         )
         private final URI uri;
     }

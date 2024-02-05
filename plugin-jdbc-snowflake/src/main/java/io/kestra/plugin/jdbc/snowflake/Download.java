@@ -26,7 +26,7 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Download data to an internal stage."
+    title = "Download data from Snowflake stage to Kestra's internal storage."
 )
 @Plugin(
     examples = {
@@ -35,7 +35,7 @@ import jakarta.validation.constraints.NotNull;
                 "url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
                 "username: snowflake_user",
                 "password: snowflake_passwd",
-                "stageName: MYSTAGE",
+                "stageName: \"@demo_db.public.%myStage\"",
                 "fileName: prefix/destFile.csv"
             }
         )
@@ -48,7 +48,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     private String role;
 
     @Schema(
-        title = "The stage name.",
+        title = "Snowflake stage name.",
         description = "~ or table name or stage name."
     )
     @PluginProperty(dynamic = true)
@@ -56,7 +56,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     private String stageName;
 
     @Schema(
-        title = "Destination file name to use."
+        title = "File name on Snowflake stage that should be downloaded."
     )
     @PluginProperty(dynamic = true)
     @NotNull
