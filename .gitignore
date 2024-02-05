@@ -20,3 +20,4 @@ certs/
 plugin-jdbc-postgres/src/test/resources/ssl/
 
 plugin-jdbc-sqlite/temp
+plugin-jdbc-duckdb/*.db

@@ -129,9 +129,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         if (DEFAULT_URL.equals(this.url)) {
             this.databaseFile = runContext.tempFile();
             Files.delete(this.databaseFile);
-
-            additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
         }
+
+        additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
 
         // inputFiles
         if (this.inputFiles != null) {
