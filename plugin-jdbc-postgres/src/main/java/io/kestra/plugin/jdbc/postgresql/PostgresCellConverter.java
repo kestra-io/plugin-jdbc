@@ -1,5 +1,7 @@
 package io.kestra.plugin.jdbc.postgresql;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import org.postgresql.jdbc.PgArray;
@@ -61,7 +63,12 @@ public class PostgresCellConverter extends AbstractCellConverter {
             String type = o.getType();
             switch (type.toLowerCase()) {
                 case "json":
-                    return o.getValue();
+                case "jsonb":
+                    try {
+                        return JacksonMapper.toMap(o.getValue());
+                    } catch (JsonProcessingException e) {
+                        throw new IllegalArgumentException("Invalid data type [" + type + "] with value [" + o.getValue() + "]");
+                    }
                 case "void":
                     return null;
                 default:

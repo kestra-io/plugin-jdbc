@@ -53,7 +53,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.keyNoPass())
             .fetchOne(true)
             .timeZoneId("Europe/Paris")
-            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
+            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -115,7 +115,8 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("pay_by_quarter"), is(new int[]{100, 200, 300}));
         assertThat(row.get("schedule"), is(new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}}));
 
-        assertThat(row.get("json_type"), is("{\"color\":\"red\",\"value\":\"#f00\"}"));
+        assertThat(row.get("json_type"), is(Map.of("color", "red", "value", "#f00")));
+        assertThat(row.get("jsonb_type"), is(Map.of("color", "blue", "value", "#0f0")));
         assertThat(row.get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
     }
 
@@ -134,7 +135,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.keyNoPass())
             .fetch(true)
             .timeZoneId("Europe/Paris")
-            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
+            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -159,7 +160,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.keyNoPass())
             .store(true)
             .timeZoneId("Europe/Paris")
-            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types")
+            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

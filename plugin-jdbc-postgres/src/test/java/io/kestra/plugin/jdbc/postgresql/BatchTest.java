@@ -62,6 +62,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 new int[]{100, 200, 300},
                 new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}},
                 "{\"color\":\"red\",\"value\":\"#f00\"}",
+                "{\"color\":\"blue\",\"value\":\"#0f0\"}",
                 Hex.decodeHex("DEADBEEF".toCharArray())
             ));
         }
@@ -103,6 +104,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 "  pay_by_quarter,\n" +
                 "  schedule,\n" +
                 "  json_type,\n" +
+                "  jsonb_type,\n" +
                 "  blob_type" +
                 ")\n" +
                 "values\n" +
@@ -128,6 +130,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 "  ?,\n" +
                 "  ?,\n" +
                 "  ?,\n" +
+                "  ?::jsonb,\n" +
                 "  ?\n" +
                 ")"
             )

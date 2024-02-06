@@ -50,6 +50,7 @@ CREATE TABLE pgsql_types (
  pay_by_quarter integer[] not null,
  schedule text[][] not null,
  json_type JSON not null,
+ jsonb_type JSONB not null,
  item inventory_item not null,
  blob_type bytea not null
 );
@@ -79,6 +80,7 @@ INSERT INTO pgsql_types
              pay_by_quarter,
              schedule,
              json_type,
+             jsonb_type,
              item,
              blob_type)
 VALUES     ( DEFAULT,
@@ -103,6 +105,7 @@ VALUES     ( DEFAULT,
              '{100,200,300}',
              '{{meeting,lunch},{training,presentation}}',
              '{"color":"red","value":"#f00"}',
+             '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
              '\xDEADBEEF' );
 
@@ -131,6 +134,7 @@ INSERT INTO pgsql_types
              pay_by_quarter,
              schedule,
              json_type,
+             jsonb_type,
              item,
              blob_type)
 VALUES     ( DEFAULT,
@@ -155,5 +159,6 @@ VALUES     ( DEFAULT,
              '{100,200,300}',
              '{{meeting,lunch},{training,presentation}}',
              '{"color":"red","value":"#f00"}',
+             '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
              '\xDEADBEEF' );

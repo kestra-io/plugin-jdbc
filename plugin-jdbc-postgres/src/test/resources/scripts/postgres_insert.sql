@@ -25,6 +25,7 @@ CREATE TABLE pgsql_types (
  pay_by_quarter integer[] not null,
  schedule text[][] not null,
  json_type JSON not null,
+ jsonb_type JSONB not null,
  blob_type bytea not null
 );
 
