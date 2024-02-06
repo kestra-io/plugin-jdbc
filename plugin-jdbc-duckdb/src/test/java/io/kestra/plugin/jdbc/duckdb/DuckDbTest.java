@@ -14,6 +14,9 @@ import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +31,7 @@ import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -174,8 +178,16 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_enum"), is("happy"));
     }
 
-    @Test
-    void inputOutputFiles() throws Exception {
+    static Stream<String> nullOrFilledDuckDbUrl() {
+        return Stream.of(
+            null,
+            "jdbc:duckdb:" + IdUtils.create() + ".db"
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("nullOrFilledDuckDbUrl") // six numbers
+    void inputOutputFiles(String url) throws Exception {
         URI source = storageInterface.put(
             null,
             new URI("/" + IdUtils.create()),
@@ -186,13 +198,19 @@ public class DuckDbTest {
         );
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        Query task = Query.builder()
+        Query.QueryBuilder<?, ?> builder = Query.builder()
             .timeZoneId("Europe/Paris")
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(List.of("out"))
             .sql("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
                 "\n" +
-                "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');")
+                "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');");
+
+        if (url != null) {
+            builder.url(url);
+        }
+
+        Query task = builder
             .build();
 
         Query.Output runOutput = task.run(runContext);
