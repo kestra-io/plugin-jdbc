@@ -39,14 +39,14 @@ import java.util.Properties;
                 "  url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
                 "  username: snowflake_user",
                 "  password: snowflake_passwd",
-                "  sql: select * from source",
+                "  sql: select * from demo_db.public.customers",
                 "  fetch: true",
                 "- id: generate-update",
                 "  type: io.kestra.plugin.jdbc.snowflake.Query",
                 "  url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
                 "  username: snowflake_user",
                 "  password: snowflake_passwd",
-                "  sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ); {% endfor %}\""}
+                "  sql: \"INSERT INTO demo_db.public.customers_new (year_month, store_code, update_date) values {% for row in outputs.update.rows %} ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ) {% if not loop.last %}, {% endif %}; {% endfor %}\""}
         )
     }
 )
