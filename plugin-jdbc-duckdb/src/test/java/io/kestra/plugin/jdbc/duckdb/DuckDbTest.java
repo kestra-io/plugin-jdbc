@@ -215,8 +215,6 @@ public class DuckDbTest {
 
         Query.Output runOutput = task.run(runContext);
 
-        System.out.println(JacksonMapper.ofYaml().writeValueAsString(task));
-
         assertThat(
             IOUtils.toString(storageInterface.get(null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
             is( "id,name\n" +
