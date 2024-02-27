@@ -21,7 +21,7 @@ configurations.all {
 }
 
 dependencies {
-    jdbcDriver 'org.postgresql:postgresql:42.7.1'
+    jdbcDriver 'org.postgresql:postgresql:42.7.2'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk18on'
     api 'org.bouncycastle:bcpkix-jdk18on'
