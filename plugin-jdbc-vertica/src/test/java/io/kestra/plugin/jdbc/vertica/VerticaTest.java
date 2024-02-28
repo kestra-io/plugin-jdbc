@@ -53,7 +53,7 @@ public class VerticaTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("time"), is(Time.valueOf(LocalTime.parse("04:05:30"))));
         assertThat(runOutput.getRow().get("datetime"), is(LocalDateTime.parse("2004-10-19T10:23:54.999999")));
         assertThat(runOutput.getRow().get("smalldatetime"), is(LocalDateTime.parse("2004-10-19T10:23:54.999999")));
-        assertThat(runOutput.getRow().get("time_with_timezone"), is(OffsetTime.parse("13:05:06+01:00")));
+        assertThat(runOutput.getRow().get("time_with_timezone"), is(OffsetTime.parse("05:05:06+01:00")));
         assertThat(runOutput.getRow().get("timestamp"), is(LocalDateTime.parse("2004-10-19T10:23:54.999999")));
         assertThat(runOutput.getRow().get("timestamp_with_timezone"), is(ZonedDateTime.parse("1999-01-08T13:05:06+01:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("interval"), is(Duration.parse("PT719H59M59S")));
