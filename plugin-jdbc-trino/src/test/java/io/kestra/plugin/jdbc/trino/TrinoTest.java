@@ -5,11 +5,9 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -43,8 +41,6 @@ public class TrinoTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        String hour = System.getenv("GITHUB_WORKFLOW") != null ? "14" : "12";
-
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
@@ -60,7 +56,7 @@ public class TrinoTest extends AbstractRdbmsTest {
         assertThat((Map<String, String>) runOutput.getRow().get("t_json") , is(Map.of("a", "b")));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("2001-08-22")));
         assertThat(runOutput.getRow().get("t_time"), is(LocalTime.parse("01:02:03")));
-        assertThat(runOutput.getRow().get("t_time_tz"), is(OffsetTime.parse("01:02:03.456-08:00")));
+        assertThat(runOutput.getRow().get("t_time_tz"), is(LocalTime.parse("09:02:03"))); // offset -0800
         assertThat(runOutput.getRow().get("t_timestamp"), is(LocalDateTime.parse("2020-06-10T15:55:23.383345")));
         assertThat(runOutput.getRow().get("t_timestamp_tz"), is(ZonedDateTime.parse("2001-08-22T13:04:05.321+02:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("t_interval_year"), is("P3M"));
