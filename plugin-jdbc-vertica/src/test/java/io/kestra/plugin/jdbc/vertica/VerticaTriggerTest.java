@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.is;
 class VerticaTriggerTest extends AbstractJdbcTriggerTest {
     @Test
     void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","vectorwise-listen");
+        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","vertica-listen");
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(1));
