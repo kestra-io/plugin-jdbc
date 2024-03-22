@@ -1,0 +1,17 @@
+id: db2-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.db2.Trigger
+    url: jdbc:db2://localhost:50000/testdb
+    username: db2inst1
+    password: password
+    sql: select * from db2_types
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

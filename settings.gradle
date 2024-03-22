@@ -18,4 +18,5 @@ include 'plugin-jdbc-vertica'
 include 'plugin-jdbc-dremio'
 include 'plugin-jdbc-arrow-flight'
 include 'plugin-jdbc-sqlite'
+include 'plugin-jdbc-db2'
 

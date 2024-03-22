@@ -185,3 +185,13 @@ services:
       - router
     env_file:
       - environment_druid
+
+  db2:
+    image: icr.io/db2_community/db2
+    ports:
+      - "50000:50000"
+    privileged: true
+    env_file:
+      - environment_db2
+    volumes:
+      - /Docker:/database
