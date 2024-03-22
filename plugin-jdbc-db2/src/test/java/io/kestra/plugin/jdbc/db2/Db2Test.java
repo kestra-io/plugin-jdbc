@@ -115,6 +115,35 @@ public class Db2Test extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("VARCHAR_COL"), is("VARCHAR_col"));
     }
 
+    @Test
+    void updateBlob() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query taskUpdate = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .sql("update db2_types set BLOB_col = CAST('VARCHAR_col' AS BLOB)")
+            .build();
+
+        taskUpdate.run(runContext);
+
+        Query taskGet = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .sql("select BLOB_col from db2_types")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("BLOB_COL"), notNullValue());
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:db2://localhost:50000/testdb";
