@@ -195,3 +195,8 @@ services:
       - environment_db2
     volumes:
       - /Docker:/database
+    healthcheck:
+      test: ["CMD-SHELL", "su - db2inst1 -c \"db2gcf -s\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
