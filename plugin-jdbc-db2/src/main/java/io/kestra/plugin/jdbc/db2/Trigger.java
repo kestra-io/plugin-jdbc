@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.db2;
 
-import com.ibm.db2.jcc.DB2Driver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.runners.RunContext;
@@ -20,7 +19,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a MySQL database."
+    title = "Wait for query on a DB2 database."
 )
 @Plugin(
     examples = {

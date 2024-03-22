@@ -39,22 +39,6 @@ import java.util.Properties;
                 "sql: select * from db2_types",
                 "fetchOne: true",
             }
-        ),
-        @Example(
-            title = "Load a csv file into a DB2 table.",
-            code = {
-                "url: jdbc:db2://127.0.0.1:50000/",
-                "username: db2inst",
-                "password: db2_passwd",
-                "inputFile: \"{{ outputs.taskId.file }}\"",
-                "sql: |",
-                "  LOAD DATA LOCAL INFILE '{{ inputFile }}'",
-                "  INTO TABLE discounts" +
-                "  FIELDS TERMINATED BY ','",
-                "  ENCLOSED BY '\"'",
-                "  LINES TERMINATED BY '\\n'",
-                "  IGNORE 1 ROWS;",
-            }
         )
     }
 )
