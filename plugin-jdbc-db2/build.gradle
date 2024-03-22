@@ -13,8 +13,6 @@ jar {
 }
 
 dependencies {
-    implementation('net.sf.jt400:jt400:20.0.6')
-//    implementation('dk.kewill.thirdpartymavencentral:jt400-full:7.10')
     implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
     implementation project(':plugin-jdbc')
 
