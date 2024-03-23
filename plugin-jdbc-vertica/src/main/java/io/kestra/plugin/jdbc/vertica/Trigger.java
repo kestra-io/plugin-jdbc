@@ -43,7 +43,7 @@ import java.sql.SQLException;
                 "",
                 "triggers:",
                 "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.vertica",
+                "    type: io.kestra.plugin.jdbc.vertica.Trigger",
                 "    interval: \"PT5M\"",
                 "    url: jdbc:vertica://127.0.0.1:56982/db",
                 "    username: vertica_user",
