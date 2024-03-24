@@ -45,16 +45,6 @@ import java.util.Properties;
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
     protected final Boolean autoCommit = true;
 
-    @Schema(
-        title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
-        description = "The file must be from Kestra's internal storage"
-    )
-    @PluginProperty(dynamic = true)
-    protected String inputFile;
-
-    @Getter(AccessLevel.NONE)
-    protected transient Path workingDirectory;
-
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new Db2CellConverter(zoneId);

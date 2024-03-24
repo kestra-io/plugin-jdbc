@@ -82,8 +82,6 @@ public class Db2Test extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("BLOB_COL"), nullValue());
         assertThat(runOutput.getRow().get("CLOB_COL"), nullValue());
         assertThat(runOutput.getRow().get("XML_COL"), nullValue());
-
-//        assertThat(runOutput.getRow().get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
     }
 
     @Test

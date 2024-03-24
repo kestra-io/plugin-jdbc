@@ -54,12 +54,8 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger {
 
-    @Getter(AccessLevel.NONE)
-    protected transient Path workingDirectory;
-
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
-        this.workingDirectory = runContext.tempDir();
 
         var query = Query.builder()
             .id(this.id)
