@@ -1,17 +1,19 @@
 package io.kestra.plugin.jdbc.db2;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.apache.commons.codec.binary.Hex;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.sql.*;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -144,7 +146,7 @@ public class Db2Test extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50000/testdb";
+        return "jdbc:db2://localhost:50010/testdb";
     }
 
     @Override

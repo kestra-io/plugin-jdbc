@@ -4,7 +4,7 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.db2.Trigger
-    url: jdbc:db2://localhost:50000/testdb
+    url: jdbc:db2://localhost:50010/testdb
     username: db2inst1
     password: password
     sql: select * from db2_types

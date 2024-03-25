@@ -26,7 +26,7 @@ class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50000/testdb";
+        return "jdbc:db2://localhost:50010/testdb";
     }
 
     @Override
