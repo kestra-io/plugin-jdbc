@@ -24,15 +24,6 @@ import static org.hamcrest.Matchers.*;
 @MicronautTest
 public class Db2Test extends AbstractRdbmsTest {
 
-    @BeforeAll
-    static void waitForInit() {
-	    try {
-		    Thread.sleep(60000);
-	    } catch (InterruptedException e) {
-		    throw new RuntimeException(e);
-	    }
-    }
-
     @Test
     void checkInitiation() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());

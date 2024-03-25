@@ -17,15 +17,6 @@ import static org.hamcrest.Matchers.is;
 @MicronautTest
 class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
-    @BeforeAll
-    static void waitForInit() {
-	    try {
-		    Thread.sleep(60000);
-	    } catch (InterruptedException e) {
-		    throw new RuntimeException(e);
-	    }
-    }
-
     @Test
     void run() throws Exception {
         var execution = triggerFlow(this.getClass().getClassLoader(), "flows","db2-listen");
