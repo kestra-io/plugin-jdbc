@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.db2;
 
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -15,6 +16,15 @@ import static org.hamcrest.Matchers.is;
 
 @MicronautTest
 class Db2TriggerTest extends AbstractJdbcTriggerTest {
+
+    @BeforeAll
+    static void waitForInit() {
+	    try {
+		    Thread.sleep(100000);
+	    } catch (InterruptedException e) {
+		    throw new RuntimeException(e);
+	    }
+    }
 
     @Test
     void run() throws Exception {
