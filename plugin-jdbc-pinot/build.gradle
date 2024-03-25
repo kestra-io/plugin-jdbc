@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.apache.pinot:pinot-jdbc-client:1.0.0-hotfix") {
+    implementation("org.apache.pinot:pinot-jdbc-client:1.1.0") {
         exclude group: 'org.slf4j'
     }
     implementation project(':plugin-jdbc')
