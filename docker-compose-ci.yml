@@ -10,6 +10,13 @@ volumes:
   druid_shared: {}
 
 services:
+  # Provides an easy way to ensure slow-starting databases are ready when the tests run
+  block-until-healthy:
+    image: alpine:latest
+    depends_on:
+      db2:
+        condition: service_healthy
+
   mysql:
     image: mysql:8
     command: --local-infile
@@ -47,9 +54,6 @@ services:
     ports:
       - "28123:8123"
       - "29000:9000"
-    depends_on:
-      db2:
-        condition: service_healthy
 
   db2:
     image: icr.io/db2_community/db2
@@ -61,11 +65,10 @@ services:
     volumes:
       - /Docker:/database
     healthcheck:
-      test: ["CMD-SHELL", "su - db2inst1",  "db2gcf -s"]
-      interval: 15s
-      timeout: 10s
-      retries: 7
-      start_period: 35s
+      test: /opt/ibm/db2/V11.5/bin/db2 CONNECT TO $$DBNAME
+      interval: 5s
+      timeout: 240s
+      start_period: 240s
 
   oracle:
     image: wnameless/oracle-xe-11g-r2
