@@ -25,7 +25,7 @@ public class Db2Test extends AbstractRdbmsTest {
     @BeforeAll
     static void initWait() {
 	    try {
-		    Thread.sleep(31000);
+		    Thread.sleep(3100);
 	    } catch (InterruptedException e) {
 		    throw new RuntimeException(e);
 	    }

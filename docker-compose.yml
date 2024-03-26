@@ -11,11 +11,11 @@ volumes:
 
 services:
   # Provides an easy way to ensure slow-starting databases are ready when the tests run
-#  block-until-healthy:
-#    image: alpine:latest
-#    depends_on:
-#      db2:
-#        condition: service_healthy
+  block-until-healthy:
+    image: alpine:latest
+    depends_on:
+      db2:
+        condition: service_healthy
 
   db2:
     image: icr.io/db2_community/db2
@@ -27,7 +27,7 @@ services:
     volumes:
       - /Docker:/database
     healthcheck:
-      test: /opt/ibm/db2/V11.5/bin/db2 CONNECT TO sample
+      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to sample"]
       interval: 30s
       retries: 7
       timeout: 240s
