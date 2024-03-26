@@ -65,10 +65,10 @@ services:
     volumes:
       - /Docker:/database
     healthcheck:
-      test: /opt/ibm/db2/V11.5/bin/db2 CONNECT TO $$DBNAME
-      interval: 5s
+      test: /opt/ibm/db2/V11.5/bin/db2 CONNECT TO sample
+      interval: 15s
       timeout: 240s
-      start_period: 240s
+      start_period: 120s
 
   oracle:
     image: wnameless/oracle-xe-11g-r2

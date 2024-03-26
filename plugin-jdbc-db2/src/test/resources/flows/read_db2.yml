@@ -4,7 +4,7 @@ namespace: io.kestra.jdbc.db2
 tasks:
   - id: read
     type: io.kestra.plugin.jdbc.db2.Query
-    url: jdbc:db2://localhost:50010/testdb
+    url: jdbc:db2://localhost:50010/sample
     username: db2inst1
     password: password
     sql: select * from db2_types

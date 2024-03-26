@@ -5,9 +5,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -23,6 +21,15 @@ import static org.hamcrest.Matchers.*;
 
 @MicronautTest
 public class Db2Test extends AbstractRdbmsTest {
+
+    @BeforeAll
+    static void initWait() {
+	    try {
+		    Thread.sleep(31000);
+	    } catch (InterruptedException e) {
+		    throw new RuntimeException(e);
+	    }
+    }
 
     @Test
     void checkInitiation() throws Exception {
@@ -146,7 +153,7 @@ public class Db2Test extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50010/testdb";
+        return "jdbc:db2://localhost:50010/sample";
     }
 
     @Override

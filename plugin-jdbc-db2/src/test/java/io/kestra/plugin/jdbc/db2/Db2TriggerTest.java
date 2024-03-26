@@ -17,6 +17,15 @@ import static org.hamcrest.Matchers.is;
 @MicronautTest
 class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
+    @BeforeAll
+    static void initWait() {
+	    try {
+		    Thread.sleep(31000);
+	    } catch (InterruptedException e) {
+		    throw new RuntimeException(e);
+	    }
+    }
+
     @Test
     void run() throws Exception {
         var execution = triggerFlow(this.getClass().getClassLoader(), "flows","db2-listen");
@@ -27,7 +36,7 @@ class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50010/testdb";
+        return "jdbc:db2://localhost:50010/sample";
     }
 
     @Override
