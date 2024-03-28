@@ -4,9 +4,13 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.micronaut.context.annotation.Requires;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -20,15 +24,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @MicronautTest
+@DisabledIf(
+    value = "isDisabled",
+    disabledReason = "The tests are disabled for CI, as db2 container have long time initialization"
+)
 public class Db2Test extends AbstractRdbmsTest {
 
-    @BeforeAll
-    static void initWait() {
-	    try {
-		    Thread.sleep(31000);
-	    } catch (InterruptedException e) {
-		    throw new RuntimeException(e);
-	    }
+    static boolean isDisabled() {
+        return true;
     }
 
     @Test

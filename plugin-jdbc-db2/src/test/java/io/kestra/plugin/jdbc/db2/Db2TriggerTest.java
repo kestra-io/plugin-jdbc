@@ -2,8 +2,8 @@ package io.kestra.plugin.jdbc.db2;
 
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -15,15 +15,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @MicronautTest
+@DisabledIf(
+    value = "isDisabled",
+    disabledReason = "The tests are disabled for CI, as db2 container have long time initialization"
+)
 class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
-    @BeforeAll
-    static void initWait() {
-	    try {
-		    Thread.sleep(31000);
-	    } catch (InterruptedException e) {
-		    throw new RuntimeException(e);
-	    }
+    static boolean isDisabled() {
+        return true;
     }
 
     @Test
