@@ -1,0 +1,14 @@
+id: read_db2
+namespace: io.kestra.jdbc.db2
+
+tasks:
+  - id: read
+    type: io.kestra.plugin.jdbc.db2.Query
+    url: jdbc:db2://localhost:5023/testdb
+    username: db2inst1
+    password: password
+    sql: select * from db2_types
+    fetchOne: true
+  - id: flow-id
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{outputs.update.row}}"
