@@ -9,6 +9,7 @@ import io.kestra.core.runners.Worker;
 import io.kestra.core.schedulers.AbstractScheduler;
 import io.kestra.core.schedulers.DefaultScheduler;
 import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
+import io.kestra.core.utils.IdUtils;
 import io.micronaut.context.ApplicationContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -54,13 +55,13 @@ public abstract class AbstractJdbcTriggerTest {
         CountDownLatch queueCount = new CountDownLatch(1);
 
         // scheduler
-        Worker worker = new Worker(applicationContext, 8, null);
         try (
             AbstractScheduler scheduler = new DefaultScheduler(
                 this.applicationContext,
                 this.flowListenersService,
                 this.triggerState
             );
+            Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
         ) {
             AtomicReference<Execution> last = new AtomicReference<>();
 
