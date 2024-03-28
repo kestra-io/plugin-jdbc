@@ -1,0 +1,20 @@
+project.description = 'Query DB2 databases using the Kestra JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "DB2",
+                "X-Kestra-Group": project.group + ".jdbc.db2",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    implementation 'com.ibm.db2.jcc:db2jcc:db2jcc4'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
