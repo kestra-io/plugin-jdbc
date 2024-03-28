@@ -28,10 +28,10 @@ services:
       - /Docker:/database
     healthcheck:
       test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to sample"]
-      interval: 30s
-      retries: 7
+      interval: 15s
+      retries: 10
       timeout: 240s
-      start_period: 120s
+      start_period: 170s
 
   mysql:
     image: mysql:8
