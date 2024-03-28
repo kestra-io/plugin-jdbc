@@ -153,7 +153,7 @@ public class Db2Test extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50010/sample";
+        return "jdbc:db2://localhost:50010/testdb";
     }
 
     @Override

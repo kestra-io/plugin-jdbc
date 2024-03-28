@@ -27,9 +27,9 @@ services:
     volumes:
       - /Docker:/database
     healthcheck:
-      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to sample"]
-      interval: 15s
-      retries: 10
+      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to testdb"]
+      interval: 30s
+      retries: 7
       timeout: 240s
       start_period: 170s
 
