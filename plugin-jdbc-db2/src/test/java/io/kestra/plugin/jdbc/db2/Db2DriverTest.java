@@ -12,7 +12,7 @@ public class Db2DriverTest extends AbstractJdbcDriverTest {
     @BeforeAll
     static void initWait() {
 	    try {
-		    Thread.sleep(61000);
+		    Thread.sleep(62000);
 	    } catch (InterruptedException e) {
 		    throw new RuntimeException(e);
 	    }

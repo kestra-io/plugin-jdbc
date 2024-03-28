@@ -20,7 +20,7 @@ services:
   db2:
     image: icr.io/db2_community/db2
     ports:
-      - "50010:50000"
+      - "5023:50000"
     privileged: true
     env_file:
       - environment_db2

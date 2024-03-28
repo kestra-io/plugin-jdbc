@@ -20,7 +20,7 @@ class Db2TriggerTest extends AbstractJdbcTriggerTest {
     @BeforeAll
     static void initWait() {
 	    try {
-		    Thread.sleep(3100);
+		    Thread.sleep(4100);
 	    } catch (InterruptedException e) {
 		    throw new RuntimeException(e);
 	    }
@@ -36,7 +36,7 @@ class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:db2://localhost:50010/testdb";
+        return "jdbc:db2://localhost:5023/testdb";
     }
 
     @Override
