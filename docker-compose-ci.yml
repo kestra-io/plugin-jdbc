@@ -24,8 +24,10 @@ services:
     privileged: true
     env_file:
       - environment_db2
+    volumes:
+      - /Docker:/database
     healthcheck:
-      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to testdb"]
+      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to sample"]
       interval: 15s
       retries: 7
       timeout: 240s
