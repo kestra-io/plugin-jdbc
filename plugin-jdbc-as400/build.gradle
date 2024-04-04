@@ -1,0 +1,20 @@
+project.description = 'Query AS400 databases using the Kestra JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "AS400",
+                "X-Kestra-Group": project.group + ".jdbc.as400",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    implementation 'net.sf.jt400:jt400:20.0.7'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}

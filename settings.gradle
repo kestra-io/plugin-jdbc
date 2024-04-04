@@ -19,4 +19,4 @@ include 'plugin-jdbc-dremio'
 include 'plugin-jdbc-arrow-flight'
 include 'plugin-jdbc-sqlite'
 include 'plugin-jdbc-db2'
-
+include 'plugin-jdbc-as400'
