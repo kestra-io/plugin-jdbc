@@ -5,6 +5,7 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -17,6 +18,7 @@ import static org.hamcrest.Matchers.*;
 
 @MicronautTest
 @Requires(property = "ROCKSET_APIKEY")
+@EnabledIfEnvironmentVariable(named = "ROCKSET_APIKEY", matches = ".*")
 class RocksetTriggerTest extends AbstractJdbcTriggerTest {
     @Property(name = "ROCKSET_APIKEY")
     String apiKey;

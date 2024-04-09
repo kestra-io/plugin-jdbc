@@ -4,23 +4,15 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
-import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import java.io.FileNotFoundException;
-import java.io.StringReader;
-import java.math.BigDecimal;
-import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 import java.time.*;
 import java.util.List;
-import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -31,6 +23,7 @@ import static org.hamcrest.Matchers.*;
  */
 @MicronautTest
 @Requires(property = "ROCKSET_APIKEY")
+@EnabledIfEnvironmentVariable(named = "ROCKSET_APIKEY", matches = ".*")
 public class RocksetTest {
     @Inject
     RunContextFactory runContextFactory;
