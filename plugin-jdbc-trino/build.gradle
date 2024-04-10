@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("io.trino:trino-jdbc:439")
+    implementation("io.trino:trino-jdbc:444")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
