@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.db2;
+package io.kestra.plugin.jdbc.as400;
 
 import io.kestra.plugin.jdbc.AbstractJdbcDriverTest;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
