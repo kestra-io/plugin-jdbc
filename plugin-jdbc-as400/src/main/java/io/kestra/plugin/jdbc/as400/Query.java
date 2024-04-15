@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.db2;
+package io.kestra.plugin.jdbc.as400;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
