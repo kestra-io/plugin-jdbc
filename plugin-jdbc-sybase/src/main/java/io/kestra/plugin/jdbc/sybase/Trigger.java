@@ -41,7 +41,7 @@ import java.sql.SQLException;
                 "",
                 "triggers:",
                 "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.mysql.Trigger",
+                "    type: io.kestra.plugin.jdbc.sybase.Trigger",
                 "    interval: \"PT5M\"",
                 "    url: jdbc:sybase:Tds:127.0.0.1:5000/",
                 "    username: syb_user",
