@@ -1,0 +1,14 @@
+id: read_sybase
+namespace: io.kestra.jdbc.sybase
+
+tasks:
+  - id: read
+    type: io.kestra.plugin.jdbc.sybase.Query
+    url: jdbc:sybase:Tds:127.0.0.1:5000/kestra
+    username: sa
+    password: myPassword
+    sql: select * from syb_types
+    fetchOne: true
+  - id: flow-id
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{outputs.update.row}}"

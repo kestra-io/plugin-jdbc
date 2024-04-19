@@ -1,0 +1,17 @@
+id: sybase-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.sybase.Trigger
+    sql: SELECT * FROM syb_types
+    url: jdbc:sybase:Tds:127.0.0.1:5000/kestra
+    username: sa
+    password: myPassword
+    fetch: true
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.core.tasks.debugs.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

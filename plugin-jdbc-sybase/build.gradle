@@ -1,0 +1,26 @@
+project.description = 'Query Sybase databases using the Kestra JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Sybase",
+                "X-Kestra-Group": project.group + ".jdbc.sybase",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+repositories {
+    maven {
+        url 'https://maven.jumpmind.com/repo/'
+    }
+}
+
+dependencies {
+    implementation 'jdbc.sybase:jconn4:16.0'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+}
