@@ -203,11 +203,11 @@ services:
     env_file:
       - environment_druid
 
-  sybase:
-    image: datagrip/sybase:16.0
-    privileged: true
-    ports:
-      - "5000:5000"
-    hostname: mysybase
-    environment:
-      - SYBASE_DB=kestra
+#  sybase:
+#    image: datagrip/sybase:16.0
+#    privileged: true
+#    ports:
+#      - "5000:5000"
+#    hostname: mysybase
+#    environment:
+#      - SYBASE_DB=kestra

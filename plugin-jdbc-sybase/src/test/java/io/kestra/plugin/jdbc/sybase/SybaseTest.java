@@ -5,6 +5,7 @@ import io.kestra.plugin.jdbc.sybase.Query;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -23,6 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @MicronautTest
+@Disabled("Lauching Sybase via our docker-compose crash the CI")
 public class SybaseTest extends AbstractRdbmsTest {
     @Test
     void select() throws Exception {
