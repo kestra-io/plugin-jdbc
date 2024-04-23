@@ -7,6 +7,7 @@ import io.kestra.core.runners.RunContext;
 import io.micronaut.context.ApplicationContext;
 import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import jakarta.inject.Inject;
+import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -32,7 +33,8 @@ public class JdbcTriggerTest {
         assertThat(evaluate.isEmpty(), is(true));
     }
 
-    private static class DoNothingTrigger extends AbstractJdbcTrigger {
+    @NoArgsConstructor
+    public static class DoNothingTrigger extends AbstractJdbcTrigger {
         @Override
         public void registerDriver() {}
 
