@@ -8,15 +8,22 @@ import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,6 +66,43 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRow().get("json_column"), is("{\"key\": \"value\"}"));
         assertThat(runOutput.getRow().get("blob_column"), is(Hex.decodeHex("0102030405060708".toCharArray())));
+    }
+
+    @Test
+    void selectFromExistingDatabase() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
+
+        URI input = storageInterface.put(
+            null,
+            new URI("/file/storage/get.yml"),
+            new FileInputStream(Objects.requireNonNull(resource).getFile())
+        );
+
+        Query task = Query.builder()
+            .url("jdbc:sqlite:Chinook_Sqlite.sqlite")
+            .username(getUsername())
+            .password(getPassword())
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .sqliteFile(input.toString())
+            .sql("""
+                SELECT Genre.Name, COUNT(InvoiceLine.InvoiceLineId) AS TracksPurchased
+                FROM Genre
+                JOIN Track ON Genre.GenreId = Track.GenreId
+                JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId
+                GROUP BY Genre.Name
+                ORDER BY TracksPurchased DESC
+                 """)
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("Name"), is("Rock"));
+        assertThat(runOutput.getRow().get("TracksPurchased"), is(835));
     }
 
     @Test
