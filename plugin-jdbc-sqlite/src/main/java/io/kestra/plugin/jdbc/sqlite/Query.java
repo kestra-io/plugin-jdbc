@@ -71,13 +71,15 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
-        if (this.sqliteFile != null) {
-            URI url = URI.create((String) properties.get("jdbc.url"));
+        URI url = URI.create((String) properties.get("jdbc.url"));
 
-            // get file name from url scheme parts
-            String filename = url.getSchemeSpecificPart().split(":")[1];
+        // get file name from url scheme parts
+        String filename = url.getSchemeSpecificPart().split(":")[1];
 
-            url = URI.create(workingDirectory.toAbsolutePath().resolve(filename).toString());
+        Path path = workingDirectory.toAbsolutePath().resolve(filename);
+        if (path.toFile().canRead()) {
+
+            url = URI.create(path.toString());
 
             UriBuilder builder = UriBuilder.of(url);
 
