@@ -6,7 +6,7 @@ import io.kestra.plugin.jdbc.AbstractCellConverter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZoneId;
+import java.time.*;
 
 public class MysqlCellConverter extends AbstractCellConverter {
     public MysqlCellConverter(ZoneId zoneId) {
@@ -23,14 +23,12 @@ public class MysqlCellConverter extends AbstractCellConverter {
 
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
-        switch (columnTypeName.toLowerCase()) {
-            case "time":
-                return ((ResultSetImpl) rs).getLocalTime(columnIndex);
-            case "datetime":
-            case "timestamp":
-                return rs.getTimestamp(columnIndex).toInstant();
-        }
+	    return switch (columnTypeName.toLowerCase()) {
+		    case "time" -> ((ResultSetImpl) rs).getLocalTime(columnIndex);
+		    case "datetime" -> rs.getTimestamp(columnIndex).toLocalDateTime();
+		    case "timestamp" -> ((ResultSetImpl) rs).getLocalDateTime(columnIndex).toInstant(ZoneOffset.UTC);
+		    default -> super.convert(columnIndex, rs);
+	    };
 
-        return super.convert(columnIndex, rs);
     }
 }
