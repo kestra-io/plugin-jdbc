@@ -24,6 +24,31 @@ import static org.hamcrest.Matchers.*;
  */
 @MicronautTest
 public class MysqlTest extends AbstractRdbmsTest {
+
+    @Test
+    void aliasQuery() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .sql("select concert_id as myConcertId, a as char_column, b as varchar_column, c as text_column, d as null_column from mysql_types")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("myConcertId"), is("1"));
+
+        assertThat(runOutput.getRow().get("char_column"), is("four"));
+        assertThat(runOutput.getRow().get("varchar_column"), is("This is a varchar"));
+        assertThat(runOutput.getRow().get("text_column"), is("This is a text column data"));
+        assertThat(runOutput.getRow().get("null_column"), nullValue());
+    }
+
     @Test
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
