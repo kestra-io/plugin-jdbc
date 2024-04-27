@@ -189,7 +189,7 @@ public class DuckDbTest {
         Query task = Query.builder()
             .fetchOne(true)
             .timeZoneId("Europe/Paris")
-            .url("jdbc:duckdb:"+resource.getPath())
+            .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
             .sql("SELECT * FROM duck_types")
             .build();
 

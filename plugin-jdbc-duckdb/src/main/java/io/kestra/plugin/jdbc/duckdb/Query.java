@@ -134,6 +134,11 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
             Path path = Path.of(filePath);
             if (path.isAbsolute()) {
+
+                if (!path.toFile().exists()) {
+                    Files.createDirectory(path.getParent());
+                }
+
                 this.workingDirectory = path.getParent();
                 this.databaseFile = path;
 
