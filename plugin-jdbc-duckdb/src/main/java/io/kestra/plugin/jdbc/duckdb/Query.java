@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.duckdb;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.tasks.PluginUtilsService;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
+import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -97,6 +98,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @PluginProperty(dynamic = true)
     private String url = DEFAULT_URL;
 
+    @Getter(AccessLevel.NONE)
+    protected transient Path workingDirectory;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DuckDbCellConverter(zoneId);
@@ -125,13 +129,37 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     public Query.Output run(RunContext runContext) throws Exception {
         Map<String, String> outputFiles = null;
 
-        // we only create the database file if the default URL is used.
-        if (DEFAULT_URL.equals(this.url)) {
-            this.databaseFile = runContext.tempFile();
+        if (!DEFAULT_URL.equals(this.url) && this.databaseFile == null) {
+            String filePath = this.url.replace("jdbc:duckdb:", "");
+
+            Path path = Path.of(filePath);
+            if (path.isAbsolute()) {
+                this.workingDirectory = path.getParent();
+                this.databaseFile = path;
+
+                additionalVars.put("dbFilePath", this.databaseFile.toAbsolutePath());
+
+                URI url = URI.create(databaseFile.toAbsolutePath().toString());
+
+                UriBuilder builder = UriBuilder.of(url);
+
+                builder.scheme("jdbc:duckdb");
+
+                this.url = builder.build().toString();
+            } else {
+                throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
+            }
+        } else if (DEFAULT_URL.equals(this.url) && this.databaseFile != null) {
+            this.workingDirectory = databaseFile.toAbsolutePath().getParent();
+
+            additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());
+        } else {
+            this.databaseFile = runContext.tempFile(".db");
             Files.delete(this.databaseFile);
+            this.workingDirectory = databaseFile.getParent();
         }
 
-        additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
+        additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
 
         // inputFiles
         if (this.inputFiles != null) {
@@ -139,16 +167,16 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
             PluginUtilsService.createInputFiles(
                 runContext,
-                runContext.tempDir(),
+                workingDirectory,
                 finalInputFiles,
                 additionalVars
             );
         }
 
         // outputFiles
-        if (this.outputFiles != null && this.outputFiles.size() > 0) {
+        if (this.outputFiles != null && !this.outputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
-                runContext.tempDir(),
+                workingDirectory,
                 this.outputFiles,
                 additionalVars
             );
