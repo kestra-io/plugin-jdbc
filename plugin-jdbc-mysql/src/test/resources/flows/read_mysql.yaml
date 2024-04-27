@@ -1,12 +1,12 @@
 id: read_mysql
-namespace: io.kestra.jdbc.mysql
+namespace: io.kestra.jdbc.mysql.trigger
 
 tasks:
   - id: read
     type: io.kestra.plugin.jdbc.mysql.Query
-    url: jdbc:postgresql://127.0.0.1:56982/
-    username: postgres
-    password: pg_passwd
+    url: jdbc:mysql://127.0.0.1:56982/
+    username: root
+    password: mysql_passwd
     sql: select * from mysql_types
     fetchOne: true
   - id: flow-id

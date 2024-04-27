@@ -98,7 +98,7 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("salary_decimal"), is(new BigDecimal("999.99")));
 
         assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
-        assertThat(runOutput.getRow().get("datetime_type"), is(Instant.parse("2050-12-31T22:59:57.150150Z")));
+        assertThat(runOutput.getRow().get("datetime_type"), is(LocalDateTime.parse("2050-12-31T22:59:57.150150")));
         assertThat(runOutput.getRow().get("time_type"), is(LocalTime.parse("04:05:30")));
         assertThat(runOutput.getRow().get("timestamp_type"), is(Instant.parse("2004-10-19T10:23:54.999999Z")));
         assertThat(runOutput.getRow().get("year_type"), is(LocalDate.parse("2025-01-01")));
