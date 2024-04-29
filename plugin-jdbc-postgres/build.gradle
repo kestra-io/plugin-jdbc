@@ -16,7 +16,7 @@ configurations.all {
     resolutionStrategy {
         // ugly bug on crypto plugin
         force('org.bouncycastle:bcprov-jdk18on:1.78')
-        force('org.bouncycastle:bcpkix-jdk18on:1.78')
+        force('org.bouncycastle:bcpkix-jdk18on:1.78.1')
     }
 }
 
