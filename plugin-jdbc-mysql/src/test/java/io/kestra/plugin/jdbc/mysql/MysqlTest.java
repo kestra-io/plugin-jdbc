@@ -12,9 +12,7 @@ import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -24,6 +22,45 @@ import static org.hamcrest.Matchers.*;
  */
 @MicronautTest
 public class MysqlTest extends AbstractRdbmsTest {
+
+    @Test
+    void aliasQuery() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                 select concert_id as myConcertId,
+                 a as char_column,
+                 b as varchar_column,
+                 c as text_column,
+                 d as null_column,
+                 date_type as date_column,
+                 datetime_type as datetime_column,
+                 timestamp_type as timestamp_column
+                 from mysql_types
+             """)
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("myConcertId"), is("1"));
+
+        assertThat(runOutput.getRow().get("char_column"), is("four"));
+        assertThat(runOutput.getRow().get("varchar_column"), is("This is a varchar"));
+        assertThat(runOutput.getRow().get("text_column"), is("This is a text column data"));
+        assertThat(runOutput.getRow().get("null_column"), nullValue());
+
+        assertThat(runOutput.getRow().get("date_column"), is(LocalDate.parse("2030-12-25")));
+        assertThat(runOutput.getRow().get("datetime_column"), is(LocalDateTime.parse("2050-12-31T22:59:57.150150")));
+        assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2004-10-19T10:23:54.999999Z")));
+    }
+
     @Test
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -61,7 +98,7 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("salary_decimal"), is(new BigDecimal("999.99")));
 
         assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
-        assertThat(runOutput.getRow().get("datetime_type"), is(Instant.parse("2050-12-31T22:59:57.150150Z")));
+        assertThat(runOutput.getRow().get("datetime_type"), is(LocalDateTime.parse("2050-12-31T22:59:57.150150")));
         assertThat(runOutput.getRow().get("time_type"), is(LocalTime.parse("04:05:30")));
         assertThat(runOutput.getRow().get("timestamp_type"), is(Instant.parse("2004-10-19T10:23:54.999999Z")));
         assertThat(runOutput.getRow().get("year_type"), is(LocalDate.parse("2025-01-01")));

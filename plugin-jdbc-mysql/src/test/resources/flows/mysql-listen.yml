@@ -1,5 +1,5 @@
 id: mysql-listen
-namespace: io.kestra.tests
+namespace: io.kestra.jdbc.mysql
 
 triggers:
   - id: watch
