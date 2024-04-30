@@ -1,71 +1,15 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Generator: Adobe Illustrator 19.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   version="1.1"
-   id="Layer_1"
-   x="0px"
-   y="0px"
-   viewBox="0 0 432.70001 84.800003"
-   xml:space="preserve"
-   sodipodi:docname="Vertica_pos_blk_rgb.svg"
-   width="432.70001"
-   height="84.800003"
-   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"><metadata
-   id="metadata19"><rdf:RDF><cc:Work
-       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
-   id="defs17" /><sodipodi:namedview
-   pagecolor="#ffffff"
-   bordercolor="#666666"
-   borderopacity="1"
-   objecttolerance="10"
-   gridtolerance="10"
-   guidetolerance="10"
-   inkscape:pageopacity="0"
-   inkscape:pageshadow="2"
-   inkscape:window-width="1920"
-   inkscape:window-height="1022"
-   id="namedview15"
-   showgrid="false"
-   inkscape:zoom="0.33585859"
-   inkscape:cx="215.8"
-   inkscape:cy="42.9"
-   inkscape:window-x="2560"
-   inkscape:window-y="0"
-   inkscape:window-maximized="1"
-   inkscape:current-layer="Layer_1" />
-<polygon
-   points="257.8,267 257.8,267 226.4,322.5 195.1,267 180.2,267 226.5,348.9 265.4,280 313.6,280 313.6,267 257.8,267 "
-   id="polygon2"
-   transform="translate(-180.2,-264.1)" />
-<polygon
-   points="258.2,300 258.2,345.3 313.6,345.3 313.6,332.3 271.2,332.3 271.2,313 313.6,313 313.6,300 "
-   id="polygon4"
-   transform="translate(-180.2,-264.1)" />
-<rect
-   x="270.5"
-   y="2.9000001"
-   width="13"
-   height="78.300003"
-   id="rect6" />
-<path
-   d="M 265.4,2.9 H 199 v 0.2 c 4.1,3.3 7.2,7.7 9,12.8 h 17.7 v 65.3 h 13 V 15.9 h 26.7 z"
-   id="path8"
-   inkscape:connector-curvature="0" />
-<path
-   d="m 195.8,81.2 h 13 L 189.6,46 c 8.2,-3.3 14,-11.4 14,-20.7 0,-12.4 -10,-22.4 -22.4,-22.4 h -29.4 -8.7 -4.3 v 78.3 h 13 V 47.6 h 25.7 z m -44,-65.3 h 29.4 c 5.2,0 9.4,4.2 9.4,9.4 0,5.2 -4.2,9.4 -9.4,9.4 h -29.4 z"
-   id="path10"
-   inkscape:connector-curvature="0" />
-<path
-   d="m 383.9,0 v 0 l -33.4,55.6 v 0.1 0 c -4.7,7.8 -13.2,13 -22.9,13 -14.8,0 -26.8,-12 -26.8,-26.8 0,-14.8 12,-26.8 26.8,-26.8 9.1,0 17.1,4.5 22,11.5 l 7,-11.7 C 349.4,7.1 339.1,2.3 327.6,2.3 305.7,2.3 288,20 288,41.9 c 0,21.9 17.7,39.6 39.6,39.6 14.4,0 27,-7.7 34,-19.2 v 0 l 22.3,-37.2 33.8,56.3 15,-0.2 z"
-   id="path12"
-   inkscape:connector-curvature="0" />
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 26.0.3, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.0" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+     viewBox="0 0 853.7 551.8" style="enable-background:new 0 0 853.7 551.8;" xml:space="preserve" fill="currentColor">
+    <polygon class="st0" points="286.2,208.9 191.6,208.9 191.6,208.9 191.6,208.9 138.4,303 85.3,208.9 60,208.9 138.5,347.8
+	204.5,230.9 286.2,230.9 "/>
+    <polygon class="st0" points="286.2,286.9 286.2,264.9 192.2,264.9 192.2,341.7 286.2,341.7 286.2,319.6 214.3,319.6 214.3,286.9 "/>
+    <rect x="518.7" y="208.9" class="st0" width="22" height="132.7"/>
+    <path class="st0" d="M510,208.9H397.5v0.3c7,5.7,12.3,13.2,15.2,21.7h30v110.7h22V230.9h45.1v-22L510,208.9z"/>
+    <path class="st0" d="M392,341.6h22L381.6,282c19.4-7.8,28.9-29.9,21.1-49.3c-5.8-14.5-19.9-23.9-35.5-23.8h-71.9v132.7h22v-56.9
+	h43.7L392,341.6z M317.4,230.9h49.9c8.8,0.2,15.8,7.5,15.5,16.3c-0.2,8.5-7,15.3-15.5,15.5h-49.9V230.9z"/>
+    <path class="st0" d="M710.9,204L710.9,204l-56.7,94.5l0,0c-13,21.3-40.8,28-62.1,15c-21.3-13-28-40.8-15-62.1
+	c13-21.3,40.8-28,62.1-15c5.4,3.3,10,7.7,13.6,12.8l11.9-19.9c-25.3-27.2-67.8-28.7-95-3.4c-27.2,25.3-28.7,67.8-3.4,95
+	c25.3,27.2,67.8,28.7,95,3.4c4.6-4.3,8.6-9.2,11.8-14.6l0,0l37.8-63.1l57.3,95.4l25.4-0.3L710.9,204z"/>
 </svg>
