@@ -35,7 +35,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a local DuckDb."
+    title = "Query a DuckDb Database."
 )
 @Plugin(
     examples = {
@@ -61,6 +61,48 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 "      in.csv: \"{{ outputs.http_download.uri }}\"",
                 "    outputFiles:",
                 "       - out"
+            }
+        ),
+        @Example(
+            title = "Execute a query that reads from existing database file using url only.",
+            full = true,
+            code = {
+                "id: query-duckdb",
+                "namespace: dev",
+                "tasks:",
+                "  - id: query1",
+                "    type: io.kestra.plugin.jdbc.duckdb.Query",
+                "    url: jdbc:duckdb:/{{ vars.dbfile }}",
+                "    sql: SELECT * FROM table_name;",
+                "    store: true",
+                "",
+                "  - id: query2",
+                "    type: io.kestra.plugin.jdbc.duckdb.Query",
+                "    url: jdbc:duckdb:/temp/folder/duck.db",
+                "    sql: SELECT * FROM table_name;",
+                "    store: true"
+            }
+        ),
+        @Example(
+            title = "Execute a query that reads from existing database file using databaseFile variable.",
+            full = true,
+            code = {
+                "id: query-duckdb",
+                "namespace: dev",
+                "tasks:",
+                "  - id: query1",
+                "    type: io.kestra.plugin.jdbc.duckdb.Query",
+                "    url: jdbc:duckdb:",
+                "    databaseFile:{{ vars.dbfile }}",
+                "    sql: SELECT * FROM table_name;",
+                "    store: true",
+                "",
+                "  - id: query2",
+                "    type: io.kestra.plugin.jdbc.duckdb.Query",
+                "    url: jdbc:duckdb:",
+                "    databaseFile:/temp/folder/duck.db",
+                "    sql: SELECT * FROM table_name;",
+                "    store: true"
             }
         )
     }
@@ -98,9 +140,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @PluginProperty(dynamic = true)
     private String url = DEFAULT_URL;
 
-    @Getter(AccessLevel.NONE)
-    protected transient Path workingDirectory;
-
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DuckDbCellConverter(zoneId);
@@ -127,6 +166,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
+        Path workingDirectory;
+
         Map<String, String> outputFiles = null;
 
         if (!DEFAULT_URL.equals(this.url) && this.databaseFile == null) {
@@ -139,7 +180,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                     Files.createDirectory(path.getParent());
                 }
 
-                this.workingDirectory = path.getParent();
+                workingDirectory = path.getParent();
                 this.databaseFile = path;
 
                 additionalVars.put("dbFilePath", this.databaseFile.toAbsolutePath());
@@ -155,13 +196,13 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
         } else if (DEFAULT_URL.equals(this.url) && this.databaseFile != null) {
-            this.workingDirectory = databaseFile.toAbsolutePath().getParent();
+            workingDirectory = databaseFile.toAbsolutePath().getParent();
 
             additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());
         } else {
             this.databaseFile = runContext.tempFile(".db");
             Files.delete(this.databaseFile);
-            this.workingDirectory = databaseFile.getParent();
+            workingDirectory = databaseFile.getParent();
         }
 
         additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
