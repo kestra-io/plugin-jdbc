@@ -155,8 +155,6 @@ public class DuckDbTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        String hour = System.getenv("GITHUB_WORKFLOW") != null ? "17" : "15";
-
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
@@ -169,7 +167,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_real"), is(123.456F));
         assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
         // assertThat(runOutput.getRow().get("t_time"), is(LocalTime.parse("'01:02:03.456"))); null is returned
-        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T" +  hour + ":55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
         assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
@@ -196,8 +194,6 @@ public class DuckDbTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        String hour = System.getenv("GITHUB_WORKFLOW") != null ? "17" : "15";
-
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
@@ -209,7 +205,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
         assertThat(runOutput.getRow().get("t_real"), is(123.456F));
         assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
-        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T" +  hour + ":55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
         assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
@@ -238,8 +234,6 @@ public class DuckDbTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        String hour = System.getenv("GITHUB_WORKFLOW") != null ? "17" : "15";
-
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
@@ -251,7 +245,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
         assertThat(runOutput.getRow().get("t_real"), is(123.456F));
         assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
-        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T" +  hour + ":55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
         assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
