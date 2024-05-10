@@ -64,7 +64,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             }
         ),
         @Example(
-            title = "Execute a query that reads from existing database file using url only.",
+            title = "Execute a query that reads from an existing database file using a URL.",
             full = true,
             code = {
                 "id: query-duckdb",
@@ -84,7 +84,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             }
         ),
         @Example(
-            title = "Execute a query that reads from existing database file using databaseFile variable.",
+            title = "Execute a query that reads from an existing database file using the `databaseFile` variable.",
             full = true,
             code = {
                 "id: query-duckdb",
