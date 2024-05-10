@@ -25,7 +25,9 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.List;
@@ -153,8 +155,6 @@ public class DuckDbTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
 
-        String hour = System.getenv("GITHUB_WORKFLOW") != null ? "17" : "15";
-
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
@@ -167,7 +167,85 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_real"), is(123.456F));
         assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
         // assertThat(runOutput.getRow().get("t_time"), is(LocalTime.parse("'01:02:03.456"))); null is returned
-        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T" +  hour + ":55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
+        assertThat(runOutput.getRow().get("t_tinyint"), is(127));
+        assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
+        assertThat(runOutput.getRow().get("t_uinteger"), is(2147483647L));
+        assertThat(runOutput.getRow().get("t_usmallint"), is(32767));
+        assertThat(runOutput.getRow().get("t_utinyint"), is((short)127));
+        assertThat(runOutput.getRow().get("t_varchar"), is("test"));
+        assertThat(runOutput.getRow().get("t_enum"), is("happy"));
+    }
+
+    @Test
+    void selectFromExistingFileInUrl() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
+
+        Query task = Query.builder()
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
+            .sql("SELECT * FROM duck_types")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
+        assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
+        assertThat(runOutput.getRow().get("t_boolean"), is(true));
+        assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
+        assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
+        assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
+        assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
+        assertThat(runOutput.getRow().get("t_real"), is(123.456F));
+        assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
+        assertThat(runOutput.getRow().get("t_tinyint"), is(127));
+        assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
+        assertThat(runOutput.getRow().get("t_uinteger"), is(2147483647L));
+        assertThat(runOutput.getRow().get("t_usmallint"), is(32767));
+        assertThat(runOutput.getRow().get("t_utinyint"), is((short)127));
+        assertThat(runOutput.getRow().get("t_varchar"), is("test"));
+        assertThat(runOutput.getRow().get("t_enum"), is("happy"));
+    }
+
+
+    @Test
+    void selectFromExistingFileInParameter() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
+
+        Query task = Query.builder()
+            .fetchOne(true)
+            .timeZoneId("Europe/Paris")
+            .url("jdbc:duckdb:")
+            .databaseFile(Path.of(Objects.requireNonNull(resource).toURI()))
+            .sql("SELECT * FROM duck_types")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
+        assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
+        assertThat(runOutput.getRow().get("t_boolean"), is(true));
+        assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
+        assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
+        assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
+        assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
+        assertThat(runOutput.getRow().get("t_real"), is(123.456F));
+        assertThat(runOutput.getRow().get("t_smallint"), is((short)127));
+        assertThat(runOutput.getRow().get("t_timestamp"), is(ZonedDateTime.parse("2020-06-10T15:55:23.383345+02:00[Europe/Paris]")));
         assertThat(runOutput.getRow().get("t_timestamptz"), is(OffsetDateTime.parse("2001-08-22T10:04:05.321Z")));
         assertThat(runOutput.getRow().get("t_tinyint"), is(127));
         assertThat(runOutput.getRow().get("t_ubigint"), is("9223372036854775807"));
@@ -181,7 +259,7 @@ public class DuckDbTest {
     static Stream<String> nullOrFilledDuckDbUrl() {
         return Stream.of(
             null,
-            "jdbc:duckdb:" + IdUtils.create() + ".db"
+            "jdbc:duckdb:/tmp/" + IdUtils.create() + ".db"
         );
     }
 
