@@ -60,7 +60,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
 
         try (
             Connection connection = this.connection(runContext);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.uriToInputStream(from)));
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)));
         ) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
             CopyManager copyManager = new CopyManager(pgConnection);

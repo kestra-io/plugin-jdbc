@@ -90,7 +90,7 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
         URI from = new URI(runContext.render(this.from));
         try (
             Connection conn = this.connection(runContext);
-            InputStream inputStream = runContext.uriToInputStream(from);
+            InputStream inputStream = runContext.storage().getFile(from);
         ) {
             String stageName = runContext.render(this.stageName);
             String prefix = runContext.render(this.prefix);
