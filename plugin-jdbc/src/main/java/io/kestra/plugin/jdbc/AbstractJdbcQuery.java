@@ -110,7 +110,7 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
                         fileWriter.flush();
                         fileWriter.close();
                         output
-                            .uri(runContext.putTempFile(tempFile))
+                            .uri(runContext.storage().putFile(tempFile))
                             .size(size);
                     } else if (this.fetch) {
                         List<Map<String, Object>> maps = new ArrayList<>();
