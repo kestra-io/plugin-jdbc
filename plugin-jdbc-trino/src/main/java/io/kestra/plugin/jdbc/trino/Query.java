@@ -46,7 +46,7 @@ import java.time.ZoneId;
                     "  fetch: true",
                     "  store: true",
                     "- id: csvReport",
-                    "  type: io.kestra.plugin.serdes.csv.CsvWriter",
+                    "  type: io.kestra.plugin.serdes.csv.IonToCsv",
                     "  from: \"{{ outputs.analyzeOrders.uri }}\""}
         )
     }
