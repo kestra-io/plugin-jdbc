@@ -42,9 +42,26 @@ import java.util.Properties;
                 "- id: update",
                 "  type: io.kestra.plugin.jdbc.sqlite.Query",
                 "  url: jdbc:sqlite:myfile.db",
-                "  sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}",
                 "  sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types",
                 "  fetch: true",
+                "",
+                "- id: use-fetched-data",
+                "  type: io.kestra.plugin.jdbc.sqlite.Query",
+                "  url: jdbc:sqlite:myfile.db",
+                "  sql: \"{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
+        ),
+        @Example(
+            full = true,
+            title = "Execute a query, using existing sqlite file, and pass the results to another task.",
+            code = {
+                "tasks:",
+                "- id: update",
+                "  type: io.kestra.plugin.jdbc.sqlite.Query",
+                "  url: jdbc:sqlite:myfile.db",
+                "  sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}",
+                "  sql: select * from pgsql_types",
+                "  fetch: true",
+                "",
                 "- id: use-fetched-data",
                 "  type: io.kestra.plugin.jdbc.sqlite.Query",
                 "  url: jdbc:sqlite:myfile.db",
@@ -76,9 +93,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // get file name from url scheme parts
         String filename = url.getSchemeSpecificPart().split(":")[1];
 
-        Path path = workingDirectory.toAbsolutePath().resolve(filename);
-        if (path.toFile().canRead()) {
-
+        Path path = runContext.resolve(Path.of(filename));
+        if (path.toFile().exists()) {
             url = URI.create(path.toString());
 
             UriBuilder builder = UriBuilder.of(url);
