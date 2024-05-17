@@ -42,6 +42,25 @@ subprojects {
         api.extendsFrom(jdbcDriver)
     }
 
+    // force Jackson for now as there is a bug in 2.7
+    configurations.configureEach {
+        resolutionStrategy {
+            force("com.fasterxml.jackson:jackson-bom:" + jacksonVersion)
+            force("com.fasterxml.jackson.core:jackson-bom:" + jacksonVersion)
+            force("com.fasterxml.jackson.core:jackson-core:" + jacksonVersion)
+            force("com.fasterxml.jackson.core:jackson-databind:" + jacksonVersion)
+            force("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:" + jacksonVersion)
+            force("com.fasterxml.jackson.module:jackson-module-parameter-names:" + jacksonVersion)
+            force("com.fasterxml.jackson.datatype:jackson-datatype-guava:" + jacksonVersion)
+            force("com.fasterxml.jackson.core:jackson-annotations:" + jacksonVersion)
+            force("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:" + jacksonVersion)
+            force("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:" + jacksonVersion)
+            force("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:" + jacksonVersion)
+            force("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:" + jacksonVersion)
+            force("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:" + jacksonVersion)
+        }
+    }
+
     dependencies {
         // Lombok
         annotationProcessor "org.projectlombok:lombok:$lombokVersion"
