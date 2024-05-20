@@ -82,7 +82,7 @@ public interface SnowflakeInterface {
 
         if (this.getPrivateKey() != null) {
             if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
-                throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.")
+                throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
             }
             properties.put("privateKey", runContext.render(this.getPrivateKey()));
         }
