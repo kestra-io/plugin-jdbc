@@ -43,6 +43,26 @@ public interface SnowflakeInterface {
     @PluginProperty(dynamic = true)
     String getRole();
 
+    @Schema(
+        title = "Specifies the private key for key pair authentication and key rotation.",
+        description = "It needs to be an un-encoded private key in plaintext."
+    )
+    @PluginProperty(dynamic = true)
+    String getPrivateKey();
+
+    @Schema(
+        title = "Specifies the private key file for key pair authentication and key rotation.",
+        description = "It needs to be the path on the host where the private key file is located."
+    )
+    @PluginProperty(dynamic = true)
+    String getPrivateKeyFile();
+
+    @Schema(
+        title = "Specifies the private key file password for key pair authentication and key rotation."
+    )
+    @PluginProperty(dynamic = true)
+    String getPrivateKeyFilePassword();
+
     default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
         if (this.getWarehouse() != null) {
             properties.put("warehouse", runContext.render(this.getWarehouse()));
@@ -58,6 +78,18 @@ public interface SnowflakeInterface {
 
         if (this.getRole() != null) {
             properties.put("role", runContext.render(this.getRole()));
+        }
+
+        if (this.getPrivateKey() != null) {
+            if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
+                throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.")
+            }
+            properties.put("privateKey", runContext.render(this.getPrivateKey()));
+        }
+
+        if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
+            properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()));
+            properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()));
         }
     }
 }

@@ -22,6 +22,9 @@ public abstract class AbstractSnowflakeConnection extends Task implements JdbcCo
     private String url;
     private String username;
     private String password;
+    private String privateKey;
+    private String privateKeyFile;
+    private String privateKeyFilePassword;
 
     @Override
     public void registerDriver() throws SQLException {
