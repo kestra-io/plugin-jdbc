@@ -53,6 +53,9 @@ import java.util.Properties;
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SnowflakeInterface, AutoCommitInterface {
     protected final Boolean autoCommit = true;
 
+    private String privateKey;
+    private String privateKeyFile;
+    private String privateKeyFilePassword;
     private String database;
     private String warehouse;
     private String schema;
