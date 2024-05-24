@@ -10,5 +10,5 @@ tasks:
     sql: select * from mysql_types
     fetchOne: true
   - id: flow-id
-    type: io.kestra.core.tasks.debugs.Return
+    type: io.kestra.plugin.core.debug.Return
     format: "{{outputs.update.row}}"
