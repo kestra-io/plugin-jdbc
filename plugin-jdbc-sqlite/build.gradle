@@ -15,13 +15,13 @@ jar {
 configurations.all {
     resolutionStrategy {
         // ugly bug on crypto plugin
-        force('org.bouncycastle:bcprov-jdk18on:1.78')
-        force('org.bouncycastle:bcpkix-jdk18on:1.78')
+        force('org.bouncycastle:bcprov-jdk18on:1.78.1')
+        force('org.bouncycastle:bcpkix-jdk18on:1.78.1')
     }
 }
 
 dependencies {
-    jdbcDriver 'org.xerial:sqlite-jdbc:3.45.3.0'
+    jdbcDriver 'org.xerial:sqlite-jdbc:3.46.0.0'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk18on'
     api 'org.bouncycastle:bcpkix-jdk18on'
