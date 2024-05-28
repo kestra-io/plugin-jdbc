@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("com.oracle.database.jdbc:ojdbc11:23.4.0.24.05")
+    implementation("com.oracle.database.jdbc:ojdbc11:23.3.0.23.09")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
