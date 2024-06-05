@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.tasks.PluginUtilsService;
+import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
