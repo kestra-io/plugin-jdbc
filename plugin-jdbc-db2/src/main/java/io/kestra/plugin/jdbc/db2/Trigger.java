@@ -68,6 +68,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();
 

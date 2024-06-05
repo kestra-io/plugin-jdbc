@@ -75,6 +75,7 @@ public class Trigger extends AbstractJdbcTrigger implements RocksetConnection {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .apiKey(this.apiKey)
             .apiServer(this.apiServer)
