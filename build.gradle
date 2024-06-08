@@ -78,6 +78,14 @@ subprojects {
         // Logs
         compileOnly'org.slf4j:slf4j-api:2.0.13'
     }
+
+    configurations.all {
+        resolutionStrategy {
+            // ugly bug on crypto plugin
+            force('org.bouncycastle:bcprov-jdk18on:1.78')
+            force('org.bouncycastle:bcpkix-jdk18on:1.78')
+        }
+    }
 }
 
 /**********************************************************************************************************************\
@@ -133,6 +141,26 @@ subprojects {
 
         testImplementation group: 'com.h2database', name: 'h2', version: '2.2.224'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.17.0'
+    }
+
+    dependencies {
+        testImplementation platform("io.qameta.allure:allure-bom:2.27.0")
+        testImplementation "io.qameta.allure:allure-junit5"
+    }
+
+    configurations {
+        agent {
+            canBeResolved = true
+            canBeConsumed = true
+        }
+    }
+
+    dependencies {
+        agent "org.aspectj:aspectjweaver:1.9.22.1"
+    }
+
+    test {
+        jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
     }
 }
 

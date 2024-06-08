@@ -12,14 +12,6 @@ jar {
     }
 }
 
-configurations.all {
-    resolutionStrategy {
-        // ugly bug on crypto plugin
-        force('org.bouncycastle:bcprov-jdk18on:1.78')
-        force('org.bouncycastle:bcpkix-jdk18on:1.78')
-    }
-}
-
 dependencies {
     jdbcDriver 'org.postgresql:postgresql:42.7.3'
     implementation project(':plugin-jdbc')
