@@ -6,7 +6,7 @@ import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.runners.RunnerUtils;
 import io.kestra.core.storages.StorageInterface;
-import io.kestra.runner.memory.MemoryRunner;
+import io.kestra.core.runners.StandAloneRunner;
 
 import jakarta.inject.Inject;
 import java.io.File;
@@ -26,7 +26,7 @@ public abstract class AbstractRdbmsTest {
     protected RunContextFactory runContextFactory;
 
     @Inject
-    protected MemoryRunner runner;
+    protected StandAloneRunner runner;
 
     @Inject
     protected RunnerUtils runnerUtils;

@@ -1,10 +1,10 @@
 package io.kestra.plugin.jdbc.druid;
 
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.plugin.jdbc.AbstractJdbcDriverTest;
 
 import java.sql.Driver;
-@MicronautTest
+@KestraTest
 public class DruidDriverTest extends AbstractJdbcDriverTest {
     @Override
     protected Class<? extends Driver> getDriverClass() {

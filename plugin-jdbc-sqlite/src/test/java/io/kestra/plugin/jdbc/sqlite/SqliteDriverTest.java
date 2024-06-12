@@ -1,11 +1,11 @@
 package io.kestra.plugin.jdbc.sqlite;
 
 import io.kestra.plugin.jdbc.AbstractJdbcDriverTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 
 import java.sql.Driver;
 
-@MicronautTest
+@KestraTest
 class SqliteDriverTest extends AbstractJdbcDriverTest {
 
     @Override

@@ -9,7 +9,7 @@ import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.h2.tools.RunScript;
@@ -42,7 +42,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://duckdb.org/docs/sql/data_types/overview
  */
-@MicronautTest
+@KestraTest
 public class DuckDbTest {
     @Inject
     private RunContextFactory runContextFactory;

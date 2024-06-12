@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://docs.microsoft.com/en-us/sql/t-sql/data-types/data-types-transact-sql?view=sql-server-ver15
  */
-@MicronautTest
+@KestraTest
 public class SqlServerTest extends AbstractRdbmsTest {
     @Test
     void select() throws Exception {

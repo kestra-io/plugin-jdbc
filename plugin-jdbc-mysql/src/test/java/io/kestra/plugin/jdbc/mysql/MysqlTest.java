@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.mysql;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.*;
 /**
  * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
  */
-@MicronautTest
+@KestraTest
 public class MysqlTest extends AbstractRdbmsTest {
 
     @Test

@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.vertica;
 
 import com.google.common.collect.ImmutableMap;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.notNullValue;
 /**
  * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
  */
-@MicronautTest
+@KestraTest
 public class VerticaTest extends AbstractRdbmsTest {
     @Test
     void select() throws Exception {

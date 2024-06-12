@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://docs.oracle.com/cd/B28359_01/server.111/b28318/datatype.htm#CNCPT1843
  */
-@MicronautTest
+@KestraTest
 public class OracleTest extends AbstractRdbmsTest {
     @Test
     void select() throws Exception {

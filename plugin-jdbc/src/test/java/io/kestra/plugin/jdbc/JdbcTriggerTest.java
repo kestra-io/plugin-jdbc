@@ -5,7 +5,7 @@ import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.context.ApplicationContext;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.Test;
@@ -16,7 +16,7 @@ import java.util.Optional;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@MicronautTest
+@KestraTest
 public class JdbcTriggerTest {
     @Inject
     protected ApplicationContext applicationContext;

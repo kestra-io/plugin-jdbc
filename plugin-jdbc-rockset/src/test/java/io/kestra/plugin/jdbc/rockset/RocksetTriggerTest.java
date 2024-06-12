@@ -3,7 +3,7 @@ package io.kestra.plugin.jdbc.rockset;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -16,7 +16,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@MicronautTest
+@KestraTest
 @Requires(property = "ROCKSET_APIKEY")
 @EnabledIfEnvironmentVariable(named = "ROCKSET_APIKEY", matches = ".*")
 class RocksetTriggerTest extends AbstractJdbcTriggerTest {

@@ -2,7 +2,7 @@ package io.kestra.plugin.jdbc.redshift;
 
 import com.google.common.collect.ImmutableMap;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
@@ -21,7 +21,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 
-@MicronautTest
+@KestraTest
 @Disabled("no server for unit test")
 public class RedshiftTest extends AbstractRdbmsTest {
     @Value("${redshift.url}")

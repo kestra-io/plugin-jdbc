@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://trino.io/docs/current/language/types.html?highlight=data%20type#date
  */
-@MicronautTest
+@KestraTest
 public class TrinoTest extends AbstractRdbmsTest {
     @SuppressWarnings("unchecked")
     @Test

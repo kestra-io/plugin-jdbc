@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://docs.pinot.apache.org/configuration-reference/schema
  */
-@MicronautTest
+@KestraTest
 public class PinotTest {
     @Inject
     RunContextFactory runContextFactory;

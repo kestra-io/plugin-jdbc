@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@MicronautTest
+@KestraTest
 @Disabled("Disable for now as refactory may be done to split SSL test")
 class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
 

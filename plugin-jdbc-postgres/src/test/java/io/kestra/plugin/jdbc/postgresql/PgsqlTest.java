@@ -7,7 +7,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.context.ApplicationContext;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * See :
  * - https://www.postgresql.org/docs/12/datatype.html
  */
-@MicronautTest
+@KestraTest
 public class PgsqlTest extends AbstractRdbmsTest {
     @Inject
     private ApplicationContext applicationContext;

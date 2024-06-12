@@ -6,7 +6,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.*;
  * See :
  * - https://rockset.io/docs/current/language/types.html?highlight=data%20type#date
  */
-@MicronautTest
+@KestraTest
 @Requires(property = "ROCKSET_APIKEY")
 @EnabledIfEnvironmentVariable(named = "ROCKSET_APIKEY", matches = ".*")
 public class RocksetTest {

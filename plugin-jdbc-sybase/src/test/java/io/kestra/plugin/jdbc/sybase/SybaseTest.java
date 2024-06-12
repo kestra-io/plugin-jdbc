@@ -2,7 +2,7 @@ package io.kestra.plugin.jdbc.sybase;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.plugin.jdbc.sybase.Query;
-import io.micronaut.test.extensions.junit5.annotation.MicronautTest;
+import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
@@ -23,7 +23,7 @@ import java.time.LocalTime;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@MicronautTest
+@KestraTest
 @Disabled("Lauching Sybase via our docker-compose crash the CI")
 public class SybaseTest extends AbstractRdbmsTest {
     @Test
