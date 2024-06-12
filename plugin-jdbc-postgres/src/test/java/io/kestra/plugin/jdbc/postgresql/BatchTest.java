@@ -6,9 +6,7 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.context.ApplicationContext;
 import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +19,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,9 +26,6 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest
 public class BatchTest extends AbstractRdbmsTest {
-    @Inject
-    private ApplicationContext applicationContext;
-
     @Test
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -238,7 +232,7 @@ public class BatchTest extends AbstractRdbmsTest {
         props.put("password", getPassword());
 
         try {
-            PostgresService.handleSsl(props, new RunContext(applicationContext, Map.of()), new PgsqlTest.PostgresConnection());
+            PostgresService.handleSsl(props, runContextFactory.of(), new PgsqlTest.PostgresConnection());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

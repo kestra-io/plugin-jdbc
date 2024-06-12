@@ -6,9 +6,7 @@ import io.kestra.core.models.flows.State;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.context.ApplicationContext;
 import io.kestra.core.junit.annotations.KestraTest;
-import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
@@ -35,8 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @KestraTest
 public class PgsqlTest extends AbstractRdbmsTest {
-    @Inject
-    private ApplicationContext applicationContext;
 
     @Test
     void selectAndFetchOne() throws Exception {
@@ -243,7 +239,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         props.put("password", getPassword());
 
         try {
-            PostgresService.handleSsl(props, new RunContext(applicationContext, Map.of()), new PostgresConnection());
+            PostgresService.handleSsl(props, runContextFactory.of(), new PostgresConnection());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
