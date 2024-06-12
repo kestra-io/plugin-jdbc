@@ -7,8 +7,7 @@ import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.Worker;
 import io.kestra.core.schedulers.AbstractScheduler;
-import io.kestra.core.schedulers.DefaultScheduler;
-import io.kestra.core.schedulers.SchedulerTriggerStateInterface;
+import io.kestra.jdbc.runner.JdbcScheduler;
 import io.kestra.core.utils.IdUtils;
 import io.micronaut.context.ApplicationContext;
 import jakarta.inject.Inject;
@@ -38,9 +37,6 @@ public abstract class AbstractJdbcTriggerTest {
     protected ApplicationContext applicationContext;
 
     @Inject
-    protected SchedulerTriggerStateInterface triggerState;
-
-    @Inject
     protected FlowListeners flowListenersService;
 
     @Inject
@@ -56,10 +52,9 @@ public abstract class AbstractJdbcTriggerTest {
 
         // scheduler
         try (
-            AbstractScheduler scheduler = new DefaultScheduler(
+            AbstractScheduler scheduler = new JdbcScheduler(
                 this.applicationContext,
-                this.flowListenersService,
-                this.triggerState
+                this.flowListenersService
             );
             Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
         ) {
