@@ -21,11 +21,17 @@ tasks.withType(JavaCompile) {
 
 group "io.kestra.plugin"
 
-allprojects {
+allprojects { Project subproject ->
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url "https://maven.dremio.com/free/" }
+        if (subproject.name == "plugin-jdbc-dremio") {
+            maven { url "https://maven.dremio.com/free/" }
+        } else if (subproject.name == "plugin-jdbc-sybase") {
+            maven { url 'https://maven.jumpmind.com/repo/' }
+        } else if (subproject.name == "plugin-jdbc-vectorwise") {
+            maven { url "https://talend-update.talend.com/nexus/content/repositories/libraries/" }
+        }
         if (isBuildSnapshot) {
             maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
         }

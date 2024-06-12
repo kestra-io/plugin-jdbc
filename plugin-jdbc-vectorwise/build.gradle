@@ -12,10 +12,6 @@ jar {
     }
 }
 
-repositories {
-    maven { url "https://talend-update.talend.com/nexus/content/repositories/libraries/" }
-}
-
 dependencies {
     jdbcDriver 'org.talend.libraries:iijdbc:6.0.0'
     implementation project(':plugin-jdbc')

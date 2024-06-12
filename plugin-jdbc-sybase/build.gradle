@@ -12,12 +12,6 @@ jar {
     }
 }
 
-repositories {
-    maven {
-        url 'https://maven.jumpmind.com/repo/'
-    }
-}
-
 dependencies {
     implementation 'jdbc.sybase:jconn4:16.0'
     implementation project(':plugin-jdbc')
