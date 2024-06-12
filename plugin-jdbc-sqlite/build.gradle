@@ -15,8 +15,8 @@ jar {
 dependencies {
     jdbcDriver 'org.xerial:sqlite-jdbc:3.46.0.0'
     implementation project(':plugin-jdbc')
-    api 'org.bouncycastle:bcprov-jdk18on'
-    api 'org.bouncycastle:bcpkix-jdk18on'
+    api 'org.bouncycastle:bcprov-jdk18on:1.78'
+    api 'org.bouncycastle:bcpkix-jdk18on:1.78'
     api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
