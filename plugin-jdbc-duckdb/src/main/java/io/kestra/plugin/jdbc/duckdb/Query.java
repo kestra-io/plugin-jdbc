@@ -235,7 +235,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
         if (outputFiles != null) {
             outputFiles
-                .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.putTempFile(new File(runContext.render(v, additionalVars))))));
+                .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
         }
 
         return Output.builder()

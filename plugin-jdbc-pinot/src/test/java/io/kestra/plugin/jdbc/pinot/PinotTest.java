@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.pinot;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.VersionProvider;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;

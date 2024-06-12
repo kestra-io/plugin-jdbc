@@ -98,7 +98,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
 
             return Output
                 .builder()
-                .uri(runContext.putTempFile(tempFile))
+                .uri(runContext.storage().putFile(tempFile))
                 .build();
         }
     }

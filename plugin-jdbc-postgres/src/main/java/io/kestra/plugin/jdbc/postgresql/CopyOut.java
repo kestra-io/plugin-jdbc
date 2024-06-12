@@ -74,7 +74,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
 
             return Output
                 .builder()
-                .uri(runContext.putTempFile(path.toFile()))
+                .uri(runContext.storage().putFile(path.toFile()))
                 .rowCount(rowsAffected)
                 .build();
         }
