@@ -53,6 +53,6 @@ final class DruidTestHelper {
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException(e);
             }
-        }, Duration.ofSeconds(1), Duration.ofMinutes(1));
+        }, Duration.ofSeconds(1), Duration.ofMinutes(2));
     }
 }
