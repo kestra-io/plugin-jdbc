@@ -7,6 +7,7 @@ import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.FlowListeners;
 import io.kestra.core.runners.Worker;
 import io.kestra.core.schedulers.AbstractScheduler;
+import io.kestra.core.utils.TestsUtils;
 import io.kestra.jdbc.runner.JdbcScheduler;
 import io.kestra.core.utils.IdUtils;
 import io.micronaut.context.ApplicationContext;
@@ -14,6 +15,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
+import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,7 +29,6 @@ import java.sql.SQLException;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -58,23 +59,20 @@ public abstract class AbstractJdbcTriggerTest {
             );
             Worker worker = applicationContext.createBean(Worker.class, IdUtils.create(), 8, null);
         ) {
-            AtomicReference<Execution> last = new AtomicReference<>();
-
             // wait for execution
-            executionQueue.receive(null, execution -> {
-                last.set(execution.getLeft());
-
+            Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
                 queueCount.countDown();
                 assertThat(execution.getLeft().getFlowId(), is(flow));
-            }, false);
+            });
 
             worker.run();
             scheduler.run();
             repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
 
-            queueCount.await(1, TimeUnit.MINUTES);
+            boolean await = queueCount.await(1, TimeUnit.MINUTES);
+            assertThat(await, is(true));
 
-            return last.get();
+            return receive.blockLast();
         }
     }
 
