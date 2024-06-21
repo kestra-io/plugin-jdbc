@@ -35,15 +35,15 @@ import java.util.Properties;
             title = "Execute a query and fetch results.",
             code = {
                 "tasks:",
-                "- id: select",
-                "  type: io.kestra.plugin.jdbc.rockset.Query",
-                "  url: jdbc:rockset://",
-                "  apiKey: \"[apiKey]\"",
-                "  apiServer: \"[apiServer]\"",
-                "  sql: |",
-                "    SELECT *",
-                "    FROM nation",
-                "  fetch: true"
+                "  - id: select",
+                "    type: io.kestra.plugin.jdbc.rockset.Query",
+                "    url: jdbc:rockset://",
+                "    apiKey: \"[apiKey]\"",
+                "    apiServer: \"[apiServer]\"",
+                "    sql: |",
+                "      SELECT *",
+                "      FROM nation",
+                "    fetch: true"
             }
         )
     }
