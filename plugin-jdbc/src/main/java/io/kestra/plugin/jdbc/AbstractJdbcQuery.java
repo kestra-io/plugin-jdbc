@@ -104,7 +104,7 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
                         size = 1;
 
                     } else if (this.store) {
-                        File tempFile = runContext.tempFile(".ion").toFile();
+                        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                         BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
                         size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
                         fileWriter.flush();

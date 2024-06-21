@@ -92,7 +92,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // get file name from url scheme parts
         String filename = url.getSchemeSpecificPart().split(":")[1];
 
-        Path path = runContext.resolve(Path.of(filename));
+        Path path = runContext.workingDir().resolve(Path.of(filename));
         if (path.toFile().exists()) {
             url = URI.create(path.toString());
 
@@ -112,7 +112,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
         URI url = URI.create((String) properties.get("jdbc.url"));
 
-        this.workingDirectory = runContext.tempDir();
+        this.workingDirectory = runContext.workingDir().path();
 
         if (this.sqliteFile != null) {
 

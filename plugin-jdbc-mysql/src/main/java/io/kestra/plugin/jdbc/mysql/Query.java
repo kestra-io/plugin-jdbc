@@ -116,7 +116,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
-        this.workingDirectory = runContext.tempDir();
+        this.workingDirectory = runContext.workingDir().path();
 
         if (this.inputFile != null) {
             PluginUtilsService.createInputFiles(

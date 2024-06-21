@@ -59,7 +59,7 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
-        this.workingDirectory = runContext.tempDir();
+        this.workingDirectory = runContext.workingDir().path();
 
 
         var query = Query.builder()

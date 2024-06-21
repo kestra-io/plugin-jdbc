@@ -200,7 +200,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
             additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());
         } else {
-            this.databaseFile = runContext.tempFile(".db");
+            this.databaseFile = runContext.workingDir().createTempFile(".db");
             Files.delete(this.databaseFile);
             workingDirectory = databaseFile.getParent();
         }

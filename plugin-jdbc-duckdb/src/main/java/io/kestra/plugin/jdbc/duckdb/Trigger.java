@@ -63,10 +63,10 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
-        this.databaseFile = runContext.tempFile();
+        this.databaseFile = runContext.workingDir().createTempFile();
         Files.delete(this.databaseFile);
 
-        additionalVars.put("workingDir", runContext.tempDir().toAbsolutePath().toString());
+        additionalVars.put("workingDir", runContext.workingDir().path().toAbsolutePath().toString());
 
         var query = Query.builder()
             .id(this.id)

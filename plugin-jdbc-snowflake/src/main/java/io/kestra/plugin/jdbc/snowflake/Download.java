@@ -73,7 +73,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @Override
     public Download.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        File tempFile = runContext.tempFile().toFile();
+        File tempFile = runContext.workingDir().createTempFile().toFile();
 
         try (
             Connection conn = this.connection(runContext);
