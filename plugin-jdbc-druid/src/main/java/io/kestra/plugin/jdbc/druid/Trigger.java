@@ -31,7 +31,7 @@ import java.sql.SQLException;
                         full = true,
                         code = {
                                 "id: jdbc-trigger",
-                                "namespace: io.kestra.tests",
+                                "namespace: company.team",
                                 "",
                                 "tasks:",
                                 "  - id: each",

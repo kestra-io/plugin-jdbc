@@ -44,7 +44,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             full = true,
             code = {
                 "id: query-duckdb",
-                "namespace: dev",
+                "namespace: company.team",
                 "tasks:",
                 "  - id: http_download",
                 "    type: io.kestra.plugin.fs.http.Download",
@@ -68,7 +68,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             full = true,
             code = {
                 "id: query-duckdb",
-                "namespace: dev",
+                "namespace: company.team",
                 "tasks:",
                 "  - id: query1",
                 "    type: io.kestra.plugin.jdbc.duckdb.Query",
@@ -88,7 +88,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             full = true,
             code = {
                 "id: query-duckdb",
-                "namespace: dev",
+                "namespace: company.team",
                 "tasks:",
                 "  - id: query1",
                 "    type: io.kestra.plugin.jdbc.duckdb.Query",
