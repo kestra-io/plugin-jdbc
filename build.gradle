@@ -47,32 +47,17 @@ subprojects {
         api.extendsFrom(jdbcDriver)
     }
 
-    // force Jackson for now as there is a bug in 2.7
-    configurations.configureEach {
-        resolutionStrategy {
-            force("com.fasterxml.jackson:jackson-bom:" + jacksonVersion)
-            force("com.fasterxml.jackson.core:jackson-bom:" + jacksonVersion)
-            force("com.fasterxml.jackson.core:jackson-core:" + jacksonVersion)
-            force("com.fasterxml.jackson.core:jackson-databind:" + jacksonVersion)
-            force("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:" + jacksonVersion)
-            force("com.fasterxml.jackson.module:jackson-module-parameter-names:" + jacksonVersion)
-            force("com.fasterxml.jackson.datatype:jackson-datatype-guava:" + jacksonVersion)
-            force("com.fasterxml.jackson.core:jackson-annotations:" + jacksonVersion)
-            force("com.fasterxml.jackson.dataformat:jackson-dataformat-smile:" + jacksonVersion)
-            force("com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:" + jacksonVersion)
-            force("com.fasterxml.jackson.dataformat:jackson-dataformat-ion:" + jacksonVersion)
-            force("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:" + jacksonVersion)
-            force("com.fasterxml.jackson.datatype:jackson-datatype-jdk8:" + jacksonVersion)
-        }
-    }
-
     dependencies {
+        // Platform
+        annotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
+        implementation enforcedPlatform("io.kestra:platform:$kestraVersion")
+        api enforcedPlatform("io.kestra:platform:$kestraVersion")
+
         // Lombok
-        annotationProcessor "org.projectlombok:lombok:$lombokVersion"
-        compileOnly "org.projectlombok:lombok:$lombokVersion"
+        annotationProcessor "org.projectlombok:lombok"
+        compileOnly "org.projectlombok:lombok"
 
         // Micronaut
-        compileOnly platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
         compileOnly "io.micronaut:micronaut-http"
         compileOnly "io.micronaut.reactor:micronaut-reactor"
 
@@ -81,15 +66,7 @@ subprojects {
         compileOnly group: "io.kestra", name: "core", version: kestraVersion
 
         // Logs
-        compileOnly'org.slf4j:slf4j-api:2.0.13'
-    }
-
-    configurations.all {
-        resolutionStrategy {
-            // ugly bug on crypto plugin
-            force('org.bouncycastle:bcprov-jdk18on:1.78')
-            force('org.bouncycastle:bcpkix-jdk18on:1.78')
-        }
+        compileOnly'org.slf4j:slf4j-api'
     }
 }
 
@@ -117,16 +94,17 @@ subprojects {
     }
 
     dependencies {
+        // Platform
+        testAnnotationProcessor enforcedPlatform("io.kestra:platform:$kestraVersion")
+        testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
+
         // lombok
-        testAnnotationProcessor "org.projectlombok:lombok:" + lombokVersion
-        testCompileOnly 'org.projectlombok:lombok:' + lombokVersion
+        testAnnotationProcessor "org.projectlombok:lombok"
+        testCompileOnly 'org.projectlombok:lombok'
 
         // micronaut
-        testAnnotationProcessor platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
         testAnnotationProcessor "io.micronaut:micronaut-inject-java"
         testAnnotationProcessor "io.micronaut.validation:micronaut-validation-processor"
-
-        testImplementation platform("io.micronaut.platform:micronaut-platform:$micronautVersion")
         testImplementation "io.micronaut.test:micronaut-test-junit5"
         testImplementation "io.micronaut:micronaut-jackson-databind"
         testImplementation "io.micronaut.reactor:micronaut-reactor"
@@ -142,8 +120,8 @@ subprojects {
         // test
         testImplementation "org.junit.jupiter:junit-jupiter-engine"
         testImplementation "org.junit.jupiter:junit-jupiter-params"
-        testImplementation "org.hamcrest:hamcrest:2.2"
-        testImplementation "org.hamcrest:hamcrest-library:2.2"
+        testImplementation "org.hamcrest:hamcrest"
+        testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2', version: '2.2.224'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.17.0'
@@ -155,7 +133,7 @@ subprojects {
  **********************************************************************************************************************/
 subprojects {
     dependencies {
-        testImplementation platform("io.qameta.allure:allure-bom:2.27.0")
+        testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
         testImplementation "io.qameta.allure:allure-junit5"
     }
 
@@ -210,6 +188,11 @@ nexusPublishing {
             snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
         }
     }
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    // Suppression this validation error as we want to enforce the Kestra platform
+    suppressedValidationErrors.add('enforced-platform')
 }
 
 subprojects { Project subproject ->
