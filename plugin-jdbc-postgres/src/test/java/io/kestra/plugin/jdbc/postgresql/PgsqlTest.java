@@ -3,10 +3,12 @@ package io.kestra.plugin.jdbc.postgresql;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.flows.State;
+import io.kestra.core.runners.FlowInputOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.kestra.core.junit.annotations.KestraTest;
+import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @KestraTest
 public class PgsqlTest extends AbstractRdbmsTest {
+    @Inject
+    private FlowInputOutput flowIO;
 
     @Test
     void selectAndFetchOne() throws Exception {
@@ -209,7 +213,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             "io.kestra.jdbc.postgres",
             "update_postgres",
             null,
-            (flow, exec) -> runnerUtils.typedInputs(flow, exec, INPUTS),
+            (flow, exec) -> flowIO.typedInputs(flow, exec, INPUTS),
             Duration.ofMinutes(5)
         );
 
