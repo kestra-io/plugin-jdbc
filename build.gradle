@@ -67,6 +67,12 @@ subprojects {
 
         // Logs
         compileOnly'org.slf4j:slf4j-api'
+
+        // this will enforce Jackson to the version defined in the Platform
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-core'
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-databind'
+        api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations'
+        api group: 'com.fasterxml.jackson.dataformat', name: 'jackson-dataformat-yaml'
     }
 }
 
