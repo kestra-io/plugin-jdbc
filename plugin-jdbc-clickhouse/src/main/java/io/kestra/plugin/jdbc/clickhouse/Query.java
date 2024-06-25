@@ -29,13 +29,13 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            title = "Send a SQL query to a Clickhouse database and fetch a row as output.",
+            title = "Query a Clickhouse database.",
             code = {
                 "url: jdbc:clickhouse://127.0.0.1:56982/",
                 "username: ch_user",
                 "password: ch_passwd",
                 "sql: select * from clickhouse_types",
-                "fetchOne: true",
+                "store: true",
             }
         )
     }
