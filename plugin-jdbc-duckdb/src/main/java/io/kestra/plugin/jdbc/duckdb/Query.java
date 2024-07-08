@@ -47,7 +47,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 "namespace: company.team",
                 "tasks:",
                 "  - id: http_download",
-                "    type: io.kestra.plugin.fs.http.Download",
+                "    type: io.kestra.plugin.core.http.Download",
                 "    uri: \"https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv\"",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.duckdb.Query",
