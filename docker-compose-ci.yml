@@ -33,12 +33,12 @@ services:
       - ./certs/server/server.crt:/var/lib/postgresql/server.crt
       - ./certs/server/server.key:/var/lib/postgresql/server.key
 
-  vertica:
-    image: jbfavre/vertica:latest
-    environment:
-      DATABASE_PASSWORD: vertica_passwd
-    ports:
-      - "25433:5433"
+#  vertica:
+#    image: jbfavre/vertica:latest
+#    environment:
+#      DATABASE_PASSWORD: vertica_passwd
+#    ports:
+#      - "25433:5433"
 
   clickhouse:
     image: clickhouse/clickhouse-server
