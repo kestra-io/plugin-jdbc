@@ -41,7 +41,7 @@ import java.util.Properties;
                 "    password: snowflake_passwd",
                 "    sql: select * from demo_db.public.customers",
                 "    fetch: true",
-                "  - id: generate-update",
+                "  - id: generate_update",
                 "    type: io.kestra.plugin.jdbc.snowflake.Query",
                 "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
                 "    username: snowflake_user",
