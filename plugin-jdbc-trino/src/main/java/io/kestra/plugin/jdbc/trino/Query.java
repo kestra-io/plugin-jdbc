@@ -33,7 +33,7 @@ import java.time.ZoneId;
             title = "Execute a query and fetch results to pass it to downstream tasks.",
             code = {
                     "tasks:",
-                    "  - id: analyzeOrders",
+                    "  - id: analyze_orders",
                     "    type: io.kestra.plugin.jdbc.trino.Query",
                     "    url: jdbc:trino://localhost:8080/tpch",
                     "    username: trino_user",
@@ -45,9 +45,9 @@ import java.time.ZoneId;
                     "      order by orderpriority",
                     "    fetch: true",
                     "    store: true",
-                    "  - id: csvReport",
+                    "  - id: csv_report",
                     "    type: io.kestra.plugin.serdes.csv.IonToCsv",
-                    "    from: \"{{ outputs.analyzeOrders.uri }}\""}
+                    "    from: \"{{ outputs.analyze_orders.uri }}\""}
         )
     }
 )

@@ -27,7 +27,7 @@ import java.sql.SQLException;
             title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
             code = {
-                "id: jdbc-trigger",
+                "id: jdbc_trigger",
                 "namespace: company.team",
                 "",
                 "tasks:",
