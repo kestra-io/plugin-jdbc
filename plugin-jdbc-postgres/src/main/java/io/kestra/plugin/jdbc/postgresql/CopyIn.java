@@ -37,7 +37,7 @@ import jakarta.validation.constraints.NotNull;
                 "username: pg_user",
                 "password: pg_passwd",
                 "format: CSV",
-                "from: {{ outputs.export.uri }}",
+                "from: \"{{ outputs.export.uri }}\"",
                 "table: my_destination_table",
                 "header: true",
                 "delimiter: \"\t\""
