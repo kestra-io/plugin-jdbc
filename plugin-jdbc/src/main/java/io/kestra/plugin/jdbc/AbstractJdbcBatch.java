@@ -22,7 +22,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import jakarta.validation.constraints.NotNull;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxSink;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -89,11 +88,11 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
         try (
             Connection connection = this.connection(runContext);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)))
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE)
         ) {
             connection.setAutoCommit(false);
 
-            Flux<Integer> flowable = Flux.create(FileSerde.reader(bufferedReader), FluxSink.OverflowStrategy.BUFFER)
+            Flux<Integer> flowable = FileSerde.readAll(bufferedReader)
                 .doOnNext(docWriteRequest -> {
                     count.incrementAndGet();
                 })

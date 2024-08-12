@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -105,10 +106,9 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
 
                     } else if (this.store) {
                         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile));
-                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
-                        fileWriter.flush();
-                        fileWriter.close();
+                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile),FileSerde.BUFFER_SIZE)) {
+                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                        }
                         output
                             .uri(runContext.storage().putFile(tempFile))
                             .size(size);
