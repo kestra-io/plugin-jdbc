@@ -145,6 +145,88 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRowCount(), is(5L));
     }
 
+    @Test
+    public void noSqlForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(
+                output,
+                List.of(
+                    9223372036854775807L,
+                    2147483647,
+                    32767,
+                    255,
+                    12345.12345D,
+                    12345.12345F,
+                    BigDecimal.valueOf(123.46),
+                    BigDecimal.valueOf(12345.12345),
+                    true,
+                    BigDecimal.valueOf(3148.2929),
+                    BigDecimal.valueOf(3148.1234),
+                    "test      ",
+                    "test",
+                    "test      ",
+                    "test",
+                    "test",
+                    "test",
+                    LocalTime.parse("12:35:29"),
+                    LocalDate.parse("2007-05-08"),
+                    ZonedDateTime.parse("2007-05-08T12:35+02:00[Europe/Paris]"),
+                    ZonedDateTime.parse("2007-05-08T12:35:29.123+02:00[Europe/Paris]"),
+                    ZonedDateTime.parse("2007-05-08T12:35:29.123456700+02:00[Europe/Paris]"),
+                    OffsetDateTime.parse("2007-05-08T12:35:29.123456700+12:15")
+                )
+            );
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("sqlserver_types")
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+	            "Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("namedInsert")
+            .columns(List.of("t_name"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:sqlserver://localhost:41433;trustServerCertificate=true";

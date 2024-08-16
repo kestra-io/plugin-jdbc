@@ -50,6 +50,31 @@ import java.time.ZoneId;
                 "    password: vertica_passwd",
                 "    sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }
+        ),
+        @Example(
+            title = "Fetch rows from a table and bulk insert to another one, without using sql query.",
+            full = true,
+            code = {
+                "tasks:",
+                "  - id: query",
+                "    type: io.kestra.plugin.jdbc.vertica.Query",
+                "    url: jdbc:vertica://dev:56982/db",
+                "    username: vertica_user",
+                "    password: vertica_passwd",
+                "    sql: |",
+                "      SELECT *",
+                "      FROM xref",
+                "      LIMIT 1500;",
+                "    fetch: true",
+                "    store: true",
+                "  - id: update",
+                "    type: io.kestra.plugin.jdbc.vertica.Batch",
+                "    from: \"{{ outputs.query.uri }}\"",
+                "    url: jdbc:vertica://prod:56982/db",
+                "    username: vertica_user",
+                "    password: vertica_passwd",
+                "    table: xref",
+            }
         )
     }
 )

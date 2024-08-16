@@ -1,13 +1,18 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
+import com.clickhouse.client.internal.google.protobuf.UInt32Value;
+import com.clickhouse.client.internal.google.protobuf.UInt64Value;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
+import org.h2.value.ValueTinyint;
 import org.junit.jupiter.api.Test;
+import reactor.util.function.Tuple2;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -106,7 +111,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             FileSerde.write(output, ImmutableMap.builder()
                 .put("String", "kestra")
                 .build()
-                           );
+            );
         }
 
         URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
@@ -138,6 +143,35 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRows(), notNullValue());
         assertThat(runOutput.getSize(), is(1001L));
         assertThat(runOutput.getRows().stream().anyMatch(map -> map.get("String").equals("kestra")), is(true));
+    }
+
+    @Test
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+                "Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        BulkInsert task = BulkInsert.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("clickhouse_types")
+            .columns(List.of("String"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -121,7 +122,6 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-
         URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         ArrayList<String> columns = new ArrayList<>();
@@ -135,6 +135,83 @@ public class BatchTest extends AbstractRdbmsTest {
             .from(uri.toString())
             .sql("insert into namedInsert (t_id,t_name) values( ? , ? )")
             .columns(columns)
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 0; i < 5; i++) {
+            FileSerde.write(output, List.of(
+                "aa",
+                "",
+                "bb",
+                "cc",
+                "dd",
+                "ee",
+                "ff".getBytes(StandardCharsets.UTF_8),
+                "gg",
+                "hh",
+                BigDecimal.valueOf(7456123.89),
+                BigDecimal.valueOf(7456123.9),
+                BigDecimal.valueOf(7456124),
+                BigDecimal.valueOf(7456123.89),
+                BigDecimal.valueOf(7456123.9),
+                BigDecimal.valueOf(7456100),
+                7456123.89F,
+                7456123.89D,
+                LocalDate.parse("1992-11-13"),
+                LocalDateTime.parse("1998-01-23T06:00:00"),
+                ZonedDateTime.parse("1998-01-23T06:00:00-05:00"),
+                LocalDateTime.parse("1998-01-23T12:00:00")
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("ORACLE_TYPES")
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+	            "It's-a me, Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("namedInsert")
+            .columns(List.of("t_name"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

@@ -19,6 +19,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -203,6 +204,85 @@ public class BatchTest extends AbstractRdbmsTest {
             .from(uri.toString())
             .sql("insert into namedInsert(id,name) values( ? , ? )")
             .columns(Arrays.asList("id", "name"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, Arrays.asList(
+                i,
+                true,
+                "four",
+                "Here is a varchar",
+                "Here is a text column data",
+                null,
+                32767,
+                9223372036854775807L,
+                9223372036854776000F,
+                9223372036854776000d,
+                9223372036854776000d,
+                new BigDecimal("2147483645.1234"),
+                LocalDate.parse("2030-12-25"),
+                LocalTime.parse("04:05:30"),
+                OffsetTime.parse("13:05:06+01:00"),
+                LocalDateTime.parse("2004-10-19T10:23:54.999999"),
+                ZonedDateTime.parse("2004-10-19T08:23:54.250+02:00[Europe/Paris]"),
+                "P10Y4M5DT0H0M10S",
+                new int[]{100, 200, 300},
+                new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}},
+                "{\"color\":\"red\",\"value\":\"#f00\"}",
+                "{\"color\":\"blue\",\"value\":\"#0f0\"}",
+                Hex.decodeHex("DEADBEEF".toCharArray())
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("pgsql_types")
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+	            "Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("namedInsert")
+            .columns(List.of("name"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
