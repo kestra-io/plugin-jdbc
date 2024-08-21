@@ -1,12 +1,12 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +83,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 "  a,\n" +
                 "  b,\n" +
                 "  c,\n" +
-                 "  d,\n" +
+                "  d,\n" +
                 "  play_time,\n" +
                 "  library_record,\n" +
                 "  floatn_test,\n" +
@@ -241,7 +241,6 @@ public class BatchTest extends AbstractRdbmsTest {
                 new int[]{100, 200, 300},
                 new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}},
                 "{\"color\":\"red\",\"value\":\"#f00\"}",
-                "{\"color\":\"blue\",\"value\":\"#0f0\"}",
                 Hex.decodeHex("DEADBEEF".toCharArray())
             ));
         }
@@ -252,8 +251,14 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.key())
+            .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
-            .table("pgsql_types")
+            .table("pgsql_nosql")
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -270,7 +275,7 @@ public class BatchTest extends AbstractRdbmsTest {
 
         for (int i = 1; i < 6; i++) {
             FileSerde.write(output, List.of(
-	            "Mario"
+                "Mario"
             ));
         }
 
@@ -280,6 +285,12 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.key())
+            .sslKeyPassword(TestUtils.keyPass())
             .from(uri.toString())
             .table("namedInsert")
             .columns(List.of("name"))
