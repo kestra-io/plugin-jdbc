@@ -84,3 +84,16 @@ VALUES (
 
 
 select * from clickhouse_types;
+
+DROP TABLE IF EXISTS clickhouse_ins;
+
+CREATE TABLE clickhouse_ins (
+   Int64 Int64,
+   Float32 Float32,
+   Float64 Float64,
+   Decimal Decimal(14, 4),
+   String String,
+)
+ENGINE = MergeTree()
+ORDER BY (Int64)
+SETTINGS index_granularity = 8192;

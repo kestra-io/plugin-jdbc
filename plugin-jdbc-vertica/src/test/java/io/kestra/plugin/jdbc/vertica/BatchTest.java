@@ -152,6 +152,64 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRowCount(), is(5L));
     }
 
+    @Test
+    public void noSqlForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+                i,
+                "It's-a me, Mario",
+                "Here"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("namedInsert")
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+	            "Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("namedInsert")
+            .columns(List.of("name"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
 
     @Override
     protected String getUrl() {

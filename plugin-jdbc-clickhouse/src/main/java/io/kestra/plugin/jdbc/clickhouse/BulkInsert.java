@@ -49,6 +49,16 @@ import java.time.ZoneId;
                 "password: ch_passwd",
                 "sql: INSERT INTO YourTable ( field1, field2, field3 ) SETTINGS async_insert=1, wait_for_async_insert=1 values( ?, ?, ? )"
             }
+        ),
+        @Example(
+            title = "Insert data into specific columns via a SQL query to a ClickHouse database using asynchronous inserts.",
+            code = {
+                "from: \"{{ outputs.query.uri }}\"",
+                "url: jdbc:clickhouse://127.0.0.1:56982/",
+                "username: ch_user",
+                "password: ch_passwd",
+                "table: YourTable"
+            }
         )
     }
 )

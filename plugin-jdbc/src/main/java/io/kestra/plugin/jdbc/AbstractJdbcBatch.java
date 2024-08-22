@@ -1,27 +1,26 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
+import reactor.core.publisher.Flux;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.ParameterMetaData;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import jakarta.validation.constraints.NotNull;
-import reactor.core.publisher.Flux;
+import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -73,6 +72,15 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     @PluginProperty(dynamic = true)
     private List<String> columns;
 
+    @Schema(
+        title = "The table from which column names will be retrieved.",
+        description =
+            "This property specifies the table name which will be used to retrieve the columns for the inserted values.\n" +
+            "You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically."
+    )
+    @PluginProperty(dynamic = true)
+    private String table;
+
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
     public Output run(RunContext runContext) throws Exception {
@@ -83,7 +91,18 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
         AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId());
 
-        String sql = runContext.render(this.sql);
+        List<String> columnsToUse = this.columns;
+        if (columnsToUse == null && this.table != null) {
+            columnsToUse = fetchColumnsFromTable(runContext, this.table);
+        }
+
+        String sql;
+        if (columnsToUse != null && this.sql == null) {
+            sql = constructInsertStatement(runContext, this.table, columnsToUse);
+        } else {
+            sql = runContext.render(this.sql);
+        }
+
         logger.debug("Starting prepared statement: {}", sql);
 
         try (
@@ -129,6 +148,30 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                 .updatedCount(updated)
                 .build();
         }
+    }
+
+    private String constructInsertStatement(RunContext runContext, String table, List<String> columns) throws IllegalVariableEvaluationException {
+        return String.format(
+            "INSERT INTO %s (%s) VALUES (%s)",
+            runContext.render(table),
+            String.join(", ", columns),
+            String.join(", ", Collections.nCopies(columns.size(), "?"))
+        );
+    }
+
+    private List<String> fetchColumnsFromTable(RunContext runContext, String table) throws Exception {
+        List<String> columns = new ArrayList<>();
+
+        try (Connection connection = this.connection(runContext)) {
+            DatabaseMetaData metaData = connection.getMetaData();
+            try (ResultSet resultSet = metaData.getColumns(null, null, table, null)) {
+                while (resultSet.next()) {
+                    columns.add(resultSet.getString("COLUMN_NAME"));
+                }
+            }
+        }
+
+        return columns;
     }
 
     @SuppressWarnings("unchecked")

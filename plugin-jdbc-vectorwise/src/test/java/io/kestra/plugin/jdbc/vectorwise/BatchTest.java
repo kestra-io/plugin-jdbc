@@ -190,6 +190,86 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRowCount(), is(5L));
     }
 
+    @Test
+    @Disabled
+    public void noSqlForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+                125,
+                32000,
+                2147483640,
+                9007199254740991L,
+                new BigDecimal("1.55"),
+                1.12365125789541,
+                1.2F,
+                "y",
+                "yoplait",
+                "tes",
+                "autret",
+                LocalDateTime.parse("1900-10-04T22:23:00.000"),
+                LocalDate.parse("2006-05-16"),
+                LocalDate.parse("2006-05-16"),
+                LocalTime.parse("04:05:30"),
+                LocalTime.parse("05:05:30"),
+                LocalTime.parse("05:05:30"),
+                LocalDateTime.parse("2006-05-16T00:00:00.000"),
+                ZonedDateTime.parse("2006-05-16T02:00:00.000+02:00[Europe/Paris]"),
+                ZonedDateTime.parse("2006-05-16T02:00:00.000+02:00[Europe/Paris]"),
+                true
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("ingres.abdt_test")
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    @Disabled
+    public void noSqlWithNamedColumnsForInsert() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".trs");
+        OutputStream output = new FileOutputStream(tempFile);
+
+        for (int i = 1; i < 6; i++) {
+            FileSerde.write(output, List.of(
+                123,
+	            "Mario"
+            ));
+        }
+
+        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+
+        Batch task = Batch.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .from(uri.toString())
+            .table("ingres.abdt_test")
+            .columns(List.of("tinyint", "varchar"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(5L));
+    }
+
     @Override
     protected String getUrl() {
         return this.url;

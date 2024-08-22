@@ -50,6 +50,30 @@ import java.time.ZoneId;
                 "    sql: |",
                 "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }
+        ),
+        @Example(
+            title = "Fetch rows from a table and bulk insert to another one, without using sql query",
+            full = true,
+            code = {
+                "tasks:",
+                "  - id: query",
+                "    type: io.kestra.plugin.jdbc.oracle.Query",
+                "    url: jdbc:oracle:thin:@dev:49161:XE",
+                "    username: oracle",
+                "    password: oracle_passwd",
+                "    sql: |",
+                "      SELECT *",
+                "      FROM xref",
+                "      LIMIT 1500;",
+                "    store: true",
+                "  - id: update",
+                "    type: io.kestra.plugin.jdbc.oracle.Batch",
+                "    from: \"{{ outputs.query.uri }}\"",
+                "    url: jdbc:oracle:thin:@prod:49161:XE",
+                "    username: oracle",
+                "    password: oracle_passwd",
+                "    table: XREF"
+            }
         )
     }
 )

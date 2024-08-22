@@ -51,6 +51,31 @@ import java.util.Properties;
                 "    sql: |",
                 "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
             }
+        ),
+
+        @Example(
+            title = "Fetch rows from a table, and bulk insert them to another one, without using sql query.",
+            full = true,
+            code = {
+                "tasks:",
+                "  - id: query",
+                "    type: io.kestra.plugin.jdbc.postgresql.Query",
+                "    url: jdbc:postgresql://dev:56982/",
+                "    username: pg_user",
+                "    password: pg_passwd",
+                "    sql: |",
+                "      SELECT *",
+                "      FROM xref",
+                "      LIMIT 1500;",
+                "    store: true",
+                "  - id: update",
+                "    type: io.kestra.plugin.jdbc.postgresql.Batch",
+                "    from: \"{{ outputs.query.uri }}\"",
+                "    url: jdbc:postgresql://prod:56982/",
+                "    username: pg_user",
+                "    password: pg_passwd",
+                "    table: xref"
+            }
         )
     }
 )
