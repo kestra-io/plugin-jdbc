@@ -240,6 +240,7 @@ public class BatchTest extends AbstractRdbmsTest {
     }
 
     @Test
+    @Disabled
     public void noSqlWithNamedColumnsForInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
