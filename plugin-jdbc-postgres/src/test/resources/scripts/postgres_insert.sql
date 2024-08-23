@@ -27,7 +27,8 @@ CREATE TABLE pgsql_types (
  schedule text[][] not null,
  json_type JSON not null,
  jsonb_type JSONB not null,
- blob_type bytea not null
+ blob_type bytea not null,
+ tsvector_col TSVECTOR not null
 );
 
 

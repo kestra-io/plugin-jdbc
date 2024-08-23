@@ -52,7 +52,8 @@ CREATE TABLE pgsql_types (
  json_type JSON not null,
  jsonb_type JSONB not null,
  item inventory_item not null,
- blob_type bytea not null
+ blob_type bytea not null,
+ tsvector_col TSVECTOR not null
 );
 
 
@@ -82,7 +83,8 @@ INSERT INTO pgsql_types
              json_type,
              jsonb_type,
              item,
-             blob_type)
+             blob_type,
+             tsvector_col)
 VALUES     ( DEFAULT,
              true,
              'four',
@@ -107,7 +109,8 @@ VALUES     ( DEFAULT,
              '{"color":"red","value":"#f00"}',
              '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
-             '\xDEADBEEF' );
+             '\xDEADBEEF',
+              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'));
 
 
 -- Insert
@@ -136,7 +139,8 @@ INSERT INTO pgsql_types
              json_type,
              jsonb_type,
              item,
-             blob_type)
+             blob_type,
+             tsvector_col)
 VALUES     ( DEFAULT,
              true,
              'four',
@@ -161,4 +165,5 @@ VALUES     ( DEFAULT,
              '{"color":"red","value":"#f00"}',
              '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
-             '\xDEADBEEF' );
+             '\xDEADBEEF',
+              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'));
