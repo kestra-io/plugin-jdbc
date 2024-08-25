@@ -29,32 +29,39 @@ import java.time.ZoneId;
         @Example(
             title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
-            code = {
-                "tasks:",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM xref",
-                "      LIMIT 1500;",
-                "    store: true",
-                "  - id: update",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Batch",
-                "    from: \"{{ outputs.query.uri }}\"",
-                "    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    sql: |",
-                "      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
-            }
+            code = """
+                id: sqlserver_batch_query 
+                namespace: company.team
+            
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.sqlserver.Query
+                    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true
+                    username: sql_server_user
+                    password: sql_server_password
+                    sql: |
+                      SELECT *
+                      FROM xref
+                      LIMIT 1500;
+                    store: true
+                  
+                  - id: update
+                    type: io.kestra.plugin.jdbc.sqlserver.Batch
+                    from: "{{ outputs.query.uri }}"
+                    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true
+                    username: sql_server_user
+                    password: sql_server_password
+                    sql: |
+                      insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                """
         ),
         @Example(
             title = "Fetch rows from a table and bulk insert to another one, without using sql query.",
             full = true,
             code = {
+                "id: sqlserver_batch_query",
+                "namespace: company.team",
+                "",
                 "tasks:",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.sqlserver.Query",
@@ -66,6 +73,7 @@ import java.time.ZoneId;
                 "      FROM xref",
                 "      LIMIT 1500;",
                 "    store: true",
+                "",
                 "  - id: update",
                 "    type: io.kestra.plugin.jdbc.sqlserver.Batch",
                 "    from: \"{{ outputs.query.uri }}\"",

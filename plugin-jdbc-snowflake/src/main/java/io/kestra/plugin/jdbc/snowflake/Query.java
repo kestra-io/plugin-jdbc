@@ -32,21 +32,26 @@ import java.util.Properties;
         @Example(
             full = true,
             title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
-            code = {
-                "tasks:",
-                "  - id: select",
-                "    type: io.kestra.plugin.jdbc.snowflake.Query",
-                "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "    username: snowflake_user",
-                "    password: snowflake_passwd",
-                "    sql: select * from demo_db.public.customers",
-                "    fetch: true",
-                "  - id: generate_update",
-                "    type: io.kestra.plugin.jdbc.snowflake.Query",
-                "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "    username: snowflake_user",
-                "    password: snowflake_passwd",
-                "    sql: \"INSERT INTO demo_db.public.customers_new (year_month, store_code, update_date) values {% for row in outputs.update.rows %} ({{row.year_month}}, {{row.store_code}}, TO_DATE('{{row.date}}', 'MONTH DD, YYYY') ) {% if not loop.last %}, {% endif %}; {% endfor %}\""}
+            code = """
+                id: snowflake_query
+                namespace: company.team
+                
+                tasks:
+                  - id: select
+                    type: io.kestra.plugin.jdbc.snowflake.Query
+                    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
+                    username: snowflake_user
+                    password: snowflake_password
+                    sql: select * from demo_db.public.customers
+                    fetch: true
+                
+                  - id: generate_update
+                    type: io.kestra.plugin.jdbc.snowflake.Query
+                    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
+                    username: snowflake_user
+                    password: snowflake_password
+                    sql: "INSERT INTO demo_db.public.customers_new (year_month, store_code, update_date) values {% for row in outputs.update.rows %} ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ) {% if not loop.last %}, {% endif %}; {% endfor %}" 
+                """
         )
     }
 )

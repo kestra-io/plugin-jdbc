@@ -33,18 +33,21 @@ import java.util.Properties;
         @Example(
             full = true,
             title = "Execute a query and fetch results.",
-            code = {
-                "tasks:",
-                "  - id: select",
-                "    type: io.kestra.plugin.jdbc.rockset.Query",
-                "    url: jdbc:rockset://",
-                "    apiKey: \"[apiKey]\"",
-                "    apiServer: \"[apiServer]\"",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM nation",
-                "    fetch: true"
-            }
+            code = """
+                id: rockset_query
+                namespace: company.team
+
+                tasks:
+                  - id: select
+                    type: io.kestra.plugin.jdbc.rockset.Query
+                    url: "jdbc:rockset://api.rs2.usw2.rockset.com"
+                    apiKey: "api_key"
+                    apiServer: "api_server"
+                    sql: |
+                      SELECT *
+                      FROM nation
+                    fetch: true
+                """
         )
     }
 )

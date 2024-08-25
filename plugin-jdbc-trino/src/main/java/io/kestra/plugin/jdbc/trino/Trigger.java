@@ -28,29 +28,29 @@ import java.sql.SQLException;
         @Example(
             title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
-            code = {
-                "id: jdbc_trigger",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ json(taskrun.value) }}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.trino.Trigger",
-                "    interval: \"PT5M\"",
-                "    url: jdbc:trino://localhost:8080/tpch",
-                "    username: trino_user",
-                "    password: trino_passwd",
-                "    sql: \"SELECT * FROM my_table\"",
-                "    fetch: true",
-            }
+            code = """
+                id: jdbc_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ json(taskrun.value) }}"
+                    value: "{{ trigger.rows }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.trino.Trigger
+                    interval: "PT5M"
+                    url: jdbc:trino://localhost:8080/tpch
+                    username: trino_user
+                    password: trino_password
+                    sql: "SELECT * FROM my_table"
+                    fetch: true
+                """
         )
     }
 )

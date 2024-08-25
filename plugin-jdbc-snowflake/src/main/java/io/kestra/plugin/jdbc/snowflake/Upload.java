@@ -28,15 +28,22 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "username: snowflake_user",
-                "password: snowflake_passwd",
-                "from: '{{ outputs.extract.uri }}'",
-                "fileName: data.csv",
-                "prefix: raw",
-                "stageName: \"@demo_db.public.%myStage\"",
-            }
+            full = true,
+            code = """
+                   id: snowflake_upload
+                   namespace: company.team
+                   
+                   tasks:
+                     - id: upload
+                       type: io.kestra.plugin.jdbc.snowflake.Upload
+                       url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
+                       username: snowflake_user
+                       password: snowflake_password
+                       from: '{{ outputs.extract.uri }}'
+                       fileName: data.csv
+                       prefix: raw
+                       stageName: "@demo_db.public.%myStage"
+                   """
         )
     }
 )

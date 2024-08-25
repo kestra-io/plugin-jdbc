@@ -30,13 +30,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Send a SQL query to a Vertica database, and fetch a row as output.",
-            code = {
-                "url: jdbc:vertica://127.0.0.1:56982/db",
-                "username: vertica_user",
-                "password: vertica_passwd",
-                "sql: select * from customer",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                   id: vertica_query
+                   namespace: company.team
+
+                   tasks:
+                     - id: query
+                       type: io.kestra.plugin.jdbc.vertica.Query
+                       url: jdbc:vertica://127.0.0.1:56982/db
+                       username: vertica_user
+                       password: vertica_password
+                       sql: select * from customer
+                       fetchOne: true
+                   """
         )
     }
 )
