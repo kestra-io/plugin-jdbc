@@ -53,7 +53,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.keyNoPass())
             .fetchOne(true)
             .timeZoneId("Europe/Paris")
-            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
+            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types")
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -118,6 +118,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("json_type"), is(Map.of("color", "red", "value", "#f00")));
         assertThat(row.get("jsonb_type"), is(Map.of("color", "blue", "value", "#0f0")));
         assertThat(row.get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
+        assertThat(row.get("tsvector_col"), is("'brown':4 'dice':2 'dog':9 'fox':5 'fuzzi':1 'jump':6 'lazi':8 'quick':3"));
     }
 
     @Test
@@ -135,7 +136,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(TestUtils.keyNoPass())
             .fetch(true)
             .timeZoneId("Europe/Paris")
-            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
+            .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types")
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

@@ -62,6 +62,10 @@ public class PostgresCellConverter extends AbstractCellConverter {
             PGobject o = ((PGobject) data);
             String type = o.getType();
             switch (type.toLowerCase()) {
+                case "tsvector":
+                {
+                    return o.getValue();
+                }
                 case "json":
                 case "jsonb":
                     try {
