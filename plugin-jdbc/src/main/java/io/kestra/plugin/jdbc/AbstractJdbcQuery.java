@@ -136,8 +136,10 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
     }
 
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
-        rs.next();
-        return mapResultSetToMap(rs, cellConverter, connection);
+        if (rs.next()) {
+            return mapResultSetToMap(rs, cellConverter, connection);
+        }
+        return null;
     }
 
     protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
