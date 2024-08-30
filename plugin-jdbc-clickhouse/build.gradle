@@ -16,7 +16,7 @@ dependencies {
     implementation("com.clickhouse:clickhouse-jdbc:0.6.0:all")
     implementation project(':plugin-jdbc')
 
-    api group: "io.kestra", name: "script", version: kestraVersion
+    compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }

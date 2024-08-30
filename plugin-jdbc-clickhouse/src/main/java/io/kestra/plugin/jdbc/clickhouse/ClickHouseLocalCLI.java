@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.clickhouse.cli;
+package io.kestra.plugin.jdbc.clickhouse;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -29,31 +29,28 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-	title = "Runs a ClickHouse-local commands."
+	title = "Run clickhouse-local commands."
 )
 @Plugin(
 	examples = {
 		@Example(
-			title = "Query data in a Parquet file in AWS S3",
+			title = "Run clickhouse-local commands",
             full = true,
             code = {
                 """
                 id: clickhouse-local
                 namespace: company.team
                 tasks:
-                  - id: wdir
-                    type: io.kestra.plugin.core.flow.WorkingDirectory
-                    tasks:
-                      - id: query
-                        type: io.kestra.plugin.clickhouse.cli.ClickHouseCLI
-                        commands:
-                          - SELECT count() FROM s3('https://datasets-documentation.s3.eu-west-3.amazonaws.com/house_parquet/house_0.parquet')
+                  - id: query
+                    type: io.kestra.plugin.clickhouse.ClickHouseLocalCLI
+                    commands:
+                      - SELECT count() FROM s3('https://datasets-documentation.s3.eu-west-3.amazonaws.com/house_parquet/house_0.parquet')
                 """
             }
 		)
 	}
 )
-public class ClickHouseCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
+public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
 
 	public static final String DEFAULT_IMAGE = "clickhouse/clickhouse-server:latest";
 
@@ -64,7 +61,7 @@ public class ClickHouseCLI extends Task implements RunnableTask<ScriptOutput>, N
 	protected List<String> beforeCommands;
 
 	@Schema(
-		title = "The commands to run in clickhouse-local."
+		title = "The commands to run."
 	)
 	@PluginProperty(dynamic = true)
 	@NotEmpty

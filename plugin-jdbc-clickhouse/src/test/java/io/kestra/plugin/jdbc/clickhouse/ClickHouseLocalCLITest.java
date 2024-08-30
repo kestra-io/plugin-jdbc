@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.clickhouse.cli;
+package io.kestra.plugin.jdbc.clickhouse;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
@@ -12,26 +12,26 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Map;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class ClickHouseCLITest {
+public class ClickHouseLocalCLITest {
 
 	@Inject
 	private RunContextFactory runContextFactory;
 
 	@Test
 	void run() throws Exception {
-		ClickHouseCLI clickHouseCLI = ClickHouseCLI.builder()
+		ClickHouseLocalCLI clickhouseLocalCLI = ClickHouseLocalCLI.builder()
 			.id(IdUtils.create())
-			.type(ClickHouseCLI.class.getName())
+			.type(ClickHouseLocalCLI.class.getName())
             .commands(List.of("SELECT * FROM system.tables"))
             .build();
 
-		RunContext runContext = TestsUtils.mockRunContext(runContextFactory, clickHouseCLI, Map.of());
+		RunContext runContext = TestsUtils.mockRunContext(runContextFactory, clickhouseLocalCLI, Map.of());
 
-		ScriptOutput output = clickHouseCLI.run(runContext);
+		ScriptOutput output = clickhouseLocalCLI.run(runContext);
 
         assertThat(output.getExitCode(), is(0));
 	}
