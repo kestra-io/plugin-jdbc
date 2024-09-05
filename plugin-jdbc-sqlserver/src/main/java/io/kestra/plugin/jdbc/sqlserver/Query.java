@@ -31,21 +31,26 @@ import java.time.ZoneId;
         @Example(
             full = true,
             title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
-            code = {
-                "tasks:",
-                "  - id: select",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "    url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    sql: select * from source",
-                "    fetch: true",
-                "  - id: generate_update",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "    url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    sql:  \"{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}\""}
+            code = """
+                id: sqlserver_query
+                namespace: company.team
+
+                tasks:
+                  - id: select
+                    type: io.kestra.plugin.jdbc.sqlserver.Query
+                    url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
+                    username: sql_server_user
+                    password: sql_server_password
+                    sql: select * from source
+                    fetch: true
+                  
+                  - id: generate_update
+                    type: io.kestra.plugin.jdbc.sqlserver.Query
+                    url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
+                    username: sql_server_user
+                    password: sql_server_password
+                    sql: "{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}"
+                """
         )
     }
 )

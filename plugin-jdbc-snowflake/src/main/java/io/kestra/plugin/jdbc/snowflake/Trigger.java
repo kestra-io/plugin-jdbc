@@ -29,29 +29,29 @@ import java.util.Properties;
         @Example(
             title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
-            code = {
-                "id: jdbc_trigger",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ json(taskrun.value) }}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.snowflake.Trigger",
-                "    interval: \"PT5M\"",
-                "    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "    username: snowflake_user",
-                "    password: snowflake_passwd",
-                "    sql: \"SELECT * FROM demo_db.public.customers\"",
-                "    fetch: true"
-            }
+            code = """
+                id: jdbc_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ json(taskrun.value) }}"
+                    value: "{{ trigger.rows }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.snowflake.Trigger
+                    interval: "PT5M"
+                    url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
+                    username: snowflake_user
+                    password: snowflake_password
+                    sql: "SELECT * FROM demo_db.public.customers"
+                    fetch: true
+                """
         )
     }
 )

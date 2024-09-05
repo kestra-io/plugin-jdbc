@@ -31,13 +31,20 @@ import jakarta.validation.constraints.NotNull;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com",
-                "username: snowflake_user",
-                "password: snowflake_passwd",
-                "stageName: \"@demo_db.public.%myStage\"",
-                "fileName: prefix/destFile.csv"
-            }
+            full = true,
+            code = """
+                   id: snowflake_download
+                   namespace: company.team
+                   
+                   tasks:
+                     - id: download
+                       type: io.kestra.plugin.jdbc.snowflake.Download
+                       url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
+                       username: snowflake_user
+                       password: snowflake_password
+                       stageName: "@demo_db.public.%myStage"
+                       fileName: prefix/destFile.csv
+                   """
         )
     }
 )

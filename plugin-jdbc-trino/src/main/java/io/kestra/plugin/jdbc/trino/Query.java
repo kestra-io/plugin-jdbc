@@ -31,23 +31,28 @@ import java.time.ZoneId;
         @Example(
             full = true,
             title = "Execute a query and fetch results to pass it to downstream tasks.",
-            code = {
-                    "tasks:",
-                    "  - id: analyze_orders",
-                    "    type: io.kestra.plugin.jdbc.trino.Query",
-                    "    url: jdbc:trino://localhost:8080/tpch",
-                    "    username: trino_user",
-                    "    password: trino_passwd",
-                    "    sql: |",
-                    "      select orderpriority as priority, sum(totalprice) as total",
-                    "      from tpch.tiny.orders",
-                    "      group by orderpriority",
-                    "      order by orderpriority",
-                    "    fetch: true",
-                    "    store: true",
-                    "  - id: csv_report",
-                    "    type: io.kestra.plugin.serdes.csv.IonToCsv",
-                    "    from: \"{{ outputs.analyze_orders.uri }}\""}
+            code = """
+                   id: trino_query
+                   namespace: company.team
+                   
+                   tasks:
+                     - id: analyze_orders
+                       type: io.kestra.plugin.jdbc.trino.Query
+                       url: jdbc:trino://localhost:8080/tpch
+                       username: trino_user
+                       password: trino_password
+                       sql: |
+                         select orderpriority as priority, sum(totalprice) as total
+                         from tpch.tiny.orders
+                         group by orderpriority
+                         order by orderpriority
+                       fetch: true
+                       store: true
+                     
+                     - id: csv_report
+                       type: io.kestra.plugin.serdes.csv.IonToCsv
+                       from: "{{ outputs.analyze_orders.uri }}"
+                   """
         )
     }
 )

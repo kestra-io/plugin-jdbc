@@ -28,13 +28,20 @@ import java.util.Properties;
     examples = {
         @Example(
             title = "Send a SQL query to a Sybase Database and fetch a row as output.",
-            code = {
-                "url: jdbc:sybase:Tds:127.0.0.1:5000/",
-                "username: syb_user",
-                "password: syb_passwd",
-                "sql: select * from syb_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                   id: sybase_query
+                   namespace: company.team 
+
+                   tasks:
+                     - id: query
+                       type: io.kestra.plugin.jdbc.sybase.Query
+                       url: jdbc:sybase:Tds:127.0.0.1:5000/
+                       username: syb_user
+                       password: syb_password
+                       sql: select * from syb_types
+                       fetchOne: true
+                   """
         )
     }
 )

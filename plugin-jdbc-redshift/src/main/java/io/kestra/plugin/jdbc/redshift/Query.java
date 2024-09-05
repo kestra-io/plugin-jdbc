@@ -30,13 +30,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Send a SQL query to a Redshift database and fetch a row as output.",
-            code = {
-                "url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev",
-                "username: admin",
-                "password: admin_passwd",
-                "sql: select * from redshift_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                   id: redshift_query
+                   namespace: company.team
+
+                   tasks:
+                     - id: select
+                       type: io.kestra.plugin.jdbc.redshift.Query
+                       url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
+                       username: admin
+                       password: admin_password
+                       sql: select * from redshift_types
+                       fetchOne: true
+                   """
         )
     }
 )

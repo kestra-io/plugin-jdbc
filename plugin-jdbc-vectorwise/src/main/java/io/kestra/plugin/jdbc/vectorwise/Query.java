@@ -30,13 +30,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Send a SQL query to a Vectorwise database and fetch a row as output.",
-            code = {
-                "url: jdbc:vectorwise://url:port/base",
-                "username: admin",
-                "password: admin_passwd",
-                "sql: select * from vectorwise_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                   id: vectorwise_query
+                   namespace: company.team
+
+                   tasks:
+                     - id: query
+                       type: io.kestra.plugin.jdbc.vectorwise.Query
+                       url: jdbc:vectorwise://url:port/base
+                       username: admin
+                       password: admin_password
+                       sql: select * from vectorwise_types
+                       fetchOne: true
+                   """
         )
     }
 )

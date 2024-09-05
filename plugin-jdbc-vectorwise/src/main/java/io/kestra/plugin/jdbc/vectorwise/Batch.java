@@ -29,31 +29,38 @@ import java.time.ZoneId;
         @Example(
             title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
-            code = {
-                "tasks:",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.vectorwise.Query",
-                "    url: jdbc:vectorwise://dev:port/base",
-                "    username: admin",
-                "    password: admin_passwd",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM xref",
-                "      LIMIT 1500;",
-                "    store: true",
-                "  - id: update",
-                "    type: io.kestra.plugin.jdbc.vectorwise.Batch",
-                "    from: \"{{ outputs.query.uri }}\"",
-                "    url: jdbc:vectorwise://prod:port/base",
-                "    username: admin",
-                "    password: admin_passwd",
-                "    sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )",
-            }
+            code = """
+                   id: vectorwise_batch_query
+                   namespace: company.team
+
+                   tasks:
+                     - id: query
+                       type: io.kestra.plugin.jdbc.vectorwise.Query
+                       url: jdbc:vectorwise://dev:port/base
+                       username: admin
+                       password: admin_password
+                       sql: |
+                         SELECT *
+                         FROM xref
+                         LIMIT 1500;
+                       store: true
+                     
+                     - id: update
+                       type: io.kestra.plugin.jdbc.vectorwise.Batch
+                       from: \"{{ outputs.query.uri }}"
+                       url: jdbc:vectorwise://prod:port/base
+                       username: admin
+                       password: admin_password
+                       sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+                   """
         ),
         @Example(
             title = "Fetch rows from a table and bulk insert to another one without using sql query.",
             full = true,
             code = {
+                "id: vectorwise_batch_query",
+                "namespace: company.team",
+                "",
                 "tasks:",
                 "  - id: query",
                 "    type: io.kestra.plugin.jdbc.vectorwise.Query",
@@ -65,6 +72,7 @@ import java.time.ZoneId;
                 "      FROM xref",
                 "      LIMIT 1500;",
                 "    store: true",
+                "",
                 "  - id: update",
                 "    type: io.kestra.plugin.jdbc.vectorwise.Batch",
                 "    from: \"{{ outputs.query.uri }}\"",
