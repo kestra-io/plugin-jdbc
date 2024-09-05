@@ -32,16 +32,23 @@ import jakarta.validation.constraints.NotNull;
     examples = {
         @Example(
             title = "Load CSV or TSV into a PostgreSQL table.",
-            code = {
-                "url: jdbc:postgresql://127.0.0.1:56982/",
-                "username: pg_user",
-                "password: pg_passwd",
-                "format: CSV",
-                "from: \"{{ outputs.export.uri }}\"",
-                "table: my_destination_table",
-                "header: true",
-                "delimiter: \"\t\""
-            }
+            full = true,
+            code = """
+                id: postgres_copy_in
+                namespace: company.team
+
+                tasks:
+                  - id: copy_in
+                    type: io.kestra.plugin.jdbc.postgresql.CopyIn
+                    url: jdbc:postgresql://127.0.0.1:56982/
+                    username: pg_user
+                    password: pg_password
+                    format: CSV
+                    from: "{{ outputs.export.uri }}"
+                    table: my_destination_table
+                    header: true
+                    delimiter: "\\t"
+                """
         )
     }
 )

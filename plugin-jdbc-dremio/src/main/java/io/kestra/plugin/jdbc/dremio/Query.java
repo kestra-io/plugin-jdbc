@@ -29,13 +29,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Send a SQL query to a Dremio database and fetch a row as output.",
-            code = {
-                "url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
-                "username: $token",
-                "password: samplePersonalAccessToken",
-                "sql: select * FROM source.database.table",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                id: dremio_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.dremio.Query
+                    url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
+                    username: dremio_token
+                    password: samplePersonalAccessToken
+                    sql: select * FROM source.database.table
+                    fetchOne: true
+                """
         )
     }
 )

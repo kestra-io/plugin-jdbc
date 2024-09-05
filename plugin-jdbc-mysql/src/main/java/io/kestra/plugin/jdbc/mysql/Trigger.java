@@ -26,29 +26,29 @@ import java.sql.SQLException;
         @Example(
             title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
-            code = {
-                "id: jdbc_trigger",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ json(taskrun.value) }}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.mysql.Trigger",
-                "    interval: \"PT5M\"",
-                "    url: jdbc:mysql://127.0.0.1:3306/",
-                "    username: mysql_user",
-                "    password: mysql_passwd",
-                "    sql: \"SELECT * FROM my_table\"",
-                "    fetch: true",
-            }
+            code = """
+                id: jdbc_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ json(taskrun.value) }}"
+                    value: "{{ trigger.rows }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.mysql.Trigger
+                    interval: "PT5M"
+                    url: jdbc:mysql://127.0.0.1:3306/
+                    username: mysql_user
+                    password: mysql_password
+                    sql: "SELECT * FROM my_table"
+                    fetch: true
+                """
         )
     }
 )

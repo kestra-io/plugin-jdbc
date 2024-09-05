@@ -22,36 +22,36 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Wait for query on a Druid database."
+    title = "Wait for query on a Druid database."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        title = "Wait for a SQL query to return results, and then iterate through rows.",
-                        full = true,
-                        code = {
-                                "id: jdbc_trigger",
-                                "namespace: company.team",
-                                "",
-                                "tasks:",
-                                "  - id: each",
-                                "    type: io.kestra.plugin.core.flow.EachSequential",
-                                "    tasks:",
-                                "      - id: return",
-                                "        type: io.kestra.plugin.core.debug.Return",
-                                "        format: \"{{ json(taskrun.value) }}\"",
-                                "    value: \"{{ trigger.rows }}\"",
-                                "",
-                                "triggers:",
-                                "  - id: watch",
-                                "    type: io.kestra.plugin.jdbc.druid.Trigger",
-                                "    interval: \"PT5M\"",
-                                "    url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true",
-                                "    sql: \"SELECT * FROM my_table\"",
-                                "    fetch: true",
-                        }
-                )
-        }
+    examples = {
+        @Example(
+            title = "Wait for a SQL query to return results, and then iterate through rows.",
+            full = true,
+            code = """
+                id: jdbc_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ json(taskrun.value) }}"
+                    value: "{{ trigger.rows }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.druid.Trigger
+                    interval: "PT5M"
+                    url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true
+                    sql: "SELECT * FROM my_table"
+                    fetch: true
+                """
+        )
+    }
 )
 public class Trigger extends AbstractJdbcTrigger {
 

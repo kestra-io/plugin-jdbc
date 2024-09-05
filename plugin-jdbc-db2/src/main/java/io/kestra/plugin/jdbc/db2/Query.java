@@ -32,13 +32,20 @@ import java.util.Properties;
     examples = {
         @Example(
             title = "Send a SQL query to a DB2 Database and fetch a row as output.",
-            code = {
-                "url: jdbc:db2://127.0.0.1:50000/",
-                "username: db2inst",
-                "password: db2_passwd",
-                "sql: select * from db2_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                id: db2_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.db2.Query
+                    url: jdbc:db2://127.0.0.1:50000/
+                    username: db2inst
+                    password: db2_password
+                    sql: select * from db2_types
+                    fetchOne: true
+                """
         )
     }
 )
