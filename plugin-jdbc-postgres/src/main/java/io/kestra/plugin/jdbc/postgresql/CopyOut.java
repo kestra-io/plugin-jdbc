@@ -31,15 +31,21 @@ import java.sql.Connection;
     examples = {
         @Example(
             title = "Export a PostgreSQL table or query to a CSV or TSV file.",
-            code = {
-                "url: jdbc:postgresql://127.0.0.1:56982/",
-                "username: pg_user",
-                "password: pg_passwd",
-                "format: CSV",
-                "sql: SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool",
-                "header: true",
-                "delimiter: \"\t\""
-            }
+            code = """
+                id: postgres_copy_out
+                namespace: company.team
+
+                tasks:
+                  - id: copy_out
+                    type: io.kestra.plugin.jdbc.postgresql.CopyOut
+                    url: jdbc:postgresql://127.0.0.1:56982/
+                    username: pg_user
+                    password: pg_password
+                    format: CSV
+                    sql: SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool
+                    header: true
+                    delimiter: "\\t"
+                """
         )
     }
 )

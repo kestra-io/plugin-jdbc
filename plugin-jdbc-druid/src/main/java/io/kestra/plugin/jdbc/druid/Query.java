@@ -28,13 +28,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Query an Apache Druid database.",
-            code = {
-                "url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true",
-                "sql: |",
-                "  SELECT *",
-                "  FROM wikiticker",
-                "store: true"
-            }
+            full = true,
+            code = """
+                id: druid_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.druid.Query
+                    url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true
+                    sql: |
+                      SELECT *
+                      FROM wikiticker
+                    store: true
+                """
         )
     }
 )

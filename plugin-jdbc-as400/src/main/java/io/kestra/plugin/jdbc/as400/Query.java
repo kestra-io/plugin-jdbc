@@ -33,13 +33,20 @@ import java.util.Properties;
     examples = {
         @Example(
             title = "Send a SQL query to a AS400 Database and fetch a row as output.",
-            code = {
-                "url: jdbc:as400://127.0.0.1:50000/",
-                "username: as400_user",
-                "password: as400_passwd",
-                "sql: select * from as400_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                id: as400_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.as400.Query
+                    url: jdbc:as400://127.0.0.1:50000/
+                    username: as400_user
+                    password: as400_password
+                    sql: select * from as400_types
+                    fetchOne: true
+                """
         )
     }
 )

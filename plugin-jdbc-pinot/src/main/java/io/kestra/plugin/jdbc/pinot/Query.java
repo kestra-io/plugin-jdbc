@@ -29,13 +29,20 @@ import java.time.ZoneId;
 @Plugin(
     examples = {
         @Example(
-            code = {
-                "url: jdbc:pinot://localhost:9000",
-                "sql: |",
-                "  SELECT *",
-                "  FROM airlineStats",
-                "fetch: true"
-            }
+            full = true,
+            code = """
+                id: pinot_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: o.kestra.plugin.jdbc.pinot.Query
+                    url: jdbc:pinot://localhost:9000
+                    sql: |
+                      SELECT *
+                      FROM airlineStats
+                    fetch: true
+                """
         )
     }
 )

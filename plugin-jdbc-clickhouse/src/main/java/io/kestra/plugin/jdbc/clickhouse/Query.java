@@ -30,13 +30,20 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Query a Clickhouse database.",
-            code = {
-                "url: jdbc:clickhouse://127.0.0.1:56982/",
-                "username: ch_user",
-                "password: ch_passwd",
-                "sql: select * from clickhouse_types",
-                "store: true",
-            }
+            full = true,
+            code = """
+                id: clickhouse_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.clickhouse.Query
+                    url: jdbc:clickhouse://127.0.0.1:56982/
+                    username: ch_user
+                    password: ch_password
+                    sql: select * from clickhouse_types
+                    store: true
+                """
         )
     }
 )

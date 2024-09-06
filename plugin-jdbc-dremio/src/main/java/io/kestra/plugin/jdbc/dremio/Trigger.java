@@ -28,29 +28,29 @@ import java.sql.SQLException;
         @Example(
             title = "Wait for a SQL query to return results, and then iterate through rows.",
             full = true,
-            code = {
-                "id: jdbc_trigger",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: each",
-                "    type: io.kestra.plugin.core.flow.EachSequential",
-                "    tasks:",
-                "      - id: return",
-                "        type: io.kestra.plugin.core.debug.Return",
-                "        format: \"{{ json(taskrun.value) }}\"",
-                "    value: \"{{ trigger.rows }}\"",
-                "",
-                "triggers:",
-                "  - id: watch",
-                "    type: io.kestra.plugin.jdbc.dremio.Trigger",
-                "    interval: \"PT5M\"",
-                "    url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;",
-                "    username: $token",
-                "    password: samplePersonalAccessToken",
-                "    sql: \"SELECT * FROM source.database.my_table\"",
-                "    fetch: true",
-            }
+            code = """
+                id: jdbc_trigger
+                namespace: company.team
+                
+                tasks:
+                  - id: each
+                    type: io.kestra.plugin.core.flow.EachSequential
+                    tasks:
+                      - id: return
+                        type: io.kestra.plugin.core.debug.Return
+                        format: "{{ json(taskrun.value) }}"
+                    value: "{{ trigger.rows }}"
+                
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.dremio.Trigger
+                    interval: "PT5M"
+                    url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
+                    username: dremio_token
+                    password: samplePersonalAccessToken
+                    sql: "SELECT * FROM source.database.my_table"
+                    fetch: true
+                """
         )
     }
 )

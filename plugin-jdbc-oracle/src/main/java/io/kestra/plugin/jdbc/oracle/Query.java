@@ -31,21 +31,26 @@ import java.time.ZoneId;
         @Example(
             full = true,
             title = "Execute a query and fetch results on another task to update another table.",
-            code = {
-                "tasks:",
-                "  - id: select",
-                "    type: io.kestra.plugin.jdbc.oracle.Query",
-                "    url: jdbc:oracle:thin:@localhost:49161:XE",
-                "    username: oracle_user",
-                "    password: oracle_passwd",
-                "    sql: select * from source",
-                "    fetch: true",
-                "  - id: generate-update",
-                "    type: io.kestra.plugin.jdbc.oracle.Query",
-                "    url: jdbc:oracle:thin:@localhost:49161:XE",
-                "    username: oracle_user",
-                "    password: oracle_passwd",
-                "    sql: \"{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ); {% endfor %}\""}
+            code = """
+                id: oracle_query
+                namespace: company.team
+
+                tasks:
+                  - id: select
+                    type: io.kestra.plugin.jdbc.oracle.Query
+                    url: jdbc:oracle:thin:@localhost:49161:XE
+                    username: oracle_user
+                    password: oracle_password
+                    sql: select * from source
+                    fetch: true
+                
+                  - id: generate_update
+                    type: io.kestra.plugin.jdbc.oracle.Query
+                    url: jdbc:oracle:thin:@localhost:49161:XE
+                    username: oracle_user
+                    password: oracle_password
+                    sql: "{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ); {% endfor %}"
+                """
         )
     }
 )

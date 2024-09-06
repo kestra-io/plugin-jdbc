@@ -24,30 +24,35 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Query a PostgreSQL server."
+    title = "Query a PostgreSQL server."
 )
 @Plugin(
-        examples = {
-                @Example(
-                        full = true,
-                        title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
-                        code = {
-                                "tasks:",
-                                "  - id: fetch",
-                                "    type: io.kestra.plugin.jdbc.postgresql.Query",
-                                "    url: jdbc:postgresql://127.0.0.1:56982/",
-                                "    username: pg_user",
-                                "    password: pg_passwd",
-                                "    sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types",
-                                "    fetch: true",
-                                "  - id: use_fetched_data",
-                                "    type: io.kestra.plugin.jdbc.postgresql.Query",
-                                "    url: jdbc:postgresql://127.0.0.1:56982/",
-                                "    username: pg_user",
-                                "    password: pg_passwd",
-                                "    sql:  \"{% for row in outputs.fetch.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}\""}
-                )
-        }
+    examples = {
+        @Example(
+            full = true,
+            title = "Execute a query and fetch results in a task, and update another table with fetched results in a different task.",
+            code = """
+                id: postgres_query
+                namespace: company.team
+
+                tasks:
+                  - id: fetch
+                    type: io.kestra.plugin.jdbc.postgresql.Query
+                    url: jdbc:postgresql://127.0.0.1:56982/
+                    username: pg_user
+                    password: pg_password
+                    sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types
+                    fetch: true
+                
+                  - id: use_fetched_data
+                    type: io.kestra.plugin.jdbc.postgresql.Query
+                    url: jdbc:postgresql://127.0.0.1:56982/
+                    username: pg_user
+                    password: pg_password
+                    sql:  "{% for row in outputs.fetch.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}"
+                """
+        )
+    }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface, AutoCommitInterface {
     protected final Boolean autoCommit = true;

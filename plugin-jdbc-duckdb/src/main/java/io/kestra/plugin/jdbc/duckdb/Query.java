@@ -42,68 +42,72 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         @Example(
             title = "Execute a query that reads a csv, and outputs another csv.",
             full = true,
-            code = {
-                "id: query-duckdb",
-                "namespace: company.team",
-                "tasks:",
-                "  - id: http_download",
-                "    type: io.kestra.plugin.core.http.Download",
-                "    uri: \"https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv\"",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.duckdb.Query",
-                "    url: 'jdbc:duckdb:'",
-                "    timeZoneId: Europe/Paris",
-                "    sql: |-",
-                "      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);",
-                "",
-                "      COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');",
-                "    inputFiles:",
-                "      in.csv: \"{{ outputs.http_download.uri }}\"",
-                "    outputFiles:",
-                "       - out"
-            }
+            code = """
+                id: query_duckdb
+                namespace: company.team
+
+                tasks:
+                  - id: http_download
+                    type: io.kestra.plugin.core.http.Download
+                    uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
+                
+                  - id: query
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: 'jdbc:duckdb:'
+                    timeZoneId: Europe/Paris
+                    sql: |-
+                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);
+                
+                      COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
+                    inputFiles:
+                      in.csv: "{{ outputs.http_download.uri }}"
+                    outputFiles:
+                       - out
+                """
         ),
         @Example(
             title = "Execute a query that reads from an existing database file using a URL.",
             full = true,
-            code = {
-                "id: query-duckdb",
-                "namespace: company.team",
-                "tasks:",
-                "  - id: query1",
-                "    type: io.kestra.plugin.jdbc.duckdb.Query",
-                "    url: jdbc:duckdb:/{{ vars.dbfile }}",
-                "    sql: SELECT * FROM table_name;",
-                "    store: true",
-                "",
-                "  - id: query2",
-                "    type: io.kestra.plugin.jdbc.duckdb.Query",
-                "    url: jdbc:duckdb:/temp/folder/duck.db",
-                "    sql: SELECT * FROM table_name;",
-                "    store: true"
-            }
+            code = """
+                id: query_duckdb
+                namespace: company.team
+
+                tasks:
+                  - id: query1
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: jdbc:duckdb:/{{ vars.dbfile }}
+                    sql: SELECT * FROM table_name;
+                    store: true
+                
+                  - id: query2
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: jdbc:duckdb:/temp/folder/duck.db
+                    sql: SELECT * FROM table_name;
+                    store: true
+                """
         ),
         @Example(
             title = "Execute a query that reads from an existing database file using the `databaseFile` variable.",
             full = true,
-            code = {
-                "id: query-duckdb",
-                "namespace: company.team",
-                "tasks:",
-                "  - id: query1",
-                "    type: io.kestra.plugin.jdbc.duckdb.Query",
-                "    url: jdbc:duckdb:",
-                "    databaseFile:{{ vars.dbfile }}",
-                "    sql: SELECT * FROM table_name;",
-                "    store: true",
-                "",
-                "  - id: query2",
-                "    type: io.kestra.plugin.jdbc.duckdb.Query",
-                "    url: jdbc:duckdb:",
-                "    databaseFile:/temp/folder/duck.db",
-                "    sql: SELECT * FROM table_name;",
-                "    store: true"
-            }
+            code = """
+                id: query_duckdb
+                namespace: company.team
+
+                tasks:
+                  - id: query1
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: jdbc:duckdb:
+                    databaseFile: {{ vars.dbfile }}
+                    sql: SELECT * FROM table_name;
+                    store: true
+                
+                  - id: query2
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: jdbc:duckdb:
+                    databaseFile: /temp/folder/duck.db
+                    sql: SELECT * FROM table_name;
+                    store: true
+                """
         )
     }
 )

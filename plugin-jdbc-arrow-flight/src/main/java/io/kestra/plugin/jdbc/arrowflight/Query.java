@@ -30,23 +30,37 @@ import java.time.ZoneId;
     examples = {
         @Example(
             title = "Send a SQL query to a database and fetch row(s) using Apache Arrow Flight SQL driver.",
-            code = {
-                "url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false",
-                "username: db_user",
-                "password: db_passwd",
-                "sql: select * FROM departments",
-                "fetch: true",
-            }
+            full = true,
+            code = """
+                id: arrow_flight_sql_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.arrowflight.Query
+                    url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false
+                    username: db_user
+                    password: db_password
+                    sql: select * FROM departments
+                    fetch: true
+                """
         ),
         @Example(
             title = "Send a SQL query to a Dremio coordinator and fetch rows as output using Apache Arrow Flight SQL driver.",
-            code = {
-                "url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public",
-                "username: dremio_user",
-                "password: dremio_passwd",
-                "sql: select * FROM departments",
-                "fetch: true",
-            }
+            full = true,
+            code = """
+                id: arrow_flight_sql_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.arrowflight.Query
+                    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
+                    username: dremio_user
+                    password: dremio_password
+                    sql: select * FROM departments
+                    fetch: true
+                """
         )
     }
 )

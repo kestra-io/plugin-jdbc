@@ -34,29 +34,47 @@ import java.util.Properties;
     examples = {
         @Example(
             title = "Send a SQL query to a MySQL Database and fetch a row as output.",
-            code = {
-                "url: jdbc:mysql://127.0.0.1:3306/",
-                "username: mysql_user",
-                "password: mysql_passwd",
-                "sql: select * from mysql_types",
-                "fetchOne: true",
-            }
+            full = true,
+            code = """
+                id: mysql_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.mysql.Query
+                    url: jdbc:mysql://127.0.0.1:3306/
+                    username: mysql_user
+                    password: mysql_password
+                    sql: select * from mysql_types
+                    fetchOne: true
+                """
         ),
         @Example(
             title = "Load a csv file into a MySQL table.",
-            code = {
-                "url: jdbc:mysql://127.0.0.1:3306/",
-                "username: mysql_user",
-                "password: mysql_passwd",
-                "inputFile: \"{{ outputs.taskId.file }}\"",
-                "sql: |",
-                "  LOAD DATA LOCAL INFILE '{{ inputFile }}'",
-                "  INTO TABLE discounts" +
-                "  FIELDS TERMINATED BY ','",
-                "  ENCLOSED BY '\"'",
-                "  LINES TERMINATED BY '\\n'",
-                "  IGNORE 1 ROWS;",
-            }
+            full = true,
+            code = """
+                id: mysql_query
+                namespace: company.team
+                
+                tasks:
+                  - id: http_download
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
+                
+                  - id: query
+                    type: io.kestra.plugin.jdbc.mysql.Query
+                    url: jdbc:mysql://127.0.0.1:3306/
+                    username: mysql_user
+                    password: mysql_password
+                    inputFile: "{{ outputs.http_download.uri }}"
+                    sql: |
+                      LOAD DATA LOCAL INFILE '{{ inputFile }}'
+                      INTO TABLE products
+                      FIELDS TERMINATED BY ','
+                      ENCLOSED BY '"'
+                      LINES TERMINATED BY '\\n'
+                      IGNORE 1 ROWS;
+                """
         )
     }
 )
