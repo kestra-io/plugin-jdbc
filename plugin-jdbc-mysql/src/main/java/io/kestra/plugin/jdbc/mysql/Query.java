@@ -66,7 +66,7 @@ import java.util.Properties;
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
                     password: mysql_password
-                    inputFile: "{{ outputs.http_download.file }}"
+                    inputFile: "{{ outputs.http_download.uri }}"
                     sql: |
                       LOAD DATA LOCAL INFILE '{{ inputFile }}'
                       INTO TABLE products
