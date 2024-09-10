@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.Task;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
@@ -43,13 +45,20 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
     private String sql;
 
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean store = false;
 
+    @Deprecated(since="0.19.0", forRemoval=true)
     @Builder.Default
     private boolean fetchOne = false;
 
+    @Deprecated(since="0.19.0", forRemoval=true)
     @Builder.Default
     private boolean fetch = false;
+
+    @NotNull
+    @Builder.Default
+    protected FetchType fetchType = FetchType.STORE;
 
     @Builder.Default
     protected Integer fetchSize = 10000;
@@ -78,6 +87,8 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
             Connection conn = this.connection(runContext);
             Statement stmt = this.createStatement(conn);
         ) {
+            setFetchTypeFromDeprecatedData();
+
             if (this instanceof AutoCommitInterface) {
                 if (this.store) {
                     conn.setAutoCommit(false);
@@ -98,26 +109,29 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
                 long size = 0;
 
                 if (isResult) {
-                    if (this.fetchOne) {
-                        output
-                            .row(fetchResult(rs, cellConverter, conn))
-                            .size(1L);
-                        size = 1;
-
-                    } else if (this.store) {
-                        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile),FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                    switch (this.getFetchType()) {
+                        case FETCH_ONE -> {
+                            output
+                                .row(fetchResult(rs, cellConverter, conn))
+                                .size(1L);
+                            size = 1;
                         }
-                        output
-                            .uri(runContext.storage().putFile(tempFile))
-                            .size(size);
-                    } else if (this.fetch) {
-                        List<Map<String, Object>> maps = new ArrayList<>();
-                        size = fetchResults(stmt, rs, maps, cellConverter, conn);
-                        output
-                            .rows(maps)
-                            .size(size);
+                        case STORE -> {
+                            File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                            try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile),FileSerde.BUFFER_SIZE)) {
+                                size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                            }
+                            output
+                                .uri(runContext.storage().putFile(tempFile))
+                                .size(size);
+                        }
+                        case FETCH -> {
+                            List<Map<String, Object>> maps = new ArrayList<>();
+                            size = fetchResults(stmt, rs, maps, cellConverter, conn);
+                            output
+                                    .rows(maps)
+                                    .size(size);
+                        }
                     }
                 }
 
@@ -128,10 +142,24 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
         }
     }
 
+    private void setFetchTypeFromDeprecatedData() {
+        if(this.isFetch()) {
+            this.fetchType = FetchType.FETCH;
+        }
+
+        if(this.isFetchOne()) {
+            this.fetchType = FetchType.FETCH_ONE;
+        }
+
+        if(this.isStore()) {
+            this.fetchType = FetchType.STORE;
+        }
+    }
+
     private String[] tags() {
         return new String[]{
-            "fetch", this.fetch || this.fetchOne ? "true" : "false",
-            "store", this.store ? "true" : "false",
+            "fetch", this.fetchType.equals(FetchType.FETCH) || this.fetchType.equals(FetchType.FETCH_ONE) ? "true" : "false",
+            "store", this.fetchType.equals(FetchType.STORE) ? "true" : "false",
         };
     }
 

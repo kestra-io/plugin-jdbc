@@ -74,6 +74,7 @@ public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionIn
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();
