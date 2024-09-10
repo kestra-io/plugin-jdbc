@@ -58,7 +58,7 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
 
     @NotNull
     @Builder.Default
-    protected FetchType fetchType = FetchType.STORE;
+    protected FetchType fetchType = FetchType.NONE;
 
     @Builder.Default
     protected Integer fetchSize = 10000;
@@ -87,10 +87,8 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
             Connection conn = this.connection(runContext);
             Statement stmt = this.createStatement(conn);
         ) {
-            setFetchTypeFromDeprecatedData();
-
             if (this instanceof AutoCommitInterface) {
-                if (this.store) {
+                if (this.getFetchType().equals(FetchType.STORE)) {
                     conn.setAutoCommit(false);
                 } else {
                     conn.setAutoCommit(((AutoCommitInterface) this).getAutoCommit());
@@ -139,20 +137,6 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
 
                 return output.build();
             }
-        }
-    }
-
-    private void setFetchTypeFromDeprecatedData() {
-        if(this.isFetch()) {
-            this.fetchType = FetchType.FETCH;
-        }
-
-        if(this.isFetchOne()) {
-            this.fetchType = FetchType.FETCH_ONE;
-        }
-
-        if(this.isStore()) {
-            this.fetchType = FetchType.STORE;
         }
     }
 
@@ -217,6 +201,36 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
 
     private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         return cellConverter.convertCell(columnIndex, rs, connection);
+    }
+
+    public void setFetchOne(boolean fetchOne) {
+        if(fetchOne) {
+            this.fetchType = FetchType.FETCH_ONE;
+        }
+    }
+
+    public boolean isFetchOne() {
+        return this.fetchType.equals(FetchType.FETCH_ONE);
+    }
+
+    public void setFetch(boolean fetch) {
+        if(fetch) {
+            this.fetchType = FetchType.FETCH;
+        }
+    }
+
+    public boolean isFetch() {
+        return this.fetchType.equals(FetchType.FETCH);
+    }
+
+    public void setStore(boolean store) {
+        if(store) {
+            this.fetchType = FetchType.STORE;
+        }
+    }
+
+    public boolean isStore() {
+        return this.fetchType.equals(FetchType.STORE);
     }
 
     @SuperBuilder

@@ -48,7 +48,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
-    protected FetchType fetchType = FetchType.STORE;
+    protected FetchType fetchType = FetchType.NONE;
 
     @Builder.Default
     protected Integer fetchSize = 10000;
