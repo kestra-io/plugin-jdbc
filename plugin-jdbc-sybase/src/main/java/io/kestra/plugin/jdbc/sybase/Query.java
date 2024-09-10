@@ -40,7 +40,7 @@ import java.util.Properties;
                        username: syb_user
                        password: syb_password
                        sql: select * from syb_types
-                       fetchOne: true
+                       fetchType: FETCH_ONE
                    """
         )
     }

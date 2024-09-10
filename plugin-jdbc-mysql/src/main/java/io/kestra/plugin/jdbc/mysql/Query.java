@@ -46,7 +46,7 @@ import java.util.Properties;
                     username: mysql_user
                     password: mysql_password
                     sql: select * from mysql_types
-                    fetchOne: true
+                    fetchType: FETCH_ONE
                 """
         ),
         @Example(

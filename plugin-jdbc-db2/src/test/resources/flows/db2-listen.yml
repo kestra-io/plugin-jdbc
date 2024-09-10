@@ -8,7 +8,7 @@ triggers:
     username: db2inst1
     password: password
     sql: select * from db2_types
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

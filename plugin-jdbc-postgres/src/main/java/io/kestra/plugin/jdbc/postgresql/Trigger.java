@@ -11,7 +11,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 
 @SuperBuilder
 @ToString
@@ -47,7 +46,7 @@ import java.util.Properties;
                     username: pg_user
                     password: pg_password
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }

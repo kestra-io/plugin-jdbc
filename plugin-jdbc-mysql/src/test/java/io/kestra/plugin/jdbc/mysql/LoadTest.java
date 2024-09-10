@@ -15,6 +15,7 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.Objects;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -74,7 +75,7 @@ public class LoadTest {
             .url("jdbc:mysql://127.0.0.1:64790/kestra")
             .username("root")
             .password("mysql_passwd")
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .sql("SELECT COUNT(*) as count FROM discounts \n")
             .build();
 

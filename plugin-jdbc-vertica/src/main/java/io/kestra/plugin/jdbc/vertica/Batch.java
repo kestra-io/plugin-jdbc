@@ -43,8 +43,8 @@ import java.time.ZoneId;
                          SELECT *
                          FROM xref
                          LIMIT 1500;
-                       fetch: true
-                       store: true
+                       fetchType: FETCH
+                       fetchType: STORE
                      
                      - id: update
                        type: io.kestra.plugin.jdbc.vertica.Batch
@@ -72,8 +72,8 @@ import java.time.ZoneId;
                 "      SELECT *",
                 "      FROM xref",
                 "      LIMIT 1500;",
-                "    fetch: true",
-                "    store: true",
+                "    fetchType: FETCH",
+                "    fetchType: STORE",
                 "",
                 "  - id: update",
                 "    type: io.kestra.plugin.jdbc.vertica.Batch",

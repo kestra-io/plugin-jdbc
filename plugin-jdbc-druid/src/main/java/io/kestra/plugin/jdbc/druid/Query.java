@@ -40,7 +40,7 @@ import java.time.ZoneId;
                     sql: |
                       SELECT *
                       FROM wikiticker
-                    store: true
+                    fetchType: STORE
                 """
         )
     }

@@ -49,7 +49,7 @@ import java.sql.SQLException;
                     username: trino_user
                     password: trino_password
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -68,6 +68,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .additionalVars(this.additionalVars)
             .build();
         return query.run(runContext);

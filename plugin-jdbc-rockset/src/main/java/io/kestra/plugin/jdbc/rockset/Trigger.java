@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.rockset;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
@@ -15,7 +14,6 @@ import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Properties;
 
 @SuperBuilder
 @ToString
@@ -51,7 +49,7 @@ import java.util.Properties;
                     apiKey: "api_key"
                     apiServer: "api_server"
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -75,6 +73,7 @@ public class Trigger extends AbstractJdbcTrigger implements RocksetConnection {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .apiKey(this.apiKey)

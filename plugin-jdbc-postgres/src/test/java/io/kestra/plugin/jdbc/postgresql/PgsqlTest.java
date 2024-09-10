@@ -25,6 +25,7 @@ import java.time.*;
 import java.util.Map;
 import java.util.Properties;
 
+import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +52,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslRootCert(TestUtils.ca())
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.keyNoPass())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types")
             .build();
@@ -74,7 +75,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslRootCert(TestUtils.ca())
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.keyNoPass())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .sql("SELECT 'someString' as stringvalue, pg_sleep(0) as voidvalue")
             .build();
 
@@ -134,7 +135,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslRootCert(TestUtils.ca())
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.keyNoPass())
-            .fetch(true)
+            .fetchType(FETCH)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types")
             .build();
@@ -159,7 +160,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslRootCert(TestUtils.ca())
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.keyNoPass())
-            .store(true)
+            .fetchType(STORE)
             .timeZoneId("Europe/Paris")
             .sql("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types")
             .build();
@@ -191,7 +192,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslRootCert(TestUtils.ca())
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.keyNoPass())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .sql("select item from pgsql_types") // PG SQL composite field are not supported
             .build();
 

@@ -46,8 +46,8 @@ import java.time.ZoneId;
                          from tpch.tiny.orders
                          group by orderpriority
                          order by orderpriority
-                       fetch: true
-                       store: true
+                       fetchType: FETCH
+                       fetchType: STORE
                      
                      - id: csv_report
                        type: io.kestra.plugin.serdes.csv.IonToCsv

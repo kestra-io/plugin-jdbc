@@ -50,7 +50,7 @@ import java.util.Properties;
                     username: snowflake_user
                     password: snowflake_password
                     sql: "SELECT * FROM demo_db.public.customers"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -77,6 +77,7 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();

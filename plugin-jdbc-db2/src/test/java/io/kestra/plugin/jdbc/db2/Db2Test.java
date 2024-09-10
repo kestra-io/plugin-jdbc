@@ -4,13 +4,9 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.micronaut.context.annotation.Requires;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -20,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -42,7 +39,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .sql("SELECT 1 AS result FROM SYSIBM.SYSDUMMY1")
             .build();
 
@@ -61,7 +58,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select * from db2_types")
             .build();
@@ -104,7 +101,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("update db2_types set VARCHAR_col = 'VARCHAR_col'")
             .build();
@@ -115,7 +112,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select VARCHAR_col from db2_types")
             .build();
@@ -133,7 +130,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("update db2_types set BLOB_col = CAST('VARCHAR_col' AS BLOB)")
             .build();
@@ -144,7 +141,7 @@ public class Db2Test extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select BLOB_col from db2_types")
             .build();

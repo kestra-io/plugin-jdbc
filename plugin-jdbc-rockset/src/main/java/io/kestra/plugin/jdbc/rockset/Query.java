@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.rockset;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -46,7 +45,7 @@ import java.util.Properties;
                     sql: |
                       SELECT *
                       FROM nation
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }

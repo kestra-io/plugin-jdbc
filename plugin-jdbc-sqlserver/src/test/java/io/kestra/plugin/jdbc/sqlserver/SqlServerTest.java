@@ -5,17 +5,15 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.*;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -33,7 +31,7 @@ public class SqlServerTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select * from sqlserver_types")
             .build();
@@ -77,7 +75,7 @@ public class SqlServerTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("UPDATE sqlserver_types SET t_varchar = 'D' WHERE t_varchar = 'test'")
             .build();
@@ -89,7 +87,7 @@ public class SqlServerTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select t_varchar from sqlserver_types")
             .build();

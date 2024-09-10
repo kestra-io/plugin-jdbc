@@ -77,13 +77,13 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:/{{ vars.dbfile }}
                     sql: SELECT * FROM table_name;
-                    store: true
+                    fetchType: STORE
                 
                   - id: query2
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:/temp/folder/duck.db
                     sql: SELECT * FROM table_name;
-                    store: true
+                    fetchType: STORE
                 """
         ),
         @Example(
@@ -99,14 +99,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: jdbc:duckdb:
                     databaseFile: {{ vars.dbfile }}
                     sql: SELECT * FROM table_name;
-                    store: true
+                    fetchType: STORE
                 
                   - id: query2
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:
                     databaseFile: /temp/folder/duck.db
                     sql: SELECT * FROM table_name;
-                    store: true
+                    fetchType: STORE
                 """
         )
     }

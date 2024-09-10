@@ -8,7 +8,7 @@ triggers:
     url: jdbc:mysql://127.0.0.1:64790/kestra
     username: root
     password: mysql_passwd
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

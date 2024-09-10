@@ -43,7 +43,7 @@ import java.util.Properties;
                     username: snowflake_user
                     password: snowflake_password
                     sql: select * from demo_db.public.customers
-                    fetch: true
+                    fetchType: FETCH
                 
                   - id: generate_update
                     type: io.kestra.plugin.jdbc.snowflake.Query

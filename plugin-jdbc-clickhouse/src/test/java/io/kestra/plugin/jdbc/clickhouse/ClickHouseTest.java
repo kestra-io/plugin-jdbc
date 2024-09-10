@@ -1,22 +1,15 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
-import com.clickhouse.client.internal.google.protobuf.UInt32Value;
-import com.clickhouse.client.internal.google.protobuf.UInt64Value;
-import com.clickhouse.client.internal.google.type.Decimal;
-import com.clickhouse.data.ClickHouseColumn;
-import com.clickhouse.data.value.ClickHouseNestedValue;
-import com.clickhouse.data.value.ClickHouseTupleValue;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import org.h2.value.ValueTinyint;
 import org.junit.jupiter.api.Test;
-import reactor.util.function.Tuple2;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -26,10 +19,10 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -44,7 +37,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FetchType.FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select * from clickhouse_types")
             .build();
@@ -82,7 +75,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FetchType.FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'")
             .build();
@@ -96,7 +89,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FetchType.FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select String from clickhouse_types")
             .build();
@@ -140,7 +133,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetch(true)
+            .fetchType(FETCH)
             .timeZoneId("Europe/Paris")
             .sql("select String from clickhouse_types")
             .build();

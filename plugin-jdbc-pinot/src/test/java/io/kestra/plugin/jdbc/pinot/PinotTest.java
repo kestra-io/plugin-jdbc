@@ -3,17 +3,12 @@ package io.kestra.plugin.jdbc.pinot;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.utils.VersionProvider;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.time.*;
-import java.util.Map;
-
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -32,7 +27,7 @@ public class PinotTest {
 
         Query task = Query.builder()
             .url("jdbc:pinot://localhost:49000")
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select \n" +
                 "  -- NULL as t_null,\n" +

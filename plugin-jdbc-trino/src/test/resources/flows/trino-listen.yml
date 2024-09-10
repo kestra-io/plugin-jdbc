@@ -7,7 +7,7 @@ triggers:
     sql: SELECT * FROM trino_types
     url: jdbc:trino://localhost:48080/memory/default
     username: fake
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

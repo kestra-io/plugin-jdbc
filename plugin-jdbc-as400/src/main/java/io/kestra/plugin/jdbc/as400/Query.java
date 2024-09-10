@@ -45,7 +45,7 @@ import java.util.Properties;
                     username: as400_user
                     password: as400_password
                     sql: select * from as400_types
-                    fetchOne: true
+                    fetchType: FETCH_ONE
                 """
         )
     }

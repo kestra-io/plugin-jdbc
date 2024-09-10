@@ -4,37 +4,29 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
-import org.h2.tools.RunScript;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -55,7 +47,7 @@ public class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');\n" +
                 "\n" +
@@ -185,7 +177,7 @@ public class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
             .sql("SELECT * FROM duck_types")
@@ -224,7 +216,7 @@ public class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .url("jdbc:duckdb:")
             .databaseFile(Path.of(Objects.requireNonNull(resource).toURI()))

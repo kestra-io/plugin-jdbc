@@ -12,7 +12,7 @@ triggers:
     url: ???
     username: ???
     password: ???
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

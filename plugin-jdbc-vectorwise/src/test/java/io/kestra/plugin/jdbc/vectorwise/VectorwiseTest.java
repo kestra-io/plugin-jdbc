@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.*;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -40,7 +41,7 @@ public class VectorwiseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql(new String (Files.readAllBytes( Paths.get("src/test/resources/scripts/vectorwise.sql"))))
             .build();

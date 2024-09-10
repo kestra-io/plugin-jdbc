@@ -8,7 +8,7 @@ triggers:
     url: jdbc:vertica://127.0.0.1:25433/docker
     username: dbadmin
     password: vertica_passwd
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

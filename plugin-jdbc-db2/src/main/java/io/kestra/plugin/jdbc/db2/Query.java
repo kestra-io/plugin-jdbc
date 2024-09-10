@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.db2;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -14,7 +13,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -44,7 +42,7 @@ import java.util.Properties;
                     username: db2inst
                     password: db2_password
                     sql: select * from db2_types
-                    fetchOne: true
+                    fetchType: FETCH_ONE
                 """
         )
     }

@@ -49,7 +49,7 @@ import java.sql.SQLException;
                     username: dremio_token
                     password: samplePersonalAccessToken
                     sql: "SELECT * FROM source.database.my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -68,6 +68,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .store(this.isStore())
             .fetch(this.isFetch())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();

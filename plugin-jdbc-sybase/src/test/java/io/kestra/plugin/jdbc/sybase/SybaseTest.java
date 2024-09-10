@@ -1,10 +1,7 @@
 package io.kestra.plugin.jdbc.sybase;
 
 import com.google.common.collect.ImmutableMap;
-import io.kestra.plugin.jdbc.sybase.Query;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.apache.commons.codec.binary.Hex;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
@@ -15,11 +12,11 @@ import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -34,7 +31,7 @@ public class SybaseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select * from syb_types")
             .build();
@@ -73,7 +70,7 @@ public class SybaseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("update syb_types set d = 'D'")
             .build();
@@ -84,7 +81,7 @@ public class SybaseTest extends AbstractRdbmsTest {
             .url(getUrl())
             .username(getUsername())
             .password(getPassword())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("select d from syb_types")
             .build();
