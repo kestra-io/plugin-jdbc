@@ -18,5 +18,7 @@ dependencies {
 
     compileOnly group: "io.kestra", name: "script", version: kestraVersion
 
+    testImplementation group: "io.kestra", name: "script", version: kestraVersion
+
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }
