@@ -1,7 +1,9 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 
 
 public interface JdbcQueryInterface extends JdbcStatementInterface {
@@ -12,14 +14,16 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     String getSql();
 
     @Schema(
-        title = "Whether to fetch the data from the query result to the task output." +
+        title = "DEPRECATED, please use `fetchType: FETCH` instead)" + "\n" +
+            "Whether to fetch the data from the query result to the task output." +
             " This parameter is evaluated after `fetchOne` and `store`."
     )
     @PluginProperty(dynamic = false)
     boolean isFetch();
 
     @Schema(
-        title = "Whether to fetch data row(s) from the query result to a file in internal storage." +
+        title = "DEPRECATED, please use `fetchType: FETCH_STORE` instead)" + "\n" +
+            "Whether to fetch data row(s) from the query result to a file in internal storage." +
             " File will be saved as Amazon Ion (text format)." +
             " \n" +
             " See <a href=\"http://amzn.github.io/ion-docs/\">Amazon Ion documentation</a>" +
@@ -29,7 +33,8 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isStore();
 
     @Schema(
-        title = "Whether to fetch only one data row from the query result to the task output." +
+        title = "DEPRECATED, please use `fetchType: FETCH_ONE` instead)" + "\n" +
+            "Whether to fetch only one data row from the query result to the task output." +
             " This parameter is evaluated before `store` and `fetch`."
     )
     @PluginProperty(dynamic = false)
@@ -44,4 +49,15 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     )
     @PluginProperty(dynamic = false)
     Integer getFetchSize();
+
+    @Schema(
+            title = "The way you want to store data.",
+            description = "FETCH_ONE - output the first row.\n"
+                    + "FETCH - output all rows as output variable.\n"
+                    + "STORE - store all rows to a file.\n"
+                    + "NONE - do nothing."
+    )
+    @PluginProperty
+    @NotNull
+    FetchType getFetchType();
 }

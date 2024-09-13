@@ -14,6 +14,7 @@ import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import java.time.*;
 import java.util.List;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -40,7 +41,7 @@ public class RocksetTest {
             .url("jdbc:rockset://")
             .apiKey(apiKey)
             .apiServer("api.euc1a1.rockset.com")
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .timeZoneId("Europe/Paris")
             .sql("SELECT\n" +
                 "  _id,\n" +

@@ -42,7 +42,7 @@ import java.time.ZoneId;
                     username: ch_user
                     password: ch_password
                     sql: select * from clickhouse_types
-                    store: true
+                    fetchType: STORE
                 """
         )
     }

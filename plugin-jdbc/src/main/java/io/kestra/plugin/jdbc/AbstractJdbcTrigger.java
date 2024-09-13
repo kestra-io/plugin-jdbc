@@ -2,8 +2,10 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
@@ -33,13 +35,20 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     private String sql;
 
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean store = false;
 
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean fetchOne = false;
 
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean fetch = false;
+
+    @NotNull
+    @Builder.Default
+    protected FetchType fetchType = FetchType.NONE;
 
     @Builder.Default
     protected Integer fetchSize = 10000;

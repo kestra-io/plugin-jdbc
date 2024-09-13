@@ -8,7 +8,7 @@ tasks:
     username: root
     password: mysql_passwd
     sql: select * from mysql_types
-    fetchOne: true
+    fetchType: FETCH_ONE
   - id: flow-id
     type: io.kestra.plugin.core.debug.Return
     format: "{{outputs.update.row}}"

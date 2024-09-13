@@ -42,7 +42,7 @@ import java.time.ZoneId;
                        username: admin
                        password: admin_password
                        sql: select * from vectorwise_types
-                       fetchOne: true
+                       fetchType: FETCH_ONE
                    """
         )
     }

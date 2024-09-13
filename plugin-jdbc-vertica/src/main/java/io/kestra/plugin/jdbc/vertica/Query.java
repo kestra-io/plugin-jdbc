@@ -42,7 +42,7 @@ import java.time.ZoneId;
                        username: vertica_user
                        password: vertica_password
                        sql: select * from customer
-                       fetchOne: true
+                       fetchType: FETCH_ONE
                    """
         )
     }

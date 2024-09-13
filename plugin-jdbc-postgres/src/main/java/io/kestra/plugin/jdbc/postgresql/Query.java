@@ -42,7 +42,7 @@ import java.util.Properties;
                     username: pg_user
                     password: pg_password
                     sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types
-                    fetch: true
+                    fetchType: FETCH
                 
                   - id: use_fetched_data
                     type: io.kestra.plugin.jdbc.postgresql.Query

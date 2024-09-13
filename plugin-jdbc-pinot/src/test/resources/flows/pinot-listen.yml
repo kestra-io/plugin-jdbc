@@ -18,7 +18,7 @@ triggers:
       from airlineStats
       limit 1
     url: jdbc:pinot://localhost:49000
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

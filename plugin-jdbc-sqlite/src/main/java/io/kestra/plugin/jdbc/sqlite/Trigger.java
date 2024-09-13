@@ -44,7 +44,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:sqlite:myfile.db
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -64,6 +64,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();

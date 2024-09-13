@@ -50,7 +50,7 @@ import java.sql.SQLException;
                     url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
                     interval: "PT5M"
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -69,6 +69,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .store(this.isStore())
             .fetch(this.isFetch())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();

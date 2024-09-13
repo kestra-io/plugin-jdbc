@@ -42,7 +42,7 @@ import java.time.ZoneId;
                     username: sql_server_user
                     password: sql_server_password
                     sql: select * from source
-                    fetch: true
+                    fetchType: FETCH
                   
                   - id: generate_update
                     type: io.kestra.plugin.jdbc.sqlserver.Query

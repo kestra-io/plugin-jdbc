@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -28,7 +29,7 @@ public class DruidTest {
 
         Query task = Query.builder()
                 .url("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true")
-                .fetchOne(true)
+                .fetchType(FETCH_ONE)
                 .timeZoneId("Europe/Paris")
                 .sql("""
                         select

@@ -11,6 +11,7 @@ import java.util.Collections;
 
 import jakarta.inject.Inject;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -57,7 +58,7 @@ public class CopyTest {
             .sslCert(TestUtils.cert())
             .sslKey(TestUtils.key())
             .sslKeyPassword(TestUtils.keyPass())
-            .fetchOne(true)
+            .fetchType(FETCH_ONE)
             .sql("CREATE TABLE " + destination + " (\n" +
                 "    int INT,\n" +
                 "    bool BOOL" +

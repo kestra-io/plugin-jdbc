@@ -14,7 +14,7 @@ triggers:
       from products
       limit 1
     url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true
-    fetch: true
+    fetchType: FETCH
     interval: PT30S
 
 tasks:

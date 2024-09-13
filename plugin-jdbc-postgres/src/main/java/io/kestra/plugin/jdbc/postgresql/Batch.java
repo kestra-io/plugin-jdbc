@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.postgresql;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -11,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.IOException;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -44,7 +42,7 @@ import java.util.Properties;
                       SELECT *
                       FROM xref
                       LIMIT 1500;
-                    store: true
+                    fetchType: STORE
                 
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch
@@ -74,7 +72,7 @@ import java.util.Properties;
                       SELECT *
                       FROM xref
                       LIMIT 1500;
-                    store: true
+                    fetchType: STORE
                 
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch

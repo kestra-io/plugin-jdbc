@@ -7,7 +7,7 @@ triggers:
     url: jdbc:rockset://
     apiKey: "{{ globals.apikey }}"
     apiServer: api.euc1a1.rockset.com
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
     sql: |
       SELECT

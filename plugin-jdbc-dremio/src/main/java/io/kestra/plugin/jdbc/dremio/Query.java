@@ -41,7 +41,7 @@ import java.time.ZoneId;
                     username: dremio_token
                     password: samplePersonalAccessToken
                     sql: select * FROM source.database.table
-                    fetchOne: true
+                    fetchType: FETCH_ONE
                 """
         )
     }

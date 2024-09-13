@@ -49,7 +49,7 @@ import java.sql.SQLException;
                     username: oracle_user
                     password: oracle_password
                     sql: "SELECT * FROM my_table"
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }
@@ -69,6 +69,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
+            .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();

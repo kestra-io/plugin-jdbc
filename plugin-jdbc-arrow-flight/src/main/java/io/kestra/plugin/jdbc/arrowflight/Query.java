@@ -42,7 +42,7 @@ import java.time.ZoneId;
                     username: db_user
                     password: db_password
                     sql: select * FROM departments
-                    fetch: true
+                    fetchType: FETCH
                 """
         ),
         @Example(
@@ -59,7 +59,7 @@ import java.time.ZoneId;
                     username: dremio_user
                     password: dremio_password
                     sql: select * FROM departments
-                    fetch: true
+                    fetchType: FETCH
                 """
         )
     }

@@ -5,7 +5,7 @@ triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.duckdb.Trigger
     sql: SHOW DATABASES;
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:

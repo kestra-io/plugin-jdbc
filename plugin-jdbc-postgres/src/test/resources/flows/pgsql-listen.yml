@@ -8,7 +8,7 @@ triggers:
     url: jdbc:postgresql://127.0.0.1:56982/
     username: postgres
     password: pg_passwd
-    fetch: true
+    fetchType: FETCH
     interval: PT10S
 
 tasks:
