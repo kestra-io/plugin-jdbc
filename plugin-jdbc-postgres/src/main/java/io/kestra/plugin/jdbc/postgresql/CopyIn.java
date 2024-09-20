@@ -25,13 +25,13 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy a PostgreSQL table or a query to a file.",
-    description = "Moves data between PostgreSQL tables or query to a file."
+    title = "Load data into a PostgreSQL table.",
+    description = "Copys in CSV, Text, or Binary data into PostgreSQL table."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Load CSV or TSV into a PostgreSQL table.",
+            title = "Load CSV data into a PostgreSQL table.",
             full = true,
             code = """
                 id: postgres_copy_in
