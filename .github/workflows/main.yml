@@ -84,8 +84,6 @@ jobs:
       # Gradle check
       - name: Build with Gradle
         if: ${{ github.event.inputs.skip-test == 'false' || github.event.inputs.skip-test == '' }}
-        env:
-          ROCKSET_APIKEY: ${{ secrets.ROCKSET_APIKEY }}
         run: ./gradlew check --refresh-dependencies --parallel
 
       # Allure check
