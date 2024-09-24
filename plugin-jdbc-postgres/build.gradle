@@ -13,10 +13,10 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'org.postgresql:postgresql:42.7.3'
+    jdbcDriver 'org.postgresql:postgresql:42.7.4'
     implementation project(':plugin-jdbc')
-    api 'org.bouncycastle:bcprov-jdk18on:1.78'
-    api 'org.bouncycastle:bcpkix-jdk18on:1.78'
+    api 'org.bouncycastle:bcprov-jdk18on:1.78.1'
+    api 'org.bouncycastle:bcpkix-jdk18on:1.78.1'
     api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output

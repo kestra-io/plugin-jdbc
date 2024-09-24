@@ -215,7 +215,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             "io.kestra.jdbc.postgres",
             "update_postgres",
             null,
-            (flow, exec) -> flowIO.typedInputs(flow, exec, INPUTS),
+            (flow, exec) -> flowIO.readExecutionInputs(flow, exec, INPUTS),
             Duration.ofMinutes(5)
         );
 
