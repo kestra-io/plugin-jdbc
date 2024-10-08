@@ -13,7 +13,10 @@ jar {
 }
 
 dependencies {
-    implementation("org.apache.calcite.avatica:avatica-core:1.25.0")
+    implementation("org.apache.calcite.avatica:avatica-core:1.25.0"){
+        // exclude libraries already provided by Kestra
+        exclude group: 'com.fasterxml.jackson.core'
+    }
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
