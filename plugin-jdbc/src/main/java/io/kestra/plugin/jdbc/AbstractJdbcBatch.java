@@ -117,20 +117,21 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                 })
                 .buffer(this.chunk, this.chunk)
                 .map(throwFunction(o -> {
-                    PreparedStatement ps = connection.prepareStatement(sql);
-                    ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
+                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                        ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
 
-                    for (Object value : o) {
-                        ps = this.addRows(ps, parameterMetaData, value, cellConverter, connection);
+                        for (Object value : o) {
+                            this.addRows(ps, parameterMetaData, value, cellConverter, connection);
 
-                        ps.addBatch();
-                        ps.clearParameters();
+                            ps.addBatch();
+                            ps.clearParameters();
+                        }
+
+                        int[] updatedRows = ps.executeBatch();
+                        connection.commit();
+
+                        return Arrays.stream(updatedRows).sum();
                     }
-
-                    int[] updatedRows = ps.executeBatch();
-                    connection.commit();
-
-                    return Arrays.stream(updatedRows).sum();
                 }));
 
             Integer updated = flowable
