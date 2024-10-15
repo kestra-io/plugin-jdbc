@@ -142,8 +142,8 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
 
     private String[] tags() {
         return new String[]{
-            "fetch", this.fetchType.equals(FetchType.FETCH) || this.fetchType.equals(FetchType.FETCH_ONE) ? "true" : "false",
-            "store", this.fetchType.equals(FetchType.STORE) ? "true" : "false",
+            "fetch", this.getFetchType().equals(FetchType.FETCH) || this.getFetchType().equals(FetchType.FETCH_ONE) ? "true" : "false",
+            "store", this.getFetchType().equals(FetchType.STORE) ? "true" : "false",
         };
     }
 
@@ -203,34 +203,28 @@ public abstract class AbstractJdbcQuery extends Task implements JdbcQueryInterfa
         return cellConverter.convertCell(columnIndex, rs, connection);
     }
 
-    public void setFetchOne(boolean fetchOne) {
-        if(fetchOne) {
-            this.fetchType = FetchType.FETCH_ONE;
+    @Override
+    public FetchType getFetchType() {
+        if(this.fetch) {
+            return FetchType.FETCH;
+        } else if(this.fetchOne) {
+            return FetchType.FETCH_ONE;
+        } else if(this.store) {
+            return FetchType.STORE;
         }
+        return fetchType;
     }
 
     public boolean isFetchOne() {
-        return this.fetchType.equals(FetchType.FETCH_ONE);
-    }
-
-    public void setFetch(boolean fetch) {
-        if(fetch) {
-            this.fetchType = FetchType.FETCH;
-        }
+        return this.getFetchType().equals(FetchType.FETCH_ONE);
     }
 
     public boolean isFetch() {
-        return this.fetchType.equals(FetchType.FETCH);
-    }
-
-    public void setStore(boolean store) {
-        if(store) {
-            this.fetchType = FetchType.STORE;
-        }
+        return this.getFetchType().equals(FetchType.FETCH);
     }
 
     public boolean isStore() {
-        return this.fetchType.equals(FetchType.STORE);
+        return this.getFetchType().equals(FetchType.STORE);
     }
 
     @SuperBuilder
