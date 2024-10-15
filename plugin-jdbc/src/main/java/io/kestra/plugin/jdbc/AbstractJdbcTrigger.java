@@ -75,5 +75,17 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         return Optional.of(execution);
     }
 
+    @Override
+    public FetchType getFetchType() {
+        if(this.fetch) {
+            return FetchType.FETCH;
+        } else if(this.fetchOne) {
+            return FetchType.FETCH_ONE;
+        } else if(this.store) {
+            return FetchType.STORE;
+        }
+        return fetchType;
+    }
+
     protected abstract AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception;
 }
