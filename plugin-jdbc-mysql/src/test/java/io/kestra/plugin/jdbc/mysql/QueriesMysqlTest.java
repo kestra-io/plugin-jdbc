@@ -17,12 +17,11 @@ import java.util.List;
 import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.*;
 
-/**
- * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
- */
 @KestraTest
 public class QueriesMysqlTest extends AbstractRdbmsTest {
 
@@ -74,17 +73,101 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
         assertThat(runOutput.getOutputs().size(), is(2));
 
-        List<Map<String, Object>> employees = runOutput.getOutputs().get(0).getRows();
+        List<Map<String, Object>> employees = runOutput.getOutputs().getFirst().getRows();
         assertThat("employees", employees, notNullValue());
         assertThat("employees", employees.size(), is(1));
         assertThat("employee selected", employees.getFirst().get("age"), is(45));
         assertThat("employee selected", employees.getFirst().get("firstName"), is("John"));
         assertThat("employee selected", employees.getFirst().get("lastName"), is("Doe"));
 
-        List<Map<String, Object>>laptops = runOutput.getOutputs().get(1).getRows();
+        List<Map<String, Object>>laptops = runOutput.getOutputs().getLast().getRows();
         assertThat("laptops", laptops, notNullValue());
         assertThat("laptops", laptops.size(), is(1));
         assertThat("selected laptop", laptops.getFirst().get("brand"), is("Apple"));
+    }
+
+    @Test
+    void testMultiQueriesOnlySelectOutputs() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        Queries taskGet = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                DROP TABLE IF EXISTS animals;
+                CREATE TABLE animals (
+                     id MEDIUMINT NOT NULL AUTO_INCREMENT,
+                     name CHAR(30) NOT NULL,
+                     PRIMARY KEY (id)
+                );
+                INSERT INTO animals (name) VALUES ('cat'),('dog');
+                SELECT COUNT(id) as animals_count FROM animals;
+                INSERT INTO animals (name) VALUES ('ostrich'),('snake'),('whale');
+                SELECT COUNT(id) as animals_count FROM animals;
+                """)
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
+        assertThat(runOutput.getOutputs().size(), is(2));
+        assertThat(runOutput.getOutputs().getFirst().getRow().get("animals_count"), is(2L));
+        assertThat(runOutput.getOutputs().getLast().getRow().get("animals_count"), is(5L));
+    }
+
+    @Test
+    void testMultiQueriesShouldBeTransactional() throws Exception {
+        long expectedUpdateNumber = 1L;
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        //Queries should pass in a transaction
+        Queries queriesPass = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                INSERT INTO test_transaction (name) VALUES ('test_1');
+                SELECT COUNT(id) as transaction_count FROM test_transaction;
+                """)
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
+        assertThat(runOutput.getOutputs().size(), is(1));
+        assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
+
+        //Queries should fail due to bad sql
+        Queries queriesFail = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                INSERT INTO test_transaction (name) VALUES ('test_2');
+                INSERT INTO test_transaction (name) VALUES (1000f);
+                """) //Try inserting before failing
+            .build();
+
+        assertThrows(Exception.class, () -> queriesFail.run(runContext));
+
+        //Final query to verify the amount of updated rows
+        Queries verifyQuery = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                SELECT COUNT(id) as transaction_count FROM test_transaction;
+                """) //Try inserting before failing
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
+        assertThat(verifyOutput.getOutputs().size(), is(1));
+        assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
     }
 
     @Override

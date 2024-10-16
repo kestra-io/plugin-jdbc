@@ -27,10 +27,19 @@ CREATE TABLE laptop
     cpu_frequency FLOAT,
     PRIMARY KEY (laptop_id)
 );
-
 INSERT INTO laptop (laptop_id, brand, model, cpu_frequency)
 VALUES
     (1, 'Apple', 'MacBookPro M1 13', 2.2),
     (2, 'Apple', 'MacBookPro M3 16', 1.5),
     (3, 'LG', 'Gram', 1.95),
     (4, 'Lenovo', 'ThinkPad', 1.05);
+
+
+/* Table for testing transactionnal queries */
+DROP TABLE IF EXISTS test_transaction;
+CREATE TABLE test_transaction
+(
+    id MEDIUMINT NOT NULL AUTO_INCREMENT,
+    name CHAR(30) NOT NULL,
+    PRIMARY KEY (id)
+);

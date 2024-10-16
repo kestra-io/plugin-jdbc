@@ -25,17 +25,23 @@ import java.util.function.Consumer;
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements JdbcQueriesInterface {
     private Property<Map<String, Object>> parameters;
 
-    private Property<Boolean> transaction;
+    private Property<Boolean> transaction = Property.of(Boolean.TRUE);
 
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
 
-        try (
-            Connection conn = this.connection(runContext);
-        ) {
+        Connection conn = null;
+        Savepoint savepoint = null;
+        try  {
+            //Create connection in not autocommit mode to enable rollback on error
+            conn = this.connection(runContext);
+            conn.setAutoCommit(false);
+            savepoint = conn.setSavepoint();
+
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
 
+            //Create named parameters (ex: ':param')
             Parameters namedParams = Parameters.parse(sqlRendered);
             PreparedStatement stmt = conn.prepareStatement(namedParams.getSQL(), ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
@@ -52,17 +58,35 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             logger.debug("Starting query: {}", sqlRendered);
 
             boolean hasMoreResult = stmt.execute();
-            List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
+            conn.commit();
 
+            //Create Outputs
+            List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
             long totalSize = 0L;
             while (hasMoreResult || stmt.getUpdateCount() != -1) {
-                AbstractJdbcQuery.Output.OutputBuilder<?, ?> output = AbstractJdbcQuery.Output.builder();
-                totalSize += populateResultFromResultSet(runContext, stmt, output, cellConverter, conn);
-                outputList.add(output.build());
+                try(ResultSet rs = stmt.getResultSet()) {
+                    //When sql is not a select statement skip output creation
+                    if(rs != null) {
+                        AbstractJdbcQuery.Output.OutputBuilder<?, ?> output = AbstractJdbcQuery.Output.builder();
+                        totalSize += populateOutputFromResultSet(runContext, stmt, rs, output, cellConverter, conn);
+                        outputList.add(output.build());
+                    }
+                }
                 hasMoreResult = stmt.getMoreResults();
             }
+
             runContext.metric(Counter.of("fetch.size",  totalSize, this.tags()));
+
             return MultiQueryOutput.builder().outputs(outputList).build();
+        } catch (Exception e) {
+            if(conn != null) {
+                conn.rollback(savepoint);
+            }
+            throw new RuntimeException(e);
+        } finally {
+            if(conn != null) {
+                conn.close();
+            }
         }
     }
 

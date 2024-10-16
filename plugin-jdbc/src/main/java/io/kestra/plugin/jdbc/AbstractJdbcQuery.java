@@ -11,6 +11,7 @@ import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.Statement;
 
 @SuperBuilder
@@ -26,7 +27,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
 
         try (
             Connection conn = this.connection(runContext);
-            Statement stmt = this.createStatement(conn);
+            Statement stmt = this.createStatement(conn)
         ) {
             if (this instanceof AutoCommitInterface autoCommitClass) {
                 if (this.getFetchType().equals(FetchType.STORE)) {
@@ -47,7 +48,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             long size = 0L;
 
             if (isResult) {
-                size = populateResultFromResultSet(runContext, stmt, output, cellConverter, conn);
+                try(ResultSet rs = stmt.getResultSet()) {
+                    size = populateOutputFromResultSet(runContext, stmt, rs, output, cellConverter, conn);
+                }
             }
 
 
