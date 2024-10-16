@@ -3,10 +3,7 @@ package io.kestra.plugin.jdbc;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.httprpc.sql.Parameters;
 import org.slf4j.Logger;
@@ -23,25 +20,29 @@ import java.util.function.Consumer;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements JdbcQueriesInterface {
-    private Property<Map<String, Object>> parameters;
+    protected Property<Map<String, Object>> parameters;
 
-    private Property<Boolean> transaction = Property.of(Boolean.TRUE);
+    @Builder.Default
+    protected Property<Boolean> transaction = Property.of(Boolean.TRUE);
 
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
 
+        final boolean isTransactional = this.transaction.as(runContext, Boolean.class);
         Connection conn = null;
         Savepoint savepoint = null;
         try  {
             //Create connection in not autocommit mode to enable rollback on error
             conn = this.connection(runContext);
-            conn.setAutoCommit(false);
-            savepoint = conn.setSavepoint();
+            if(isTransactional) {
+                conn.setAutoCommit(false);
+                savepoint = conn.setSavepoint();
+            }
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
 
-            //Create named parameters (ex: ':param')
+            //Inject named parameters (ex: ':param')
             Parameters namedParams = Parameters.parse(sqlRendered);
             PreparedStatement stmt = conn.prepareStatement(namedParams.getSQL(), ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
@@ -58,7 +59,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             logger.debug("Starting query: {}", sqlRendered);
 
             boolean hasMoreResult = stmt.execute();
-            conn.commit();
+            if(isTransactional) {
+                conn.commit();
+            }
 
             //Create Outputs
             List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
@@ -79,7 +82,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
-            if(conn != null) {
+            if(conn != null && savepoint != null) {
                 conn.rollback(savepoint);
             }
             throw new RuntimeException(e);

@@ -117,7 +117,7 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
     }
 
     @Test
-    void testMultiQueriesShouldBeTransactional() throws Exception {
+    void testMultiQueriesTransactionalShouldRollback() throws Exception {
         long expectedUpdateNumber = 1L;
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
@@ -168,6 +168,51 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
         assertThat(verifyOutput.getOutputs().size(), is(1));
         assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
+    }
+
+    @Test
+    void testMultiQueriesShouldNonTransactionalShouldNotRollback() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        //Queries should pass in a transaction
+        Queries queriesFail = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .transaction(Property.of(false)) //No rollback on failure
+            .sql("""
+                INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_1');
+                INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_2');
+                INSERT INTO test_transaction (name) VALUES (10f);
+                INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_1');
+                INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_2');
+                """) //Expect failure with 2 inserts
+            .build();
+
+        assertThrows(Exception.class, () -> queriesFail.run(runContext));
+
+        //Final query to verify the amount of updated rows
+        Queries verifyQuery = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                SELECT name FROM test_transaction;
+                """)
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
+        List<String> names = verifyOutput.getOutputs().getFirst().getRows()
+            .stream().map(m -> (String) m.get("name"))
+            .filter(name -> name.startsWith("test_no_rollback"))
+            .toList();
+
+        assertThat(names.size(), is(2));
+        assertThat(names, containsInAnyOrder("test_no_rollback_success_1", "test_no_rollback_success_2"));
     }
 
     @Override
