@@ -67,6 +67,9 @@ subprojects {
 
         // Logs
         compileOnly'org.slf4j:slf4j-api'
+
+        //SQL named parameters binding
+        implementation group: 'org.httprpc', name: 'httprpc', version: '5.9'
     }
 }
 

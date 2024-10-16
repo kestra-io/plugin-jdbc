@@ -8,12 +8,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import org.httprpc.sql.Parameters;
 import org.slf4j.Logger;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +23,7 @@ import java.util.function.Consumer;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements JdbcQueriesInterface {
-    private Property<Map<String, String>> parameters;
+    private Property<Map<String, Object>> parameters;
 
     private Property<Boolean> transaction;
 
@@ -35,15 +33,25 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         try (
             Connection conn = this.connection(runContext);
-            Statement stmt = this.createStatement(conn);
         ) {
+            String sqlRendered = runContext.render(this.sql, this.additionalVars);
+
+            Parameters namedParams = Parameters.parse(sqlRendered);
+            PreparedStatement stmt = conn.prepareStatement(namedParams.getSQL(), ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY);
+
+            Map<String, Object> namedParamsRendered = this.getParameters() == null ? null : this.getParameters().asMap(runContext, String.class, Object.class);
+            if(namedParamsRendered != null && !namedParamsRendered.isEmpty()) {
+                namedParams.putAll(namedParamsRendered);
+                namedParams.apply(stmt);
+            }
+
 
             stmt.setFetchSize(this.getFetchSize());
 
-            String sqlRendered = runContext.render(this.sql, this.additionalVars);
             logger.debug("Starting query: {}", sqlRendered);
 
-            boolean hasMoreResult = stmt.execute(sqlRendered);
+            boolean hasMoreResult = stmt.execute();
             List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
 
             long totalSize = 0L;
