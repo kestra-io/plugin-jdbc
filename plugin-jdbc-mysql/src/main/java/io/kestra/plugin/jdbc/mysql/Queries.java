@@ -39,6 +39,26 @@ import java.util.Properties;
             title = "Send a SQL query to a MySQL Database and fetch a row as output.",
             full = true,
             code = """
+                id: send_multiple_queries
+                namespace: test.queries
+                tasks:
+                  - id: test_queries_insert
+                    type: io.kestra.plugin.jdbc.mysql.Queries
+                    fetchType: FETCH
+                    url: jdbc:mysql://mysql:3306/kestra
+                    username: "${{secret('MYSQL_USERNAME')}}"
+                    password: "${{secret('MYSQL_PASSWORD')}}"
+                    sql: "{{ read('populate.sql') }}"
+                
+                  - id: test_queries_select
+                    type: io.kestra.plugin.jdbc.mysql.Queries
+                    fetchType: FETCH
+                    url: jdbc:mysql://mysql:3306/kestra
+                    username: root
+                    password: mysql_passwd
+                    sql: |
+                      SELECT firstName, lastName FROM employee;
+                      SELECT brand FROM laptop;
                 """
         )
     }
