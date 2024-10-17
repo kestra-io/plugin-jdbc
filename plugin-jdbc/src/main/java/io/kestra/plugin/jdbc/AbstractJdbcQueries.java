@@ -1,11 +1,11 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.httprpc.sql.Parameters;
 import org.slf4j.Logger;
 
 import java.sql.*;
@@ -13,6 +13,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuperBuilder
 @ToString
@@ -31,6 +33,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         final boolean isTransactional = this.transaction.as(runContext, Boolean.class);
         Connection conn = null;
+        PreparedStatement stmt = null;
         Savepoint savepoint = null;
         try  {
             //Create connection in not autocommit mode to enable rollback on error
@@ -42,17 +45,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
 
-            //Inject named parameters (ex: ':param')
-            Parameters namedParams = Parameters.parse(sqlRendered);
-            PreparedStatement stmt = conn.prepareStatement(namedParams.getSQL(), ResultSet.TYPE_FORWARD_ONLY,
-                ResultSet.CONCUR_READ_ONLY);
-
-            Map<String, Object> namedParamsRendered = this.getParameters() == null ? null : this.getParameters().asMap(runContext, String.class, Object.class);
-            if(namedParamsRendered != null && !namedParamsRendered.isEmpty()) {
-                namedParams.putAll(namedParamsRendered);
-                namedParams.apply(stmt);
-            }
-
+            stmt = createPreparedStatementAndPopulateParameters(runContext, conn, sqlRendered);
 
             stmt.setFetchSize(this.getFetchSize());
 
@@ -87,9 +80,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             }
             throw new RuntimeException(e);
         } finally {
-            if(conn != null) {
-                conn.close();
-            }
+            if(conn != null) { conn.close(); }
+            if(stmt != null) { stmt.close(); }
         }
     }
 
@@ -110,5 +102,35 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
         List<AbstractJdbcQuery.Output> outputs;
+    }
+
+    private PreparedStatement createPreparedStatementAndPopulateParameters(RunContext runContext, Connection conn, String sql) throws SQLException, IllegalVariableEvaluationException {
+        //Inject named parameters (ex: ':param')
+        Map<String, Object> namedParamsRendered = this.getParameters() == null ? null : this.getParameters().asMap(runContext, String.class, Object.class);
+
+        if(namedParamsRendered == null || namedParamsRendered.isEmpty()) {
+            return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        }
+
+        //Extract parameters in orders and replace them with '?'
+        String preparedSql = new String(sql);
+        Pattern pattern = Pattern.compile(" :\\w+");
+        Matcher matcher = pattern.matcher(preparedSql);
+
+        List<String> params = new LinkedList<>();
+
+        while (matcher.find()) {
+            String param = matcher.group();
+            params.add(param.substring(2));
+            preparedSql = matcher.replaceFirst( " ?");
+            matcher = pattern.matcher(preparedSql);
+        }
+        PreparedStatement stmt = conn.prepareStatement(preparedSql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+
+        for(int i=0; i<params.size(); i++) {
+            stmt.setObject(i+1, namedParamsRendered.get(params.get(i)));
+        }
+
+        return stmt;
     }
 }
