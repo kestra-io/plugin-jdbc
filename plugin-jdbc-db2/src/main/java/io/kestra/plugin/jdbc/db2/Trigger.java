@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
