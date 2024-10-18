@@ -40,6 +40,6 @@ DROP TABLE IF EXISTS test_transaction;
 CREATE TABLE test_transaction
 (
     id MEDIUMINT NOT NULL AUTO_INCREMENT,
-    name CHAR(30) NOT NULL,
+    name VARCHAR(30) NOT NULL,
     PRIMARY KEY (id)
 );

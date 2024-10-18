@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
 import java.sql.*;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,47 +36,46 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         Connection conn = null;
         PreparedStatement stmt = null;
         Savepoint savepoint = null;
+        long totalSize = 0L;
+        List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
+
         try  {
             //Create connection in not autocommit mode to enable rollback on error
             conn = this.connection(runContext);
-            if(isTransactional) {
-                conn.setAutoCommit(false);
-                savepoint = conn.setSavepoint();
-            }
+            conn.setAutoCommit(false);
+            savepoint = conn.setSavepoint();
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
+            String[] queries = isTransactional ? new String[]{sqlRendered} : sqlRendered.split("(?<='\\);)");
 
-            stmt = createPreparedStatementAndPopulateParameters(runContext, conn, sqlRendered);
-
-            stmt.setFetchSize(this.getFetchSize());
-
-            logger.debug("Starting query: {}", sqlRendered);
-
-            boolean hasMoreResult = stmt.execute();
-            if(isTransactional) {
+            for(String query : queries) {
+                //Create statement, execute
+                stmt = createPreparedStatementAndPopulateParameters(runContext, conn, query);
+                stmt.setFetchSize(this.getFetchSize());
+                logger.debug("Starting query: {}", query);
+                boolean hasMoreResult = stmt.execute();
                 conn.commit();
-            }
 
-            //Create Outputs
-            List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
-            long totalSize = 0L;
-            while (hasMoreResult || stmt.getUpdateCount() != -1) {
-                try(ResultSet rs = stmt.getResultSet()) {
-                    //When sql is not a select statement skip output creation
-                    if(rs != null) {
-                        AbstractJdbcQuery.Output.OutputBuilder<?, ?> output = AbstractJdbcQuery.Output.builder();
-                        totalSize += populateOutputFromResultSet(runContext, stmt, rs, output, cellConverter, conn);
-                        outputList.add(output.build());
+                //Create Outputs
+                while (hasMoreResult || stmt.getUpdateCount() != -1) {
+                    try(ResultSet rs = stmt.getResultSet()) {
+                        //When sql is not a select statement skip output creation
+                        if(rs != null) {
+                            AbstractJdbcQuery.Output.OutputBuilder<?, ?> output = AbstractJdbcQuery.Output.builder();
+                            totalSize += populateOutputFromResultSet(runContext, stmt, rs, output, cellConverter, conn);
+                            outputList.add(output.build());
+                        }
                     }
+                    hasMoreResult = stmt.getMoreResults();
                 }
-                hasMoreResult = stmt.getMoreResults();
             }
+            conn.commit();
 
             runContext.metric(Counter.of("fetch.size",  totalSize, this.tags()));
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
-            if(conn != null && savepoint != null) {
+            if(isTransactional && conn != null && savepoint != null) {
                 conn.rollback(savepoint);
             }
             throw new RuntimeException(e);

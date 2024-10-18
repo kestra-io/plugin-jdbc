@@ -17,6 +17,20 @@ services:
     ports:
       - "64790:3306"
 
+  postgres-multi-query:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pg_passwd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    ports:
+      - "56983:5432"
+
   postgres:
     image: bitnami/postgresql:latest
     environment:
