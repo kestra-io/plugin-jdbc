@@ -7,8 +7,9 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
+import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -38,50 +39,31 @@ import java.util.Properties;
             title = "Send a SQL query to a MySQL Database and fetch a row as output.",
             full = true,
             code = """
-                id: mysql_query
-                namespace: company.team
-                
+                id: send_multiple_queries
+                namespace: test.queries
                 tasks:
-                  - id: query
-                    type: io.kestra.plugin.jdbc.mysql.Query
-                    url: jdbc:mysql://127.0.0.1:3306/
-                    username: mysql_user
-                    password: mysql_password
-                    sql: select * from mysql_types
-                    fetchType: FETCH_ONE
-                """
-        ),
-        @Example(
-            title = "Load a csv file into a MySQL table.",
-            full = true,
-            code = """
-                id: mysql_query
-                namespace: company.team
+                  - id: test_queries_insert
+                    type: io.kestra.plugin.jdbc.mysql.Queries
+                    fetchType: FETCH
+                    url: jdbc:mysql://mysql:3306/kestra
+                    username: "${{secret('MYSQL_USERNAME')}}"
+                    password: "${{secret('MYSQL_PASSWORD')}}"
+                    sql: "{{ read('populate.sql') }}"
                 
-                tasks:
-                  - id: http_download
-                    type: io.kestra.plugin.core.http.Download
-                    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
-                
-                  - id: query
-                    type: io.kestra.plugin.jdbc.mysql.Query
-                    url: jdbc:mysql://127.0.0.1:3306/
-                    username: mysql_user
-                    password: mysql_password
-                    inputFile: "{{ outputs.http_download.uri }}"
+                  - id: test_queries_select
+                    type: io.kestra.plugin.jdbc.mysql.Queries
+                    fetchType: FETCH
+                    url: jdbc:mysql://mysql:3306/kestra
+                    username: root
+                    password: mysql_passwd
                     sql: |
-                      LOAD DATA LOCAL INFILE '{{ inputFile }}'
-                      INTO TABLE products
-                      FIELDS TERMINATED BY ','
-                      ENCLOSED BY '"'
-                      LINES TERMINATED BY '\\n'
-                      IGNORE 1 ROWS;
+                      SELECT firstName, lastName FROM employee;
+                      SELECT brand FROM laptop;
                 """
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
 
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
@@ -105,7 +87,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return MysqlUtils.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
+        return MysqlUtils.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, true);
     }
 
     @Override
@@ -117,7 +99,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     }
 
     @Override
-    public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
+    public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         this.workingDirectory = runContext.workingDir().path();
 
         if (this.inputFile != null) {
