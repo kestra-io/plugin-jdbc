@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:24.3.0-0'
+    jdbcDriver 'com.vertica.jdbc:vertica-jdbc:24.4.0-0'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
