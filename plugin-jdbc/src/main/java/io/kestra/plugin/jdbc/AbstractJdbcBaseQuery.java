@@ -92,36 +92,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         };
     }
 
-    protected long populateOutputFromResultSet(RunContext runContext, Statement stmt, ResultSet rs, Output.OutputBuilder<?,?> output,
-                                               AbstractCellConverter cellConverter, Connection conn) throws Exception {
-        long size = 0L;
-        switch (this.getFetchType()) {
-            case FETCH_ONE -> {
-                size = 1L;
-                output
-                    .row(fetchResult(rs, cellConverter, conn))
-                    .size(size);
-            }
-            case STORE -> {
-                File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                    size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
-                }
-                output
-                    .uri(runContext.storage().putFile(tempFile))
-                    .size(size);
-            }
-            case FETCH -> {
-                List<Map<String, Object>> maps = new ArrayList<>();
-                size = fetchResults(stmt, rs, maps, cellConverter, conn);
-                output
-                    .rows(maps)
-                    .size(size);
-            }
-        }
-        return size;
-    }
-
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         if (rs.next()) {
             return mapResultSetToMap(rs, cellConverter, connection);
