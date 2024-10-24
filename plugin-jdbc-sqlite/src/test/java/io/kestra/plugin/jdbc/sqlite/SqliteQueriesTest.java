@@ -111,6 +111,6 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        executeSqlScript("scripts/sqlite.sql");
+        executeSqlScript("scripts/sqlite_queries.sql");
     }
 }
