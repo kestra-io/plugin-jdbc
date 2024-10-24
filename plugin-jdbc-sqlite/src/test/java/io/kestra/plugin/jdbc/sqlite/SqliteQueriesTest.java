@@ -18,8 +18,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class SqliteQueriesTest extends AbstractRdbmsTest {
@@ -83,6 +85,61 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
         assertThat("laptops", laptops, notNullValue());
         assertThat("laptops", laptops.size(), is(1));
         assertThat("selected laptop", laptops.getFirst().get("brand"), is("Apple"));
+    }
+
+    @Test
+    void testRollback() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        //Queries should pass in a transaction
+        Queries queriesPass = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                DROP TABLE IF EXISTS test_transaction;
+                CREATE TABLE test_transaction(id INTEGER PRIMARY KEY);
+                INSERT INTO test_transaction (id) VALUES (1);
+                SELECT COUNT(id) as transaction_count FROM test_transaction;
+                """)
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
+        assertThat(runOutput.getOutputs().size(), is(1));
+        assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
+
+        //Queries should fail due to bad sql
+        Queries insertsFail = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                INSERT INTO test_transaction (id) VALUES (2);
+                INSERT INTO test_transaction (id) VALUES (3f);
+                """) //Try inserting before failing
+            .build();
+
+        assertThrows(Exception.class, () -> insertsFail.run(runContext));
+
+        //Final query to verify the amount of updated rows
+        Queries verifyQuery = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                SELECT COUNT(id) as transaction_count FROM test_transaction;
+                """) //Try inserting before failing
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
+        assertThat(verifyOutput.getOutputs().size(), is(1));
+        assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
     }
 
     @Override
