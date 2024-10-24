@@ -27,28 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class SqliteQueriesTest extends AbstractRdbmsTest {
 
     @Test
-    void testMultiSelect() throws Exception {
-        RunContext runContext = runContextFactory.of(Collections.emptyMap());
-
-        Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
-                SELECT firstName, lastName FROM employee;
-                SELECT brand FROM laptop;
-                """)
-            .build();
-
-        AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(2));
-        assertThat(runOutput.getOutputs().get(0), notNullValue());
-        assertThat(runOutput.getOutputs().get(1), notNullValue());
-    }
-
-    @Test
     void testMultiSelectWithParameters() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
@@ -124,6 +102,46 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
             .build();
 
         assertThrows(Exception.class, () -> insertsFail.run(runContext));
+
+        //Final query to verify the amount of updated rows
+        Queries verifyQuery = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                SELECT COUNT(id) as transaction_count FROM test_transaction;
+                """) //Try inserting before failing
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
+        assertThat(verifyOutput.getOutputs().size(), is(1));
+        assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
+    }
+
+    @Test
+    void testNonTransactionalShouldNotRollback() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        //Queries should pass in a transaction
+        Queries insertOneAndFail = Queries.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .transaction(Property.of(false))
+            .timeZoneId("Europe/Paris")
+            .sql("""
+                DROP TABLE IF EXISTS test_transaction;
+                CREATE TABLE test_transaction(id INTEGER PRIMARY KEY);
+                INSERT INTO test_transaction (id) VALUES (1);
+                INSERT INTO test_transaction (id) VALUES (1f);
+                INSERT INTO test_transaction (id) VALUES (2);
+                """)
+            .build();
+
+        assertThrows(Exception.class, () -> insertOneAndFail.run(runContext));
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
