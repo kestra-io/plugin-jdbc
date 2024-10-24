@@ -1,9 +1,12 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.runners.RunContext;
+import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.net.URI;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -39,16 +42,18 @@ public interface JdbcConnectionInterface {
     void registerDriver() throws SQLException;
 
     default Properties connectionProperties(RunContext runContext) throws Exception {
-        Properties props = new Properties();
-        props.put("jdbc.url", runContext.render(this.getUrl()));
+        return createConnectionProperties(runContext);
+    }
 
-        if (this.getUsername() != null) {
-            props.put("user", runContext.render(this.getUsername()));
-        }
+    default Properties connectionProperties(RunContext runContext, String urlScheme) throws Exception {
+        Properties props = createConnectionProperties(runContext);
 
-        if (this.getPassword() != null) {
-            props.put("password", runContext.render(this.getPassword()));
-        }
+        URI url = URI.create((String) props.get("jdbc.url"));
+        url = URI.create(url.getSchemeSpecificPart());
+
+        UriBuilder builder = UriBuilder.of(url).scheme(urlScheme);
+
+        props.put("jdbc.url", builder.build().toString());
 
         return props;
     }
@@ -61,5 +66,20 @@ public interface JdbcConnectionInterface {
         props.remove("jdbc.url");
 
         return DriverManager.getConnection(jdbcUrl, props);
+    }
+
+    private Properties createConnectionProperties(RunContext runContext) throws IllegalVariableEvaluationException {
+        Properties props = new Properties();
+        props.put("jdbc.url", runContext.render(this.getUrl()));
+
+        if (this.getUsername() != null) {
+            props.put("user", runContext.render(this.getUsername()));
+        }
+
+        if (this.getPassword() != null) {
+            props.put("password", runContext.render(this.getPassword()));
+        }
+
+        return props;
     }
 }
