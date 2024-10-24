@@ -47,7 +47,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             savepoint = conn.setSavepoint();
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
-            String[] queries = isTransactional ? new String[]{sqlRendered} : sqlRendered.split("(?<='\\);)");
+            String[] queries = sqlRendered.split(";[^']");
 
             for(String query : queries) {
                 //Create statement, execute
@@ -55,7 +55,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 stmt.setFetchSize(this.getFetchSize());
                 logger.debug("Starting query: {}", query);
                 boolean hasMoreResult = stmt.execute();
-                conn.commit();
+                if(!isTransactional) {
+                    conn.commit();
+                }
 
                 //Create Outputs
                 while (hasMoreResult || stmt.getUpdateCount() != -1) {
