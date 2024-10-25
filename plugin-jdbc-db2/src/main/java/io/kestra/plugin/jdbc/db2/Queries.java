@@ -5,11 +5,15 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
@@ -24,7 +28,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a DB2 database."
+    title = "Perform multiple queries on a DB2 database."
 )
 @Plugin(
     examples = {
@@ -36,19 +40,18 @@ import java.util.Properties;
                 namespace: company.team
 
                 tasks:
-                  - id: query
-                    type: io.kestra.plugin.jdbc.db2.Query
+                  - id: queries
+                    type: io.kestra.plugin.jdbc.db2.Queries
                     url: jdbc:db2://127.0.0.1:50000/
                     username: db2inst
                     password: db2_password
-                    sql: select * from db2_types
-                    fetchType: FETCH_ONE
+                    sql: select * from employee; select * from laptop;
+                    fetchType: FETCH
                 """
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
