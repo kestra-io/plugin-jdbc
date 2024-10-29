@@ -5,14 +5,14 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
-import io.micronaut.http.uri.UriBuilder;
+import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.net.URI;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -27,7 +27,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a AS400 database."
+    title = "Perform multiple queries on a AS400 database."
 )
 @Plugin(
     examples = {
@@ -35,24 +35,22 @@ import java.util.Properties;
             title = "Send a SQL query to a AS400 Database and fetch a row as output.",
             full = true,
             code = """
-                id: as400_query
+                id: as400_queries
                 namespace: company.team
                 
                 tasks:
                   - id: query
-                    type: io.kestra.plugin.jdbc.as400.Query
+                    type: io.kestra.plugin.jdbc.as400.Queries
                     url: jdbc:as400://127.0.0.1:50000/
                     username: as400_user
                     password: as400_password
-                    sql: select * from as400_types
-                    fetchType: FETCH_ONE
+                    sql: select * from employee; select * from laptops;
+                    fetchType: FETCH
                 """
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
-
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new As400CellConverter(zoneId);
