@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
+import com.clickhouse.data.value.UnsignedLong;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 
 import java.net.Inet4Address;
@@ -83,6 +84,11 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         if (columnTypeName.equals("IPv6")) {
             Inet6Address col = (Inet6Address) columnVal;
             return col.toString().substring(1);
+        }
+
+        if (columnTypeName.equals("UInt64")) {
+            UnsignedLong col = (UnsignedLong) columnVal;
+            return col.longValue();
         }
 
         return super.convert(columnIndex, rs);
