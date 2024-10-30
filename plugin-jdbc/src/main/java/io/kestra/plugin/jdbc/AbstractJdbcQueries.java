@@ -61,16 +61,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 stmt = createPreparedStatementAndPopulateParameters(runContext, conn, query);
                 stmt.setFetchSize(this.getFetchSize());
                 logger.debug("Starting query: {}", query);
-                boolean hasMoreResult = stmt.execute();
+                stmt.execute();
+
                 if(!isTransactional) {
                     conn.commit();
                 }
-
-                //Create Outputs
-                while (hasMoreResult || stmt.getUpdateCount() != -1) {
-                    totalSize = extractResultsFromResultSet(runContext, cellConverter, totalSize, outputList);
-                    hasMoreResult = stmt.getMoreResults();
-                }
+                totalSize = extractResultsFromResultSet(runContext, cellConverter, totalSize, outputList);
             }
             conn.commit();
 
