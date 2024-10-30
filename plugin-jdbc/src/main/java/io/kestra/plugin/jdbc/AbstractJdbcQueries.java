@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
@@ -29,14 +30,20 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Builder.Default
     protected Property<Boolean> transaction = Property.of(Boolean.TRUE);
 
+    @Getter(AccessLevel.NONE)
+    private Connection conn = null;
+
+    @Getter(AccessLevel.NONE)
+    private PreparedStatement stmt = null;
+
+    @Getter(AccessLevel.NONE)
+    private Savepoint savepoint = null;
+
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
 
         final boolean isTransactional = this.transaction.as(runContext, Boolean.class);
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        Savepoint savepoint = null;
         long totalSize = 0L;
         List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
 
@@ -44,7 +51,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             //Create connection in not autocommit mode to enable rollback on error
             conn = this.connection(runContext);
             conn.setAutoCommit(false);
-            savepoint = conn.setSavepoint();
+            savepoint = initializeSavepoint(conn);
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
             String[] queries = sqlRendered.split(";[^']");
@@ -61,40 +68,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
                 //Create Outputs
                 while (hasMoreResult || stmt.getUpdateCount() != -1) {
-                    try(ResultSet rs = stmt.getResultSet()) {
-                        //When sql is not a select statement skip output creation
-                        if(rs != null) {
-                            AbstractJdbcQuery.Output.OutputBuilder<?, ?> output = AbstractJdbcQuery.Output.builder();
-                            //Populate result fro result set
-                            long size = 0L;
-                            switch (this.getFetchType()) {
-                                case FETCH_ONE -> {
-                                    size = 1L;
-                                    output
-                                        .row(fetchResult(rs, cellConverter, conn))
-                                        .size(size);
-                                }
-                                case STORE -> {
-                                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                                    try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
-                                    }
-                                    output
-                                        .uri(runContext.storage().putFile(tempFile))
-                                        .size(size);
-                                }
-                                case FETCH -> {
-                                    List<Map<String, Object>> maps = new ArrayList<>();
-                                    size = fetchResults(stmt, rs, maps, cellConverter, conn);
-                                    output
-                                        .rows(maps)
-                                        .size(size);
-                                }
-                            }
-                            totalSize += size;
-                            outputList.add(output.build());
-                        }
-                    }
+                    totalSize = extractResultsFromResultSet(runContext, cellConverter, totalSize, outputList);
                     hasMoreResult = stmt.getMoreResults();
                 }
             }
@@ -104,13 +78,73 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
-            if(isTransactional && conn != null && savepoint != null) {
-                conn.rollback(savepoint);
-            }
+            rollbackIfTransactional(isTransactional);
             throw new RuntimeException(e);
         } finally {
-            if(conn != null) { conn.close(); }
-            if(stmt != null) { stmt.close(); }
+            closeConnectionAndStatement();
+        }
+    }
+
+    private long extractResultsFromResultSet(RunContext runContext, AbstractCellConverter cellConverter, long totalSize, List<Output> outputList) throws SQLException, IOException {
+        try(ResultSet rs = stmt.getResultSet()) {
+            //When sql is not a select statement skip output creation
+            if(rs != null) {
+                Output.OutputBuilder<?, ?> output = Output.builder();
+                //Populate result fro result set
+                long size = 0L;
+                switch (this.getFetchType()) {
+                    case FETCH_ONE -> {
+                        size = 1L;
+                        output
+                            .row(fetchResult(rs, cellConverter, conn))
+                            .size(size);
+                    }
+                    case STORE -> {
+                        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                        }
+                        output
+                            .uri(runContext.storage().putFile(tempFile))
+                            .size(size);
+                    }
+                    case FETCH -> {
+                        List<Map<String, Object>> maps = new ArrayList<>();
+                        size = fetchResults(stmt, rs, maps, cellConverter, conn);
+                        output
+                            .rows(maps)
+                            .size(size);
+                    }
+                    default -> throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+                }
+                totalSize += size;
+                outputList.add(output.build());
+            }
+        }
+        return totalSize;
+    }
+
+    private void rollbackIfTransactional(boolean isTransactional) throws SQLException {
+        if(isTransactional && conn != null) {
+            if(savepoint != null) {
+                conn.rollback(savepoint);
+                return;
+            }
+            conn.rollback();
+        }
+    }
+
+    private void closeConnectionAndStatement() throws SQLException {
+        if(conn != null) { conn.close(); }
+        if(stmt != null) { stmt.close(); }
+    }
+
+    private Savepoint initializeSavepoint(Connection conn) throws SQLException {
+        try {
+            return conn.setSavepoint();
+        } catch (SQLException e) {
+            //Savepoint not supported by this driver
+            return null;
         }
     }
 
@@ -142,7 +176,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
 
         //Extract parameters in orders and replace them with '?'
-        String preparedSql = new String(sql);
+        String preparedSql = sql;
         Pattern pattern = Pattern.compile(" :\\w+");
         Matcher matcher = pattern.matcher(preparedSql);
 
@@ -154,7 +188,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             preparedSql = matcher.replaceFirst( " ?");
             matcher = pattern.matcher(preparedSql);
         }
-        PreparedStatement stmt = conn.prepareStatement(preparedSql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        stmt = conn.prepareStatement(preparedSql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
 
         for(int i=0; i<params.size(); i++) {
             stmt.setObject(i+1, namedParamsRendered.get(params.get(i)));
