@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.*;
  * - https://docs.pinot.apache.org/configuration-reference/schema
  */
 @KestraTest
-public class PinotTest {
+class PinotTest {
     @Inject
     RunContextFactory runContextFactory;
 
