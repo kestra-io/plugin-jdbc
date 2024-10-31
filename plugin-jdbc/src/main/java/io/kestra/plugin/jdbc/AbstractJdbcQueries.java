@@ -7,6 +7,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statements;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -54,10 +56,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             savepoint = initializeSavepoint(conn);
 
             String sqlRendered = runContext.render(this.sql, this.additionalVars);
-            String[] queries = sqlRendered.split(";[^']");
-
-            for(String query : queries) {
+            Statements statements = CCJSqlParserUtil.parseStatements(sqlRendered);
+            for(net.sf.jsqlparser.statement.Statement statement : statements) {
                 //Create statement, execute
+                String query = statement.toString();
                 stmt = createPreparedStatementAndPopulateParameters(runContext, conn, query);
                 stmt.setFetchSize(this.getFetchSize());
                 logger.debug("Starting query: {}", query);
