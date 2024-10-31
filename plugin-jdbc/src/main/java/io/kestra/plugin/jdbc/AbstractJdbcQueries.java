@@ -168,7 +168,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         Map<String, Object> namedParamsRendered = this.getParameters() == null ? null : this.getParameters().asMap(runContext, String.class, Object.class);
 
         if(namedParamsRendered == null || namedParamsRendered.isEmpty()) {
-            return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+            return createPreparedStatement(conn, sql);
         }
 
         //Extract parameters in orders and replace them with '?'
@@ -184,12 +184,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             preparedSql = matcher.replaceFirst( " ?");
             matcher = pattern.matcher(preparedSql);
         }
-        stmt = conn.prepareStatement(preparedSql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+        stmt = createPreparedStatement(conn, preparedSql);
 
         for(int i=0; i<params.size(); i++) {
             stmt.setObject(i+1, namedParamsRendered.get(params.get(i)));
         }
 
         return stmt;
+    }
+
+    protected PreparedStatement createPreparedStatement(Connection conn, String preparedSql) throws SQLException {
+        return conn.prepareStatement(preparedSql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 }
