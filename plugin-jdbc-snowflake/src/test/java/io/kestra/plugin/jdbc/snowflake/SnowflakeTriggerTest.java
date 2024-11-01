@@ -1,8 +1,8 @@
 package io.kestra.plugin.jdbc.snowflake;
 
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.context.annotation.Value;
-import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
