@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation 'com.clickhouse:clickhouse-jdbc:0.7.0'
+    implementation 'com.clickhouse:clickhouse-jdbc:0.7.1'
     implementation 'com.clickhouse:clickhouse-client:0.7.0'
     implementation 'org.lz4:lz4-java:1.8.0'
 
