@@ -49,6 +49,7 @@ import java.sql.SQLException;
                     username: snowflake_user
                     password: snowflake_password
                     sql: "SELECT * FROM demo_db.public.customers"
+                    warehouse: COMPUTE_WH
                     fetchType: FETCH
                 """
         )
