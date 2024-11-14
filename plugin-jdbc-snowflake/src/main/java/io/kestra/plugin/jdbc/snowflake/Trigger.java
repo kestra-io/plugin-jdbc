@@ -49,6 +49,7 @@ import java.sql.SQLException;
                     username: snowflake_user
                     password: snowflake_password
                     sql: "SELECT * FROM demo_db.public.customers"
+                    warehouse: COMPUTE_WH
                     fetchType: FETCH
                 """
         )
@@ -79,6 +80,8 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .fetchType(this.getFetchType())
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
+            .warehouse(this.getWarehouse())
+            .database(this.getDatabase())
             .build();
         return query.run(runContext);
     }
