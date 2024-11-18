@@ -6,6 +6,7 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import net.snowflake.client.jdbc.SnowflakeConnection;
@@ -15,7 +16,6 @@ import org.slf4j.Logger;
 import java.io.InputStream;
 import java.net.URI;
 import java.sql.Connection;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString

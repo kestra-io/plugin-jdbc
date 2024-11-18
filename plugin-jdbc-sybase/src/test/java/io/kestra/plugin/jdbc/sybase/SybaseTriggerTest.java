@@ -1,7 +1,7 @@
 package io.kestra.plugin.jdbc.sybase;
 
-import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

@@ -77,7 +77,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             rollbackIfTransactional(isTransactional);
             throw new RuntimeException(e);
         } finally {
-            closeConnectionAndStatement();
+            closeConnectionAndStatement(runContext);
         }
     }
 
@@ -130,9 +130,13 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
     }
 
-    private void closeConnectionAndStatement() throws SQLException {
-        if(conn != null) { conn.close(); }
-        if(stmt != null) { stmt.close(); }
+    private void closeConnectionAndStatement(RunContext runContext) {
+        try {
+            if(conn != null && !conn.isClosed()) { conn.close(); }
+            if(stmt != null && !stmt.isClosed()) { stmt.close(); }
+        } catch (SQLException e) {
+            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
+        }
     }
 
     private Savepoint initializeSavepoint(Connection conn) throws SQLException {
