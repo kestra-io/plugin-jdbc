@@ -31,12 +31,12 @@ import java.sql.SQLException;
                 
                 tasks:
                   - id: each
-                    type: io.kestra.plugin.core.flow.EachSequential
+                    type: io.kestra.plugin.core.flow.ForEach
+                    values: "{{ trigger.rows }}"
                     tasks:
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
                         format: "{{ json(taskrun.value) }}"
-                    value: "{{ trigger.rows }}"
                 
                 triggers:
                   - id: watch
