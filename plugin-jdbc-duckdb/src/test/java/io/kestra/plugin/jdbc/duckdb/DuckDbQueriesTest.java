@@ -8,8 +8,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -18,13 +16,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,10 +51,10 @@ public class DuckDbQueriesTest {
             .sql("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
-                
+
                 INSERT INTO employee(id, name, age) VALUES (1, 'John', 25), (2, 'Bryan', 35);
                 INSERT INTO laptop(id, brand, model) VALUES (1, 'Apple', 'MacBook M3 16'), (2, 'LG', 'Gram');
-                
+
                 SELECT * FROM employee where age > :age;
                 SELECT * FROM laptop;
                 """)
@@ -90,10 +83,10 @@ public class DuckDbQueriesTest {
             .sql("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
-                
+
                 INSERT INTO employee(id, name, age) VALUES (1, 'John', 25), (2, 'Bryan', 35);
                 INSERT INTO laptop(id, brand, model) VALUES (1, 'Apple', 'MacBook M3 16'), (2, 'LG', 'Gram');
-                
+
                 SELECT * FROM employee where age > :age;
                 SELECT * FROM laptop;
                 """)
@@ -120,6 +113,7 @@ public class DuckDbQueriesTest {
     @MethodSource("nullOrFilledDuckDbUrl") // six numbers
     void inputOutputFiles(String url) throws Exception {
         URI source = storageInterface.put(
+            null,
             null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbQueriesTest.class.getClassLoader()
@@ -156,7 +150,7 @@ public class DuckDbQueriesTest {
         assertThat("Query name", runOutput.getOutputs().getLast().getRow().get("name"), is("Ailane"));
 
         assertThat(
-            IOUtils.toString(storageInterface.get(null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
+            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +

@@ -260,6 +260,7 @@ public class DuckDbTest {
     void inputOutputFiles(String url) throws Exception {
         URI source = storageInterface.put(
             null,
+            null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
                     .getResource("full.csv"))
@@ -286,7 +287,7 @@ public class DuckDbTest {
         Query.Output runOutput = task.run(runContext);
 
         assertThat(
-            IOUtils.toString(storageInterface.get(null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
+            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +
