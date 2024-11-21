@@ -113,7 +113,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             );
         }
 
-        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert taskUpdate = BulkInsert.builder()
             .from(uri.toString())
@@ -161,7 +161,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
             .url(getUrl())
@@ -189,7 +189,7 @@ public class ClickHouseTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
             .url(getUrl())

@@ -73,6 +73,7 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         URI input = storageInterface.put(
             null,
+            null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())
         );
