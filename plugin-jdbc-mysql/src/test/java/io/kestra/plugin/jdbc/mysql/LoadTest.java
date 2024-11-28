@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.Objects;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.NONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,6 +53,7 @@ public class LoadTest {
                 "    amount DECIMAL(10 , 2 ) NULL,\n" +
                 "    PRIMARY KEY (id)\n" +
                 ");")
+            .fetchType(NONE)
             .build();
 
         createTable.run(runContext);
@@ -61,6 +63,7 @@ public class LoadTest {
             .username("root")
             .password("mysql_passwd")
             .inputFile(put.toString())
+            .fetchType(NONE)
             .sql("LOAD DATA LOCAL INFILE '{{ inputFile }}' \n" +
                 "INTO TABLE discounts \n" +
                 "FIELDS TERMINATED BY ',' \n" +
