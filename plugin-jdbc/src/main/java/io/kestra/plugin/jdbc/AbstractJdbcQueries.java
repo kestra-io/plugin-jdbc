@@ -111,6 +111,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                             .rows(maps)
                             .size(size);
                     }
+                    case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
                     default -> throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
                 }
                 totalSize += size;
