@@ -178,15 +178,15 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         //Extract parameters in orders and replace them with '?'
         String preparedSql = sql;
-        Pattern pattern = Pattern.compile(" :\\w+");
+        Pattern pattern =  Pattern.compile(":\\w+");
         Matcher matcher = pattern.matcher(preparedSql);
 
         List<String> params = new LinkedList<>();
 
         while (matcher.find()) {
             String param = matcher.group();
-            params.add(param.substring(2));
-            preparedSql = matcher.replaceFirst( " ?");
+            params.add(param.substring(1));
+            preparedSql = matcher.replaceFirst( "?");
             matcher = pattern.matcher(preparedSql);
         }
         stmt = createPreparedStatement(conn, preparedSql);
