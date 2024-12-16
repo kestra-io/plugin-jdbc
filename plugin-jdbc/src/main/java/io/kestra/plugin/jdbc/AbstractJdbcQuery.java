@@ -59,9 +59,10 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                     //Populate result fro result set
                     switch (this.getFetchType()) {
                         case FETCH_ONE -> {
-                            size = 1L;
+                            var result = fetchResult(rs, cellConverter, conn);
+                            size = result == null ? 0L : 1L;
                             output
-                                .row(fetchResult(rs, cellConverter, conn))
+                                .row(result)
                                 .size(size);
                         }
                         case STORE -> {
