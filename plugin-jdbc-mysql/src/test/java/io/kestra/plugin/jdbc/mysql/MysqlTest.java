@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.*;
+import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -106,6 +107,24 @@ public class MysqlTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRow().get("json_type"), is("{\"color\": \"red\", \"value\": \"#f00\"}"));
         assertThat(runOutput.getRow().get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
+    }
+
+    @Test
+    void selectQueryReturnNoValue_sizeShouldBeZero() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(getUrl())
+            .username(getUsername())
+            .password(getPassword())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("select * from mysql_types where concert_id='random'")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), nullValue());
+        assertThat(runOutput.getSize(), equalTo(0L));
     }
 
     @Test
