@@ -148,6 +148,29 @@ public class PgsqlTest extends AbstractRdbmsTest {
     }
 
     @Test
+    void selectAndFetchOne_EmptyResult() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(TestUtils.url())
+            .username(TestUtils.username())
+            .password(TestUtils.password())
+            .ssl(TestUtils.ssl())
+            .sslMode(TestUtils.sslMode())
+            .sslRootCert(TestUtils.ca())
+            .sslCert(TestUtils.cert())
+            .sslKey(TestUtils.keyNoPass())
+            .fetchType(FETCH_ONE)
+            .timeZoneId("Europe/Paris")
+            .sql("select concert_id from pgsql_types where b='random'")
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), nullValue());
+        assertThat(runOutput.getSize(), is(0L));
+    }
+
+    @Test
     void selectAndFetchToFile() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
