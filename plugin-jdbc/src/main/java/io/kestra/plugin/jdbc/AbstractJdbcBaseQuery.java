@@ -65,7 +65,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @NotNull
     @Builder.Default
-    protected FetchType fetchType = FetchType.STORE;
+    protected FetchType fetchType = FetchType.NONE;
 
     @Builder.Default
     protected Integer fetchSize = 10000;
