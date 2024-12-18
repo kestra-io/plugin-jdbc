@@ -47,7 +47,7 @@ public class DuckDbQueriesTest {
         Queries task = Queries.builder()
             .fetchType(FETCH)
             .timeZoneId("Europe/Paris")
-            .parameters(Property.of(Map.of("age", "30")))
+            .parameters(Property.of(Map.of("age", 30)))
             .sql("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
@@ -78,7 +78,7 @@ public class DuckDbQueriesTest {
         Queries task = Queries.builder()
             .fetchType(FETCH)
             .timeZoneId("Europe/Paris")
-            .parameters(Property.of(Map.of("age", "30")))
+            .parameters(Property.of(Map.of("age", 30)))
             .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
             .sql("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
