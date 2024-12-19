@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.apache.arrow:flight-sql-jdbc-driver:17.0.0")
+    implementation("org.apache.arrow:flight-sql-jdbc-driver:18.1.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
