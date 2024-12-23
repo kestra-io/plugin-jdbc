@@ -1,7 +1,9 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
@@ -24,15 +26,15 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
-    private String url;
+    private Property<String> url;
 
-    private String username;
+    private Property<String> username;
 
-    private String password;
+    private Property<String> password;
 
-    private String timeZoneId;
+    private Property<String> timeZoneId;
 
-    private String sql;
+    private Property<String> sql;
 
     @Builder.Default
     @Deprecated(since="0.19.0", forRemoval=true)
@@ -48,10 +50,10 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
-    protected FetchType fetchType = FetchType.NONE;
+    protected Property<FetchType> fetchType = Property.of(FetchType.NONE);
 
     @Builder.Default
-    protected Integer fetchSize = 10000;
+    protected Property<Integer> fetchSize = Property.of(10000);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -64,7 +66,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
         var run = runQuery(runContext);
 
-        logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql));
+        logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql).as(String.class).orElse(null));
 
         if (Optional.ofNullable(run.getSize()).orElse(0L) == 0) {
             return Optional.empty();
@@ -75,8 +77,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         return Optional.of(execution);
     }
 
-    @Override
-    public FetchType getFetchType() {
+    public FetchType renderFetchType(RunContext runContext) throws IllegalVariableEvaluationException {
         if(this.fetch) {
             return FetchType.FETCH;
         } else if(this.fetchOne) {
@@ -84,7 +85,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         } else if(this.store) {
             return FetchType.STORE;
         }
-        return fetchType;
+        return runContext.render(fetchType).as(FetchType.class).orElseThrow();
     }
 
     protected abstract AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception;

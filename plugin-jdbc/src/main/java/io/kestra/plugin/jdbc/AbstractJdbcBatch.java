@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -20,7 +21,6 @@ import java.sql.*;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
@@ -31,20 +31,19 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInterface {
-    private String url;
+    private Property<String> url;
 
-    private String username;
+    private Property<String> username;
 
-    private String password;
+    private Property<String> password;
 
-    private String timeZoneId;
+    private Property<String> timeZoneId;
 
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
-    @PluginProperty(dynamic = true)
-    private String from;
+    private Property<String> from;
 
     @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
@@ -54,23 +53,20 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             "\nIn case you do not want all columns, you need to specify it in the query in the columns property" +
             "\nExample: 'insert into <table_name> (id, name) values( ? , ? )' for inserting data into 2 columns: 'id' and 'name'."
     )
-    @PluginProperty(dynamic = true)
-    private String sql;
+    private Property<String> sql;
 
     @Schema(
         title = "The size of chunk for every bulk request."
     )
-    @PluginProperty(dynamic = true)
     @Builder.Default
     @NotNull
-    private Integer chunk = 1000;
+    private Property<Integer> chunk = Property.of(1000);
 
     @Schema(
         title = "The columns to be inserted.",
         description = "If not provided, `?` count need to match the `from` number of columns."
     )
-    @PluginProperty(dynamic = true)
-    private List<String> columns;
+    private Property<List<String>> columns;
 
     @Schema(
         title = "The table from which column names will be retrieved.",
@@ -78,29 +74,28 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             "This property specifies the table name which will be used to retrieve the columns for the inserted values.\n" +
             "You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically."
     )
-    @PluginProperty(dynamic = true)
-    private String table;
+    private Property<String> table;
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        URI from = new URI(runContext.render(this.from));
+        URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
         AtomicLong count = new AtomicLong();
 
-        AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId());
+        AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId(runContext));
 
-        List<String> columnsToUse = this.columns;
-        if (columnsToUse == null && this.table != null) {
-            columnsToUse = fetchColumnsFromTable(runContext, this.table);
+        List<String> columnsToUse = runContext.render(this.columns).asList(String.class);
+        if (columnsToUse.isEmpty() && this.table != null) {
+            columnsToUse = fetchColumnsFromTable(runContext, runContext.render(this.table).as(String.class).orElseThrow());
         }
 
         String sql;
         if (columnsToUse != null && this.sql == null) {
-            sql = constructInsertStatement(runContext, this.table, columnsToUse);
+            sql = constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse);
         } else {
-            sql = runContext.render(this.sql);
+            sql = runContext.render(this.sql).as(String.class).orElse(null);
         }
 
         logger.debug("Starting prepared statement: {}", sql);
@@ -111,17 +106,19 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         ) {
             connection.setAutoCommit(false);
 
+            var renderedChunk = runContext.render(this.chunk).as(Integer.class).orElseThrow();
+
             Flux<Integer> flowable = FileSerde.readAll(bufferedReader)
                 .doOnNext(docWriteRequest -> {
                     count.incrementAndGet();
                 })
-                .buffer(this.chunk, this.chunk)
+                .buffer(renderedChunk, renderedChunk)
                 .map(throwFunction(o -> {
                     try (PreparedStatement ps = connection.prepareStatement(sql)) {
                         ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
 
                         for (Object value : o) {
-                            this.addRows(ps, parameterMetaData, value, cellConverter, connection);
+                            this.addRows(ps, parameterMetaData, value, cellConverter, connection, runContext);
 
                             ps.addBatch();
                             ps.clearParameters();
@@ -181,15 +178,17 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         ParameterType parameterMetaData,
         Object o,
         AbstractCellConverter cellConverter,
-        Connection connection
+        Connection connection,
+        RunContext runContext
     ) throws Exception {
         if (o instanceof Map) {
             Map<String, Object> map = ((Map<String, Object>) o);
             ListIterator<String> iterKeys = new ArrayList<>(map.keySet()).listIterator();
             int index = 0;
+            List<String> columnsValue = runContext.render(this.columns).asList(String.class);
             while (iterKeys.hasNext()) {
                 String col = iterKeys.next();
-                if (this.columns == null || this.columns.contains(col)) {
+                if (columnsValue.isEmpty() || columnsValue.contains(col)) {
                     index++;
                     ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, map.get(col), index, connection);
                 }

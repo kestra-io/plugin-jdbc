@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.snowflake;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,7 +33,7 @@ import java.sql.Connection;
             code = """
                    id: snowflake_upload
                    namespace: company.team
-                   
+
                    tasks:
                      - id: upload
                        type: io.kestra.plugin.jdbc.snowflake.Upload
@@ -48,60 +49,55 @@ import java.sql.Connection;
     }
 )
 public class Upload extends AbstractSnowflakeConnection implements RunnableTask<Upload.Output> {
-    private String database;
-    private String warehouse;
-    private String schema;
-    private String role;
+    private Property<String> database;
+    private Property<String> warehouse;
+    private Property<String> schema;
+    private Property<String> role;
 
     @Schema(
         title = "Path to the file to load to Snowflake stage."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String from;
+    private Property<String> from;
 
     @Schema(
         title = "Snowflake stage name.",
         description = "This can either be a stage name or a table name."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String stageName;
+    private Property<String> stageName;
 
     @Schema(
         title = "The prefix under which the file will be uploaded to Snowflake stage."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String prefix;
+    private Property<String> prefix;
 
     @Schema(
         title = "Destination file name to use."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String fileName;
+    private Property<String> fileName;
 
     @Schema(
         title = "Whether to compress the file or not before uploading it to the Snowflake stage."
     )
-    @PluginProperty(dynamic = false)
     @NotNull
     @Builder.Default
-    private Boolean compress = true;
+    private Property<Boolean> compress = Property.of(true);
 
     @Override
     public Upload.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
 
-        URI from = new URI(runContext.render(this.from));
+        URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
         try (
             Connection conn = this.connection(runContext);
             InputStream inputStream = runContext.storage().getFile(from);
         ) {
-            String stageName = runContext.render(this.stageName);
-            String prefix = runContext.render(this.prefix);
-            String filename = runContext.render(this.fileName);
+            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            String prefix = runContext.render(this.prefix).as(String.class).orElseThrow();
+            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
 
             logger.info("Starting upload to stage '{}' on '{}' with name '{}'", stageName, prefix, filename);
 
@@ -112,12 +108,12 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
                     prefix,
                     inputStream,
                     filename,
-                    this.compress
+                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
                 );
 
             return Output
                 .builder()
-                .uri(URI.create(StringUtils.stripEnd(prefix, "/") + "/" + filename + (this.compress ? ".gz" : "")))
+                .uri(URI.create(StringUtils.stripEnd(prefix, "/") + "/" + filename + (runContext.render(this.compress).as(Boolean.class).orElseThrow() ? ".gz" : "")))
                 .build();
         }
     }

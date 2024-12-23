@@ -39,15 +39,15 @@ public class VerticaQueriesTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
-                """)
+                """))
             .parameters(Property.of(parameters))
             .build();
 

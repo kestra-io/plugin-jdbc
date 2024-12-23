@@ -30,12 +30,12 @@ class PinotQueriesTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Queries task = Queries.builder()
-            .url("jdbc:pinot://localhost:49000")
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of("jdbc:pinot://localhost:49000"))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 select count(*) as count from airlineStats;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = task.run(runContext);

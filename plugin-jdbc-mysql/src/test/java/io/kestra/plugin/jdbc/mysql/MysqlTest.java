@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.mysql;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
@@ -30,12 +31,12 @@ public class MysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                  select concert_id as myConcertId,
                  a as char_column,
                  b as varchar_column,
@@ -45,7 +46,7 @@ public class MysqlTest extends AbstractRdbmsTest {
                  datetime_type as datetime_column,
                  timestamp_type as timestamp_column
                  from mysql_types
-             """)
+             """))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -68,12 +69,12 @@ public class MysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select * from mysql_types")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select * from mysql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -114,12 +115,12 @@ public class MysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select * from mysql_types where concert_id='random'")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select * from mysql_types where concert_id='random'"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -132,23 +133,23 @@ public class MysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("update mysql_types set d = 'D'")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("update mysql_types set d = 'D'"))
             .build();
 
         taskUpdate.run(runContext);
 
         Query taskGet = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select d from mysql_types")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select d from mysql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);

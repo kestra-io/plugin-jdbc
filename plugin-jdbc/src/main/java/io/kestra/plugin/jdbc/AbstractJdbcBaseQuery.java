@@ -2,10 +2,11 @@ package io.kestra.plugin.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -19,8 +20,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URI;
 import java.sql.Connection;
@@ -28,7 +27,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -41,15 +39,15 @@ import java.util.function.Consumer;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInterface {
-    private String url;
+    private Property<String> url;
 
-    private String username;
+    private Property<String> username;
 
-    private String password;
+    private Property<String> password;
 
-    private String timeZoneId;
+    private Property<String> timeZoneId;
 
-    protected String sql;
+    protected Property<String> sql;
 
     @Builder.Default
     @Deprecated(since="0.19.0", forRemoval=true)
@@ -65,10 +63,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @NotNull
     @Builder.Default
-    protected FetchType fetchType = FetchType.NONE;
+    protected Property<FetchType> fetchType = Property.of(FetchType.NONE);
 
     @Builder.Default
-    protected Integer fetchSize = 10000;
+    protected Property<Integer> fetchSize = Property.of(10000);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -85,10 +83,11 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         );
     }
 
-    protected String[] tags() {
+    protected String[] tags(RunContext runContext) throws IllegalVariableEvaluationException {
+        var fetchTypeRendered = this.renderFetchType(runContext);
         return new String[]{
-            "fetch", this.getFetchType().equals(FetchType.FETCH) || this.getFetchType().equals(FetchType.FETCH_ONE) ? "true" : "false",
-            "store", this.getFetchType().equals(FetchType.STORE) ? "true" : "false",
+            "fetch", fetchTypeRendered.equals(FetchType.FETCH) || fetchTypeRendered.equals(FetchType.FETCH_ONE) ? "true" : "false",
+            "store", fetchTypeRendered.equals(FetchType.STORE) ? "true" : "false",
         };
     }
 
@@ -148,8 +147,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return cellConverter.convertCell(columnIndex, rs, connection);
     }
 
-    @Override
-    public FetchType getFetchType() {
+    public FetchType renderFetchType(RunContext runContext) throws IllegalVariableEvaluationException {
         if(this.fetch) {
             return FetchType.FETCH;
         } else if(this.fetchOne) {
@@ -157,19 +155,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         } else if(this.store) {
             return FetchType.STORE;
         }
-        return fetchType;
-    }
-
-    public boolean isFetchOne() {
-        return this.getFetchType().equals(FetchType.FETCH_ONE);
-    }
-
-    public boolean isFetch() {
-        return this.getFetchType().equals(FetchType.FETCH);
-    }
-
-    public boolean isStore() {
-        return this.getFetchType().equals(FetchType.STORE);
+        return runContext.render(fetchType).as(FetchType.class).orElseThrow();
     }
 
     @SuperBuilder

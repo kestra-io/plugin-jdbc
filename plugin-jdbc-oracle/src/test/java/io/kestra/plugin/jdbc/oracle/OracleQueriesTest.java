@@ -42,15 +42,15 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
-                """)
+                """))
             .parameters(Property.of(parameters))
             .build();
 
@@ -76,16 +76,16 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 CREATE TABLE test_rollback (n NUMBER);
                 INSERT INTO test_rollback (n) VALUES (1);
                 SELECT COUNT(n) as TEST_ROLLBACK_COUNT FROM test_rollback;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
@@ -94,29 +94,29 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 INSERT INTO test_rollback (n) VALUES (2);
                 INSERT INTO test_rollback (n) VALUES ('hello');
-                """) //Try inserting before failing
+                """))//Try inserting before failing
             .build();
 
         assertThrows(Exception.class, () -> insertsFail.run(runContext));
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT COUNT(n) as TEST_ROLLBACK_COUNT FROM test_rollback;
-                """) //Try inserting before failing
+                """)) //Try inserting before failing
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
@@ -130,32 +130,32 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries insertOneAndFail = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
             .transaction(Property.of(false))
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 CREATE TABLE test_transaction (n NUMBER);
                 INSERT INTO test_transaction (n) VALUES (1);
                 INSERT INTO test_transaction (n) VALUES ('random');
                 INSERT INTO test_transaction (n) VALUES (2);
-                """)
+                """))
             .build();
 
         assertThrows(Exception.class, () -> insertOneAndFail.run(runContext));
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT COUNT(n) as TRANSACTION_COUNT FROM test_transaction;
-                """) //Try inserting before failing
+                """)) //Try inserting before failing
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);

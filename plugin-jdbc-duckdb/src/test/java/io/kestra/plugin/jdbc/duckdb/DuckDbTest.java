@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
@@ -47,9 +48,9 @@ public class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');\n" +
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');\n" +
                 "\n" +
                 "SET TimeZone='America/Los_Angeles';\n" +
                 "\n" +
@@ -141,7 +142,7 @@ public class DuckDbTest {
                 "    'happy'\n" +
                 ");\n" +
                 "\n" +
-                "SELECT * FROM duck_types")
+                "SELECT * FROM duck_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -177,10 +178,10 @@ public class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
-            .sql("SELECT * FROM duck_types")
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
+            .sql(Property.of("SELECT * FROM duck_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -216,11 +217,11 @@ public class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .url("jdbc:duckdb:")
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:"))
             .databaseFile(Path.of(Objects.requireNonNull(resource).toURI()))
-            .sql("SELECT * FROM duck_types")
+            .sql(Property.of("SELECT * FROM duck_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -270,15 +271,15 @@ public class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query.QueryBuilder<?, ?> builder = Query.builder()
-            .timeZoneId("Europe/Paris")
+            .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(List.of("out"))
-            .sql("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
+            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
                 "\n" +
-                "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');");
+                "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');"));
 
         if (url != null) {
-            builder.url(url);
+            builder.url(new Property<>(url));
         }
 
         Query task = builder

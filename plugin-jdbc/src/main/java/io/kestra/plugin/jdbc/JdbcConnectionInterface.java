@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,21 +19,18 @@ public interface JdbcConnectionInterface {
     @Schema(
         title = "The JDBC URL to connect to the database."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    String getUrl();
+    Property<String> getUrl();
 
     @Schema(
         title = "The database user."
     )
-    @PluginProperty(dynamic = true)
-    String getUsername();
+    Property<String> getUsername();
 
     @Schema(
         title = "The database user's password."
     )
-    @PluginProperty(dynamic = true)
-    String getPassword();
+    Property<String> getPassword();
 
     /**
      * JDBC driver may be auto-registered. See <a href="https://docs.oracle.com/javase/8/docs/api/java/sql/DriverManager.html">DriverManager</a>
@@ -70,14 +68,14 @@ public interface JdbcConnectionInterface {
 
     private Properties createConnectionProperties(RunContext runContext) throws IllegalVariableEvaluationException {
         Properties props = new Properties();
-        props.put("jdbc.url", runContext.render(this.getUrl()));
+        props.put("jdbc.url", runContext.render(this.getUrl()).as(String.class).orElseThrow());
 
         if (this.getUsername() != null) {
-            props.put("user", runContext.render(this.getUsername()));
+            props.put("user", runContext.render(this.getUsername()).as(String.class).orElse(null));
         }
 
         if (this.getPassword() != null) {
-            props.put("password", runContext.render(this.getPassword()));
+            props.put("password", runContext.render(this.getPassword()).as(String.class).orElse(null));
         }
 
         return props;

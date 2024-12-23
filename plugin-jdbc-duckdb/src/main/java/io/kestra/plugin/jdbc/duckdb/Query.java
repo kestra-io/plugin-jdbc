@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
@@ -50,14 +51,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                   - id: http_download
                     type: io.kestra.plugin.core.http.Download
                     uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
-                
+
                   - id: query
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: 'jdbc:duckdb:'
                     timeZoneId: Europe/Paris
                     sql: |-
                       CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);
-                
+
                       COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
                     inputFiles:
                       in.csv: "{{ outputs.http_download.uri }}"
@@ -78,7 +79,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: jdbc:duckdb:/{{ vars.dbfile }}
                     sql: SELECT * FROM table_name;
                     fetchType: STORE
-                
+
                   - id: query2
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:/temp/folder/duck.db
@@ -100,7 +101,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     databaseFile: {{ vars.dbfile }}
                     sql: SELECT * FROM table_name;
                     fetchType: STORE
-                
+
                   - id: query2
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:
@@ -141,8 +142,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     private transient Path databaseFile;
 
     @Builder.Default
-    @PluginProperty(dynamic = true)
-    private String url = DEFAULT_URL;
+    private Property<String> url = Property.of(DEFAULT_URL);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -161,9 +161,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         defaultValue = DEFAULT_URL
     )
     @NotNull
-    public String getUrl() {
-        if (DEFAULT_URL.equals(this.url)) {
-            return DEFAULT_URL + this.databaseFile;
+    public Property<String> getUrl() {
+        if (DEFAULT_URL.equals(this.url.toString())) {
+            return Property.of(DEFAULT_URL + this.databaseFile);
         }
         return this.url;
     }
@@ -174,8 +174,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
         Map<String, String> outputFiles = null;
 
-        if (!DEFAULT_URL.equals(this.url) && this.databaseFile == null) {
-            String filePath = this.url.replace("jdbc:duckdb:", "");
+        var renderedUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        if (!DEFAULT_URL.equals(renderedUrl) && this.databaseFile == null) {
+            String filePath = renderedUrl.replace("jdbc:duckdb:", "");
 
             Path path = Path.of(filePath);
             if (path.isAbsolute()) {
@@ -195,11 +196,11 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
                 builder.scheme("jdbc:duckdb");
 
-                this.url = builder.build().toString();
+                this.url = Property.of(builder.build().toString());
             } else {
                 throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
-        } else if (DEFAULT_URL.equals(this.url) && this.databaseFile != null) {
+        } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();
 
             additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());

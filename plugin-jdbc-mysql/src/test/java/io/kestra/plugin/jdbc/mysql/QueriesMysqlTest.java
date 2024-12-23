@@ -30,15 +30,15 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT firstName, lastName FROM employee;
                 SELECT brand FROM laptop;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
@@ -58,15 +58,15 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
-                """)
+                """))
             .parameters(Property.of(parameters))
             .build();
 
@@ -91,12 +91,12 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 DROP TABLE IF EXISTS animals;
                 CREATE TABLE animals (
                      id MEDIUMINT NOT NULL AUTO_INCREMENT,
@@ -107,7 +107,7 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
                 SELECT COUNT(id) as animals_count FROM animals;
                 INSERT INTO animals (name) VALUES ('ostrich'),('snake'),('whale');
                 SELECT COUNT(id) as animals_count FROM animals;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
@@ -123,15 +123,15 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 INSERT INTO test_transaction (name) VALUES ('test_1');
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
@@ -140,29 +140,29 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
 
         //Queries should fail due to bad sql
         Queries queriesFail = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 INSERT INTO test_transaction (name) VALUES ('test_2');
                 INSERT INTO test_transaction (name) VALUES (1000f);
-                """) //Try inserting before failing
+                """)) //Try inserting before failing
             .build();
 
         assertThrows(Exception.class, () -> queriesFail.run(runContext));
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
-                """) //Try inserting before failing
+                """))//Try inserting before failing
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
@@ -176,33 +176,33 @@ public class QueriesMysqlTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesFail = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
             .transaction(Property.of(false)) //No rollback on failure
-            .sql("""
+            .sql(Property.of("""
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_1');
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_2');
                 INSERT INTO test_transaction (name) VALUES (10f);
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_1');
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_2');
-                """) //Expect failure with 2 inserts
+                """)) //Expect failure with 2 inserts
             .build();
 
         assertThrows(Exception.class, () -> queriesFail.run(runContext));
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("""
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("""
                 SELECT name FROM test_transaction;
-                """)
+                """))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);

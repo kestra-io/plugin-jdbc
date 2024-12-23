@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -43,7 +44,7 @@ import java.util.Properties;
                     password: pg_password
                     sql: select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type from pgsql_types
                     fetchType: FETCH
-                
+
                   - id: use_fetched_data
                     type: io.kestra.plugin.jdbc.postgresql.Query
                     url: jdbc:postgresql://127.0.0.1:56982/
@@ -57,12 +58,12 @@ import java.util.Properties;
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface, AutoCommitInterface {
     protected final Boolean autoCommit = true;
     @Builder.Default
-    protected Boolean ssl = false;
-    protected SslMode sslMode;
-    protected String sslRootCert;
-    protected String sslCert;
-    protected String sslKey;
-    protected String sslKeyPassword;
+    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<SslMode> sslMode;
+    protected Property<String> sslRootCert;
+    protected Property<String> sslCert;
+    protected Property<String> sslKey;
+    protected Property<String> sslKeyPassword;
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {

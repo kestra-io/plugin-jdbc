@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -31,7 +32,7 @@ import java.util.Properties;
             code = """
                 id: postgres_bulk_insert
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.postgresql.Query
@@ -43,7 +44,7 @@ import java.util.Properties;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch
                     from: "{{ outputs.query.uri }}"
@@ -61,7 +62,7 @@ import java.util.Properties;
             code = """
                 id: postgres_bulk_insert
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.postgresql.Query
@@ -73,7 +74,7 @@ import java.util.Properties;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch
                     from: "{{ outputs.query.uri }}"
@@ -87,12 +88,12 @@ import java.util.Properties;
 )
 public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, PostgresConnectionInterface{
     @Builder.Default
-    protected Boolean ssl = false;
-    protected SslMode sslMode;
-    protected String sslRootCert;
-    protected String sslCert;
-    protected String sslKey;
-    protected String sslKeyPassword;
+    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<SslMode> sslMode;
+    protected Property<String> sslRootCert;
+    protected Property<String> sslCert;
+    protected Property<String> sslKey;
+    protected Property<String> sslKeyPassword;
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

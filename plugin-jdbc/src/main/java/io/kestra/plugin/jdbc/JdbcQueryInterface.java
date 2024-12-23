@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -10,8 +11,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
         title = "The SQL query to run."
     )
-    @PluginProperty(dynamic = true)
-    String getSql();
+    Property<String> getSql();
 
     @Schema(
         title = "DEPRECATED, please use `fetchType: FETCH` instead." + "\n" +
@@ -47,8 +47,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
             "ignores the value and is free to make its own best guess as to what the fetch size should be. Ignored if " +
             "`autoCommit` is false."
     )
-    @PluginProperty(dynamic = false)
-    Integer getFetchSize();
+    Property<Integer> getFetchSize();
 
     @Schema(
             title = "The way you want to store data.",
@@ -57,7 +56,6 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
                     + "STORE - store all rows to a file.\n"
                     + "NONE - do nothing."
     )
-    @PluginProperty
     @NotNull
-    FetchType getFetchType();
+    Property<FetchType> getFetchType();
 }

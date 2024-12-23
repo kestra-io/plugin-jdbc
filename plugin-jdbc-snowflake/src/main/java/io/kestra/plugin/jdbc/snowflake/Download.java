@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.snowflake;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -35,7 +36,7 @@ import java.sql.Connection;
             code = """
                    id: snowflake_download
                    namespace: company.team
-                   
+
                    tasks:
                      - id: download
                        type: io.kestra.plugin.jdbc.snowflake.Download
@@ -49,33 +50,30 @@ import java.sql.Connection;
     }
 )
 public class Download extends AbstractSnowflakeConnection implements RunnableTask<Download.Output> {
-    private String database;
-    private String warehouse;
-    private String schema;
-    private String role;
+    private Property<String> database;
+    private Property<String> warehouse;
+    private Property<String> schema;
+    private Property<String> role;
 
     @Schema(
         title = "Snowflake stage name.",
         description = "~ or table name or stage name."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String stageName;
+    private Property<String> stageName;
 
     @Schema(
         title = "File name on Snowflake stage that should be downloaded."
     )
-    @PluginProperty(dynamic = true)
     @NotNull
-    private String fileName;
+    private Property<String> fileName;
 
     @Schema(
         title = "Whether to compress data before uploading stream."
     )
-    @PluginProperty(dynamic = false)
     @NotNull
     @Builder.Default
-    private Boolean compress = true;
+    private Property<Boolean> compress = Property.of(true);
 
     @Override
     public Download.Output run(RunContext runContext) throws Exception {
@@ -86,8 +84,8 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
             Connection conn = this.connection(runContext);
             BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
         ) {
-            String stageName = runContext.render(this.stageName);
-            String filename = runContext.render(this.fileName);
+            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
 
             logger.info("Starting download from stage '{}' with name '{}'", stageName, filename);
 
@@ -96,7 +94,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
                 .downloadStream(
                     stageName,
                     filename,
-                    this.compress
+                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
                 );
 
             IOUtils.copyLarge(inputStream, outputStream);

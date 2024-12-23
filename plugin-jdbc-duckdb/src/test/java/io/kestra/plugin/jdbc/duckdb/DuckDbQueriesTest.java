@@ -45,10 +45,10 @@ public class DuckDbQueriesTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Queries task = Queries.builder()
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
             .parameters(Property.of(Map.of("age", 30)))
-            .sql("""
+            .sql(Property.of("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
 
@@ -57,7 +57,7 @@ public class DuckDbQueriesTest {
 
                 SELECT * FROM employee where age > :age;
                 SELECT * FROM laptop;
-                """)
+                """))
             .build();
 
         Queries.Output runOutput = task.run(runContext);
@@ -76,11 +76,11 @@ public class DuckDbQueriesTest {
         URL resource = DuckDbQueriesTest.class.getClassLoader().getResource("db/duck.db");
 
         Queries task = Queries.builder()
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
             .parameters(Property.of(Map.of("age", 30)))
-            .url("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath())
-            .sql("""
+            .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
+            .sql(Property.of("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
 
@@ -89,7 +89,7 @@ public class DuckDbQueriesTest {
 
                 SELECT * FROM employee where age > :age;
                 SELECT * FROM laptop;
-                """)
+                """))
             .build();
 
         Queries.Output runOutput = task.run(runContext);
@@ -124,20 +124,20 @@ public class DuckDbQueriesTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Queries.QueriesBuilder<?, ?> builder = Queries.builder()
-            .timeZoneId("Europe/Paris")
+            .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(List.of("out"))
-            .fetchType(FETCH_ONE)
-            .sql("""
+            .fetchType(Property.of(FETCH_ONE))
+            .sql(new Property<>("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
                 COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
                 SELECT COUNT(id) as count FROM new_tbl;
                 SELECT name FROM new_tbl ORDER BY name LIMIT 1;
-                """
+                """)
             );
 
         if (url != null) {
-            builder.url(url);
+            builder.url(new Property<>(url));
         }
 
         Queries.Output runOutput = builder

@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -34,12 +35,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FetchType.FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select * from clickhouse_types")
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .fetchType(Property.of(FetchType.FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select * from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -72,12 +73,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FetchType.FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'")
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .fetchType(Property.of(FetchType.FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'"))
             .build();
 
         taskUpdate.run(runContext);
@@ -86,12 +87,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         Thread.sleep(500);
 
         Query taskGet = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FetchType.FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select String from clickhouse_types")
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .fetchType(Property.of(FetchType.FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select String from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -116,12 +117,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert taskUpdate = BulkInsert.builder()
-            .from(uri.toString())
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .timeZoneId("Europe/Paris")
-            .sql("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )")
+            .from(Property.of(uri.toString()))
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )"))
             .build();
 
         taskUpdate.run(runContext);
@@ -130,12 +131,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         Thread.sleep(500);
 
         Query taskGet = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH)
-            .timeZoneId("Europe/Paris")
-            .sql("select String from clickhouse_types")
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select String from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -164,11 +165,11 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("clickhouse_ins")
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .from(Property.of(uri.toString()))
+            .table(Property.of("clickhouse_ins"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -192,12 +193,12 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("clickhouse_types")
-            .columns(List.of("String"))
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .from(Property.of(uri.toString()))
+            .table(Property.of("clickhouse_types"))
+            .columns(Property.of(List.of("String")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

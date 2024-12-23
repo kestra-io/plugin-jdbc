@@ -3,13 +3,12 @@ package io.kestra.plugin.jdbc.mysql;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
-import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -49,7 +48,7 @@ import java.util.Properties;
                     username: "${{secret('MYSQL_USERNAME')}}"
                     password: "${{secret('MYSQL_PASSWORD')}}"
                     sql: "{{ read('populate.sql') }}"
-                
+
                   - id: test_queries_select
                     type: io.kestra.plugin.jdbc.mysql.Queries
                     fetchType: FETCH
@@ -91,11 +90,11 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
     }
 
     @Override
-    public Integer getFetchSize() {
+    public Property<Integer> getFetchSize() {
         // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on MySql DB instance side.
         // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.
         // It actually just disables client-side caching of the entire response and gives you responses as they arrive as a result it has no effect on the DB
-        return this.isStore() ? Integer.MIN_VALUE : this.fetchSize;
+        return this.isStore() ? Property.of(Integer.MIN_VALUE) : this.fetchSize;
     }
 
     @Override
