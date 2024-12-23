@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.snowflake;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -34,7 +35,7 @@ import java.util.Properties;
             code = """
                 id: snowflake_queries
                 namespace: company.team
-                
+
                 tasks:
                   - id: select
                     type: io.kestra.plugin.jdbc.snowflake.Queries
@@ -48,13 +49,13 @@ import java.util.Properties;
     }
 )
 public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, SnowflakeInterface {
-    private String privateKey;
-    private String privateKeyFile;
-    private String privateKeyFilePassword;
-    private String database;
-    private String warehouse;
-    private String schema;
-    private String role;
+    private Property<String> privateKey;
+    private Property<String> privateKeyFile;
+    private Property<String> privateKeyFilePassword;
+    private Property<String> database;
+    private Property<String> warehouse;
+    private Property<String> schema;
+    private Property<String> role;
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {

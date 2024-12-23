@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -26,21 +27,21 @@ public class CopyTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         CopyOut copyOut = CopyOut.builder()
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .format(AbstractCopy.Format.CSV)
-            .header(true)
-            .delimiter('\t')
-            .escape('"')
-            .forceQuote(Collections.singletonList("int"))
-            .sql("SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool ")
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .format(Property.of(AbstractCopy.Format.CSV))
+            .header(Property.of(true))
+            .delimiter(Property.of('\t'))
+            .escape(Property.of('"'))
+            .forceQuote(Property.of(Collections.singletonList("int")))
+            .sql(Property.of("SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool "))
             .build();
 
         CopyOut.Output runOut = copyOut.run(runContext);
@@ -49,39 +50,39 @@ public class CopyTest {
         String destination = "d" + IdUtils.create();
 
         Query create = Query.builder()
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .fetchType(FETCH_ONE)
-            .sql("CREATE TABLE " + destination + " (\n" +
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .fetchType(Property.of(FETCH_ONE))
+            .sql(Property.of("CREATE TABLE " + destination + " (\n" +
                 "    int INT,\n" +
                 "    bool BOOL" +
                 ");"
-            )
+            ))
             .build();
         create.run(runContext);
 
         CopyIn copyIn = CopyIn.builder()
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.keyNoPass())
-            .from(runOut.getUri().toString())
-            .format(AbstractCopy.Format.CSV)
-            .header(true)
-            .delimiter('\t')
-            .escape('"')
-            .table(destination)
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.keyNoPass()))
+            .from(Property.of(runOut.getUri().toString()))
+            .format(Property.of(AbstractCopy.Format.CSV))
+            .header(Property.of(true))
+            .delimiter(Property.of('\t'))
+            .escape(Property.of('"'))
+            .table(Property.of(destination))
             .build();
 
         CopyIn.Output runIn = copyIn.run(runContext);

@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.duckdb;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
@@ -50,7 +51,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                   - id: http_download
                     type: io.kestra.plugin.core.http.Download
                     uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
-                
+
                   - id: queries
                     type: io.kestra.plugin.jdbc.duckdb.Queries
                     url: 'jdbc:duckdb:'
@@ -76,7 +77,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: jdbc:duckdb:/{{ vars.dbfile }}
                     sql: SELECT * FROM table1_name; SELECT * FROM table2_name;
                     fetchType: STORE
-                
+
                   - id: query2
                     type: io.kestra.plugin.jdbc.duckdb.Query
                     url: jdbc:duckdb:/temp/folder/duck.db
@@ -114,8 +115,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
     private transient Path databaseFile;
 
     @Builder.Default
-    @PluginProperty(dynamic = true)
-    private String url = DEFAULT_URL;
+    private Property<String> url = Property.of(DEFAULT_URL);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -134,9 +134,9 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
         defaultValue = DEFAULT_URL
     )
     @NotNull
-    public String getUrl() {
-        if (DEFAULT_URL.equals(this.url)) {
-            return DEFAULT_URL + this.databaseFile;
+    public Property<String> getUrl() {
+        if (DEFAULT_URL.equals(this.url.toString())) {
+            return Property.of(DEFAULT_URL + this.databaseFile);
         }
         return this.url;
     }
@@ -147,8 +147,9 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
 
         Map<String, String> outputFiles = null;
 
-        if (!DEFAULT_URL.equals(this.url) && this.databaseFile == null) {
-            String filePath = this.url.replace("jdbc:duckdb:", "");
+        var renderedUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        if (!DEFAULT_URL.equals(renderedUrl) && this.databaseFile == null) {
+            String filePath = renderedUrl.replace("jdbc:duckdb:", "");
 
             Path path = Path.of(filePath);
             if (path.isAbsolute()) {
@@ -168,11 +169,11 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
 
                 builder.scheme("jdbc:duckdb");
 
-                this.url = builder.build().toString();
+                this.url = Property.of(builder.build().toString());
             } else {
                 throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
-        } else if (DEFAULT_URL.equals(this.url) && this.databaseFile != null) {
+        } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();
 
             additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());

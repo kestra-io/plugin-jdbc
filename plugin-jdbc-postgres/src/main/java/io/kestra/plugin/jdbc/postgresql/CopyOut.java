@@ -4,6 +4,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -54,8 +55,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied.",
         description = "For INSERT, UPDATE and DELETE queries a RETURNING clause must be provided, and the target relation must not have a conditional rule, nor an ALSO rule, nor an INSTEAD rule that expands to multiple statements."
     )
-    @PluginProperty(dynamic = true)
-    protected String sql;
+    protected Property<String> sql;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -69,7 +69,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
             CopyManager copyManager = new CopyManager(pgConnection);
 
-            String sql = this.query(runContext, this.sql, "TO STDOUT");
+            String sql = this.query(runContext, runContext.render(this.sql).as(String.class).orElse(null), "TO STDOUT");
 
             logger.debug("Starting query: {}", sql);
 

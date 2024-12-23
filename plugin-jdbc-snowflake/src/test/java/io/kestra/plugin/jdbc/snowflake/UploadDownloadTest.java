@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.snowflake;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
@@ -54,30 +55,30 @@ public class UploadDownloadTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Upload upload = Upload.builder()
-            .url("jdbc:snowflake://" + this.host + "/?loginTimeout=3")
-            .username(this.username)
-            .password(this.password)
-            .warehouse("COMPUTE_WH")
-            .database("UNITTEST")
-            .from(put.toString())
-            .schema("public")
-            .stageName("UNITSTAGE")
-            .prefix("ut_" + IdUtils.create())
-            .fileName("test.sql")
+            .url(Property.of("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
+            .username(Property.of(this.username))
+            .password(Property.of(this.password))
+            .warehouse(Property.of("COMPUTE_WH"))
+            .database(Property.of("UNITTEST"))
+            .from(Property.of(put.toString()))
+            .schema(Property.of("public"))
+            .stageName(Property.of("UNITSTAGE"))
+            .prefix(Property.of("ut_" + IdUtils.create()))
+            .fileName(Property.of("test.sql"))
             .build();
 
         Upload.Output uploadRun = upload.run(runContext);
         assertThat(uploadRun.getUri(), notNullValue());
 
         Download download = Download.builder()
-            .url("jdbc:snowflake://" + this.host + "/?loginTimeout=3")
-            .username(this.username)
-            .password(this.password)
-            .warehouse("COMPUTE_WH")
-            .database("UNITTEST")
-            .schema("public")
-            .stageName("UNITSTAGE")
-            .fileName(uploadRun.getUri().toString())
+            .url(Property.of("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
+            .username(Property.of(this.username))
+            .password(Property.of(this.password))
+            .warehouse(Property.of("COMPUTE_WH"))
+            .database(Property.of("UNITTEST"))
+            .schema(Property.of("public"))
+            .stageName(Property.of("UNITSTAGE"))
+            .fileName(Property.of(uploadRun.getUri().toString()))
             .build();
 
         Download.Output downloadRun = download.run(runContext);

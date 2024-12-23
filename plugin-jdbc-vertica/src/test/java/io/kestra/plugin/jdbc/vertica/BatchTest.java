@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.vertica;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
@@ -76,11 +77,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into vertica_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ?  , ? , ? , ? , ? , ?  , ? ,  ?  , ? , ? , ?, ? , ? , ? )")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into vertica_types values( ? , ? , ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ? , ? , ?, ? , ? , ? , ? , ?  , ? , ? , ? , ? , ?  , ? ,  ?  , ? , ? , ?, ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -108,11 +109,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into namedInsert values( ? , ? , ? )")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into namedInsert values( ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -139,12 +140,12 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(Arrays.asList("id", "name"))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into namedInsert(id,name) values( ? , ? )"))
+            .columns(Property.of(Arrays.asList("id", "name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -170,11 +171,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("namedInsert")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("namedInsert"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -198,12 +199,12 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("namedInsert")
-            .columns(List.of("name"))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("namedInsert"))
+            .columns(Property.of(List.of("name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

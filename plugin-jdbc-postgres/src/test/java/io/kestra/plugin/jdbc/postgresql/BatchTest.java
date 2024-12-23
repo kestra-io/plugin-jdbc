@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
@@ -66,18 +67,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .from(uri.toString())
-            .sql("insert into pgsql_types\n" +
+            .url(Property.of(getUrl()))
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into pgsql_types\n" +
                 "(\n" +
                 "  concert_id,\n" +
                 "  available,\n" +
@@ -131,7 +132,7 @@ public class BatchTest extends AbstractRdbmsTest {
                 "  ?,\n" +
                 "  ?::tsvector\n" +
                 ")"
-            )
+            ))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -158,17 +159,17 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .from(uri.toString())
-            .sql("insert into namedInsert values( ? , ? , ? )")
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into namedInsert values( ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -195,18 +196,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(TestUtils.url())
-            .username(TestUtils.username())
-            .password(TestUtils.password())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .from(uri.toString())
-            .sql("insert into namedInsert(id,name) values( ? , ? )")
-            .columns(Arrays.asList("id", "name"))
+            .url(Property.of(TestUtils.url()))
+            .username(Property.of(TestUtils.username()))
+            .password(Property.of(TestUtils.password()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into namedInsert(id,name) values( ? , ? )"))
+            .columns(Property.of(Arrays.asList("id", "name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -251,17 +252,17 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .from(uri.toString())
-            .table("pgsql_nosql")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("pgsql_nosql"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -285,18 +286,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .ssl(TestUtils.ssl())
-            .sslMode(TestUtils.sslMode())
-            .sslRootCert(TestUtils.ca())
-            .sslCert(TestUtils.cert())
-            .sslKey(TestUtils.key())
-            .sslKeyPassword(TestUtils.keyPass())
-            .from(uri.toString())
-            .table("namedInsert")
-            .columns(List.of("name"))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .ssl(Property.of(TestUtils.ssl()))
+            .sslMode(Property.of(TestUtils.sslMode()))
+            .sslRootCert(Property.of(TestUtils.ca()))
+            .sslCert(Property.of(TestUtils.cert()))
+            .sslKey(Property.of(TestUtils.key()))
+            .sslKeyPassword(Property.of(TestUtils.keyPass()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("namedInsert"))
+            .columns(Property.of(List.of("name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -334,57 +335,6 @@ public class BatchTest extends AbstractRdbmsTest {
         return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
     }
 
-    public static class PostgresConnection implements PostgresConnectionInterface {
-        @Override
-        public String getUrl() {
-            return TestUtils.url();
-        }
-
-        @Override
-        public String getUsername() {
-            return TestUtils.username();
-        }
-
-        @Override
-        public String getPassword() {
-            return TestUtils.password();
-        }
-
-        @Override
-        public Boolean getSsl() {
-            return TestUtils.ssl();
-        }
-
-        @Override
-        public SslMode getSslMode() {
-            return TestUtils.sslMode();
-        }
-
-        @Override
-        public String getSslRootCert() {
-            return TestUtils.ca();
-        }
-
-        @Override
-        public String getSslCert() {
-            return TestUtils.cert();
-        }
-
-        @Override
-        public String getSslKey() {
-            return TestUtils.key();
-        }
-
-        @Override
-        public String getSslKeyPassword() {
-            return TestUtils.keyPass();
-        }
-
-        @Override
-        public void registerDriver() throws SQLException {
-
-        }
-    }
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {

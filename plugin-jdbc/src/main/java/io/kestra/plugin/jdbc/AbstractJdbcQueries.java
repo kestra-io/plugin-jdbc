@@ -46,9 +46,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
+        AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        final boolean isTransactional = this.transaction.as(runContext, Boolean.class);
+        final boolean isTransactional = runContext.render(this.transaction).as(Boolean.class).orElseThrow();
         long totalSize = 0L;
         List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
 
@@ -61,13 +61,13 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             connection.setAutoCommit(false);
 
-            String sqlRendered = runContext.render(this.sql, this.additionalVars);
+            String sqlRendered = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
             String[] queries = sqlRendered.split(";[^']");
 
             for (String query : queries) {
                 //Create statement, execute
                 try (PreparedStatement stmt = prepareStatement(runContext, connection, query)) {
-                    stmt.setFetchSize(this.getFetchSize());
+                    stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
                     if (!isTransactional) {
@@ -77,7 +77,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
             }
             connection.commit();
-            runContext.metric(Counter.of("fetch.size",  totalSize, this.tags()));
+            runContext.metric(Counter.of("fetch.size",  totalSize, this.tags(runContext)));
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
@@ -103,14 +103,14 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final RunContext runContext,
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
-                                             final List<Output> outputList) throws SQLException, IOException {
+                                             final List<Output> outputList) throws SQLException, IOException, IllegalVariableEvaluationException {
         try (ResultSet rs = stmt.getResultSet()) {
             //When sql is not a select statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
                 //Populate result fro result set
                 long size = 0L;
-                switch (this.getFetchType()) {
+                switch (this.renderFetchType(runContext)) {
                     case FETCH_ONE -> {
                         size = 1L;
                         output
@@ -189,9 +189,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                                final String sql) throws SQLException, IllegalVariableEvaluationException {
 
         // Inject named parameters (ex: ':param')
-        Optional<Map<String, Object>> namedParamsRendered = Optional
-            .ofNullable(this.getParameters())
-            .map(Rethrow.throwFunction(it -> it.asMap(runContext, String.class, Object.class)));
+        Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
 
         if (namedParamsRendered.isEmpty()) {
             return createPreparedStatement(conn, sql);
@@ -214,7 +212,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         PreparedStatement stmt = createPreparedStatement(conn, preparedSql);
 
         for (int i = 0; i < params.size(); i++) {
-            stmt.setObject(i + 1, namedParamsRendered.get().get(params.get(i)));
+            stmt.setObject(i + 1, namedParamsRendered.get(params.get(i)));
         }
 
         return stmt;

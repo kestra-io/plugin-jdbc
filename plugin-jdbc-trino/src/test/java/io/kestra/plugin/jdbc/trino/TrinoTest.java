@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.trino;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
@@ -31,12 +32,12 @@ public class TrinoTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select * from trino_types")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(null)
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select * from trino_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

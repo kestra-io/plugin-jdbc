@@ -28,28 +28,29 @@ import java.util.Properties;
 
 public abstract class PostgresService {
     public static void handleSsl(Properties properties, RunContext runContext, PostgresConnectionInterface conn) throws Exception {
-        if (conn.getSsl() != null && conn.getSsl()) {
+        if (conn.getSsl() != null && runContext.render(conn.getSsl()).as(Boolean.class).orElseThrow()) {
             properties.put("ssl", "true");
         }
 
         if (conn.getSslMode() != null) {
-            properties.put("sslmode", conn.getSslMode().name().toUpperCase(Locale.ROOT).replace("_", "-"));
+            properties.put("sslmode", runContext.render(conn.getSslMode()).as(PostgresConnectionInterface.SslMode.class).orElseThrow().name().toUpperCase(Locale.ROOT).replace("_", "-"));
         }
 
         if (conn.getSslRootCert() != null) {
-            properties.put("sslrootcert", runContext.workingDir().createTempFile(runContext.render(conn.getSslRootCert()).getBytes(StandardCharsets.UTF_8), ".pem").toAbsolutePath().toString());
+            properties.put("sslrootcert", runContext.workingDir().createTempFile(runContext.render(conn.getSslRootCert()).as(String.class).orElseThrow().getBytes(StandardCharsets.UTF_8), ".pem").toAbsolutePath().toString());
         }
 
         if (conn.getSslCert() != null) {
-            properties.put("sslcert", runContext.workingDir().createTempFile(runContext.render(conn.getSslCert()).getBytes(StandardCharsets.UTF_8), ".pem").toAbsolutePath().toString());
+            properties.put("sslcert", runContext.workingDir().createTempFile(runContext.render(conn.getSslCert()).as(String.class).orElseThrow().getBytes(StandardCharsets.UTF_8), ".pem").toAbsolutePath().toString());
         }
 
         if (conn.getSslKey() != null) {
-            properties.put("sslkey", convertPrivateKey(runContext, conn.getSslKey(), conn.getSslKeyPassword()));
+            properties.put("sslkey", convertPrivateKey(runContext, runContext.render(conn.getSslKey()).as(String.class).orElse(null),
+                runContext.render(conn.getSslKeyPassword()).as(String.class).orElse(null)));
         }
 
         if (conn.getSslKeyPassword() != null) {
-            properties.put("sslpassword", runContext.render(conn.getSslKeyPassword()));
+            properties.put("sslpassword", runContext.render(conn.getSslKeyPassword()).as(String.class).orElseThrow());
         }
     }
 

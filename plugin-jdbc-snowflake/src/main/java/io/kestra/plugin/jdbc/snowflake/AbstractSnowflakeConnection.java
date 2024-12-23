@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.snowflake;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
@@ -19,12 +20,12 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractSnowflakeConnection extends Task implements JdbcConnectionInterface, SnowflakeInterface {
-    private String url;
-    private String username;
-    private String password;
-    private String privateKey;
-    private String privateKeyFile;
-    private String privateKeyFilePassword;
+    private Property<String> url;
+    private Property<String> username;
+    private Property<String> password;
+    private Property<String> privateKey;
+    private Property<String> privateKeyFile;
+    private Property<String> privateKeyFilePassword;
 
     @Override
     public void registerDriver() throws SQLException {

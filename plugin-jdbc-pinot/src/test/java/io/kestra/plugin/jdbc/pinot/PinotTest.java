@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.pinot;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -26,10 +27,10 @@ class PinotTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url("jdbc:pinot://localhost:49000")
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql("select \n" +
+            .url(Property.of("jdbc:pinot://localhost:49000"))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select \n" +
                 "  -- NULL as t_null,\n" +
                 "  'string' AS t_string,\n" +
                 "  CAST(2147483647 AS INT) as t_integer,\n" +
@@ -41,7 +42,7 @@ class PinotTest {
                 "  ToEpochSeconds(1613472303000) AS t_epoch\n" +
                 "  \n" +
                 "from airlineStats \n" +
-                "limit 1")
+                "limit 1"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

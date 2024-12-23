@@ -30,23 +30,23 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
 
     public AbstractJdbcBaseQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        AbstractCellConverter cellConverter = getCellConverter(this.zoneId());
+        AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
         try (
             Connection conn = this.connection(runContext);
             Statement stmt = this.createStatement(conn)
         ) {
             if (this instanceof AutoCommitInterface autoCommitClass) {
-                if (this.getFetchType().equals(FetchType.STORE)) {
+                if (this.renderFetchType(runContext).equals(FetchType.STORE)) {
                     conn.setAutoCommit(false);
                 } else {
                     conn.setAutoCommit(autoCommitClass.getAutoCommit());
                 }
             }
 
-            stmt.setFetchSize(this.getFetchSize());
+            stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
 
-            String sql = runContext.render(this.sql, this.additionalVars);
+            String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
             logger.debug("Starting query: {}", sql);
 
             boolean isResult = stmt.execute(sql);
@@ -57,7 +57,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             if (isResult) {
                 try(ResultSet rs = stmt.getResultSet()) {
                     //Populate result fro result set
-                    switch (this.getFetchType()) {
+                    switch (this.renderFetchType(runContext)) {
                         case FETCH_ONE -> {
                             var result = fetchResult(rs, cellConverter, conn);
                             size = result == null ? 0L : 1L;
@@ -84,7 +84,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                     }
                 }
             }
-            runContext.metric(Counter.of("fetch.size",  size, this.tags()));
+            runContext.metric(Counter.of("fetch.size",  size, this.tags(runContext)));
             return output.build();
         }
     }

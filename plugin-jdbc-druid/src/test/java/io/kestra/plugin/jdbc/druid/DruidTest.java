@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.druid;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -28,10 +29,10 @@ public class DruidTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-                .url("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true")
-                .fetchType(FETCH_ONE)
-                .timeZoneId("Europe/Paris")
-                .sql("""
+                .url(Property.of("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
+                .fetchType(Property.of(FETCH_ONE))
+                .timeZoneId(Property.of("Europe/Paris"))
+                .sql(Property.of("""
                         select
                           -- NULL as t_null,
                           'string' AS t_string,
@@ -41,7 +42,7 @@ public class DruidTest {
                           TIME_FORMAT(MILLIS_TO_TIMESTAMP(1639137263000), 'yyyy-MM-dd')  as t_date,
                           TIME_FORMAT(MILLIS_TO_TIMESTAMP(1639137263000), 'yyyy-MM-dd HH:mm:ss') AS t_timestamp
                         from products
-                        limit 1""")
+                        limit 1"""))
                 .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

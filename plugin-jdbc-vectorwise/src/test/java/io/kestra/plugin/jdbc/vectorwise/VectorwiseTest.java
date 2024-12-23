@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.vectorwise;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.Disabled;
@@ -38,12 +39,12 @@ public class VectorwiseTest extends AbstractRdbmsTest {
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
         Query task = Query.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .fetchType(FETCH_ONE)
-            .timeZoneId("Europe/Paris")
-            .sql(new String (Files.readAllBytes( Paths.get("src/test/resources/scripts/vectorwise.sql"))))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of(new String (Files.readAllBytes( Paths.get("src/test/resources/scripts/vectorwise.sql")))))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

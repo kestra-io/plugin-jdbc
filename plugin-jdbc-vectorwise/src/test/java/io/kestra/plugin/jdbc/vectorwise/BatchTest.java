@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.vectorwise;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
@@ -74,11 +75,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into ingres.abdt_test values( ? , ? , ?, ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into ingres.abdt_test values( ? , ? , ?, ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -126,11 +127,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into ingres.abdt_test values( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?)")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into ingres.abdt_test values( ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?)"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -177,12 +178,12 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .sql("insert into ingres.abdt_test(\"tinyint\",\"datetime\",\"boolean\") values( ? , ? , ? )")
-            .columns(Arrays.asList("tinyint", "datetime", "boolean"))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .sql(Property.of("insert into ingres.abdt_test(\"tinyint\",\"datetime\",\"boolean\") values( ? , ? , ? )"))
+            .columns(Property.of(Arrays.asList("tinyint", "datetime", "boolean")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -227,11 +228,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("ingres.abdt_test")
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("ingres.abdt_test"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -257,12 +258,12 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(getUrl())
-            .username(getUsername())
-            .password(getPassword())
-            .from(uri.toString())
-            .table("ingres.abdt_test")
-            .columns(List.of("tinyint", "varchar"))
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .from(Property.of(uri.toString()))
+            .table(Property.of("ingres.abdt_test"))
+            .columns(Property.of(List.of("tinyint", "varchar")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

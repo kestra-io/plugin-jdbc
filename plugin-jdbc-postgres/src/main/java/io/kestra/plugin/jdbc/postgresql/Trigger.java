@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
@@ -28,7 +29,7 @@ import java.sql.SQLException;
             code = """
                 id: jdbc_trigger
                 namespace: company.team
-                
+
                 tasks:
                   - id: each
                     type: io.kestra.plugin.core.flow.ForEach
@@ -37,7 +38,7 @@ import java.sql.SQLException;
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
                         format: "{{ json(taskrun.value) }}"
-                
+
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.jdbc.postgresql.Trigger
@@ -53,12 +54,12 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionInterface {
     @Builder.Default
-    protected Boolean ssl = false;
-    protected PostgresConnectionInterface.SslMode sslMode;
-    protected String sslRootCert;
-    protected String sslCert;
-    protected String sslKey;
-    protected String sslKeyPassword;
+    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<PostgresConnectionInterface.SslMode> sslMode;
+    protected Property<String> sslRootCert;
+    protected Property<String> sslCert;
+    protected Property<String> sslKey;
+    protected Property<String> sslKeyPassword;
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
@@ -73,7 +74,7 @@ public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionIn
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
-            .fetchType(this.getFetchType())
+            .fetchType(Property.of(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .build();
