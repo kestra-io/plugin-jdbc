@@ -63,27 +63,6 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     inputFiles:
                       in.csv: "{{ outputs.http_download.uri }}"
                 """
-        ),
-        @Example(
-            title = "Execute queries that reads from an existing database file using a URL.",
-            full = true,
-            code = """
-                id: query_duckdb
-                namespace: company.team
-
-                tasks:
-                  - id: query1
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/{{ vars.dbfile }}
-                    sql: SELECT * FROM table1_name; SELECT * FROM table2_name;
-                    fetchType: STORE
-
-                  - id: query2
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/temp/folder/duck.db
-                    sql: SELECT * FROM table1_name; SELECT * FROM table2_name;
-                    fetchType: STORE
-                """
         )
     }
 )
