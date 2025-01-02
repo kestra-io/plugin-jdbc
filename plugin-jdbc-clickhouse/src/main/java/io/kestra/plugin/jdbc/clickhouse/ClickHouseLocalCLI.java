@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.*;
 import io.kestra.core.models.tasks.runners.ScriptService;
 import io.kestra.core.models.tasks.runners.TaskRunner;
@@ -92,10 +93,12 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 
 	private Object inputFiles;
 
-	private List<String> outputFiles;
+	private Property<List<String>> outputFiles;
 
 	@Override
 	public ScriptOutput run(RunContext runContext) throws Exception {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+
 		return new CommandsWrapper(runContext)
 			.withWarningOnStdErr(true)
 			.withTaskRunner(this.taskRunner)
@@ -103,7 +106,7 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 			.withEnv(Optional.ofNullable(env).orElse(new HashMap<>()))
 			.withNamespaceFiles(namespaceFiles)
 			.withInputFiles(inputFiles)
-			.withOutputFiles(outputFiles)
+			.withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
 			.withCommands(
 				ScriptService.scriptCommands(
 					List.of("clickhouse-local"),
