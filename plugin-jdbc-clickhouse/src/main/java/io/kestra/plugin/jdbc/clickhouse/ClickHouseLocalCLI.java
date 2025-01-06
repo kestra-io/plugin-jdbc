@@ -80,7 +80,7 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 	@Valid
 	@PluginProperty
 	@Builder.Default
-	private TaskRunner taskRunner = Docker.instance();
+	private TaskRunner<?> taskRunner = Docker.instance();
 
 	@Schema(
 		title = "The Clickhouse container image."
