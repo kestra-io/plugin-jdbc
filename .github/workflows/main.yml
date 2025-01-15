@@ -106,7 +106,7 @@ jobs:
           storageType: gcs
           resultsGlob: "**/build/allure-results"
           bucket: internal-kestra-host
-          baseUrl: "https://internal.kestra.io"
+          baseUrl: "https://internal.dev.kestra.io"
           prefix: ${{ format('{0}/{1}', github.repository, 'allure/java') }}
           copyLatest: true
           ignoreMissingResults: true
