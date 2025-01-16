@@ -56,7 +56,7 @@ import java.util.Properties;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
     @Builder.Default
     protected Property<Boolean> ssl = Property.of(false);
     protected Property<SslMode> sslMode;

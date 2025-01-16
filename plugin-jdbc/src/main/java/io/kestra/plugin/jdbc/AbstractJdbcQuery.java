@@ -40,7 +40,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                 if (this.renderFetchType(runContext).equals(FetchType.STORE)) {
                     conn.setAutoCommit(false);
                 } else {
-                    conn.setAutoCommit(autoCommitClass.getAutoCommit());
+                    conn.setAutoCommit(runContext.render(autoCommitClass.getAutoCommit()).as(Boolean.class).orElse(true));
                 }
             }
 

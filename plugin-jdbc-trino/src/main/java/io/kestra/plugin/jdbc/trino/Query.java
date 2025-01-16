@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.trino;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -33,7 +34,7 @@ import java.time.ZoneId;
             code = """
                    id: trino_query
                    namespace: company.team
-                   
+
                    tasks:
                      - id: analyze_orders
                        type: io.kestra.plugin.jdbc.trino.Query
@@ -47,7 +48,7 @@ import java.time.ZoneId;
                          order by orderpriority
                        fetchType: FETCH
                        fetchType: STORE
-                     
+
                      - id: csv_report
                        type: io.kestra.plugin.serdes.csv.IonToCsv
                        from: "{{ outputs.analyze_orders.uri }}"
@@ -56,7 +57,7 @@ import java.time.ZoneId;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

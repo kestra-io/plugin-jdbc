@@ -57,7 +57,7 @@ import java.util.Properties;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SnowflakeInterface, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     private Property<String> privateKey;
     private Property<String> privateKeyFile;

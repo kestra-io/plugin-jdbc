@@ -82,7 +82,7 @@ import java.util.Properties;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
