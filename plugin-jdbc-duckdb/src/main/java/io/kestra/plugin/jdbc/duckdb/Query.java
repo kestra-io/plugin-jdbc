@@ -115,7 +115,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, AutoCommitInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Schema(
         title = "Input files to be loaded from DuckDb.",

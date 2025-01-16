@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.oracle;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -42,7 +43,7 @@ import java.time.ZoneId;
                     password: oracle_password
                     sql: select * from source
                     fetchType: FETCH
-                
+
                   - id: generate_update
                     type: io.kestra.plugin.jdbc.oracle.Query
                     url: jdbc:oracle:thin:@localhost:49161:XE
@@ -54,7 +55,7 @@ import java.time.ZoneId;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

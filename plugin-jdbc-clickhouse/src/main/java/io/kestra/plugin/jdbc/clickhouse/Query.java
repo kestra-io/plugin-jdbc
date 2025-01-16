@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
+import io.kestra.core.models.property.Property;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -34,7 +35,7 @@ import java.time.ZoneId;
             code = """
                 id: clickhouse_query
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.clickhouse.Query
@@ -48,7 +49,7 @@ import java.time.ZoneId;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

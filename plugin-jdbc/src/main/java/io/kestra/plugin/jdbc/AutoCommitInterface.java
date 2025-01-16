@@ -1,6 +1,6 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface AutoCommitInterface {
@@ -12,6 +12,5 @@ public interface AutoCommitInterface {
             "or the method rollback. By default, new connections are in auto-commit mode except when you are using " +
             "`store` property in which case the auto-commit will be disabled."
     )
-    @PluginProperty(dynamic = false)
-    Boolean getAutoCommit();
+    Property<Boolean> getAutoCommit();
 }

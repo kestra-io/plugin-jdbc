@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.as400;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -37,7 +38,7 @@ import java.util.Properties;
             code = """
                 id: as400_query
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.as400.Query
@@ -51,7 +52,7 @@ import java.util.Properties;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
-    protected final Boolean autoCommit = true;
+    protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
