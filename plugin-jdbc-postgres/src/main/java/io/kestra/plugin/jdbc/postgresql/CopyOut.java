@@ -32,6 +32,7 @@ import java.sql.Connection;
     examples = {
         @Example(
             title = "Export a PostgreSQL table or query to a CSV or TSV file.",
+            full = true,
             code = """
                 id: postgres_copy_out
                 namespace: company.team
