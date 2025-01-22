@@ -16,7 +16,7 @@ dependencies {
     jdbcDriver 'org.postgresql:postgresql:42.7.5'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk18on:1.79'
-    api 'org.bouncycastle:bcpkix-jdk18on:1.79'
+    api 'org.bouncycastle:bcpkix-jdk18on:1.80'
     api 'name.neuhalfen.projects.crypto.bouncycastle.openpgp:bouncy-gpg:2.3.0'
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
