@@ -247,6 +247,14 @@ release {
     git {
         requireBranch.set('master')
     }
+
+    // Dynamically set properties with default values
+    failOnSnapshotDependencies = (project.hasProperty('release.failOnSnapshotDependencies')
+            ? project.property('release.failOnSnapshotDependencies').toBoolean()
+            : true)
+    pushReleaseVersionBranch = (project.hasProperty('release.pushReleaseVersionBranch')
+            ? project.property('release.pushReleaseVersionBranch').toString()
+            : null)
 }
 
 /**********************************************************************************************************************\
