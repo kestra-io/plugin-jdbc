@@ -83,6 +83,7 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .additionalVars(this.additionalVars)
             .warehouse(this.getWarehouse())
             .database(this.getDatabase())
+            .parameters(this.getParameters())
             .build();
         return query.run(runContext);
     }

@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.*;
  * - https://duckdb.org/docs/sql/data_types/overview
  */
 @KestraTest
-public class DuckDbTest {
+class DuckDbTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -153,7 +153,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
@@ -192,7 +192,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
@@ -207,6 +207,26 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_utinyint"), is((short)127));
         assertThat(runOutput.getRow().get("t_varchar"), is("test"));
         assertThat(runOutput.getRow().get("t_enum"), is("happy"));
+    }
+
+    @Test
+    void selectFromExistingFileInUrlWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
+            .parameters(Property.of(Map.of("num", 2147483647)))
+            .sql(Property.of("SELECT * FROM duck_types WHERE t_integer = :num"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
     }
 
 
@@ -232,7 +252,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));

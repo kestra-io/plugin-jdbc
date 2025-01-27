@@ -59,6 +59,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @Getter(AccessLevel.NONE)
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
+    protected Property<Map<String, Object>> parameters;
+
     @Override
     public Optional<Execution> evaluate(ConditionContext conditionContext, TriggerContext context) throws Exception {
         RunContext runContext = conditionContext.getRunContext();

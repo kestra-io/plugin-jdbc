@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,6 +67,26 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("Nullable"), is(nullValue()));
         assertThat(runOutput.getRow().get("Ipv4"), is("116.253.40.133"));
         assertThat(runOutput.getRow().get("Ipv6"), is("2a02:aa08:e000:3100:0:0:0:2"));
+    }
+
+    @Test
+    void selectWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.of(getUrl()))
+            .username(null)
+            .password(null)
+            .fetchType(Property.of(FetchType.FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .parameters(Property.of(Map.of("num", 123)))
+            .sql(Property.of("select * from clickhouse_types where Int8 = :num"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("Int8"), is(123));
     }
 
     @Test

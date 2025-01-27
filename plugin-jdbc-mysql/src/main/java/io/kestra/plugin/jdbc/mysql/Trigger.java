@@ -77,6 +77,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetchType(Property.of(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
+            .parameters(this.getParameters())
             .build();
         return query.run(runContext);
     }
