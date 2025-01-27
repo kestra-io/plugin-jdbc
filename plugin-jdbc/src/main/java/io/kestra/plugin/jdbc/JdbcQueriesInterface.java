@@ -7,12 +7,6 @@ import java.util.Map;
 
 public interface JdbcQueriesInterface {
     @Schema(
-        title = "Parameters",
-        description = "A map of parameters to bind to the SQL queries. The keys should match the parameter placeholders in the SQL string, e.g., :parameterName."
-    )
-    Property<Map<String, Object>> getParameters();
-
-    @Schema(
         title = "Transaction",
         description = "If one query failed, rollback transactions."
     )

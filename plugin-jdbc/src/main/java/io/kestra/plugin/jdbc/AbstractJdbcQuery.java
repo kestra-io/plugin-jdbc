@@ -15,6 +15,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -32,9 +33,11 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
+        String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+
         try (
             Connection conn = this.connection(runContext);
-            Statement stmt = this.createStatement(conn)
+            Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
         ) {
             if (this instanceof AutoCommitInterface autoCommitClass) {
                 if (this.renderFetchType(runContext).equals(FetchType.STORE)) {
@@ -46,10 +49,17 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
 
             stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
 
-            String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-            logger.debug("Starting query: {}", sql);
+            logger.debug("Starting query: {}", renderedSql);
 
-            boolean isResult = stmt.execute(sql);
+            boolean isResult = switch (stmt) {
+                case PreparedStatement preparedStatement  -> {
+                    if (this.getParameters() == null) { //Null check for DuckDB which always use PreparedStatement
+                        yield preparedStatement.execute(renderedSql);
+                    }
+                    yield preparedStatement.execute();
+                }
+                case Statement statment -> statment.execute(renderedSql);
+            };
 
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;

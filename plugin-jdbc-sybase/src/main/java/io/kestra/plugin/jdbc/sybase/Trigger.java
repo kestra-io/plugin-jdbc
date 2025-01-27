@@ -73,6 +73,7 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetchOne(this.isFetchOne())
             .fetchType(Property.of(this.renderFetchType(runContext)))
             .additionalVars(this.additionalVars)
+            .parameters(this.getParameters())
             .build();
 
         return query.run(runContext);

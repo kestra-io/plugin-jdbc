@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements JdbcQueriesInterface {
-    protected Property<Map<String, Object>> parameters;
 
     @Builder.Default
     protected Property<Boolean> transaction = Property.of(Boolean.TRUE);
@@ -182,43 +181,5 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
         List<AbstractJdbcQuery.Output> outputs;
-    }
-
-    private PreparedStatement prepareStatement(final RunContext runContext,
-                                               final Connection conn,
-                                               final String sql) throws SQLException, IllegalVariableEvaluationException {
-
-        // Inject named parameters (ex: ':param')
-        Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
-
-        if (namedParamsRendered.isEmpty()) {
-            return createPreparedStatement(conn, sql);
-        }
-
-        //Extract parameters in orders and replace them with '?'
-        String preparedSql = sql;
-        Pattern pattern = Pattern.compile(":\\w+");
-        Matcher matcher = pattern.matcher(preparedSql);
-
-        List<String> params = new LinkedList<>();
-
-        while (matcher.find()) {
-            String param = matcher.group();
-            params.add(param.substring(1));
-            preparedSql = matcher.replaceFirst("?");
-            matcher = pattern.matcher(preparedSql);
-        }
-
-        PreparedStatement stmt = createPreparedStatement(conn, preparedSql);
-
-        for (int i = 0; i < params.size(); i++) {
-            stmt.setObject(i + 1, namedParamsRendered.get(params.get(i)));
-        }
-
-        return stmt;
-    }
-
-    protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {
-        return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 }

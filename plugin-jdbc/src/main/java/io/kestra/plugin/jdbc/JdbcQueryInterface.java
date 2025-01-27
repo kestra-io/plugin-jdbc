@@ -6,6 +6,8 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.Map;
+
 
 public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
@@ -58,4 +60,10 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     )
     @NotNull
     Property<FetchType> getFetchType();
+
+    @Schema(
+        title = "Parameters",
+        description = "A map of parameters to bind to the SQL queries. The keys should match the parameter placeholders in the SQL string, e.g., :parameterName."
+    )
+    Property<Map<String, Object>> getParameters();
 }

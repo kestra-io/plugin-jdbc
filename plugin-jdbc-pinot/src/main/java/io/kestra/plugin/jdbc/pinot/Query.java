@@ -31,7 +31,7 @@ import java.time.ZoneId;
             code = """
                 id: pinot_query
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: o.kestra.plugin.jdbc.pinot.Query

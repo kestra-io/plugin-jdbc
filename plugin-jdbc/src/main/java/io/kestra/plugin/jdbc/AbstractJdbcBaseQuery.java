@@ -22,16 +22,12 @@ import lombok.experimental.SuperBuilder;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.URI;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuperBuilder
 @ToString
@@ -67,6 +63,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @Builder.Default
     protected Property<Integer> fetchSize = Property.of(10000);
+
+    protected Property<Map<String, Object>> parameters;
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -156,6 +154,44 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             return FetchType.STORE;
         }
         return runContext.render(fetchType).as(FetchType.class).orElseThrow();
+    }
+
+    protected PreparedStatement prepareStatement(final RunContext runContext,
+                                               final Connection conn,
+                                               final String sql) throws SQLException, IllegalVariableEvaluationException {
+
+        // Inject named parameters (ex: ':param')
+        Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
+
+        if (namedParamsRendered.isEmpty()) {
+            return createPreparedStatement(conn, sql);
+        }
+
+        //Extract parameters in orders and replace them with '?'
+        String preparedSql = sql;
+        Pattern pattern = Pattern.compile(":\\w+");
+        Matcher matcher = pattern.matcher(preparedSql);
+
+        List<String> params = new LinkedList<>();
+
+        while (matcher.find()) {
+            String param = matcher.group();
+            params.add(param.substring(1));
+            preparedSql = matcher.replaceFirst("?");
+            matcher = pattern.matcher(preparedSql);
+        }
+
+        PreparedStatement stmt = createPreparedStatement(conn, preparedSql);
+
+        for (int i = 0; i < params.size(); i++) {
+            stmt.setObject(i + 1, namedParamsRendered.get(params.get(i)));
+        }
+
+        return stmt;
+    }
+
+    protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {
+        return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
     @SuperBuilder

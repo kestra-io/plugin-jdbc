@@ -157,6 +157,26 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("d"), is("D"));
     }
 
+    @Test
+    void selectWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select * from mysql_types where concert_id=:concert_id"))
+            .parameters(Property.of(Map.of("concert_id", "1")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("concert_id"), is("1"));
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:mysql://127.0.0.1:64790/kestra";

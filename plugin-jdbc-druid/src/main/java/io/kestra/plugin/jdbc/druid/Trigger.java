@@ -59,20 +59,21 @@ public class Trigger extends AbstractJdbcTrigger {
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         var query = Query.builder()
-                .id(this.id)
-                .type(Query.class.getName())
-                .url(this.getUrl())
-                .username(this.getUsername())
-                .password(this.getPassword())
-                .timeZoneId(this.getTimeZoneId())
-                .sql(this.getSql())
-                .fetch(this.isFetch())
-                .store(this.isStore())
-                .fetchOne(this.isFetchOne())
-                .fetchType(Property.of(this.renderFetchType(runContext)))
-                .fetchSize(this.getFetchSize())
-                .additionalVars(this.additionalVars)
-                .build();
+            .id(this.id)
+            .type(Query.class.getName())
+            .url(this.getUrl())
+            .username(this.getUsername())
+            .password(this.getPassword())
+            .timeZoneId(this.getTimeZoneId())
+            .sql(this.getSql())
+            .fetch(this.isFetch())
+            .store(this.isStore())
+            .fetchOne(this.isFetchOne())
+            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchSize(this.getFetchSize())
+            .additionalVars(this.additionalVars)
+            .parameters(this.getParameters())
+            .build();
         return query.run(runContext);
     }
 
