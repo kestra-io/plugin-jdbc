@@ -1,0 +1,51 @@
+id: duckdb
+namespace: qa
+
+tasks:
+  - id: http_download
+    type: io.kestra.plugin.core.http.Download
+    uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
+
+  - id: check_query
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    url: 'jdbc:duckdb:'
+    inputFiles:
+      data.csv: "{{ outputs.http_download.uri }}"
+    fetchType: STORE
+    sql: |
+      SELECT * FROM read_csv_auto('{{ workingDir }}/data.csv', header=True);
+
+
+  - id: check_queries
+    type: io.kestra.plugin.jdbc.duckdb.Queries
+    url: 'jdbc:duckdb:'
+    inputFiles:
+      data.csv: "{{ outputs.http_download.uri }}"
+    fetchType: STORE
+    sql: |
+      CREATE TABLE t1 AS SELECT * FROM read_csv_auto('{{ workingDir }}/data.csv', header=True);
+      INSERT INTO t1 SELECT * FROM t1 LIMIT 3; 
+      SELECT * FROM t1;
+      SELECT * FROM t1 LIMIT 2;
+
+  - id: assert_size
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.check_queries.outputs[0].size != 103}}"
+
+  - id: assert_size2
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.check_queries.outputs[1].size != 2}}"
+
+
+  - id: check_query_fetch
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    url: 'jdbc:duckdb:'
+    inputFiles:
+      data.csv: "{{ outputs.http_download.uri }}"
+    fetchType: FETCH_ONE
+    sql: |
+      SELECT * FROM read_csv_auto('{{ workingDir }}/data.csv', header=True);
+  
+  - id: assert_size3
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.check_query_fetch.size != 1}}"
