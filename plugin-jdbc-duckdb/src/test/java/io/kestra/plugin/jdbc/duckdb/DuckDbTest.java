@@ -297,7 +297,7 @@ class DuckDbTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(List.of("out"))
+            .outputFiles(Property.of(List.of("out")))
             .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
                 "\n" +
                 "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');"));
