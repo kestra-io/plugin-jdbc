@@ -135,8 +135,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
             " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
     )
-    @PluginProperty
-    protected List<String> outputFiles;
+    protected Property<List<String>> outputFiles;
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
@@ -225,10 +224,11 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         }
 
         // outputFiles
-        if (this.outputFiles != null && !this.outputFiles.isEmpty()) {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        if (!renderedOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
-                this.outputFiles,
+                renderedOutputFiles,
                 additionalVars
             );
         }
