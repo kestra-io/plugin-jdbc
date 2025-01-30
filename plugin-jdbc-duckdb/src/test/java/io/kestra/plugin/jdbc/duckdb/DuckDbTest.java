@@ -11,6 +11,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -42,6 +44,8 @@ class DuckDbTest {
 
     @Inject
     private StorageInterface storageInterface;
+
+    private static final String motherDuckToken = "";
 
     @Test
     void select() throws Exception {
@@ -322,5 +326,51 @@ class DuckDbTest {
                 "946749,Browsebug\n"
             )
         );
+    }
+
+    @Disabled("Requires a Mother Duck token")
+    @Test
+    void selectWithMotherDuckUrl() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + motherDuckToken))
+            .sql(Property.of("""
+                SELECT created_date, agency, complaint_type, landmark, resolution_description
+                FROM sample_data.nyc.service_requests
+                WHERE created_date >= '2021-01-01' AND created_date <= '2021-01-31' LIMIT 100;
+                """))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().getFirst().size(), is(5));
+    }
+
+    @Disabled("Requires a Mother Duck token")
+    @Test
+    void selectWithMotherDuckUrlAndParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + motherDuckToken))
+            .parameters(Property.of(Map.of(
+                "type", "Street Condition"
+            )))
+            .sql(Property.of("""
+                SELECT created_date, agency, complaint_type, landmark, resolution_description
+                FROM sample_data.nyc.service_requests
+                WHERE complaint_type = :type LIMIT 100;
+                """))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().size(), is(100));
+        runOutput.getRows().forEach(row -> assertThat(row.get("complaint_type"), is("Street Condition")));
     }
 }
