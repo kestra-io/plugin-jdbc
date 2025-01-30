@@ -170,7 +170,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
-        Path workingDirectory;
+        Path workingDirectory = null;
 
         Map<String, String> outputFiles = null;
 
@@ -197,8 +197,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 builder.scheme("jdbc:duckdb");
 
                 this.url = Property.of(builder.build().toString());
-            } else {
-                throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
         } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();
@@ -210,7 +208,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             workingDirectory = databaseFile.getParent();
         }
 
-        additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        if (workingDirectory != null) {
+            additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        }
 
         // inputFiles
         if (this.inputFiles != null) {
