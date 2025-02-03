@@ -45,7 +45,7 @@ class DuckDbTest {
     @Inject
     private StorageInterface storageInterface;
 
-    private static final String motherDuckToken = "";
+    private static final String MOTHER_DUCK_TOKEN = "";
 
     @Test
     void select() throws Exception {
@@ -336,7 +336,7 @@ class DuckDbTest {
         Query task = Query.builder()
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + motherDuckToken))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
             .sql(Property.of("""
                 SELECT created_date, agency, complaint_type, landmark, resolution_description
                 FROM sample_data.nyc.service_requests
@@ -357,7 +357,7 @@ class DuckDbTest {
         Query task = Query.builder()
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + motherDuckToken))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
             .parameters(Property.of(Map.of(
                 "type", "Street Condition"
             )))
@@ -372,5 +372,33 @@ class DuckDbTest {
         assertThat(runOutput.getRows(), notNullValue());
         assertThat(runOutput.getRows().size(), is(100));
         runOutput.getRows().forEach(row -> assertThat(row.get("complaint_type"), is("Street Condition")));
+    }
+
+    @Test
+    void queryWithExistingFile() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        URI dbSource = storageInterface.put(
+            null,
+            null,
+            new URI("/" + IdUtils.create()),
+            new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
+                    .getResource("db/file.db"))
+                .toURI())
+            )
+        );
+
+        var task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .databaseUri(Property.of(dbSource.toString()))
+            .sql(Property.of("SELECT * FROM new_table;"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        List<Integer> outputs = runOutput.getRows().stream().map(m -> (int) m.get("i")).toList();
+        assertThat(outputs, hasSize(3));
+        assertThat(outputs.toArray(), arrayContainingInAnyOrder(1, 2, 3));
     }
 }
