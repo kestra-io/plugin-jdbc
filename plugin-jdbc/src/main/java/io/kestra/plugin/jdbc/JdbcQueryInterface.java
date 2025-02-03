@@ -24,7 +24,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isFetch();
 
     @Schema(
-        title = "DEPRECATED, please use `fetchType: FETCH_STORE` instead." + "\n" +
+        title = "DEPRECATED, please use `fetchType: STORE` instead." + "\n" +
             "Whether to fetch data row(s) from the query result to a file in internal storage." +
             " File will be saved as Amazon Ion (text format)." +
             " \n" +
