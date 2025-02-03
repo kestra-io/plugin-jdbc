@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.duckdb;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,39 +74,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 id: query_duckdb
                 namespace: company.team
 
-                tasks:
-                  - id: query1
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/{{ vars.dbfile }}
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-
-                  - id: query2
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/temp/folder/duck.db
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-                """
-        ),
-        @Example(
-            title = "Execute a query that reads from an existing database file using the `databaseFile` variable.",
-            full = true,
-            code = """
-                id: query_duckdb
-                namespace: company.team
+                inputs:
+                  - id: my_db
+                    type: FILE
 
                 tasks:
                   - id: query1
                     type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:
-                    databaseFile: {{ vars.dbfile }}
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-
-                  - id: query2
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:
-                    databaseFile: /temp/folder/duck.db
+                    databaseUri: "{{ inputs.my_db }}"
                     sql: SELECT * FROM table_name;
                     fetchType: STORE
                 """
@@ -142,6 +118,12 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Builder.Default
     private Property<String> url = Property.of(DEFAULT_URL);
+
+    @Schema(
+        title = "Database URI",
+        description = "Kestra's URI to an existing Duck DB database file"
+    )
+    private Property<String> databaseUri;
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -221,6 +203,18 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 finalInputFiles,
                 additionalVars
             );
+        }
+
+        if (this.databaseUri != null) {
+            String dbName = IdUtils.create();
+            PluginUtilsService.createInputFiles(
+                runContext,
+                workingDirectory,
+                Map.of(dbName, runContext.render(this.databaseUri).as(String.class).orElseThrow()),
+                additionalVars
+            );
+
+            this.url = new Property<>(DEFAULT_URL + workingDirectory + "/" + dbName);
         }
 
         // outputFiles
