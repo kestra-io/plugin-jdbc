@@ -6,6 +6,8 @@ triggers:
     type: io.kestra.plugin.jdbc.clickhouse.Trigger
     sql: SELECT * FROM clickhouse_types
     url: jdbc:clickhouse://127.0.0.1:28123/default
+    username: myuser
+    password: mypassword
     fetchType: FETCH
     interval: PT10S
 

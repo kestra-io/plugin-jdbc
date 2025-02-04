@@ -4,7 +4,6 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-public class ClickHouseQueriesTest extends AbstractRdbmsTest {
+public class ClickHouseQueriesTest extends AbstractClickHouseTest {
 
     @Test
     void testMultiSelectWithParameters() throws Exception {
@@ -37,8 +36,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
 
         Queries taskGet = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
             .sql(Property.of("""
@@ -72,8 +71,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         //Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
             .sql(Property.of("""
@@ -96,8 +95,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
             .sql(Property.of("""
@@ -111,8 +110,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
             .sql(Property.of("""
@@ -133,8 +132,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         //Queries should pass in a transaction
         Queries insertOneAndFail = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .transaction(Property.of(false))
             .timeZoneId(Property.of("Europe/Paris"))
@@ -157,8 +156,8 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
             .url(Property.of(getUrl()))
-            .username(null)
-            .password(null)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
             .sql(Property.of("""
@@ -169,16 +168,6 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
         assertThat(verifyOutput.getOutputs().size(), is(1));
         assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1L));
-    }
-
-    @Override
-    protected String getUrl() {
-        return "jdbc:clickhouse://127.0.0.1:28123/default";
-    }
-
-    @Override
-    protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        executeSqlScript("scripts/clickhouse_queries.sql");
     }
 
     @Override
