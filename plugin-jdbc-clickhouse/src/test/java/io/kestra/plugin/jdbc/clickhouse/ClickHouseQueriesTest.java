@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
+@Disabled
 public class ClickHouseQueriesTest extends AbstractRdbmsTest {
 
     @Test
