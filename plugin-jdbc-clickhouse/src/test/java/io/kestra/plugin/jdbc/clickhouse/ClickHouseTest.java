@@ -9,6 +9,8 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
@@ -222,5 +224,10 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Override
+    protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
+        executeSqlScript("scripts/clickhouse.sql");
     }
 }

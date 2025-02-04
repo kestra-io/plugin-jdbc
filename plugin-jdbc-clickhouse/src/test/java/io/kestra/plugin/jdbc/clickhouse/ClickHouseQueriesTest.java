@@ -171,6 +171,11 @@ public class ClickHouseQueriesTest extends AbstractClickHouseTest {
     }
 
     @Override
+    protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
+        executeSqlScript("scripts/clickhouse_queries.sql");
+    }
+
+    @Override
     @BeforeEach
     public void init() throws IOException, URISyntaxException, SQLException {
         initDatabase();
