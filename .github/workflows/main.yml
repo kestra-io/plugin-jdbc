@@ -6,12 +6,16 @@ on:
   push:
     branches:
       - master
+      - main
+      - releases/*
     tags:
       - v*
 
   pull_request:
     branches:
       - master
+      - main
+      - releases/*
 
   workflow_dispatch:
     inputs:
