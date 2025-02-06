@@ -2,7 +2,7 @@ name: Main
 
 on:
   schedule:
-    - cron: '0 4 * * 1,3,5'
+    - cron: '0 4 * * 1,2,3,4,5'
   push:
     branches:
       - master
@@ -17,178 +17,16 @@ on:
     inputs:
       skip-test:
         description: 'Skip test'
-        required: false
-        type: string
-        default: "false"
+        type: choice
+        required: true
+        default: 'false'
+        options:
+          - "true"
+          - "false"
 
 jobs:
   check:
-    name: Check & Publish
-    runs-on: ubuntu-latest
-    env:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-    steps:
-      - uses: actions/checkout@v4
-
-      # Caches
-      - name: Gradle cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle*.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      # JDK
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: 21
-
-      - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
-
-      # Services
-      - name: Build the docker-compose stack
-        if: ${{ github.event.inputs.skip-test == 'false' || github.event.inputs.skip-test == '' }}
-        run: |
-          mkdir certs
-          openssl req -new -x509 -days 365 -nodes -out certs/ca.crt -keyout certs/ca.key -subj "/CN=root-ca"
-
-          mkdir certs/server
-          openssl genrsa -des3 -out certs/server/server.key -passout pass:p4ssphrase 2048
-          openssl rsa -in certs/server/server.key -passin pass:p4ssphrase -out certs/server/server.key
-          openssl req -new -nodes -key certs/server/server.key -out certs/server/server.csr -subj "/CN=postgresql"
-          openssl x509 -req -in certs/server/server.csr -days 365 -CA certs/ca.crt -CAkey certs/ca.key -CAcreateserial -out certs/server/server.crt
-          sudo chmod -R 600 certs/server/
-          sudo chown -R 1001 certs/server/
-
-          mkdir certs/client
-          openssl genrsa -des3 -out certs/client/client.key -passout pass:p4ssphrase 2048
-          openssl rsa -in certs/client/client.key -passin pass:p4ssphrase -out certs/client/client-no-pass.key
-          openssl req -new -nodes -key certs/client/client.key -passin pass:p4ssphrase -out certs/client/client.csr -subj "/CN=postgres"
-          openssl x509 -req -in certs/client/client.csr -days 365 -CA certs/ca.crt -CAkey certs/ca.key -CAcreateserial -out certs/client/client.crt
-
-          mkdir plugin-jdbc-postgres/src/test/resources/ssl/
-          cp certs/client/* plugin-jdbc-postgres/src/test/resources/ssl/
-          cp certs/ca.crt plugin-jdbc-postgres/src/test/resources/ssl/
-
-          docker compose -f docker-compose-ci.yml up -d sqlserver
-          docker compose -f docker-compose-ci.yml up -d
-          sleep 3
-
-      # Gradle check
-      - name: Build with Gradle
-        if: ${{ github.event.inputs.skip-test == 'false' || github.event.inputs.skip-test == '' }}
-        run: ./gradlew check --refresh-dependencies --parallel
-
-      # Allure check
-      - name: Auth to Google Cloud
-        id: auth
-        if: ${{ always() && env.GOOGLE_SERVICE_ACCOUNT != 0 }}
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GOOGLE_SERVICE_ACCOUNT }}'
-
-      - uses: rlespinasse/github-slug-action@v5
-
-      - name: Publish allure report
-        uses: andrcuns/allure-publish-action@v2.9.0
-        if: ${{ always() && env.GOOGLE_SERVICE_ACCOUNT != 0 && (github.event.inputs.skip-test == 'false' || github.event.inputs.skip-test == '') }}
-        env:
-          GITHUB_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JAVA_HOME: /usr/lib/jvm/default-jvm/
-        with:
-          storageType: gcs
-          resultsGlob: "**/build/allure-results"
-          bucket: internal-kestra-host
-          baseUrl: "https://internal.dev.kestra.io"
-          prefix: ${{ format('{0}/{1}', github.repository, 'allure/java') }}
-          copyLatest: true
-          ignoreMissingResults: true
-
-      # Jacoco
-      - name: 'Set up Cloud SDK'
-        if: ${{ env.GOOGLE_SERVICE_ACCOUNT != 0 }}
-        uses: 'google-github-actions/setup-gcloud@v2'
-
-      - name: 'Copy jacoco files'
-        if: ${{ env.GOOGLE_SERVICE_ACCOUNT != 0 }}
-        run: |
-          mv build/reports/jacoco/testCodeCoverageReport build/reports/jacoco/test/
-          mv build/reports/jacoco/test/testCodeCoverageReport.xml build/reports/jacoco/test/jacocoTestReport.xml
-          gsutil -m rsync -d -r  build/reports/jacoco/test/ gs://internal-kestra-host/${{ format('{0}/{1}', github.repository, 'jacoco') }}
-
-      # Publish
-      - name: Publish package to Sonatype
-        if: github.ref == 'refs/heads/master'
-        env:
-          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPE_USER }}
-          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_GPG_KEYID: ${{ secrets.SONATYPE_GPG_KEYID }}
-          SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
-          SONATYPE_GPG_FILE: ${{ secrets.SONATYPE_GPG_FILE }}
-        run: |
-          echo "signing.keyId=${SONATYPE_GPG_KEYID}" > ~/.gradle/gradle.properties
-          echo "signing.password=${SONATYPE_GPG_PASSWORD}" >> ~/.gradle/gradle.properties
-          echo "signing.secretKeyRingFile=${HOME}/.gradle/secring.gpg" >> ~/.gradle/gradle.properties
-          echo ${SONATYPE_GPG_FILE} | base64 -d > ~/.gradle/secring.gpg
-          ./gradlew publishToSonatype
-
-      # Release
-      - name: Release package to Maven Central
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.SONATYPE_USER }}
-          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_GPG_KEYID: ${{ secrets.SONATYPE_GPG_KEYID }}
-          SONATYPE_GPG_PASSWORD: ${{ secrets.SONATYPE_GPG_PASSWORD }}
-          SONATYPE_GPG_FILE: ${{ secrets.SONATYPE_GPG_FILE }}
-        run: |
-          echo "signing.keyId=${SONATYPE_GPG_KEYID}" > ~/.gradle/gradle.properties
-          echo "signing.password=${SONATYPE_GPG_PASSWORD}" >> ~/.gradle/gradle.properties
-          echo "signing.secretKeyRingFile=${HOME}/.gradle/secring.gpg" >> ~/.gradle/gradle.properties
-          echo ${SONATYPE_GPG_FILE} | base64 -d > ~/.gradle/secring.gpg
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository
-
-      # GitHub Release
-      - name: Create GitHub release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        if: startsWith(github.ref, 'refs/tags/v')
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: |
-            plugin-jdbc-*/build/libs/*.jar
-
-      # Cleanup services
-      - name: Cleanup services
-        if: ${{ always() }}
-        run: sudo rm -rf certs
-
-      # Slack
-      - name: Slack notification
-        uses: 8398a7/action-slack@v3
-        if: ${{ always() && env.SLACK_WEBHOOK_URL != 0 }}
-        with:
-          status: ${{ job.status }}
-          job_name: Check & Publish
-          fields: repo,message,commit,author,action,eventName,ref,workflow,job,took
-          username: Github Actions
-          icon_emoji: ':github-actions:'
-          channel: 'C02DQ1A7JLR'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify failed CI
-        id: send-ci-failed
-        if: always() && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && job.status != 'success'
-        uses: kestra-io/actions/.github/actions/send-ci-failed@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    uses: kestra-io/actions/.github/workflows/plugins.yml@main
+    with:
+      skip-test: ${{ github.event.inputs.skip-test == 'true' }}
+    secrets: inherit
