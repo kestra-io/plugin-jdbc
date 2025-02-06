@@ -76,7 +76,7 @@ public abstract class AbstractCellConverter {
             return data;
         }
 
-        String columnName = rs.getMetaData().getColumnName(columnIndex);
+        String columnName = rs.getMetaData().getColumnLabel(columnIndex);
 
         throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported");
     }

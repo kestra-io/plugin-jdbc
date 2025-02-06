@@ -31,7 +31,7 @@ public class TrinoCellConverter extends AbstractCellConverter {
 
         Object columnVal = rs.getObject(columnIndex);
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
-        String columnName = rs.getMetaData().getColumnName(columnIndex);
+        String columnName = rs.getMetaData().getColumnLabel(columnIndex);
 
         if (columnTypeName.equals("tinyint")) {
             Byte col = (Byte) columnVal;
