@@ -1,0 +1,17 @@
+id: mariadb-listen
+namespace: io.kestra.jdbc.mariadb
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.mariadb.Trigger
+    sql: SELECT * FROM mariadb_types
+    url: jdbc:mariadb://127.0.0.1:64791/kestra
+    username: root
+    password: mariadb_passwd
+    fetchType: FETCH
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"
