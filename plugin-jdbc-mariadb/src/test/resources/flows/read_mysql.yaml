@@ -1,0 +1,14 @@
+id: read_mariadb
+namespace: io.kestra.jdbc.mariadb.trigger
+
+tasks:
+  - id: read
+    type: io.kestra.plugin.jdbc.mariadb.Query
+    url: jdbc:mariadb://127.0.0.1:56982/
+    username: root
+    password: mariadb_passwd
+    sql: select * from mariadb_types
+    fetchType: FETCH_ONE
+  - id: flow-id
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{outputs.update.row}}"

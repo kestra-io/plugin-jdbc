@@ -19,6 +19,13 @@ mkdir plugin-jdbc-postgres/src/test/resources/ssl/
 cp certs/client/* plugin-jdbc-postgres/src/test/resources/ssl/
 cp certs/ca.crt plugin-jdbc-postgres/src/test/resources/ssl/
 
-docker compose -f docker-compose-ci.yml up -d sqlserver
-docker compose -f docker-compose-ci.yml up -d
+docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver
+docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 sleep 3
+
+docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
+INSTALL SONAME 'auth_ed25519';
+CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
+GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
+"""
+
