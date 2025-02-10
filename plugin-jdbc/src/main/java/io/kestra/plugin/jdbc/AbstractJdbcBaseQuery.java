@@ -135,7 +135,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         Map<String, Object> map = new LinkedHashMap<>();
 
         for (int i = 1; i <= columnsCount; i++) {
-            map.put(rs.getMetaData().getColumnName(i), convertCell(i, rs, cellConverter, connection));
+            map.put(rs.getMetaData().getColumnLabel(i), convertCell(i, rs, cellConverter, connection));
         }
 
         return map;
