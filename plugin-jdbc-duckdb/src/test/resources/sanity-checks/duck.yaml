@@ -1,5 +1,5 @@
 id: duckdb
-namespace: qa
+namespace: sanitychecks
 
 tasks:
   - id: http_download
