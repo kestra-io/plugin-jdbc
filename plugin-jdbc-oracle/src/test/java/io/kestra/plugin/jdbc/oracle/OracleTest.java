@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -67,6 +68,26 @@ public class OracleTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("T_TIMESTAMP"), is(LocalDateTime.parse("1998-01-23T06:00:00")));
         assertThat(runOutput.getRow().get("T_TIMESTAMP_TIME_ZONE"), is(ZonedDateTime.parse("1998-01-23T06:00:00-05:00")));
         assertThat(runOutput.getRow().get("T_TIMESTAMP_LOCAL"), is(LocalDateTime.parse("1998-01-23T12:00:00")));
+    }
+
+    @Test
+    void selectWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.of(getUrl()))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .parameters(Property.of(Map.of("char", "aa")))
+            .sql(Property.of("select * from oracle_types where T_CHAR = :char"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("T_CHAR"), is("aa"));
     }
 
     @Test

@@ -11,6 +11,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
+import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -36,12 +38,14 @@ import static org.hamcrest.Matchers.*;
  * - https://duckdb.org/docs/sql/data_types/overview
  */
 @KestraTest
-public class DuckDbTest {
+class DuckDbTest {
     @Inject
     private RunContextFactory runContextFactory;
 
     @Inject
     private StorageInterface storageInterface;
+
+    private static final String MOTHER_DUCK_TOKEN = "";
 
     @Test
     void select() throws Exception {
@@ -153,7 +157,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
@@ -192,7 +196,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
@@ -207,6 +211,26 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_utinyint"), is((short)127));
         assertThat(runOutput.getRow().get("t_varchar"), is("test"));
         assertThat(runOutput.getRow().get("t_enum"), is("happy"));
+    }
+
+    @Test
+    void selectFromExistingFileInUrlWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
+            .parameters(Property.of(Map.of("num", 2147483647)))
+            .sql(Property.of("SELECT * FROM duck_types WHERE t_integer = :num"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+
+        assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
     }
 
 
@@ -232,7 +256,7 @@ public class DuckDbTest {
         assertThat(runOutput.getRow().get("t_boolean"), is(true));
         assertThat(runOutput.getRow().get("t_date"), is(LocalDate.parse("1992-09-20")));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
-        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));;
+        assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345123L, 3)));
         assertThat(runOutput.getRow().get("t_hugeint"), is("9223372036854775807"));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_interval"), is("28 days"));
@@ -273,7 +297,7 @@ public class DuckDbTest {
         Query.QueryBuilder<?, ?> builder = Query.builder()
             .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(List.of("out"))
+            .outputFiles(Property.of(List.of("out")))
             .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
                 "\n" +
                 "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');"));
@@ -302,5 +326,79 @@ public class DuckDbTest {
                 "946749,Browsebug\n"
             )
         );
+    }
+
+    @Disabled("Requires a Mother Duck token")
+    @Test
+    void selectWithMotherDuckUrl() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
+            .sql(Property.of("""
+                SELECT created_date, agency, complaint_type, landmark, resolution_description
+                FROM sample_data.nyc.service_requests
+                WHERE created_date >= '2021-01-01' AND created_date <= '2021-01-31' LIMIT 100;
+                """))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().getFirst().size(), is(5));
+    }
+
+    @Disabled("Requires a Mother Duck token")
+    @Test
+    void selectWithMotherDuckUrlAndParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
+            .parameters(Property.of(Map.of(
+                "type", "Street Condition"
+            )))
+            .sql(Property.of("""
+                SELECT created_date, agency, complaint_type, landmark, resolution_description
+                FROM sample_data.nyc.service_requests
+                WHERE complaint_type = :type LIMIT 100;
+                """))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().size(), is(100));
+        runOutput.getRows().forEach(row -> assertThat(row.get("complaint_type"), is("Street Condition")));
+    }
+
+    @Test
+    void queryWithExistingFile() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        URI dbSource = storageInterface.put(
+            null,
+            null,
+            new URI("/" + IdUtils.create()),
+            new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
+                    .getResource("db/file.db"))
+                .toURI())
+            )
+        );
+
+        var task = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .databaseUri(Property.of(dbSource.toString()))
+            .sql(Property.of("SELECT * FROM new_table;"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        List<Integer> outputs = runOutput.getRows().stream().map(m -> (int) m.get("i")).toList();
+        assertThat(outputs, hasSize(3));
+        assertThat(outputs.toArray(), arrayContainingInAnyOrder(1, 2, 3));
     }
 }

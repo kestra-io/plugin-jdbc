@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.duckdb;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -73,39 +74,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 id: query_duckdb
                 namespace: company.team
 
-                tasks:
-                  - id: query1
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/{{ vars.dbfile }}
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-
-                  - id: query2
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:/temp/folder/duck.db
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-                """
-        ),
-        @Example(
-            title = "Execute a query that reads from an existing database file using the `databaseFile` variable.",
-            full = true,
-            code = """
-                id: query_duckdb
-                namespace: company.team
+                inputs:
+                  - id: my_db
+                    type: FILE
 
                 tasks:
                   - id: query1
                     type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:
-                    databaseFile: {{ vars.dbfile }}
-                    sql: SELECT * FROM table_name;
-                    fetchType: STORE
-
-                  - id: query2
-                    type: io.kestra.plugin.jdbc.duckdb.Query
-                    url: jdbc:duckdb:
-                    databaseFile: /temp/folder/duck.db
+                    databaseUri: "{{ inputs.my_db }}"
                     sql: SELECT * FROM table_name;
                     fetchType: STORE
                 """
@@ -135,14 +111,19 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
             " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
     )
-    @PluginProperty
-    protected List<String> outputFiles;
+    protected Property<List<String>> outputFiles;
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
 
     @Builder.Default
     private Property<String> url = Property.of(DEFAULT_URL);
+
+    @Schema(
+        title = "Database URI",
+        description = "Kestra's URI to an existing Duck DB database file"
+    )
+    private Property<String> databaseUri;
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -170,7 +151,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
-        Path workingDirectory;
+        Path workingDirectory = null;
 
         Map<String, String> outputFiles = null;
 
@@ -197,8 +178,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 builder.scheme("jdbc:duckdb");
 
                 this.url = Property.of(builder.build().toString());
-            } else {
-                throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
         } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();
@@ -210,7 +189,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             workingDirectory = databaseFile.getParent();
         }
 
-        additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        if (workingDirectory != null) {
+            additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        }
 
         // inputFiles
         if (this.inputFiles != null) {
@@ -224,11 +205,24 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             );
         }
 
+        if (this.databaseUri != null) {
+            String dbName = IdUtils.create();
+            PluginUtilsService.createInputFiles(
+                runContext,
+                workingDirectory,
+                Map.of(dbName, runContext.render(this.databaseUri).as(String.class).orElseThrow()),
+                additionalVars
+            );
+
+            this.url = new Property<>(DEFAULT_URL + workingDirectory + "/" + dbName);
+        }
+
         // outputFiles
-        if (this.outputFiles != null && !this.outputFiles.isEmpty()) {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        if (!renderedOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
-                this.outputFiles,
+                renderedOutputFiles,
                 additionalVars
             );
         }

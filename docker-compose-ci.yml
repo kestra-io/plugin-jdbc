@@ -17,6 +17,15 @@ services:
     ports:
       - "64790:3306"
 
+  mariadb:
+    image: mariadb:11
+    command: --local-infile
+    environment:
+      MARIADB_ROOT_PASSWORD: mariadb_passwd
+      MARIADB_DATABASE: kestra
+    ports:
+      - "64791:3306"
+
   postgres-multi-query:
     image: postgres:latest
     environment:
@@ -59,6 +68,10 @@ services:
     ports:
       - "28123:8123"
       - "29000:9000"
+    environment:
+      CLICKHOUSE_USER: myuser
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
 
 #  db2:
 #    image: icr.io/db2_community/db2
