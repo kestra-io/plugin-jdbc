@@ -14,6 +14,7 @@ import io.kestra.plugin.scripts.runner.docker.Docker;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -58,15 +59,13 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 	@Schema(
 		title = "The commands to run before main list of commands."
 	)
-	@PluginProperty(dynamic = true)
-	protected List<String> beforeCommands;
+	protected Property<List<String>> beforeCommands;
 
 	@Schema(
 		title = "The commands to run."
 	)
-	@PluginProperty(dynamic = true)
-	@NotEmpty
-	protected List<String> commands;
+    @NotNull
+	protected Property<List<String>> commands;
 
 	@Schema(
 		title = "Additional environment variables for the current process."
@@ -107,13 +106,9 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 			.withNamespaceFiles(namespaceFiles)
 			.withInputFiles(inputFiles)
 			.withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
-			.withCommands(
-				ScriptService.scriptCommands(
-					List.of("clickhouse-local"),
-					Optional.ofNullable(this.beforeCommands).map(throwFunction(runContext::render)).orElse(null),
-					runContext.render(this.commands)
-				)
-			)
+            .withInterpreter(Property.of(List.of("clickhouse-local")))
+            .withBeforeCommands(this.beforeCommands)
+            .withCommands(this.commands)
 			.run();
 	}
 
