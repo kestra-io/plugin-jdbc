@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -26,7 +27,7 @@ public class ClickHouseLocalCLITest {
 		ClickHouseLocalCLI clickhouseLocalCLI = ClickHouseLocalCLI.builder()
 			.id(IdUtils.create())
 			.type(ClickHouseLocalCLI.class.getName())
-            .commands(List.of("SELECT * FROM system.tables"))
+            .commands(Property.of(List.of("SELECT * FROM system.tables")))
             .build();
 
 		RunContext runContext = TestsUtils.mockRunContext(runContextFactory, clickhouseLocalCLI, Map.of());
