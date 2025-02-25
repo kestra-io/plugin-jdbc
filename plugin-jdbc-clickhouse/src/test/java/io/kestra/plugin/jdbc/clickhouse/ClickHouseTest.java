@@ -66,6 +66,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         assertThat(runOutput.getRow().get("Nullable"), is(nullValue()));
         assertThat(runOutput.getRow().get("Ipv4"), is("116.253.40.133"));
         assertThat(runOutput.getRow().get("Ipv6"), is("2a02:aa08:e000:3100:0:0:0:2"));
+        assertThat(runOutput.getRow().get("UInt16"), is(65534));
     }
 
     @Test

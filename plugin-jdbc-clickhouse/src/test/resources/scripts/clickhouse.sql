@@ -25,7 +25,8 @@ CREATE TABLE clickhouse_types (
    Tuple Tuple(String, Int8),
    Nullable Nullable(Int8),
    Ipv4 IPv4,
-   Ipv6 IPv6
+   Ipv6 IPv6,
+   UInt16 UInt16
 )
 ENGINE = MergeTree()
 PARTITION BY toYYYYMM(DateTime)
@@ -56,7 +57,8 @@ INSERT INTO clickhouse_types
     Tuple,
     Nullable,
     Ipv4,
-    Ipv6
+    Ipv6,
+    UInt16
 )
 VALUES (
     123,
@@ -79,7 +81,8 @@ VALUES (
     tuple('a', 1) ,
     NULL,
     '116.253.40.133',
-    '2a02:aa08:e000:3100::2'
+    '2a02:aa08:e000:3100::2',
+    65534
 );
 
 
