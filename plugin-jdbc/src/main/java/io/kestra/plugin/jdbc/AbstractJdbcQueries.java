@@ -146,7 +146,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     private static void rollbackIfTransactional(final Connection connection,
                                                 final Savepoint savepoint,
                                                 final boolean isTransactional) throws SQLException {
-        if (isTransactional) {
+        if (isTransactional && connection != null) {
             if (savepoint != null) {
                 connection.rollback(savepoint);
                 return;
