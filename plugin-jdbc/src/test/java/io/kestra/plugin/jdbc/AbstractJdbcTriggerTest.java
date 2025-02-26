@@ -61,8 +61,8 @@ public abstract class AbstractJdbcTriggerTest {
         ) {
             // wait for execution
             Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
-                queueCount.countDown();
                 assertThat(execution.getLeft().getFlowId(), is(flow));
+                queueCount.countDown();
             });
 
             worker.run();
