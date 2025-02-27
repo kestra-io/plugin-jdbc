@@ -1,7 +1,6 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
@@ -12,7 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
-import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -102,38 +101,26 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
         try (
             Connection connection = this.connection(runContext);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE)
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE);
+            PreparedStatement ps = connection.prepareStatement(sql);
         ) {
             connection.setAutoCommit(false);
 
-            var renderedChunk = runContext.render(this.chunk).as(Integer.class).orElseThrow();
+            int renderedChunk = runContext.render(this.chunk).as(Integer.class).orElseThrow();
 
-            Flux<Integer> flowable = FileSerde.readAll(bufferedReader)
-                .doOnNext(docWriteRequest -> {
-                    count.incrementAndGet();
-                })
-                .buffer(renderedChunk, renderedChunk)
-                .map(throwFunction(o -> {
-                    try (PreparedStatement ps = connection.prepareStatement(sql)) {
-                        ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
-
-                        for (Object value : o) {
-                            this.addRows(ps, parameterMetaData, value, cellConverter, connection, runContext);
-
-                            ps.addBatch();
-                            ps.clearParameters();
-                        }
-
-                        int[] updatedRows = ps.executeBatch();
-                        connection.commit();
-
-                        return Arrays.stream(updatedRows).sum();
+            final ParameterType parameterMetaData = ParameterType.of(ps.getParameterMetaData());
+            Integer updated = FileSerde.readAll(bufferedReader)
+                .doOnNext(docWriteRequest -> count.incrementAndGet())
+                .buffer(renderedChunk)
+                .map(throwFunction(buffer -> {
+                    for (Object row : buffer) {
+                        addBatch(ps, parameterMetaData, row, cellConverter, connection, runContext);
                     }
-                }));
-
-            Integer updated = flowable
-                .reduce(Integer::sum)
-                .block();
+                    int[] updatedRows = ps.executeBatch();
+                    connection.commit();
+                    return Arrays.stream(updatedRows).sum();
+                }))
+                .reduce(Integer::sum).block();
 
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
@@ -173,7 +160,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     }
 
     @SuppressWarnings("unchecked")
-    private PreparedStatement addRows(
+    private void addBatch(
         PreparedStatement ps,
         ParameterType parameterMetaData,
         Object o,
@@ -195,13 +182,11 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             }
         } else if (o instanceof Collection) {
             ListIterator<Object> iter = ((List<Object>) o).listIterator();
-
             while (iter.hasNext()) {
                 ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, iter.next(), iter.nextIndex(), connection);
             }
         }
-
-        return ps;
+        ps.addBatch();
     }
 
     @Builder
