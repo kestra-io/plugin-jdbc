@@ -2,6 +2,8 @@ package io.kestra.plugin.jdbc;
 
 import com.google.common.collect.ImmutableList;
 
+import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
@@ -187,27 +189,20 @@ public abstract class AbstractCellConverter {
 
                 return ps;
             } else if (Blob.class.isAssignableFrom(cls)) {
-                if (value.getClass().getName().equals("[B")) {
-                    Blob blob = connection.createBlob();
-                    blob.setBytes(1, (byte[]) value);
-
-                    ps.setBlob(index, blob);
+                if (value instanceof byte[] bytes) {
+                    ps.setBlob(index, new ByteArrayInputStream(bytes), bytes.length);
                     return ps;
                 }
             } else if (Clob.class.isAssignableFrom(cls)) {
-                if (value instanceof String) {
-                    Clob blob = connection.createClob();
-                    blob.setString(1, (String) value);
-
-                    ps.setClob(index, blob);
+                if (value instanceof String string) {
+                    // ps.setClob(index, new StringReader(string), string.length());
+                    // use use setCharacterStream() instead of setClob for efficiency
+                    ps.setCharacterStream(index, new StringReader(string), string.length());
                     return ps;
                 }
             } else if (NClob.class.isAssignableFrom(cls)) {
-                if (value instanceof String) {
-                    NClob blob = connection.createNClob();
-                    blob.setString(1, (String) value);
-
-                    ps.setClob(index, blob);
+                if (value instanceof String string) {
+                    ps.setNClob(index, new StringReader(string), string.length());
                     return ps;
                 }
             }
