@@ -88,52 +88,21 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, AutoCommitInterface, DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
     protected final Property<Boolean> autoCommit = Property.of(true);
 
-    @Schema(
-        title = "Input files to be loaded from DuckDb.",
-        description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{ workingDir }}/myfile.csv');` "
-    )
-    @PluginProperty(
-        additionalProperties = String.class,
-        dynamic = true
-    )
-    protected Object inputFiles;
-
-    @Schema(
-        title = "Output file list that will be uploaded to internal storage.",
-        description = "List of keys that will generate temporary files.\n" +
-            "On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
-            "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
-            " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
-    )
-    protected Property<List<String>> outputFiles;
-
-    @Getter(AccessLevel.NONE)
-    private transient Path databaseFile;
 
     @Builder.Default
     private Property<String> url = Property.of(DEFAULT_URL);
 
-    @Schema(
-        title = "Database URI",
-        description = "Kestra's URI to an existing Duck DB database file"
-    )
-    private Property<String> databaseUri;
+    protected Object inputFiles;
+    protected Property<List<String>> outputFiles;
+    protected Property<String> databaseUri;
 
-    @Override
-    protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
-        return new DuckDbCellConverter(zoneId);
-    }
-
-    @Override
-    public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new org.duckdb.DuckDBDriver());
-    }
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Override
     @Schema(
@@ -148,6 +117,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         }
         return this.url;
     }
+
+    @Getter(AccessLevel.NONE)
+    private transient Path databaseFile;
 
     @Override
     public Query.Output run(RunContext runContext) throws Exception {
@@ -205,6 +177,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
             );
         }
 
+        //Read database from URI and put it into workingDir
         if (this.databaseUri != null) {
             String dbName = IdUtils.create();
             PluginUtilsService.createInputFiles(
@@ -213,8 +186,8 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 Map.of(dbName, runContext.render(this.databaseUri).as(String.class).orElseThrow()),
                 additionalVars
             );
-
-            this.url = new Property<>(DEFAULT_URL + workingDirectory + "/" + dbName);
+            this.databaseFile = Path.of(workingDirectory + "/" + dbName);
+            this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
         }
 
         // outputFiles
@@ -237,12 +210,19 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
         }
 
+        //Create and output DB URI
+        URI dbUri = null;
+        if (Boolean.TRUE.equals(runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow())) {
+            dbUri = runContext.storage().putFile(new File(this.databaseFile.toUri()));
+        }
+
         return Output.builder()
             .row(run.getRow())
             .rows(run.getRows())
             .uri(run.getUri())
             .size(run.getSize())
             .outputFiles(uploaded)
+            .databaseUri(dbUri)
             .build();
     }
 
@@ -254,5 +234,21 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         )
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;
+
+        @Schema(
+            title = "The database output URI in Kestra's internal storage."
+        )
+        @PluginProperty
+        private final URI databaseUri;
+    }
+
+    @Override
+    protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
+        return new DuckDbCellConverter(zoneId);
+    }
+
+    @Override
+    public void registerDriver() throws SQLException {
+        DriverManager.registerDriver(new org.duckdb.DuckDBDriver());
     }
 }

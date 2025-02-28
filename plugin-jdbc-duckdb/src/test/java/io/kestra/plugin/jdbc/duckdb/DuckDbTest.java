@@ -18,8 +18,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.*;
@@ -28,8 +31,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import static io.kestra.core.models.tasks.common.FetchType.FETCH;
-import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.*;
+import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getCsvSourceUri;
+import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getDatabaseFileSourceUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -283,15 +287,8 @@ class DuckDbTest {
     @ParameterizedTest
     @MethodSource("nullOrFilledDuckDbUrl") // six numbers
     void inputOutputFiles(String url) throws Exception {
-        URI source = storageInterface.put(
-            null,
-            null,
-            new URI("/" + IdUtils.create()),
-            new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
-                    .getResource("full.csv"))
-                .toURI())
-            )
-        );
+        URI source = getCsvSourceUri(storageInterface);
+
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query.QueryBuilder<?, ?> builder = Query.builder()
@@ -375,30 +372,75 @@ class DuckDbTest {
     }
 
     @Test
-    void queryWithExistingFile() throws Exception {
+    void queryWithExistingFileAndOutputDatabase() throws Exception {
         RunContext runContext = runContextFactory.of(Map.of());
 
-        URI dbSource = storageInterface.put(
-            null,
-            null,
-            new URI("/" + IdUtils.create()),
-            new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
-                    .getResource("db/file.db"))
-                .toURI())
-            )
-        );
+        //Retrieve DB file from resources folder
+        URI dbSource = getDatabaseFileSourceUri(storageInterface);
 
-        var task = Query.builder()
+        //Original query
+        var originalSelect = Query.builder()
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
             .databaseUri(Property.of(dbSource.toString()))
             .sql(Property.of("SELECT * FROM new_table;"))
-            .build();
+            .build().run(runContext);
 
-        AbstractJdbcQuery.Output runOutput = task.run(runContext);
-        assertThat(runOutput.getRows(), notNullValue());
-        List<Integer> outputs = runOutput.getRows().stream().map(m -> (int) m.get("i")).toList();
+        assertThat(originalSelect.getRows(), notNullValue());
+        List<Integer> outputs = originalSelect.getRows().stream().map(m -> (int) m.get("i")).toList();
         assertThat(outputs, hasSize(3));
         assertThat(outputs.toArray(), arrayContainingInAnyOrder(1, 2, 3));
+
+        //Insert data and output DB file
+        var update = Query.builder()
+            .fetchType(Property.of(NONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .databaseUri(Property.of(dbSource.toString()))
+            .sql(Property.of("INSERT  INTO new_table (i) VALUES (4);"))
+            .outputDbFile(Property.of(true))
+            .build().run(runContext);
+
+        //Check output
+        var check = Query.builder()
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .databaseUri(Property.of(update.getDatabaseUri().toString())) // use output db from last task
+            .sql(Property.of("SELECT * FROM new_table;"))
+            .build().run(runContext);
+
+        assertThat(check.getRows(), notNullValue());
+        List<Integer> checkOutputs = check.getRows().stream().map(m -> (int) m.get("i")).toList();
+        assertThat(checkOutputs, hasSize(4));
+        assertThat(checkOutputs.toArray(), arrayContainingInAnyOrder(1, 2, 3, 4));
+    }
+
+    @Test
+    void createLocalDbAndOutputDatabaseFile() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        //Create DB and Output file
+        URI source = getCsvSourceUri(storageInterface);
+
+        var createTable = Query.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .outputFiles(Property.of(List.of("out")))
+            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);"))
+            .outputDbFile(Property.of(true))
+            .build()
+            .run(runContext);
+
+        //Check table exists
+        var getTable = Query.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .databaseUri(Property.of(createTable.getDatabaseUri().toString()))
+            .fetchType(Property.of(FETCH))
+            .sql(new Property<>("SELECT * FROM new_tbl;"))
+            .build()
+            .run(runContext);
+
+        assertThat(getTable.getRows(), notNullValue());
+        assertThat(getTable.getRows().size(), is(10));
+        assertThat(getTable.getRows().getFirst().size(), is(12));
     }
 }
