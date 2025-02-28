@@ -16,12 +16,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 @SuperBuilder
@@ -62,9 +64,9 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, SqliteQueryInterface {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries.Output>, SqliteQueryInterface {
 
-    protected String sqliteFile;
+    protected Property<String> sqliteFile;
 
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.of(false);
@@ -79,27 +81,49 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
     }
 
     @Override
-    public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
+    public Output run(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         URI url = URI.create((String) properties.get("jdbc.url"));
 
         this.workingDirectory = runContext.workingDir().path();
 
-        if (this.sqliteFile != null) {
+        Optional<String> sqliteFileOptional = runContext.render(this.sqliteFile).as(String.class);
+        String fileName = null;
+        if (sqliteFileOptional.isPresent()) {
 
             // Get file name from url scheme parts, to be equally same as in connection url
-            String filename = url.getSchemeSpecificPart().split(":")[1];
+            fileName = url.getSchemeSpecificPart().split(":")[1];
 
             PluginUtilsService.createInputFiles(
                 runContext,
                 workingDirectory,
-                Map.of(filename, this.sqliteFile),
+                Map.of(fileName, sqliteFileOptional.get()),
                 additionalVars
             );
         }
 
-        return super.run(runContext);
+        AbstractJdbcQueries.MultiQueryOutput multiQueryOutput = super.run(runContext);
+
+        URI dbUri = null;
+        if (Boolean.TRUE.equals(runContext.render(this.outputDbFile).as(Boolean.class).orElseThrow()) && sqliteFileOptional.isPresent()) {
+            dbUri = runContext.storage().putFile(new File(workingDirectory.toString() + "/" + fileName), fileName);
+        }
+
+        return Output.builder()
+            .databaseUri(dbUri)
+            .outputs(multiQueryOutput.getOutputs())
+            .build();
+    }
+
+    @SuperBuilder
+    @Getter
+    public static class Output extends AbstractJdbcQueries.MultiQueryOutput {
+        @Schema(
+            title = "The database output URI in Kestra's internal storage."
+        )
+        @PluginProperty
+        private final URI databaseUri;
     }
 
     @Override
