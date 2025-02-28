@@ -50,7 +50,12 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface {
+
+    protected Property<String> sqliteFile;
+
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
@@ -69,6 +74,8 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())
+            .outputDbFile(this.getOutputDbFile())
+            .sqliteFile(this.getSqliteFile())
             .build();
         return query.run(runContext);
     }
