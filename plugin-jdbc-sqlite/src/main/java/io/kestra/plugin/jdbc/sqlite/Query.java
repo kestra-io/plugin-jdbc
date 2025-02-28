@@ -8,6 +8,7 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
@@ -15,13 +16,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+
+import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 
 @SuperBuilder
@@ -78,15 +81,13 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface , SqliteQueryInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
-    @Schema(
-        title = "Add sqlite file.",
-        description = "The file must be from Kestra's internal storage"
-    )
-    @PluginProperty(dynamic = true)
-    protected String sqliteFile;
+    protected Property<String> sqliteFile;
+
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;
@@ -94,48 +95,56 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
-
-        URI url = URI.create((String) properties.get("jdbc.url"));
-
-        // get file name from url scheme parts
-        String filename = url.getSchemeSpecificPart().split(":")[1];
-
-        Path path = runContext.workingDir().resolve(Path.of(filename));
-        if (path.toFile().exists()) {
-            url = URI.create(path.toString());
-
-            UriBuilder builder = UriBuilder.of(url);
-
-            builder.scheme("jdbc:sqlite");
-
-            properties.put("jdbc.url", builder.build().toString());
-        }
-
-        return properties;
+        return SqliteQueryUtils.buildSqliteProperties(properties, runContext);
     }
 
     @Override
-    public AbstractJdbcQuery.Output run(RunContext runContext) throws Exception {
+    public Output run(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
         URI url = URI.create((String) properties.get("jdbc.url"));
 
         this.workingDirectory = runContext.workingDir().path();
 
-        if (this.sqliteFile != null) {
-
+        Optional<String> sqliteFileOptional = runContext.render(this.sqliteFile).as(String.class);
+        String fileName = null;
+        if (sqliteFileOptional.isPresent()) {
             // Get file name from url scheme parts, to be equally same as in connection url
-            String filename = url.getSchemeSpecificPart().split(":")[1];
+            fileName = url.getSchemeSpecificPart().split(":")[1];
 
             PluginUtilsService.createInputFiles(
                 runContext,
                 workingDirectory,
-                Map.of(filename, this.sqliteFile),
+                Map.of(fileName, sqliteFileOptional.get()),
                 additionalVars
             );
         }
 
-        return super.run(runContext);
+        AbstractJdbcBaseQuery.Output queryOutput = super.run(runContext);
+
+
+        URI dbUri = null;
+        if (Boolean.TRUE.equals(runContext.render(this.outputDbFile).as(Boolean.class).orElseThrow()) && sqliteFileOptional.isPresent()) {
+            dbUri = runContext.storage().putFile(new File(workingDirectory.toString() + "/" + fileName), fileName);
+        }
+
+        return Output.builder()
+            .databaseUri(dbUri)
+            .row(queryOutput.getRow())
+            .rows(queryOutput.getRows())
+            .size(queryOutput.getSize())
+            .uri(queryOutput.getUri())
+            .build();
+    }
+
+    @SuperBuilder
+    @Getter
+    public static class Output extends AbstractJdbcQuery.Output {
+        @Schema(
+            title = "The database output URI in Kestra's internal storage."
+        )
+        @PluginProperty
+        private final URI databaseUri;
     }
 
     @Override
