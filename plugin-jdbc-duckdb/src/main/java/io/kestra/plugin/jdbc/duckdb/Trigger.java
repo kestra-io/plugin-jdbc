@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 
 @SuperBuilder
 @ToString
@@ -52,10 +53,17 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface {
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
+
+    protected Object inputFiles;
+    protected Property<List<String>> outputFiles;
+    protected Property<String> databaseUri;
+
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Override
     public Property<String> getUrl() {
@@ -84,6 +92,9 @@ public class Trigger extends AbstractJdbcTrigger {
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())
+            .databaseUri(this.getDatabaseUri())
+            .outputDbFile(this.getOutputDbFile())
+            .inputFiles(this.getInputFiles())
             .build();
         return query.run(runContext);
     }

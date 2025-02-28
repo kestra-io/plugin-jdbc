@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -66,29 +67,15 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries.Output> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries.Output>, DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
-    @Schema(
-        title = "Input files to be loaded from DuckDb.",
-        description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{ workingDir }}/myfile.csv');` "
-    )
-    @PluginProperty(
-        additionalProperties = String.class,
-        dynamic = true
-    )
-    protected Object inputFiles;
 
-    @Schema(
-        title = "Output file list that will be uploaded to internal storage.",
-        description = "List of keys that will generate temporary files.\n" +
-            "On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
-            "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
-            " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
-    )
-    @PluginProperty
-    protected List<String> outputFiles;
+    protected Object inputFiles;
+    protected Property<List<String>> outputFiles;
+    protected Property<String> databaseUri;
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
@@ -122,7 +109,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Path workingDirectory;
+        Path workingDirectory = null;
 
         Map<String, String> outputFiles = null;
 
@@ -162,7 +149,9 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
             workingDirectory = databaseFile.getParent();
         }
 
-        additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        if (workingDirectory != null) {
+            additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
+        }
 
         // inputFiles
         if (this.inputFiles != null) {
@@ -176,11 +165,25 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
             );
         }
 
+        //Read database from URI and put it into workingDir
+        if (this.databaseUri != null) {
+            String dbName = IdUtils.create();
+            PluginUtilsService.createInputFiles(
+                runContext,
+                workingDirectory,
+                Map.of(dbName, runContext.render(this.databaseUri).as(String.class).orElseThrow()),
+                additionalVars
+            );
+            this.databaseFile = Path.of(workingDirectory + "/" + dbName);
+            this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
+        }
+
         // outputFiles
-        if (this.outputFiles != null && !this.outputFiles.isEmpty()) {
+        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        if (!renderedOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
-                this.outputFiles,
+                renderedOutputFiles,
                 additionalVars
             );
         }
@@ -195,9 +198,16 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
                 .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
         }
 
+        //Create and output DB URI
+        URI dbUri = null;
+        if (Boolean.TRUE.equals(runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow())) {
+            dbUri = runContext.storage().putFile(new File(this.databaseFile.toUri()));
+        }
+
         return Output.builder()
             .outputs(run.getOutputs())
             .outputFiles(uploaded)
+            .databaseUri(dbUri)
             .build();
     }
 
@@ -209,5 +219,11 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
         )
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;
+
+        @Schema(
+            title = "The database output URI in Kestra's internal storage."
+        )
+        @PluginProperty
+        private final URI databaseUri;
     }
 }
