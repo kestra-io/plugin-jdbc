@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.sqlite;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
@@ -12,11 +13,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.net.URI;
@@ -43,7 +40,7 @@ import java.util.Properties;
             code = """
                 id: sqlite_query_using_file
                 namespace: company.team
-                
+
                 tasks:
                   - id: update
                     type: io.kestra.plugin.jdbc.sqlite.Queries
@@ -51,28 +48,26 @@ import java.util.Properties;
                     sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
                     sql: select * from pgsql_types
                     fetchType: FETCH
-                
+
                   - id: use_fetched_data
                     type: io.kestra.plugin.jdbc.sqlite.Queries
                     url: jdbc:sqlite:myfile.db
                     sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
                     sql: |
-                        {% for row in outputs.update.rows %} 
-                            INSERT INTO pl_store_distribute (year_month,store_code, update_date) 
-                            VALUES ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); 
+                        {% for row in outputs.update.rows %}
+                            INSERT INTO pl_store_distribute (year_month,store_code, update_date)
+                            VALUES ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') );
                         {% endfor %}"
                 """
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, SqliteQueryInterface {
 
-    @Schema(
-        title = "Add sqlite file.",
-        description = "The file must be from Kestra's internal storage"
-    )
-    @PluginProperty(dynamic = true)
     protected String sqliteFile;
+
+    @Builder.Default
+    protected Property<Boolean> outputDbFile = Property.of(false);
 
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;
@@ -80,24 +75,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
-
-        URI url = URI.create((String) properties.get("jdbc.url"));
-
-        // get file name from url scheme parts
-        String filename = url.getSchemeSpecificPart().split(":")[1];
-
-        Path path = runContext.workingDir().resolve(Path.of(filename));
-        if (path.toFile().exists()) {
-            url = URI.create(path.toString());
-
-            UriBuilder builder = UriBuilder.of(url);
-
-            builder.scheme("jdbc:sqlite");
-
-            properties.put("jdbc.url", builder.build().toString());
-        }
-
-        return properties;
+        return SqliteQueryUtils.buildSqliteProperties(properties, runContext);
     }
 
     @Override

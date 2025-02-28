@@ -23,7 +23,7 @@ import java.time.LocalTime;
 import java.util.Objects;
 import java.util.Properties;
 
-import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -85,7 +85,7 @@ public class SqliteTest extends AbstractRdbmsTest {
             .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sqliteFile(input.toString())
+            .sqliteFile(Property.of(input.toString()))
             .sql(Property.of("""
                 SELECT Genre.Name, COUNT(InvoiceLine.InvoiceLineId) AS TracksPurchased
                 FROM Genre
@@ -93,7 +93,7 @@ public class SqliteTest extends AbstractRdbmsTest {
                 JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId
                 GROUP BY Genre.Name
                 ORDER BY TracksPurchased DESC
-                 """))
+                """))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -102,6 +102,71 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRow().get("Name"), is("Rock"));
         assertThat(runOutput.getRow().get("TracksPurchased"), is(835));
+    }
+
+    @Test
+    void selectFromExistingDatabaseAndOutputDatabase() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
+
+        URI input = storageInterface.put(
+            null,
+            null,
+            new URI("/file/storage/get.yml"),
+            new FileInputStream(Objects.requireNonNull(resource).getFile())
+        );
+
+        //Fetch and check
+        Query task = Query.builder()
+            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sqliteFile(Property.of(input.toString()))
+            .sql(Property.of("""
+                SELECT * FROM Genre
+                """))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().size(), is(25));
+
+        //Update DB and output file
+        Query insert = Query.builder()
+            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(NONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sqliteFile(Property.of(input.toString()))
+            .outputDbFile(Property.of(true))
+            .sql(Property.of("""
+                INSERT INTO Genre (GenreId, Name) VALUES (26, 'TestInsert');
+                """))
+            .build();
+        Query.Output insertOutput = insert.run(runContext);
+
+        //Check DB size
+        //Update DB and output file
+        Query check = Query.builder()
+            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sqliteFile(Property.of(insertOutput.getDatabaseUri().toString()))
+            .sql(Property.of("""
+                SELECT * FROM Genre;
+                """))
+            .build();
+        AbstractJdbcQuery.Output checkOutput = check.run(runContext);
+        assertThat(checkOutput.getRows(), notNullValue());
+        assertThat(checkOutput.getRows().size(), is(26));
+        assertThat(checkOutput.getRows().stream().anyMatch(row -> row.get("Name").equals("TestInsert")), is(true));
     }
 
     @Test
