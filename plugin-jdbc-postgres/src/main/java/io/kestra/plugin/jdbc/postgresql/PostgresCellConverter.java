@@ -48,6 +48,8 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 PGInterval interval = (PGInterval) data;
                 // Returns an iso 8601 duration format
                 return getISO8601Interval(interval.getYears(), interval.getMonths(), interval.getDays(), interval.getHours(), interval.getMinutes(), (int) interval.getSeconds());
+            case "hstore":
+                return rs.getString(columnIndex);
         }
 
         Class<?> clazz = data.getClass();
