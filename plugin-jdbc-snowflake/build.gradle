@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("net.snowflake:snowflake-jdbc:3.21.0")
+    implementation("net.snowflake:snowflake-jdbc:3.23.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
