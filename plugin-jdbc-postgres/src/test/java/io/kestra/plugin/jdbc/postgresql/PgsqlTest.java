@@ -55,7 +55,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(Property.of(TestUtils.keyNoPass()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types"))
+            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -121,6 +121,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("jsonb_type"), is(Map.of("color", "blue", "value", "#0f0")));
         assertThat(row.get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
         assertThat(row.get("tsvector_col"), is("'brown':4 'dice':2 'dog':9 'fox':5 'fuzzi':1 'jump':6 'lazi':8 'quick':3"));
+        assertThat(row.get("hstore_type"), is(Map.of("foo", "bar", "hello", "world")));
     }
 
     @Test
@@ -138,7 +139,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(Property.of(TestUtils.keyNoPass()))
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types"))
+            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
