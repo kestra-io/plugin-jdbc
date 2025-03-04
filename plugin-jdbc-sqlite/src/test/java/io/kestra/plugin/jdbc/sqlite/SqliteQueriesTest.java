@@ -1,24 +1,25 @@
 package io.kestra.plugin.jdbc.sqlite;
 
+import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
+import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import org.junit.jupiter.api.Test;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
-import static io.kestra.core.models.tasks.common.FetchType.FETCH;
-import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -158,6 +159,59 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
         assertThat(verifyOutput.getOutputs().size(), is(1));
         assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
+    }
+
+    @Test
+    void selectFromExistingDatabaseAndOutputDatabase() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
+
+        URI input = storageInterface.put(
+            null,
+            null,
+            new URI("/file/storage/get.yml"),
+            new FileInputStream(Objects.requireNonNull(resource).getFile())
+        );
+
+        //Fetch and insert data, output dbFile, check size of outputs
+        Queries task = Queries.builder()
+            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sqliteFile(Property.of(input.toString()))
+            .outputDbFile(Property.of(true))
+            .sql(Property.of("""
+                SELECT * FROM Genre;
+                INSERT INTO Genre (GenreId, Name) VALUES (26, 'TestInsert');
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs().size(), is(1));
+        assertThat(runOutput.getOutputs().getFirst(), notNullValue());
+        assertThat(runOutput.getOutputs().getFirst().getRows().size(), is(25));
+
+        //Check DB size
+        //Update DB and output file
+        Queries check = Queries.builder()
+            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sqliteFile(Property.of(runOutput.getDatabaseUri().toString()))
+            .sql(Property.of("""
+                SELECT * FROM Genre;
+                """))
+            .build();
+        Queries.Output checkOutput = check.run(runContext);
+        assertThat(checkOutput.getOutputs().getFirst().getRows(), notNullValue());
+        assertThat(checkOutput.getOutputs().getFirst().getRows().size(), is(26));
+        assertThat(checkOutput.getOutputs().getFirst().getRows().stream().anyMatch(row -> row.get("Name").equals("TestInsert")), is(true));
     }
 
     @Override

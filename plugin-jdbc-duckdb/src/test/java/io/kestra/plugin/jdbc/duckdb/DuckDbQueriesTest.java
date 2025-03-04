@@ -25,6 +25,7 @@ import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getCsvSourceUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -33,7 +34,7 @@ import static org.hamcrest.Matchers.*;
  * - https://duckdb.org/docs/sql/data_types/overview
  */
 @KestraTest
-public class DuckDbQueriesTest {
+class DuckDbQueriesTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -126,7 +127,7 @@ public class DuckDbQueriesTest {
         Queries.QueriesBuilder<?, ?> builder = Queries.builder()
             .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(List.of("out"))
+            .outputFiles(Property.of(List.of("out")))
             .fetchType(Property.of(FETCH_ONE))
             .sql(new Property<>("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
@@ -164,5 +165,54 @@ public class DuckDbQueriesTest {
                 "946749,Browsebug\n"
             )
         );
+    }
+
+
+    @Test
+    void testQueriesWithInputAndOutputDb() throws Exception {
+        URI source = getCsvSourceUri(storageInterface);
+
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        final long testId = 4814976L;
+        final String expectedName = "Viva";
+
+        var createTableAndFetchData = Queries.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .fetchType(Property.of(FETCH))
+            .sql(new Property<>("""
+                CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
+                SELECT * FROM new_tbl;
+                """)
+            )
+            .outputDbFile(Property.of(true))
+            .build()
+            .run(runContext);
+
+        assertThat(createTableAndFetchData.getOutputs().getFirst().getRows().size(), is(10));
+        assertThat(createTableAndFetchData.getOutputs().getFirst().getRows().stream()
+            .filter(row -> (long) row.get("id") == testId)
+            .findFirst()
+            .orElseThrow()
+            .get("name"), is(expectedName));
+
+        var updateTableAndFetchData = Queries.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .fetchType(Property.of(FETCH))
+            .sql(new Property<>(
+                "UPDATE new_tbl SET name = 'TestUser' WHERE name = '" + expectedName + "'; \n" +
+                "SELECT * FROM new_tbl;")
+            )
+            .databaseUri(Property.of(createTableAndFetchData.getDatabaseUri().toString()))
+            .build()
+            .run(runContext);
+
+        assertThat(updateTableAndFetchData.getOutputs().getFirst().getRows().size(), is(10));
+        assertThat(updateTableAndFetchData.getOutputs().getFirst().getRows().stream()
+            .filter(row -> (long) row.get("id") == testId)
+            .findFirst()
+            .orElseThrow()
+            .get("name"), is("TestUser"));
     }
 }
