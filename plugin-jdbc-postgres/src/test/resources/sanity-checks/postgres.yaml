@@ -1,4 +1,4 @@
-id: dlt_to_postgres
+id: postgres
 namespace: sanitychecks
 
 variables:
@@ -55,6 +55,13 @@ tasks:
     sql: SELECT * FROM sanitychecks.test;
     fetchType: FETCH
 
+  - id: queries
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM sanitychecks.test;
+      SELECT * FROM sanitychecks.test LIMIT 1;
+
 
   - id: copyout
     type: io.kestra.plugin.jdbc.postgresql.CopyOut
@@ -70,6 +77,8 @@ tasks:
       - "{{ outputs.copyin.rowCount == 3}}"
       - "{{ outputs.query.rows[0].field1 == 1 }}"
       - "{{ outputs.query.rows[1].field2 == 4 }}"
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 1 }}"
       - "{{ outputs.copyout.rowCount == 2}}"
 
 finally:
