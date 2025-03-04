@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS hstore;
+
 DROP TABLE IF EXISTS pl_store_distribute;
 
 CREATE TABLE pl_store_distribute
@@ -53,7 +55,8 @@ CREATE TABLE pgsql_types (
  jsonb_type JSONB not null,
  item inventory_item not null,
  blob_type bytea not null,
- tsvector_col TSVECTOR not null
+ tsvector_col TSVECTOR not null,
+ hstore_type HSTORE not null
 );
 
 
@@ -84,7 +87,8 @@ INSERT INTO pgsql_types
              jsonb_type,
              item,
              blob_type,
-             tsvector_col)
+             tsvector_col,
+             hstore_type)
 VALUES     ( DEFAULT,
              true,
              'four',
@@ -110,7 +114,8 @@ VALUES     ( DEFAULT,
              '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
              '\xDEADBEEF',
-              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'));
+              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'),
+              'foo=>"bar", hello=>"world"');
 
 
 -- Insert
@@ -140,7 +145,8 @@ INSERT INTO pgsql_types
              jsonb_type,
              item,
              blob_type,
-             tsvector_col)
+             tsvector_col,
+             hstore_type)
 VALUES     ( DEFAULT,
              true,
              'four',
@@ -166,4 +172,5 @@ VALUES     ( DEFAULT,
              '{"color":"blue","value":"#0f0"}',
              Row('fuzzy dice', 42, 1.99),
              '\xDEADBEEF',
-              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'));
+              to_tsvector('english', 'fuzzy dice quick brown fox jumps over lazy dog'),
+              'foo=>"bar", hello=>"world"');
