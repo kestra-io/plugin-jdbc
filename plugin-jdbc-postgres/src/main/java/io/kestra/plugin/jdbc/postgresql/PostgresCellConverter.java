@@ -7,6 +7,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import org.postgresql.jdbc.PgArray;
 import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
+import org.postgresql.util.HStoreConverter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -15,6 +16,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Map;
 
 public class PostgresCellConverter extends AbstractCellConverter {
     public PostgresCellConverter(ZoneId zoneId) {
@@ -48,6 +50,10 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 PGInterval interval = (PGInterval) data;
                 // Returns an iso 8601 duration format
                 return getISO8601Interval(interval.getYears(), interval.getMonths(), interval.getDays(), interval.getHours(), interval.getMinutes(), (int) interval.getSeconds());
+            case "hstore":
+                // Convert hstore to a Map<String, String>
+                Map<String, String> hstoreMap = HStoreConverter.fromString(rs.getString(columnIndex));
+                return hstoreMap;
         }
 
         Class<?> clazz = data.getClass();
