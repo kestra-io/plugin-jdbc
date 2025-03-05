@@ -70,6 +70,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .username(Property.of(getUsername()))
             .password(Property.of(getPassword()))
             .from(Property.of(uri.toString()))
+            .chunk(Property.of(1))
             .sql(Property.of("""
                  INSERT INTO mysql_types (
                     concert_id,
