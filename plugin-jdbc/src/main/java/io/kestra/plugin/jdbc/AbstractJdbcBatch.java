@@ -82,6 +82,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
         AtomicLong count = new AtomicLong();
+        AtomicLong queryCount = new AtomicLong();
 
         AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId(runContext));
 
@@ -118,14 +119,16 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                     }
                     int[] updatedRows = ps.executeBatch();
                     connection.commit();
+                    queryCount.incrementAndGet();
                     return Arrays.stream(updatedRows).sum();
                 }))
                 .reduce(Integer::sum).block();
 
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
+            runContext.metric(Counter.of("query", queryCount.get()));
 
-            logger.info("Successfully executed {} bulk queries and updated {} rows", count.get(), updated);
+            logger.info("Successfully executed {} bulk queries and updated {} rows", queryCount.get(), updated);
 
             return Output
                 .builder()
