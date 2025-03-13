@@ -68,7 +68,7 @@ subprojects {
         //Logs
         constraints {
             // Forced dependencies
-            api("org.slf4j:slf4j-api:2.0.16")
+            api("org.slf4j:slf4j-api:2.0.17")
         }
     }
 }
