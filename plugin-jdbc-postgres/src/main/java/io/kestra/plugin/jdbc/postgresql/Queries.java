@@ -45,6 +45,33 @@ import java.util.Properties;
                       SELECT brand FROM laptop;
                     fetchType: FETCH
                 """
+        ),
+        @Example(
+            full = true,
+            title = "Use Postgres Queries to run multiple queries",
+            code = """
+                id: postgres_queries
+                namespace: company.team
+                
+                tasks:
+                  - id: init_products
+                    type: io.kestra.plugin.jdbc.postgresql.Queries
+                    url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
+                    sql: |
+                      CREATE TABLE IF NOT EXISTS products(
+                        product_id SERIAL PRIMARY KEY,
+                        product_name varchar(100),
+                        product_category varchar(50),
+                        brand varchar(50)
+                      );
+                      INSERT INTO products VALUES(1, 'streamline turn-key systems','Electronics','gomez') ON CONFLICT (product_id) DO NOTHING;
+                      INSERT INTO products VALUES(2, 'morph viral applications','Household','wolfe') ON CONFLICT (product_id) DO NOTHING;
+                      INSERT INTO products VALUES(3, 'expedite front-end schemas','Household','davis-martinez') ON CONFLICT (product_id) DO NOTHING;
+                      INSERT INTO products VALUES(4, 'syndicate robust ROI','Outdoor','ruiz-price') ON CONFLICT (product_id) DO NOTHING;
+                    fetchType: NONE
+            """
         )
     }
 )
