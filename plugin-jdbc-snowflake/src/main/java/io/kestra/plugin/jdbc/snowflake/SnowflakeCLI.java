@@ -96,7 +96,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     protected Property<List<String>> beforeCommands;
 
     @Schema(
-        title = "The commands to run."
+        title = "The commands to run. Please refer to SnowflakeCLI documentation https://docs.snowflake.com/en/developer-guide/snowflake-cli/command-reference/overview"
     )
     @NotNull
     protected Property<List<String>> commands;
