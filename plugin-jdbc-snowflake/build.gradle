@@ -16,5 +16,8 @@ dependencies {
     implementation("net.snowflake:snowflake-jdbc:3.21.0")
     implementation project(':plugin-jdbc')
 
+    compileOnly group: "io.kestra", name: "script", version: kestraVersion
+
+    testImplementation group: "io.kestra", name: "script", version: kestraVersion
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }
