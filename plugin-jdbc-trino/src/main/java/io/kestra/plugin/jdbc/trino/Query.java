@@ -30,7 +30,7 @@ import java.time.ZoneId;
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results to pass it to downstream tasks.",
+            title = "Generate a CSV file report from a SQL query using Trino",
             code = """
                    id: trino_query
                    namespace: company.team
