@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("com.microsoft.sqlserver:mssql-jdbc:12.9.0.jre11-preview")
+    implementation("com.microsoft.sqlserver:mssql-jdbc:12.10.0.jre11")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
