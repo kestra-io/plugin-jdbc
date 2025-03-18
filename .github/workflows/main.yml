@@ -1,5 +1,7 @@
 name: Main
-
+permissions:
+  contents: read
+  pull-requests: write
 on:
   schedule:
     - cron: '0 4 * * 1,2,3,4,5'
@@ -30,6 +32,7 @@ on:
 
 jobs:
   check:
+    runs-on: 'self-hosted'
     uses: kestra-io/actions/.github/workflows/plugins.yml@main
     with:
       skip-test: ${{ github.event.inputs.skip-test == 'true' }}
