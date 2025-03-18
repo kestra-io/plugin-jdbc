@@ -57,12 +57,12 @@ import jakarta.validation.constraints.NotNull;
             code = """
                 id: postgres_copyin
                 namespace: company.team
-                
+
                 tasks:
                   - id: download_products
                     type: io.kestra.plugin.core.http.Download
                     uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
-                
+
                   - id: create_products_table
                     type: io.kestra.plugin.jdbc.postgresql.Query
                     url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
@@ -75,7 +75,7 @@ import jakarta.validation.constraints.NotNull;
                         product_category varchar(50),
                         brand varchar(50)
                       );
-                
+
                   - id: copyin_products
                     type: io.kestra.plugin.jdbc.postgresql.CopyIn
                     url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
@@ -95,6 +95,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI."
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Override

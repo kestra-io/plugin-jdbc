@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
@@ -42,6 +43,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @NotNull
