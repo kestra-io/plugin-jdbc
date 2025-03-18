@@ -1,7 +1,4 @@
 name: Main
-permissions:
-  contents: read
-  pull-requests: write
 on:
   schedule:
     - cron: '0 4 * * 1,2,3,4,5'
