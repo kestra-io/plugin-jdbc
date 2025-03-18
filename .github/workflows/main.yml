@@ -32,8 +32,8 @@ on:
 
 jobs:
   check:
-    runs-on: 'self-hosted'
     uses: kestra-io/actions/.github/workflows/plugins.yml@main
     with:
+      runner: 'self-hosted'
       skip-test: ${{ github.event.inputs.skip-test == 'true' }}
     secrets: inherit
