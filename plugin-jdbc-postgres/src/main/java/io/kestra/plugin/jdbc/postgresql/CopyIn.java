@@ -95,7 +95,6 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI."
     )
-    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Override

@@ -43,7 +43,6 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
-    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @NotNull
