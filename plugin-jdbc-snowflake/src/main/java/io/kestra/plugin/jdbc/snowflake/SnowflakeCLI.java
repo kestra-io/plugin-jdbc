@@ -37,7 +37,7 @@ import java.util.stream.Stream;
                     id: snowflake
                     namespace: company.team
                     tasks:
-                      - id: list_stage_files
+                      - id: log_info_and_connection_status
                         type: io.kestra.plugin.jdbc.snowflake.SnowflakeCLI
                         account: snowflake_account
                         username: snowflake_username
@@ -89,11 +89,6 @@ import java.util.stream.Stream;
 public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, NamespaceFilesInterface, InputFilesInterface, OutputFilesInterface {
 
     public static final String DEFAULT_IMAGE = "ghcr.io/kestra-io/snowflake-cli";
-
-    @Schema(
-        title = "The commands to run before main list of commands."
-    )
-    protected Property<List<String>> beforeCommands;
 
     @Schema(
         title = "The commands to run. Please refer to SnowflakeCLI documentation https://docs.snowflake.com/en/developer-guide/snowflake-cli/command-reference/overview"
@@ -166,7 +161,6 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
             .withInputFiles(inputFiles)
             .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
             .withInterpreter(Property.of(List.of("/bin/sh", "-c")))
-            .withBeforeCommands(this.beforeCommands)
             .withCommands(
                 Property.of(
                     Stream.concat(
