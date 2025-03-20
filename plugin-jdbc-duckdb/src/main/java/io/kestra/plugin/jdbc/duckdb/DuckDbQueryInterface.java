@@ -10,7 +10,7 @@ public interface DuckDbQueryInterface {
     @Schema(
         title = "Input files to be loaded from DuckDb.",
         description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{ workingDir }}/myfile.csv');` "
+            "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` "
     )
     @PluginProperty(
         additionalProperties = String.class,
