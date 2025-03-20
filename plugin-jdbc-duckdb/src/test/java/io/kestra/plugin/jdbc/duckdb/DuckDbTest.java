@@ -422,7 +422,7 @@ class DuckDbTest {
             .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(Property.of(List.of("out")))
-            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);"))
+            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
             .outputDbFile(Property.of(true))
             .build()
             .run(runContext);
