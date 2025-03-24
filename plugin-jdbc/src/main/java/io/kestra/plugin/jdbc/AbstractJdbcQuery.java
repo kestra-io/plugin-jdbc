@@ -40,6 +40,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
         ) {
             if (this instanceof AutoCommitInterface autoCommitClass) {
+                // TODO remove all of these conditions when deleting the deprecated property
                 if (this.renderFetchType(runContext).equals(FetchType.STORE)) {
                     conn.setAutoCommit(false);
                 } else {
