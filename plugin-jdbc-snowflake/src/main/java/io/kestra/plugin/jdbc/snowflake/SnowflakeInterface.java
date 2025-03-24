@@ -1,11 +1,15 @@
 package io.kestra.plugin.jdbc.snowflake;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
 import java.util.Properties;
 
 public interface SnowflakeInterface {
@@ -50,7 +54,7 @@ public interface SnowflakeInterface {
         title = "Specifies the private key file password for key pair authentication and key rotation.")
     Property<String> getPrivateKeyFilePassword();
 
-    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
+    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException, NoSuchAlgorithmException, InvalidKeySpecException {
         if (this.getWarehouse() != null) {
             properties.put("warehouse", runContext.render(this.getWarehouse()).as(String.class).orElseThrow());
         }
@@ -71,7 +75,11 @@ public interface SnowflakeInterface {
             if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
                 throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
             }
-            properties.put("privateKey", runContext.render(this.getPrivateKey()).as(String.class).orElseThrow());
+            var privateKeyBase64 = runContext.render(this.getPrivateKey()).as(String.class).orElseThrow();
+            var privateKeyBytes = Base64.getDecoder().decode(privateKeyBase64.getBytes());
+            var spec = new PKCS8EncodedKeySpec(privateKeyBytes);
+            var keyFactory = KeyFactory.getInstance("RSA");
+            properties.put("privateKey", keyFactory.generatePrivate(spec));
         }
 
         if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
