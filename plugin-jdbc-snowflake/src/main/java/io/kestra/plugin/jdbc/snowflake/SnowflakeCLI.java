@@ -111,8 +111,19 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     @Schema(
         title = "The password to use for authentication."
     )
-    @NotNull
     protected Property<String> password;
+
+    @Schema(
+        title = "The private key file for key pair authentication and key rotation for authentication.",
+        description = "It needs to be the path on the host where the private key file is located."
+    )
+    protected Property<String> privateKeyPath;
+
+    @Schema(
+        title = "The private key file for key pair authentication and key rotation for authentication/",
+        description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='"
+    )
+    protected Property<String> privateKey;
 
     @Schema(
         title = "Additional environment variables for the current process."
@@ -148,9 +159,32 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
         var envVarsWithDefaultAuthentication = Optional.ofNullable(env).orElse(new HashMap<>());
         envVarsWithDefaultAuthentication.putAll(Map.of(
             "SNOWFLAKE_ACCOUNT", runContext.render(this.account).as(String.class).orElseThrow(),
-            "SNOWFLAKE_USER", runContext.render(this.username).as(String.class).orElseThrow(),
-            "SNOWFLAKE_PASSWORD", runContext.render(this.password).as(String.class).orElseThrow()
+            "SNOWFLAKE_USER", runContext.render(this.username).as(String.class).orElseThrow()
+
         ));
+        if (this.password != null) {
+            envVarsWithDefaultAuthentication.putAll(Map.of(
+                "SNOWFLAKE_PASSWORD", runContext.render(this.password).as(String.class).orElseThrow()
+            ));
+        }
+        if (this.privateKeyPath != null) {
+            envVarsWithDefaultAuthentication.putAll(Map.of(
+                "SNOWFLAKE_AUTHENTICATOR", "SNOWFLAKE_JWT",
+                "SNOWFLAKE_PRIVATE_KEY_PATH", runContext.render(this.privateKeyPath).as(String.class).orElseThrow()
+            ));
+        }
+        if (this.privateKey != null) {
+            var tempPrivateKeyFile = runContext
+                .workingDir().createTempFile(
+                    formatPrivateKeyToPEM(
+                        runContext.render(this.privateKey).as(String.class).orElseThrow()
+                    ).getBytes()
+                );
+            envVarsWithDefaultAuthentication.putAll(Map.of(
+                "SNOWFLAKE_AUTHENTICATOR", "SNOWFLAKE_JWT",
+                "SNOWFLAKE_PRIVATE_KEY_PATH", tempPrivateKeyFile.toAbsolutePath().toString()
+            ));
+        }
 
         return new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
@@ -172,5 +206,12 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
                 )
             )
             .run();
+    }
+
+    private String formatPrivateKeyToPEM(String privateKey) {
+        if(privateKey.contains("-----BEGIN")) {
+            return privateKey;
+        }
+        return "-----BEGIN PRIVATE KEY-----\n" + privateKey + "\n-----END PRIVATE KEY-----";
     }
 }
