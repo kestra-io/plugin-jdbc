@@ -42,7 +42,7 @@ public interface SnowflakeInterface {
 
     @Schema(
         title = "Specifies the private key for key pair authentication and key rotation.",
-        description = "It needs to be an un-encoded private key in plaintext.")
+        description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='")
     Property<String> getPrivateKey();
 
     @Schema(
