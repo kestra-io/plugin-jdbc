@@ -114,12 +114,6 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     protected Property<String> password;
 
     @Schema(
-        title = "The private key file for key pair authentication and key rotation for authentication.",
-        description = "It needs to be the path on the host where the private key file is located."
-    )
-    protected Property<String> privateKeyPath;
-
-    @Schema(
         title = "The private key file for key pair authentication and key rotation for authentication/",
         description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='"
     )
@@ -165,12 +159,6 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
         if (this.password != null) {
             envVarsWithDefaultAuthentication.putAll(Map.of(
                 "SNOWFLAKE_PASSWORD", runContext.render(this.password).as(String.class).orElseThrow()
-            ));
-        }
-        if (this.privateKeyPath != null) {
-            envVarsWithDefaultAuthentication.putAll(Map.of(
-                "SNOWFLAKE_AUTHENTICATOR", "SNOWFLAKE_JWT",
-                "SNOWFLAKE_PRIVATE_KEY_PATH", runContext.render(this.privateKeyPath).as(String.class).orElseThrow()
             ));
         }
         if (this.privateKey != null) {
