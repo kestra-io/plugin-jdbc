@@ -3,11 +3,15 @@ package io.kestra.plugin.jdbc.mysql;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.utils.IdUtils;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -17,6 +21,7 @@ import java.time.*;
 import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.STORE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -128,17 +133,20 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getSize(), equalTo(0L));
     }
 
-    @Test
-    void update() throws Exception {
+    @ParameterizedTest
+    @EnumSource(FetchType.class)
+    void update_storeTrue(FetchType fetchType) throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        final String randomString = IdUtils.create();
 
         Query taskUpdate = Query.builder()
             .url(Property.of(getUrl()))
             .username(Property.of(getUsername()))
             .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
+            .fetchType(Property.of(fetchType))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("update mysql_types set d = 'D'"))
+            .sql(Property.of(String.format("update mysql_types set c = '%s'", randomString)))
             .build();
 
         taskUpdate.run(runContext);
@@ -149,12 +157,12 @@ public class MysqlTest extends AbstractRdbmsTest {
             .password(Property.of(getPassword()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select d from mysql_types"))
+            .sql(Property.of("select c from mysql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
-        assertThat(runOutput.getRow().get("d"), is("D"));
+        assertThat(runOutput.getRow().get("c"), is(randomString));
     }
 
     @Test
