@@ -14,7 +14,9 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.math.BigDecimal;
@@ -33,6 +35,7 @@ import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getCsvSourceUri;
 import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getDatabaseFileSourceUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * See :
@@ -501,5 +504,27 @@ class DuckDbTest {
             .run(runContext);
 
         assertThat(result.getRows(), notNullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("incorrectUrl")
+    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(url)
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("SELECT array_value(1, 2, 3);"))
+            .build();
+
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    public static Stream<Arguments> incorrectUrl() {
+        return Stream.of(
+            Arguments.of(new Property<>("")), //Empty URL
+            Arguments.of("jdbc:postgresql://127.0.0.1:64790/kestra") //Incorrect scheme
+        );
     }
 }

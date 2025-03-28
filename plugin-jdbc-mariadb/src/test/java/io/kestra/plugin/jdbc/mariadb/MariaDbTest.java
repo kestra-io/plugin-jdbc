@@ -8,6 +8,10 @@ import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
@@ -15,10 +19,12 @@ import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.*;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * See : https://dev.mariadb.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
@@ -174,6 +180,31 @@ public class MariaDbTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow(), notNullValue());
 
         assertThat(runOutput.getRow().get("concert_id"), is("1"));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @MethodSource("incorrectUrl")
+    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(url)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select d from mariadb_types;"))
+            .build();
+
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    public static Stream<Arguments> incorrectUrl() {
+        return Stream.of(
+            Arguments.of(new Property<>("")), //Empty URL
+            Arguments.of("jdbc:postgresql://127.0.0.1:64790/kestra") //Incorrect scheme
+        );
     }
 
     @Override

@@ -52,7 +52,7 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements Db2ConnectionInterface {
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {

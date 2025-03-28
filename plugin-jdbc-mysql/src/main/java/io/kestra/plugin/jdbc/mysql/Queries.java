@@ -62,7 +62,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, MySqlConnectionInterface {
 
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
@@ -86,7 +86,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return MysqlUtils.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, true);
+        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
     }
 
     @Override

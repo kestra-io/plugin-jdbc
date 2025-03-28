@@ -46,7 +46,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, Db2ConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
@@ -61,6 +61,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return super.connectionProperties(runContext, "jdbc:db2");
+        return super.connectionProperties(runContext, this.getScheme());
     }
 }

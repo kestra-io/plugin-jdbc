@@ -55,7 +55,7 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements DremioConnectionInterface {
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         var query = Query.builder()

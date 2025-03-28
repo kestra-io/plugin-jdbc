@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
-public class JdbcTriggerTest {
+class JdbcTriggerTest {
     @Inject
     protected RunContextFactory runContextFactory;
 
@@ -36,6 +36,9 @@ public class JdbcTriggerTest {
     public static class DoNothingTrigger extends AbstractJdbcTrigger {
         @Override
         public void registerDriver() {}
+
+        @Override
+        public String getScheme() { return null; }
 
         @Override
         protected AbstractJdbcQuery.Output runQuery(RunContext runContext) {

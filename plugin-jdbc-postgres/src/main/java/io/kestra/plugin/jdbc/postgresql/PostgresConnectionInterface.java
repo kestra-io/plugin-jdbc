@@ -46,4 +46,9 @@ public interface PostgresConnectionInterface extends JdbcConnectionInterface {
         VERIFY_CA,
         VERIFY_FULL
     }
+
+    @Override
+    default String getScheme() {
+        return "jdbc:postgresql";
+    }
 }

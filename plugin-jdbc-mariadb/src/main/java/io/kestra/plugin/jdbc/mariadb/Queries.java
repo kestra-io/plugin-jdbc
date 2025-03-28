@@ -63,7 +63,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, MariaDbConnectionInterface {
 
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",

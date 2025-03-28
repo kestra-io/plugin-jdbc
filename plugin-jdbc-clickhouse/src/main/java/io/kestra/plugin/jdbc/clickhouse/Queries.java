@@ -29,7 +29,7 @@ import java.time.ZoneId;
             code = """
                 id: clickhouse_queries
                 namespace: company.team
-                
+
                 tasks:
                   - id: queries
                     type: io.kestra.plugin.jdbc.clickhouse.Queries
@@ -42,7 +42,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, ClickhouseConnectionInterface {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

@@ -82,5 +82,4 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new org.postgresql.Driver());
     }
-
 }

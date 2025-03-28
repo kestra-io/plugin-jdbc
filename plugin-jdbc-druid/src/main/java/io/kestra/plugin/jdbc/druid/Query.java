@@ -32,7 +32,7 @@ import java.time.ZoneId;
             code = """
                 id: druid_query
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.druid.Query
@@ -45,7 +45,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, DruidConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DruidCellConverter(zoneId);

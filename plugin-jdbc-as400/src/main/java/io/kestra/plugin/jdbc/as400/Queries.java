@@ -37,7 +37,7 @@ import java.util.Properties;
             code = """
                 id: as400_queries
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.as400.Queries
@@ -50,7 +50,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, As400ConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new As400CellConverter(zoneId);
