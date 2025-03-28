@@ -53,14 +53,7 @@ public interface JdbcConnectionInterface {
 
         //Check if URL is empty
         if (StringUtils.isBlank(url)) {
-            throw new IllegalVariableEvaluationException("Rendered value of `url` is blank.");
-        }
-
-        //Valid if url is a valid URL using class URI validation
-        try {
-            new URI(url);
-        } catch (URISyntaxException e) {
-            throw new IllegalVariableEvaluationException("Rendered value of `url` is not a  valid URL. Value :  " + url, e);
+            throw new IllegalArgumentException("Rendered value of `url` is blank.");
         }
 
         //Validate JDBC scheme
