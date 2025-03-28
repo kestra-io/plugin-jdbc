@@ -54,7 +54,7 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements MariaDbConnectionInterface {
 
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;

@@ -52,12 +52,12 @@ import java.time.ZoneId;
             code = """
                 id: query_clickhouse
                 namespace: company.team
-                
+
                 tasks:
                   - id: create_database
                     type: io.kestra.plugin.jdbc.clickhouse.Query
                     sql: CREATE DATABASE IF NOT EXISTS helloworld
-                
+
                   - id: create_table
                     type: io.kestra.plugin.jdbc.clickhouse.Query
                     sql: |
@@ -70,7 +70,7 @@ import java.time.ZoneId;
                       )
                       ENGINE = MergeTree()
                       PRIMARY KEY (user_id, timestamp)
-                
+
                   - id: insert_data
                     type: io.kestra.plugin.jdbc.clickhouse.Query
                     sql: |
@@ -80,12 +80,12 @@ import java.time.ZoneId;
                           (102, 'Insert a lot of rows per batch',                     yesterday(), 1.41421 ),
                           (102, 'Sort your data based on your commonly-used queries', today(),     2.718   ),
                           (101, 'Granules are the smallest chunks of data read',      now() + 5,   3.14159 )
-                
+
                   - id: query_and_store_as_json
                     type: io.kestra.plugin.jdbc.clickhouse.Query
                     sql: SELECT user_id, message FROM helloworld.my_first_table
                     fetchType: STORE
-                
+
                 pluginDefaults:
                   - type: io.kestra.plugin.jdbc.clickhouse.Query
                     values:
@@ -95,7 +95,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, ClickhouseConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
@@ -106,10 +106,5 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.clickhouse.jdbc.ClickHouseDriver());
-    }
-
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }

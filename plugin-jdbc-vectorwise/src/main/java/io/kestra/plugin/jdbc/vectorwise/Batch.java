@@ -44,10 +44,10 @@ import java.time.ZoneId;
                          FROM xref
                          LIMIT 1500;
                        fetchType: STORE
-                     
+
                      - id: update
                        type: io.kestra.plugin.jdbc.vectorwise.Batch
-                       from: \"{{ outputs.query.uri }}"
+                       from: "{{ outputs.query.uri }}"
                        url: jdbc:vectorwise://prod:port/base
                        username: admin
                        password: admin_password
@@ -84,7 +84,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, VetorwiseConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new VectorwiseCellConverter(zoneId);

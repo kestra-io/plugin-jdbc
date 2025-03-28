@@ -45,7 +45,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, VerticaConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new VerticaCellConverter(zoneId);

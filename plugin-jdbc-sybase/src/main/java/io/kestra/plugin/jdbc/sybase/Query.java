@@ -49,7 +49,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, SybaseConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
@@ -61,10 +61,4 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.sybase.jdbc4.jdbc.SybDriver());
     }
-
-    @Override
-    public Properties connectionProperties(RunContext runContext) throws Exception {
-	    return super.connectionProperties(runContext);
-    }
-
 }

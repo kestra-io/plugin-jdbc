@@ -33,7 +33,7 @@ import java.util.Properties;
             code = """
                 id: mysql_batch
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.mysql.Query
@@ -45,7 +45,7 @@ import java.util.Properties;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.mysql.Batch
                     from: "{{ outputs.query.uri }}"
@@ -62,7 +62,7 @@ import java.util.Properties;
             code = """
                 id: mysql_batch
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.mysql.Query
@@ -74,7 +74,7 @@ import java.util.Properties;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.mysql.Batch
                     from: "{{ outputs.query.uri }}"
@@ -86,7 +86,7 @@ import java.util.Properties;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, MySqlConnectionInterface {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

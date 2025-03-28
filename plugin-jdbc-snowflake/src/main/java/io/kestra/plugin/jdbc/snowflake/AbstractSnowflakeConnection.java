@@ -3,7 +3,6 @@ package io.kestra.plugin.jdbc.snowflake;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,7 +18,7 @@ import java.util.Properties;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractSnowflakeConnection extends Task implements JdbcConnectionInterface, SnowflakeInterface {
+public abstract class AbstractSnowflakeConnection extends Task implements SnowflakeInterface {
     private Property<String> url;
     private Property<String> username;
     private Property<String> password;
@@ -34,7 +33,7 @@ public abstract class AbstractSnowflakeConnection extends Task implements JdbcCo
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        Properties properties = JdbcConnectionInterface.super.connectionProperties(runContext);
+        Properties properties = SnowflakeInterface.super.connectionProperties(runContext);
 
         this.renderProperties(runContext, properties);
 

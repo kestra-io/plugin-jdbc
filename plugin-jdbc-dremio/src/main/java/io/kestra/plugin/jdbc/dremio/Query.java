@@ -46,7 +46,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, DremioConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DremioCellConverter(zoneId);
@@ -55,10 +55,5 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.dremio.jdbc.Driver());
-    }
-
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }

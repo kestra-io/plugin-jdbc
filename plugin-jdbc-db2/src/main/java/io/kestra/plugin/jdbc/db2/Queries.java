@@ -47,7 +47,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, Db2ConnectionInterface {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -61,6 +61,6 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return super.connectionProperties(runContext, "jdbc:db2");
+        return super.connectionProperties(runContext, this.getScheme());
     }
 }

@@ -58,7 +58,7 @@ import java.time.ZoneId;
                 inputs:
                   - id: file
                     type: FILE
-                
+
                 tasks:
                   - id: bulk_insert
                     type: io.kestra.plugin.jdbc.clickhouse.BulkInsert
@@ -79,7 +79,7 @@ import java.time.ZoneId;
                 inputs:
                   - id: file
                     type: FILE
-                
+
                 tasks:
                   - id: bulk_insert
                     type: io.kestra.plugin.jdbc.clickhouse.BulkInsert
@@ -92,7 +92,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class BulkInsert extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class BulkInsert extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, ClickhouseConnectionInterface {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -102,10 +102,5 @@ public class BulkInsert extends AbstractJdbcBatch implements RunnableTask<Abstra
     @Override
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.clickhouse.jdbc.ClickHouseDriver());
-    }
-
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }
