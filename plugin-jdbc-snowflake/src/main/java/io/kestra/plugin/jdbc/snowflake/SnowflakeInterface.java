@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.snowflake;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.security.KeyFactory;
@@ -12,7 +13,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import java.util.Properties;
 
-public interface SnowflakeInterface {
+public interface SnowflakeInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Specifies the virtual warehouse to use once connected.",
         description = "The specified warehouse should be an existing warehouse for which the specified default role has privileges.\n" +
@@ -86,5 +87,10 @@ public interface SnowflakeInterface {
             properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()).as(String.class).orElseThrow());
             properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()).as(String.class).orElseThrow());
         }
+    }
+
+    @Override
+    default String getScheme() {
+        return "jdbc:snowflake";
     }
 }

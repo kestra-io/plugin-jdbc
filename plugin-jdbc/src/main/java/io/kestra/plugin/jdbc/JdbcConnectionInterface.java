@@ -7,11 +7,14 @@ import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+
 import jakarta.validation.constraints.NotNull;
+import org.apache.commons.lang3.StringUtils;
 
 
 public interface JdbcConnectionInterface {
@@ -37,6 +40,35 @@ public interface JdbcConnectionInterface {
      * @throws SQLException registerDrivers failed
      */
     void registerDriver() throws SQLException;
+
+    /**
+     * Validation of the URL based on the database.
+     * Default behavior is to render and check if the URL is empty and if it is a valid URL.
+     * @return the validated and rendered URL
+     * @throws IllegalVariableEvaluationException if there is a rendering issue.
+     * @throws IllegalArgumentException if the URL is not valid or empty.
+     */
+    default String validateUrl(RunContext runContext) throws IllegalVariableEvaluationException, IllegalArgumentException {
+        String url = runContext.render(this.getUrl()).as(String.class).orElse(null);
+
+        //Check if URL is empty
+        if (StringUtils.isBlank(url)) {
+            throw new IllegalArgumentException("Rendered value of `url` is blank.");
+        }
+
+        //Validate JDBC scheme
+        if (getScheme() != null && !url.startsWith(getScheme())) {
+            throw new IllegalArgumentException("URL scheme is invalid. URL should start with `" + getScheme() + "`");
+        }
+
+        return url;
+    }
+
+    /***
+     * Return the scheme associated to the JDBC driver for validation
+     * @return jdbc scheme (ex: `jdbc:postgresql`)
+     */
+    String getScheme();
 
     default Properties connectionProperties(RunContext runContext) throws Exception {
         return createConnectionProperties(runContext);
@@ -67,7 +99,7 @@ public interface JdbcConnectionInterface {
 
     private Properties createConnectionProperties(RunContext runContext) throws IllegalVariableEvaluationException {
         Properties props = new Properties();
-        props.put("jdbc.url", runContext.render(this.getUrl()).as(String.class).orElseThrow());
+        props.put("jdbc.url", validateUrl(runContext));
 
         if (this.getUsername() != null) {
             props.put("user", runContext.render(this.getUsername()).as(String.class).orElse(null));

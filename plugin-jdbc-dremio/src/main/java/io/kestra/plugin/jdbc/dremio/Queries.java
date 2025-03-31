@@ -39,13 +39,13 @@ import java.time.ZoneId;
                     url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
                     username: dremio_token
                     password: samplePersonalAccessToken
-                    sql: select * FROM source.database.table; select * FROM source.database.table; 
+                    sql: select * FROM source.database.table; select * FROM source.database.table;
                     fetchType: FETCH_ONE
                 """
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, DremioConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DremioCellConverter(zoneId);

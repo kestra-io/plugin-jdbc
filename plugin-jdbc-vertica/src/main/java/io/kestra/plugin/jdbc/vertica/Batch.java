@@ -32,7 +32,7 @@ import java.time.ZoneId;
             code = """
                    id: vertica_batch_query
                    namespace: company.team
-                   
+
                    tasks:
                      - id: query
                        type: io.kestra.plugin.jdbc.vertica.Query
@@ -45,7 +45,7 @@ import java.time.ZoneId;
                          LIMIT 1500;
                        fetchType: FETCH
                        fetchType: STORE
-                     
+
                      - id: update
                        type: io.kestra.plugin.jdbc.vertica.Batch
                        from: "{{ outputs.query.uri }}"
@@ -86,7 +86,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, VerticaConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new VerticaCellConverter(zoneId);

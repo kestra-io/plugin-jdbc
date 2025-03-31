@@ -81,7 +81,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, MySqlConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Schema(
@@ -106,7 +106,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return MysqlUtils.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
+        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
     }
 
     @Override

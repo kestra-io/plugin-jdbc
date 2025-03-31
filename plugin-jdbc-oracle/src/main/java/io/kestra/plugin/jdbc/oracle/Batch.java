@@ -44,7 +44,7 @@ import java.time.ZoneId;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.oracle.Batch
                     from: "{{ outputs.query.uri }}"
@@ -73,7 +73,7 @@ import java.time.ZoneId;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update
                     type: io.kestra.plugin.jdbc.oracle.Batch
                     from: "{{ outputs.query.uri }}"
@@ -85,7 +85,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, OracleConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new OracleCellConverter(zoneId);
