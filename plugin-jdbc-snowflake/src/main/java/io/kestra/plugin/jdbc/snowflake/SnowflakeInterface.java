@@ -6,12 +6,10 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
 import java.util.Properties;
+
 
 public interface SnowflakeInterface extends JdbcConnectionInterface {
     @Schema(
@@ -46,6 +44,11 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='")
     Property<String> getPrivateKey();
 
+
+    @Schema(
+        title = "Specifies the private key password for key pair authentication and key rotation.")
+    Property<String> getPrivateKeyPassword();
+
     @Schema(
         title = "Specifies the private key file for key pair authentication and key rotation.",
         description = "It needs to be the path on the host where the private key file is located.")
@@ -76,17 +79,19 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
             if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
                 throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
             }
-            var privateKeyBase64 = runContext.render(this.getPrivateKey()).as(String.class).orElseThrow();
-            var privateKeyBytes = Base64.getDecoder().decode(privateKeyBase64.getBytes());
-            var spec = new PKCS8EncodedKeySpec(privateKeyBytes);
-            var keyFactory = KeyFactory.getInstance("RSA");
-            properties.put("privateKey", keyFactory.generatePrivate(spec));
+
+            var unencryptedPrivateKey = RSAKeyPairUtils.deserializePrivateKey(
+                runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
+                runContext.render(this.getPrivateKeyPassword()).as(String.class)
+            );
+            properties.put("privateKey", unencryptedPrivateKey);
         }
 
         if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
             properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()).as(String.class).orElseThrow());
             properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()).as(String.class).orElseThrow());
         }
+
     }
 
     @Override
