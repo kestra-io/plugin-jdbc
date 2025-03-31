@@ -120,6 +120,11 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     protected Property<String> privateKey;
 
     @Schema(
+        title = "Specifies the private key password for key pair authentication and key rotation."
+    )
+    protected Property<String> privateKeyPassword;
+
+    @Schema(
         title = "Additional environment variables for the current process."
     )
     @PluginProperty(dynamic = true)
@@ -165,7 +170,12 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
             var tempPrivateKeyFile = runContext
                 .workingDir().createTempFile(
                     formatPrivateKeyToPEM(
-                        runContext.render(this.privateKey).as(String.class).orElseThrow()
+                        Base64.getEncoder().encodeToString(
+                            RSAKeyPairUtils.deserializePrivateKey(
+                                runContext.render(this.privateKey).as(String.class).orElseThrow(),
+                                runContext.render(this.privateKeyPassword).as(String.class)
+                            ).getEncoded()
+                        )
                     ).getBytes()
                 );
             envVarsWithDefaultAuthentication.putAll(Map.of(
@@ -197,7 +207,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     }
 
     private String formatPrivateKeyToPEM(String privateKey) {
-        if(privateKey.contains("-----BEGIN")) {
+        if (privateKey.contains("-----BEGIN")) {
             return privateKey;
         }
         return "-----BEGIN PRIVATE KEY-----\n" + privateKey + "\n-----END PRIVATE KEY-----";
