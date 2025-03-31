@@ -27,12 +27,12 @@ public class RSAKeyPairUtilsTest {
 
     @Test
     void passwordIsRequiredForEncryptedPrivateKey() {
-        var raisedException = assertThrows(IllegalArgumentException.class, () ->
+        var raisedException = assertThrows(RuntimeException.class, () ->
             RSAKeyPairUtils.deserializePrivateKey(
                 ENCRYPTED_PRIVATE_KEY,
                 Optional.empty()
             ));
-        assertThat(raisedException.getMessage(), containsString("password is required"));
+        assertThat(raisedException.getMessage(), containsString("Could not read private key"));
     }
 
     @Test

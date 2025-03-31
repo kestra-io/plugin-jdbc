@@ -19,15 +19,16 @@ public class RSAKeyPairUtils {
     public static PrivateKey deserializePrivateKey(String privateKey, Optional<String> privateKeyPassword) {
         Security.addProvider(new BouncyCastleProvider());
         var keyBytes = Base64.getDecoder().decode(privateKey);
-        try {
-            // Try unencrypted first
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-            return keyFactory.generatePrivate(keySpec);
-        } catch (IllegalArgumentException | NoSuchAlgorithmException | InvalidKeySpecException e) {
-            // Try encrypted
-            var password = privateKeyPassword.orElseThrow(() -> new IllegalArgumentException("Private key seems to be encrypted, password is required"));
-            return deserializeEncryptedPrivateKey(keyBytes, password);
+        if (privateKeyPassword.isPresent()) {
+            return deserializeEncryptedPrivateKey(keyBytes, privateKeyPassword.get());
+        } else {
+            try {
+                KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+                return keyFactory.generatePrivate(keySpec);
+            } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+                throw new RuntimeException("Could not read private key, err: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -42,8 +43,8 @@ public class RSAKeyPairUtils {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
             unencryptedPrivateKey = keyFactory.generatePrivate(keySpec);
         } catch (IOException | NoSuchProviderException | OperatorCreationException | PKCSException |
-                 NoSuchAlgorithmException | InvalidKeySpecException e2) {
-            throw new RuntimeException("Could not read private key: " + e2.getMessage(), e2);
+                 NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException("Could not read encrypted private key, err: " + e.getMessage(), e);
         }
         return unencryptedPrivateKey;
     }
