@@ -68,12 +68,10 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
-        var query = Query.builder()
+        var queryBuilder = Query.builder()
             .id(this.id)
             .type(Query.class.getName())
             .url(this.getUrl())
-            .username(this.getUsername())
-            .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
             .fetch(this.isFetch())
@@ -84,9 +82,21 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .additionalVars(this.additionalVars)
             .warehouse(this.getWarehouse())
             .database(this.getDatabase())
-            .parameters(this.getParameters())
-            .build();
-        return query.run(runContext);
+            .parameters(this.getParameters());
+
+        if (this.getUsername() != null) {
+            queryBuilder.username(this.getUsername());
+        }
+        if (this.getPassword() != null) {
+            queryBuilder.password(this.getPassword());
+        }
+        if(this.getPrivateKey() != null) {
+            queryBuilder.privateKey(this.getPrivateKey());
+        }
+        if(this.getPrivateKeyPassword() != null) {
+            queryBuilder.privateKeyPassword(this.getPrivateKeyPassword());
+        }
+        return queryBuilder.build().run(runContext);
     }
 
     @Override
