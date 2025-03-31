@@ -5,12 +5,20 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
+import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.Properties;
 
 public interface SnowflakeInterface extends JdbcConnectionInterface {
@@ -46,6 +54,11 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='")
     Property<String> getPrivateKey();
 
+
+    @Schema(
+        title = "Specifies the private key password for key pair authentication and key rotation.")
+    Property<String> getPrivateKeyPassword();
+
     @Schema(
         title = "Specifies the private key file for key pair authentication and key rotation.",
         description = "It needs to be the path on the host where the private key file is located.")
@@ -76,17 +89,51 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
             if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
                 throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
             }
-            var privateKeyBase64 = runContext.render(this.getPrivateKey()).as(String.class).orElseThrow();
-            var privateKeyBytes = Base64.getDecoder().decode(privateKeyBase64.getBytes());
-            var spec = new PKCS8EncodedKeySpec(privateKeyBytes);
-            var keyFactory = KeyFactory.getInstance("RSA");
-            properties.put("privateKey", keyFactory.generatePrivate(spec));
+
+            var unencryptedPrivateKey = deserializePrivateKey(
+                runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
+                runContext.render(this.getPrivateKeyPassword()).as(String.class)
+            );
+            properties.put("privateKey", unencryptedPrivateKey);
         }
 
         if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
             properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()).as(String.class).orElseThrow());
             properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()).as(String.class).orElseThrow());
         }
+
+    }
+
+    private PrivateKey deserializePrivateKey(String privateKey, Optional<String> privateKeyPassword) {
+        Security.addProvider(new BouncyCastleProvider());
+        var keyBytes = Base64.getDecoder().decode(privateKey);
+        try {
+            // Try unencrypted first
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+            return keyFactory.generatePrivate(keySpec);
+        } catch (IllegalArgumentException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            // Try encrypted
+            var password = privateKeyPassword.orElseThrow(() -> new IllegalArgumentException("Private key seems to be encrypted, password is required"));
+            return deserializeEncryptedPrivateKey(keyBytes, password);
+        }
+    }
+
+    private static PrivateKey deserializeEncryptedPrivateKey(byte[] keyBytes, String password) {
+        PrivateKey unencryptedPrivateKey;
+        try {
+            PKCS8EncryptedPrivateKeyInfo encryptedInfo = new PKCS8EncryptedPrivateKeyInfo(keyBytes);
+            InputDecryptorProvider decryptorProvider = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(password.toCharArray());
+            PrivateKeyInfo privateKeyInfo = encryptedInfo.decryptPrivateKeyInfo(decryptorProvider);
+
+            KeyFactory keyFactory = KeyFactory.getInstance(privateKeyInfo.getPrivateKeyAlgorithm().getAlgorithm().getId(), "BC");
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKeyInfo.getEncoded());
+            unencryptedPrivateKey = keyFactory.generatePrivate(keySpec);
+        } catch (IOException | NoSuchProviderException | OperatorCreationException | PKCSException |
+                 NoSuchAlgorithmException | InvalidKeySpecException e2) {
+            throw new RuntimeException("Could not read private key: " + e2.getMessage(), e2);
+        }
+        return unencryptedPrivateKey;
     }
 
     @Override

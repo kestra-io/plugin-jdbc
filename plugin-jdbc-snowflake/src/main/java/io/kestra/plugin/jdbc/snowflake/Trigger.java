@@ -58,6 +58,7 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
     private Property<String> privateKey;
+    private Property<String> privateKeyPassword;
     private Property<String> privateKeyFile;
     private Property<String> privateKeyFilePassword;
     private Property<String> database;
