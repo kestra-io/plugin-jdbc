@@ -50,6 +50,7 @@ import java.util.Properties;
 )
 public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, SnowflakeInterface {
     private Property<String> privateKey;
+    private Property<String> privateKeyPassword;
     private Property<String> privateKeyFile;
     private Property<String> privateKeyFilePassword;
     private Property<String> database;
