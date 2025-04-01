@@ -13,7 +13,7 @@ import static org.hamcrest.Matchers.is;
 @KestraTest(startRunner = true)
 class RunnerTest {
     @Test
-    @ExecuteFlow("sanity-checks/duck.yaml")
+    @ExecuteFlow("sanity-checks/all-duckdb.yaml")
     void duck(Execution execution) {
         assertThat(execution.getTaskRunList(), hasSize(7));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
