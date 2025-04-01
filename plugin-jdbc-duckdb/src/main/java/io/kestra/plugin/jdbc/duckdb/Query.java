@@ -43,7 +43,32 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
     examples = {
         @Example(
             full = true,
-            title = "Execute a query that reads a csv, and outputs another csv.",
+            title = "Query multiple CSV files from a ZIP file, include the filename in the result, and output both the final dataset in ION format and the DuckDB database file.",
+            code = """
+                id: query_multiple_csv_files
+                namespace: company.team
+
+                tasks:
+                  - id: get_zip_file
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://huggingface.co/datasets/kestra/datasets/resolve/main/zip/2023-01.zip
+
+                  - id: unzip
+                    type: io.kestra.plugin.compress.ArchiveDecompress
+                    algorithm: ZIP
+                    from: "{{outputs.get_zip_file.uri}}"
+
+                  - id: duckdb
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    inputFiles: "{{outputs.unzip.files}}"
+                    sql: SELECT * FROM read_csv_auto('**/*-outcomes.csv', union_by_name=true, filename=true);
+                    store: true  # output data in ION format
+                    outputDbFile: true  # output the DuckDB database file
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Execute a query that reads a CSV file, and outputs another CSV file.",
             code = """
                 id: query_duckdb
                 namespace: company.team
@@ -58,11 +83,11 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: 'jdbc:duckdb:'
                     timeZoneId: Europe/Paris
                     sql: |-
-                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);
+                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('data.csv', header=True);
 
                       COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
                     inputFiles:
-                      in.csv: "{{ outputs.http_download.uri }}"
+                      data.csv: "{{ outputs.http_download.uri }}"
                     outputFiles:
                        - out
                 """
