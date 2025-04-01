@@ -1,5 +1,5 @@
-id: duckdb
-namespace: sanitychecks
+id: all_duckdb
+namespace: sanitychecks.plugin-jdbc
 
 tasks:
   - id: http_download
