@@ -6,8 +6,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.security.*;
-import java.security.spec.InvalidKeySpecException;
 import java.util.Properties;
 
 
@@ -49,16 +47,19 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         title = "Specifies the private key password for key pair authentication and key rotation.")
     Property<String> getPrivateKeyPassword();
 
-    @Schema(
-        title = "Specifies the private key file for key pair authentication and key rotation.",
-        description = "It needs to be the path on the host where the private key file is located.")
-    Property<String> getPrivateKeyFile();
+    /**
+     * @deprecated use {@link #getPrivateKey()} instead
+     */
+    @Deprecated(since = "0.23.0", forRemoval = true)
+    default void setPrivateKeyFile(Property<String> file){};
 
-    @Schema(
-        title = "Specifies the private key file password for key pair authentication and key rotation.")
-    Property<String> getPrivateKeyFilePassword();
+    /**
+     * @deprecated use {@link #getPrivateKeyPassword()} instead
+     */
+    @Deprecated(since = "0.23.0", forRemoval = true)
+    default void setPrivateKeyFilePassword(Property<String> pwd){};
 
-    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException, NoSuchAlgorithmException, InvalidKeySpecException {
+    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
         if (this.getWarehouse() != null) {
             properties.put("warehouse", runContext.render(this.getWarehouse()).as(String.class).orElseThrow());
         }
@@ -76,22 +77,12 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         }
 
         if (this.getPrivateKey() != null) {
-            if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
-                throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
-            }
-
             var unencryptedPrivateKey = RSAKeyPairUtils.deserializePrivateKey(
                 runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
                 runContext.render(this.getPrivateKeyPassword()).as(String.class)
             );
             properties.put("privateKey", unencryptedPrivateKey);
         }
-
-        if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
-            properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()).as(String.class).orElseThrow());
-            properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()).as(String.class).orElseThrow());
-        }
-
     }
 
     @Override

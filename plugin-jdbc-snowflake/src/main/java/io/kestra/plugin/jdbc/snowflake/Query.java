@@ -61,8 +61,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     private Property<String> privateKey;
     private Property<String> privateKeyPassword;
-    private Property<String> privateKeyFile;
-    private Property<String> privateKeyFilePassword;
     private Property<String> database;
     private Property<String> warehouse;
     private Property<String> schema;
