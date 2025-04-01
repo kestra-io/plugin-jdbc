@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
@@ -42,6 +43,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
+    @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @NotNull
@@ -82,6 +84,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
         AtomicLong count = new AtomicLong();
+        AtomicLong queryCount = new AtomicLong();
 
         AbstractCellConverter cellConverter = this.getCellConverter(this.zoneId(runContext));
 
@@ -118,14 +121,16 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                     }
                     int[] updatedRows = ps.executeBatch();
                     connection.commit();
+                    queryCount.incrementAndGet();
                     return Arrays.stream(updatedRows).sum();
                 }))
                 .reduce(Integer::sum).block();
 
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
+            runContext.metric(Counter.of("query", queryCount.get()));
 
-            logger.info("Successfully executed {} bulk queries and updated {} rows", count.get(), updated);
+            logger.info("Successfully executed {} bulk queries and updated {} rows", queryCount.get(), updated);
 
             return Output
                 .builder()

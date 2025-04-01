@@ -5,13 +5,10 @@ import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.*;
 import java.time.*;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.TimeZone;
-import java.util.UUID;
 
 public class MysqlCellConverter extends AbstractCellConverter {
     public MysqlCellConverter(ZoneId zoneId) {

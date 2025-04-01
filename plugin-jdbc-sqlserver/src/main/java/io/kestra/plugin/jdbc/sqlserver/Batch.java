@@ -30,9 +30,9 @@ import java.time.ZoneId;
             title = "Fetch rows from a table and bulk insert to another one.",
             full = true,
             code = """
-                id: sqlserver_batch_query 
+                id: sqlserver_batch_query
                 namespace: company.team
-            
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.sqlserver.Query
@@ -44,7 +44,7 @@ import java.time.ZoneId;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                  
+
                   - id: update
                     type: io.kestra.plugin.jdbc.sqlserver.Batch
                     from: "{{ outputs.query.uri }}"
@@ -85,7 +85,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output> {
+public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, SqlServerConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new SqlServerCellConverter(zoneId);

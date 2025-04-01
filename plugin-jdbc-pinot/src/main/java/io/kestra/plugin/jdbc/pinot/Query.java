@@ -44,7 +44,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output> {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PinotConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new PinotCellConverter(zoneId);

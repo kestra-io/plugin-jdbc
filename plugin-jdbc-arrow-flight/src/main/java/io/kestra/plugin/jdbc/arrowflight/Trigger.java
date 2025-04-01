@@ -56,7 +56,7 @@ import java.sql.SQLException;
         )
     }
 )
-public class Trigger extends AbstractJdbcTrigger {
+public class Trigger extends AbstractJdbcTrigger implements ArrowFlightConnectionInterface {
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         Query query = Query.builder()

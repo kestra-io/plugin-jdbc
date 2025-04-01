@@ -13,8 +13,12 @@ jar {
 }
 
 dependencies {
-    implementation("net.snowflake:snowflake-jdbc:3.21.0")
+    implementation("net.snowflake:snowflake-jdbc:3.23.1")
     implementation project(':plugin-jdbc')
+    implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 
+    compileOnly group: "io.kestra", name: "script", version: kestraVersion
+
+    testImplementation group: "io.kestra", name: "script", version: kestraVersion
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }

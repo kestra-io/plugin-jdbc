@@ -2,15 +2,16 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-public interface DuckDbQueryInterface {
+public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Input files to be loaded from DuckDb.",
         description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files using a `workingDir` variable, example: `SELECT * FROM read_csv_auto('{{ workingDir }}/myfile.csv');` "
+            "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` "
     )
     @PluginProperty(
         additionalProperties = String.class,
@@ -38,4 +39,9 @@ public interface DuckDbQueryInterface {
         description = "This property lets you define if you want to output the in-memory database as a file for further processing."
     )
     Property<Boolean> getOutputDbFile();
+
+    @Override
+    default String getScheme() {
+        return "jdbc:duckdb";
+    }
 }

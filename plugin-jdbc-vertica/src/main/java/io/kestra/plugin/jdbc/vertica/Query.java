@@ -48,7 +48,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, VerticaConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
@@ -59,10 +59,5 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
     @Override
     public void registerDriver() throws SQLException {
         DriverManager.registerDriver(new com.vertica.jdbc.Driver());
-    }
-
-    @Override
-    public Output run(RunContext runContext) throws Exception {
-        return super.run(runContext);
     }
 }

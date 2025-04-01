@@ -8,12 +8,10 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
-import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.net.URI;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -48,7 +46,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, Db2ConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override
@@ -63,6 +61,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return super.connectionProperties(runContext, "jdbc:db2");
+        return super.connectionProperties(runContext, this.getScheme());
     }
 }

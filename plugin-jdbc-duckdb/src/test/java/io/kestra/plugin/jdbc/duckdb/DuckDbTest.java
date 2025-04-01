@@ -14,16 +14,15 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.*;
 import java.util.List;
@@ -36,6 +35,7 @@ import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getCsvSourceUri;
 import static io.kestra.plugin.jdbc.duckdb.DuckDbTestUtils.getDatabaseFileSourceUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * See :
@@ -309,7 +309,7 @@ class DuckDbTest {
         Query.Output runOutput = task.run(runContext);
 
         assertThat(
-            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
+            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), StandardCharsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +
@@ -425,7 +425,7 @@ class DuckDbTest {
             .timeZoneId(Property.of("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(Property.of(List.of("out")))
-            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);"))
+            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
             .outputDbFile(Property.of(true))
             .build()
             .run(runContext);
@@ -442,5 +442,89 @@ class DuckDbTest {
         assertThat(getTable.getRows(), notNullValue());
         assertThat(getTable.getRows().size(), is(10));
         assertThat(getTable.getRows().getFirst().size(), is(12));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SELECT [1, 2, 3] AS result",
+        "SELECT array_value(1, 2, 3) AS result;"
+
+    })
+    void selectWithDuckDbArray(String sql) throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        var result = Query.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(new Property<>(sql))
+            .fetchType(Property.of(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+        assertThat(result.getRows().size(), is(1));
+        Object[] resultInteger = (Object[]) result.getRows().getFirst().get("result");
+        assertThat(resultInteger, arrayContainingInAnyOrder(1, 2, 3));
+    }
+
+    @Test
+    void selectWithDuckDbArray_nestedArray() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        var result = Query.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(new Property<>("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
+            .fetchType(Property.of(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+        assertThat(result.getRows().size(), is(1));
+        Object[] resultInteger = (Object[]) result.getRows().getFirst().get("result");
+        assertThat(resultInteger, is(notNullValue()));
+        assertThat(resultInteger.length, is(2) );
+
+        Object[] firstArray = (Object[]) resultInteger[0];
+        assertThat(firstArray, arrayContainingInAnyOrder(1, 2));
+
+        Object[] secondArray = (Object[]) resultInteger[1];
+        assertThat(secondArray, arrayContainingInAnyOrder(3, 4));
+    }
+
+    @Test
+    void selectWithDuckDbArray_specialFunction_bid() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        var result = Query.builder()
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(new Property<>("""
+                SELECT array_value(1, 2, 3);
+                """))
+            .fetchType(Property.of(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+    }
+
+    @ParameterizedTest
+    @MethodSource("incorrectUrl")
+    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(url)
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("SELECT array_value(1, 2, 3);"))
+            .build();
+
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    public static Stream<Arguments> incorrectUrl() {
+        return Stream.of(
+            Arguments.of(new Property<>("")), //Empty URL
+            Arguments.of("jdbc:postgresql://127.0.0.1:64790/kestra") //Incorrect scheme
+        );
     }
 }

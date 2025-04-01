@@ -1,14 +1,17 @@
 package io.kestra.plugin.jdbc.snowflake;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Properties;
 
-public interface SnowflakeInterface {
+
+public interface SnowflakeInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Specifies the virtual warehouse to use once connected.",
         description = "The specified warehouse should be an existing warehouse for which the specified default role has privileges.\n" +
@@ -38,8 +41,13 @@ public interface SnowflakeInterface {
 
     @Schema(
         title = "Specifies the private key for key pair authentication and key rotation.",
-        description = "It needs to be an un-encoded private key in plaintext.")
+        description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='")
     Property<String> getPrivateKey();
+
+
+    @Schema(
+        title = "Specifies the private key password for key pair authentication and key rotation.")
+    Property<String> getPrivateKeyPassword();
 
     @Schema(
         title = "Specifies the private key file for key pair authentication and key rotation.",
@@ -50,7 +58,7 @@ public interface SnowflakeInterface {
         title = "Specifies the private key file password for key pair authentication and key rotation.")
     Property<String> getPrivateKeyFilePassword();
 
-    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
+    default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException, NoSuchAlgorithmException, InvalidKeySpecException {
         if (this.getWarehouse() != null) {
             properties.put("warehouse", runContext.render(this.getWarehouse()).as(String.class).orElseThrow());
         }
@@ -71,12 +79,23 @@ public interface SnowflakeInterface {
             if (this.getPrivateKeyFile() != null || this.getPrivateKeyFilePassword() != null) {
                 throw new IllegalArgumentException("The 'privateKeyFile' property cannot be used if the 'privateKey' property is used.");
             }
-            properties.put("privateKey", runContext.render(this.getPrivateKey()).as(String.class).orElseThrow());
+
+            var unencryptedPrivateKey = RSAKeyPairUtils.deserializePrivateKey(
+                runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
+                runContext.render(this.getPrivateKeyPassword()).as(String.class)
+            );
+            properties.put("privateKey", unencryptedPrivateKey);
         }
 
         if (this.getPrivateKeyFile() != null && this.getPrivateKeyFilePassword() != null) {
             properties.put("private_key_file", runContext.render(this.getPrivateKeyFile()).as(String.class).orElseThrow());
             properties.put("private_key_file_pwd", runContext.render(this.getPrivateKeyFilePassword()).as(String.class).orElseThrow());
         }
+
+    }
+
+    @Override
+    default String getScheme() {
+        return "jdbc:snowflake";
     }
 }

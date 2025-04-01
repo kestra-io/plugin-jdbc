@@ -36,9 +36,9 @@ import java.util.Properties;
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.postgresql.Query
-                    url: jdbc:postgresql://dev:56982/
-                    username: pg_user
-                    password: pg_password
+                    url: jdbc:postgresql://dev:5432/
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -48,14 +48,13 @@ import java.util.Properties;
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch
                     from: "{{ outputs.query.uri }}"
-                    url: jdbc:postgresql://prod:56982/
-                    username: pg_user
-                    password: pg_password
+                    url: jdbc:postgresql://prod:5433/
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"    
                     sql: |
                       insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
         ),
-
         @Example(
             title = "Fetch rows from a table, and bulk insert them to another one, without using sql query.",
             full = true,
@@ -66,9 +65,9 @@ import java.util.Properties;
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.postgresql.Query
-                    url: jdbc:postgresql://dev:56982/
-                    username: pg_user
-                    password: pg_password
+                    url: jdbc:postgresql://dev:5432/
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -78,11 +77,50 @@ import java.util.Properties;
                   - id: update
                     type: io.kestra.plugin.jdbc.postgresql.Batch
                     from: "{{ outputs.query.uri }}"
-                    url: jdbc:postgresql://prod:56982/
-                    username: pg_user
-                    password: pg_password
+                    url: jdbc:postgresql://prod:5433/
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     table: xre
                 """
+        ),
+        @Example(
+            full = true,
+            title = "Use Postgres Batch to bulk insert rows",
+            code = """
+                id: postgres_batch
+                namespace: company.team
+                
+                tasks:
+                  - id: download_products_csv_file
+                    type: io.kestra.plugin.core.http.Download
+                    uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
+                
+                  - id: products_csv_to_ion
+                    type: io.kestra.plugin.serdes.csv.CsvToIon
+                    from: "{{ outputs.download_products_csv_file.uri }}"
+                
+                  - id: postgres_create_table
+                    type: io.kestra.plugin.jdbc.postgresql.Query
+                    url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
+                    sql: |
+                      CREATE TABLE IF NOT EXISTS products(
+                        product_id varchar(5),
+                        product_name varchar(100),
+                        product_category varchar(50),
+                        brand varchar(50)
+                      )
+                
+                  - id: postgres_batch_insert
+                    type: io.kestra.plugin.jdbc.postgresql.Batch
+                    url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
+                    from: "{{ outputs.products_csv_to_ion.uri }}"
+                    sql: |
+                      insert into products values (?, ?, ?, ?)
+            """
         )
     }
 )

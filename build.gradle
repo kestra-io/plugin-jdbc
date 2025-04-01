@@ -68,7 +68,7 @@ subprojects {
         //Logs
         constraints {
             // Forced dependencies
-            api("org.slf4j:slf4j-api:2.0.16")
+            api("org.slf4j:slf4j-api:2.0.17")
         }
     }
 }
@@ -127,7 +127,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.17.2'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.18.0'
     }
 }
 

@@ -13,6 +13,10 @@ import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -25,6 +29,7 @@ import java.sql.SQLException;
 import java.time.*;
 import java.util.Map;
 import java.util.Properties;
+import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -55,7 +60,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(Property.of(TestUtils.keyNoPass()))
             .fetchType(Property.of(FETCH_ONE))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types"))
+            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -121,6 +126,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(row.get("jsonb_type"), is(Map.of("color", "blue", "value", "#0f0")));
         assertThat(row.get("blob_type"), is(Hex.decodeHex("DEADBEEF".toCharArray())));
         assertThat(row.get("tsvector_col"), is("'brown':4 'dice':2 'dog':9 'fox':5 'fuzzi':1 'jump':6 'lazi':8 'quick':3"));
+        assertThat(row.get("hstore_type"), is(Map.of("foo", "bar", "hello", "world")));
     }
 
     @Test
@@ -138,7 +144,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .sslKey(Property.of(TestUtils.keyNoPass()))
             .fetchType(Property.of(FETCH))
             .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col from pgsql_types"))
+            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -245,6 +251,31 @@ public class PgsqlTest extends AbstractRdbmsTest {
 
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
         assertThat(execution.getTaskRunList(), hasSize(2));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @MethodSource("incorrectUrl")
+    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(url)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select item from pgsql_types;"))
+            .build();
+
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    public static Stream<Arguments> incorrectUrl() {
+        return Stream.of(
+            Arguments.of(new Property<>("")), //Empty URL
+            Arguments.of("jdbc:mysql://127.0.0.1:64790/kestra") //Incorrect scheme
+        );
     }
 
     @Override

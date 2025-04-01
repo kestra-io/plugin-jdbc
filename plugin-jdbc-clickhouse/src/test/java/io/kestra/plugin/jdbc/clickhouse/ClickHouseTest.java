@@ -12,6 +12,10 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullSource;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -22,10 +26,13 @@ import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
+import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class ClickHouseTest extends AbstractClickHouseTest {
@@ -225,6 +232,31 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @MethodSource("incorrectUrl")
+    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .url(url)
+            .username(Property.of(getUsername()))
+            .password(Property.of(getPassword()))
+            .fetchType(Property.of(FETCH_ONE))
+            .timeZoneId(Property.of("Europe/Paris"))
+            .sql(Property.of("select String from clickhouse_types"))
+            .build();
+
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    public static Stream<Arguments> incorrectUrl() {
+        return Stream.of(
+            Arguments.of(new Property<>("")), //Empty URL
+            Arguments.of("jdbc:postgresql://127.0.0.1:64790/kestra") //Incorrect scheme
+        );
     }
 
     @Override

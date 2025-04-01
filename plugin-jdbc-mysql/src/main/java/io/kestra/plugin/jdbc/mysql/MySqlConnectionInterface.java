@@ -1,18 +1,19 @@
 package io.kestra.plugin.jdbc.mysql;
 
+import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.micronaut.http.uri.UriBuilder;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Properties;
 
-public class MysqlUtils {
-
-    private MysqlUtils() {
-        throw new IllegalStateException("Utility class");
+public interface MySqlConnectionInterface extends JdbcConnectionInterface {
+    @Override
+    default String getScheme() {
+        return "jdbc:mysql";
     }
 
-    protected static Properties createMysqlProperties(Properties props, Path workingDirectory,
+    default Properties createMysqlProperties(Properties props, Path workingDirectory,
                                                       boolean isMultiQuery) {
         URI url = URI.create((String) props.get("jdbc.url"));
         url = URI.create(url.getSchemeSpecificPart());

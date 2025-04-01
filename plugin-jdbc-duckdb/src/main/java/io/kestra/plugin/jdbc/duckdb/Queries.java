@@ -10,8 +10,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -58,7 +56,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: 'jdbc:duckdb:'
                     timeZoneId: Europe/Paris
                     sql: |-
-                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);
+                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);
                       SELECT count(customer_name) FROM new_tbl;
                       SELECT customer_name FROM new_tbl;
                     inputFiles:
@@ -187,6 +185,9 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
                 additionalVars
             );
         }
+
+        final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
+        this.sql = new Property<>(configureFileSearchPathQuery +"\n" + this.sql.toString());
 
         AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
 

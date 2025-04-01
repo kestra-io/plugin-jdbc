@@ -5,7 +5,6 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -33,7 +32,7 @@ import java.time.ZoneId;
             code = """
                 id: druid_queries
                 namespace: company.team
-                
+
                 tasks:
                   - id: queries
                     type: io.kestra.plugin.jdbc.druid.Queries
@@ -45,7 +44,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput> {
+public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, DruidConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DruidCellConverter(zoneId);

@@ -30,7 +30,7 @@ import java.time.ZoneId;
     examples = {
         @Example(
             full = true,
-            title = "Execute a query and fetch results to pass it to downstream tasks.",
+            title = "Generate a CSV file report from a SQL query using Trino",
             code = """
                    id: trino_query
                    namespace: company.team
@@ -56,7 +56,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, TrinoConnectionInterface {
     protected final Property<Boolean> autoCommit = Property.of(true);
 
     @Override

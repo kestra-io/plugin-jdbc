@@ -31,8 +31,8 @@ import java.sql.Connection;
 @Plugin(
     examples = {
         @Example(
-            title = "Export a PostgreSQL table or query to a CSV or TSV file.",
             full = true,
+            title = "Export a PostgreSQL table or query to a CSV or TSV file.",
             code = """
                 id: postgres_copy_out
                 namespace: company.team
@@ -40,14 +40,37 @@ import java.sql.Connection;
                 tasks:
                   - id: copy_out
                     type: io.kestra.plugin.jdbc.postgresql.CopyOut
-                    url: jdbc:postgresql://127.0.0.1:56982/
-                    username: pg_user
-                    password: pg_password
+                    url: jdbc:postgresql://sample_postgres:5432/world
+                    username: "{{ secret("POSTGRES_USERNAME") }}"
+                    password: "{{ secret("POSTGRES_PASSWORD") }}"
                     format: CSV
                     sql: SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool
                     header: true
                     delimiter: "\\t"
                 """
+        ),
+        @Example(
+            full = true,
+            title = "Export output of a Postgres SQL query to a CSV file",
+            code = """
+                id: export_from_postgres
+                namespace: company.team
+                
+                tasks:
+                  - id: export
+                    type: io.kestra.plugin.jdbc.postgresql.CopyOut
+                    url: jdbc:postgresql://sample_postgres:5432/world
+                    username: "{{ secret("POSTGRES_USERNAME") }}"
+                    password: "{{ secret("POSTGRES_PASSWORD") }}"
+                    format: CSV
+                    header: true
+                    sql: SELECT * FROM country LIMIT 10
+                    delimiter: ","
+                
+                  - id: log
+                    type: io.kestra.plugin.core.log.Log
+                    message: "{{ outputs.export.rowCount }}"
+            """
         )
     }
 )

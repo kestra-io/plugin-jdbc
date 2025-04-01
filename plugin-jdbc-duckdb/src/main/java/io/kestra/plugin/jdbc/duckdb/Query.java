@@ -42,8 +42,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Plugin(
     examples = {
         @Example(
-            title = "Execute a query that reads a csv, and outputs another csv.",
             full = true,
+            title = "Execute a query that reads a csv, and outputs another csv.",
             code = """
                 id: query_duckdb
                 namespace: company.team
@@ -58,7 +58,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     url: 'jdbc:duckdb:'
                     timeZoneId: Europe/Paris
                     sql: |-
-                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{ workingDir }}/in.csv', header=True);
+                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);
 
                       COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
                     inputFiles:
@@ -68,8 +68,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 """
         ),
         @Example(
-            title = "Execute a query that reads from an existing database file using a URL.",
             full = true,
+            title = "Execute a query that reads from an existing database file using a URL.",
             code = """
                 id: query_duckdb
                 namespace: company.team
@@ -84,6 +84,34 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     databaseUri: "{{ inputs.my_db }}"
                     sql: SELECT * FROM table_name;
                     fetchType: STORE
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
+            code = """
+                    id: motherduck
+                    namespace: company.team
+
+                    tasks:
+                      - id: query
+                        type: io.kestra.plugin.jdbc.duckdb.Query
+                        sql: |
+                          SELECT by, COUNT(*) as nr_comments
+                          FROM sample_data.hn.hacker_news
+                          GROUP BY by
+                          ORDER BY nr_comments DESC;
+                        fetchType: STORE
+
+                      - id: csv
+                        type: io.kestra.plugin.serdes.csv.IonToCsv
+                        from: "{{ outputs.query.uri }}"
+
+                    pluginDefaults:
+                      - type: io.kestra.plugin.jdbc.duckdb.Query
+                        values:
+                          url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
+                          timeZoneId: Europe/Berlin
                 """
         )
     }
@@ -199,6 +227,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 additionalVars
             );
         }
+
+        final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
+        this.sql = new Property<>(configureFileSearchPathQuery +"\n" + this.sql.toString());
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 
