@@ -24,8 +24,6 @@ public abstract class AbstractSnowflakeConnection extends Task implements Snowfl
     private Property<String> password;
     private Property<String> privateKey;
     private Property<String> privateKeyPassword;
-    private Property<String> privateKeyFile;
-    private Property<String> privateKeyFilePassword;
 
     @Override
     public void registerDriver() throws SQLException {
