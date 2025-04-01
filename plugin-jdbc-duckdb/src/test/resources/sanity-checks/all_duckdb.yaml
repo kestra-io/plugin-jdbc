@@ -1,4 +1,4 @@
-id: all-duckdb
+id: all_duckdb
 namespace: sanitychecks.plugin-jdbc
 
 tasks:
