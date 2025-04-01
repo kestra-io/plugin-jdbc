@@ -1,5 +1,5 @@
-id: postgres
-namespace: sanitychecks
+id: all-postgres
+namespace: sanitychecks.plugin-jdbc
 
 variables:
   postgres_password: sanity
