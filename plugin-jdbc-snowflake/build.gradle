@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("net.snowflake:snowflake-jdbc:3.23.1")
+    implementation("net.snowflake:snowflake-jdbc:3.23.2")
     implementation project(':plugin-jdbc')
     implementation("org.bouncycastle:bcpkix-jdk18on:1.80")
 
