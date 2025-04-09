@@ -4,7 +4,6 @@ import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.utils.IdUtils;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
@@ -141,11 +140,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, AutoCommitInterface, DuckDbQueryInterface {
+public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
-
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
 
     @Builder.Default
     private Property<String> url = Property.of(DEFAULT_URL);

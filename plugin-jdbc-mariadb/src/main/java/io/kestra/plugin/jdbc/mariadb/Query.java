@@ -9,7 +9,6 @@ import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -82,9 +81,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, MariaDbConnectionInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, MariaDbConnectionInterface {
     @Schema(
         title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
         description = "The file must be from Kestra's internal storage"

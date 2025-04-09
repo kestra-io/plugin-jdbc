@@ -2,12 +2,9 @@ package io.kestra.plugin.jdbc.sybase;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -18,7 +15,6 @@ import lombok.experimental.SuperBuilder;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.Properties;
 
 @SuperBuilder
 @ToString
@@ -49,9 +45,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, SybaseConnectionInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SybaseConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new SybaseCellConverter(zoneId);

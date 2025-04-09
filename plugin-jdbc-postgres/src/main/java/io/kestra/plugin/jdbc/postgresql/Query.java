@@ -7,7 +7,6 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -55,8 +54,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface, AutoCommitInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface {
     @Builder.Default
     protected Property<Boolean> ssl = Property.of(false);
     protected Property<SslMode> sslMode;

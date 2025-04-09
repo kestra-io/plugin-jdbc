@@ -1,7 +1,5 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
-import io.kestra.core.models.property.Property;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -11,7 +9,6 @@ import lombok.experimental.SuperBuilder;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 
@@ -95,9 +92,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, ClickhouseConnectionInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, ClickhouseConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new ClickHouseCellConverter(zoneId);
