@@ -1,7 +1,5 @@
 package io.kestra.plugin.jdbc.redshift;
 
-import io.kestra.core.models.property.Property;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -47,9 +45,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface, RedshiftConnectionInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, RedshiftConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new RedshiftCellConverter(zoneId);

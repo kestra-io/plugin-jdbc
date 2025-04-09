@@ -10,7 +10,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -22,8 +21,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.*;
-
-import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 
 @SuperBuilder
@@ -80,9 +77,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, AutoCommitInterface , SqliteQueryInterface {
-    protected final Property<Boolean> autoCommit = Property.of(true);
-
+public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SqliteQueryInterface {
     protected Property<String> sqliteFile;
 
     @Builder.Default
