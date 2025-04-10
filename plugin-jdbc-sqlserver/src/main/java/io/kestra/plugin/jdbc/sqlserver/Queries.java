@@ -37,8 +37,8 @@ import java.time.ZoneId;
                   - id: select
                     type: io.kestra.plugin.jdbc.sqlserver.Queries
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: select * from employee; select * from laptop;
                     fetchType: FETCH
                 """

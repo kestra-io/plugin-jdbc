@@ -37,16 +37,16 @@ import java.time.ZoneId;
                   - id: select
                     type: io.kestra.plugin.jdbc.sqlserver.Query
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: select * from source
                     fetchType: FETCH
 
                   - id: generate_update
                     type: io.kestra.plugin.jdbc.sqlserver.Query
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: "{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}"
                 """
         )

@@ -37,8 +37,8 @@ import java.time.ZoneId;
                   - id: query
                     type: io.kestra.plugin.jdbc.sqlserver.Query
                     url: jdbc:sqlserver://dev:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -49,8 +49,8 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.sqlserver.Batch
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:sqlserver://prod:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: |
                       insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
@@ -58,30 +58,30 @@ import java.time.ZoneId;
         @Example(
             title = "Fetch rows from a table and bulk insert to another one, without using sql query.",
             full = true,
-            code = {
-                "id: sqlserver_batch_query",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Query",
-                "    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM xref",
-                "      LIMIT 1500;",
-                "    fetchType: STORE",
-                "",
-                "  - id: update",
-                "    type: io.kestra.plugin.jdbc.sqlserver.Batch",
-                "    from: \"{{ outputs.query.uri }}\"",
-                "    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true",
-                "    username: sql_server_user",
-                "    password: sql_server_passwd",
-                "    table: xref"
-            }
+            code = """
+                id: sqlserver_batch_query
+                namespace: company.team
+                
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.sqlserver.Query
+                    url: jdbc:sqlserver://dev:41433;trustServerCertificate=true
+                    username: sql_server_user
+                    password: sql_server_passwd
+                    sql: |
+                      SELECT *
+                      FROM xref
+                      LIMIT 1500;
+                    fetchType: STORE
+                
+                  - id: update",
+                    type: io.kestra.plugin.jdbc.sqlserver.Batch
+                    from: "{{ outputs.query.uri }}"
+                    url: jdbc:sqlserver://prod:41433;trustServerCertificate=true
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
+                    table: xref
+            """
         )
     }
 )

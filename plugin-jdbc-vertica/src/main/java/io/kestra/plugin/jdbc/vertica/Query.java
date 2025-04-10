@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: query
                        type: io.kestra.plugin.jdbc.vertica.Query
                        url: jdbc:vertica://127.0.0.1:56982/db
-                       username: vertica_user
-                       password: vertica_password
+                       username: "{{ secret('VERTICA_USERNAME') }}"
+                       password: "{{ secret('VERTICA_PASSWORD') }}"
                        sql: select * from customer
                        fetchType: FETCH_ONE
                    """

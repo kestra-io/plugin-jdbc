@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.redshift.Trigger
                     interval: "PT5M"
                     url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
-                    username: admin
-                    password: admin_password
+                    username: "{{ secret('REDSHIFT_USERNAME') }}"
+                    password: "{{ secret('REDSHIFT_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

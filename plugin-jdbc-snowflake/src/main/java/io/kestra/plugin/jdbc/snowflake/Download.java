@@ -41,8 +41,8 @@ import java.sql.Connection;
                      - id: download
                        type: io.kestra.plugin.jdbc.snowflake.Download
                        url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
-                       username: snowflake_user
-                       password: snowflake_password
+                       username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                       password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                        stageName: "@demo_db.public.%myStage"
                        fileName: prefix/destFile.csv
                    """

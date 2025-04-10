@@ -43,8 +43,8 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.clickhouse.BulkInsert
                     from: "{{ inputs.file }}"
                     url: jdbc:clickhouse://127.0.0.1:56982/
-                    username: ch_user
-                    password: ch_password
+                    username: "{{ secret('CLICKHOUSE_USERNAME') }}"
+                    password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     sql: INSERT INTO YourTable SETTINGS async_insert=1, wait_for_async_insert=1 values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
         ),
@@ -64,8 +64,8 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.clickhouse.BulkInsert
                     from: "{{ inputs.file }}"
                     url: jdbc:clickhouse://127.0.0.1:56982/
-                    username: ch_user
-                    password: ch_password
+                    username: "{{ secret('CLICKHOUSE_USERNAME') }}"
+                    password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     sql: INSERT INTO YourTable ( field1, field2, field3 ) SETTINGS async_insert=1, wait_for_async_insert=1 values( ?, ?, ? )
                 """
         ),
@@ -85,8 +85,8 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.clickhouse.BulkInsert
                     from: "{{ inputs.file }}"
                     url: jdbc:clickhouse://127.0.0.1:56982/
-                    username: ch_user
-                    password: ch_password
+                    username: "{{ secret('CLICKHOUSE_USERNAME') }}"
+                    password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     table: YourTable
                 """
         )

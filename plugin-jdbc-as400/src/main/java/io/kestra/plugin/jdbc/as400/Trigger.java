@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.as400.Trigger
                     interval: "PT5M"
                     url: jdbc:as400://127.0.0.1:50000/
-                    username: as400_user
-                    password: as400_password
+                    username: "{{ secret('AS400_USERNAME') }}"
+                    password: "{{ secret('AS400_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

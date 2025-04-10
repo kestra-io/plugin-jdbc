@@ -38,8 +38,8 @@ import java.time.ZoneId;
                   - id: query
                     type: io.kestra.plugin.jdbc.arrowflight.Queries
                     url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false
-                    username: db_user
-                    password: db_password
+                    username: "{{ secret('ARROWFLIGHT_USERNAME') }}"
+                    password: "{{ secret('ARROWFLIGHT_PASSWORD') }}"
                     sql: SELECT * FROM employee; SELECT * FROM laptop;
                     fetchType: FETCH
                 """

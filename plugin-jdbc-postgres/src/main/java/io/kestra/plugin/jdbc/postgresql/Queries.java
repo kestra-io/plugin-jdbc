@@ -38,8 +38,8 @@ import java.util.Properties;
                   - id: fetch
                     type: io.kestra.plugin.jdbc.postgresql.Queries
                     url: jdbc:postgresql://127.0.0.1:56982/
-                    username: pg_user
-                    password: pg_password
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     sql: |
                       SELECT firstName, lastName FROM employee;
                       SELECT brand FROM laptop;
@@ -56,7 +56,7 @@ import java.util.Properties;
                 tasks:
                   - id: init_products
                     type: io.kestra.plugin.jdbc.postgresql.Queries
-                    url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
+                    url: "jdbc:postgresql://{{secret('POSTGRES_HOST')}}:5432/postgres"
                     username: "{{ secret('POSTGRES_USERNAME') }}"
                     password: "{{ secret('POSTGRES_PASSWORD') }}"
                     sql: |

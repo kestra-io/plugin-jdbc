@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.snowflake.Trigger
                     interval: "PT5M"
                     url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
-                    username: snowflake_user
-                    password: snowflake_password
+                    username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                    password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                     sql: "SELECT * FROM demo_db.public.customers"
                     warehouse: COMPUTE_WH
                     fetchType: FETCH
