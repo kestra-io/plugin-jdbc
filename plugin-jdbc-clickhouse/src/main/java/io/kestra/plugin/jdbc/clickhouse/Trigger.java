@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.clickhouse.Trigger
                     interval: "PT5M"
                     url: jdbc:clickhouse://127.0.0.1:56982/
-                    username: ch_user
-                    password: ch_password
+                    username: "{{ secret('CLICKHOUSE_USERNAME') }}"
+                    password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

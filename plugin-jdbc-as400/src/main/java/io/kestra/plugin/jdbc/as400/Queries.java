@@ -42,8 +42,8 @@ import java.util.Properties;
                   - id: query
                     type: io.kestra.plugin.jdbc.as400.Queries
                     url: jdbc:as400://127.0.0.1:50000/
-                    username: as400_user
-                    password: as400_password
+                    username: "{{ secret('AS400_USERNAME') }}"
+                    password: "{{ secret('AS400_PASSWORD') }}"
                     sql: select * from employee; select * from laptops;
                     fetchType: FETCH
                 """

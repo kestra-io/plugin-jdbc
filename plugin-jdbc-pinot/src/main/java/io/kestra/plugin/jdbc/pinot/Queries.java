@@ -34,8 +34,10 @@ import java.time.ZoneId;
 
                 tasks:
                   - id: queries
-                    type: o.kestra.plugin.jdbc.pinot.Queries
+                    type: io.kestra.plugin.jdbc.pinot.Queries
                     url: jdbc:pinot://localhost:9000
+                    username: "{{ secret('PINOT_USERNAME') }}"
+                    password: "{{ secret('PINOT_PASSWORD') }}"
                     sql: |
                       SELECT * FROM airlineStats;
                       SELECT * FROM airlineStats;

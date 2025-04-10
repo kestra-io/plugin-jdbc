@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: query
                        type: io.kestra.plugin.jdbc.vectorwise.Query
                        url: jdbc:vectorwise://dev:port/base
-                       username: admin
-                       password: admin_password
+                       username: "{{ secret('VECTORWISE_USERNAME') }}"
+                       password: "{{ secret('VECTORWISE_PASSWORD') }}"
                        sql: |
                          SELECT *
                          FROM xref
@@ -49,8 +49,8 @@ import java.time.ZoneId;
                        type: io.kestra.plugin.jdbc.vectorwise.Batch
                        from: "{{ outputs.query.uri }}"
                        url: jdbc:vectorwise://prod:port/base
-                       username: admin
-                       password: admin_password
+                       username: "{{ secret('VECTORWISE_USERNAME') }}"
+                       password: "{{ secret('VECTORWISE_PASSWORD') }}"
                        sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                    """
         ),

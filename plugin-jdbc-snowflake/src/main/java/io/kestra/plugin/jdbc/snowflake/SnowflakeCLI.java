@@ -36,12 +36,13 @@ import java.util.stream.Stream;
                 """
                     id: snowflake
                     namespace: company.team
+
                     tasks:
                       - id: log_info_and_connection_status
                         type: io.kestra.plugin.jdbc.snowflake.SnowflakeCLI
                         account: snowflake_account
-                        username: snowflake_username
-                        password: snowflake_password
+                        username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                        password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                         commands:
                           - snow --info
                           - snow connection test
@@ -55,12 +56,13 @@ import java.util.stream.Stream;
                 """
                     id: snowflake
                     namespace: company.team
+
                     tasks:
                       - id: list_stage_files
                         type: io.kestra.plugin.jdbc.snowflake.SnowflakeCLI
                         account: snowflake_account
-                        username: snowflake_username
-                        password: snowflake_password
+                        username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                        password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                         commands:
                           - snow stage list-files @MY_WAREHOUSE.MY_SCHEMA.%MY_TABLE_STAGE_NAME
                     """
@@ -73,12 +75,13 @@ import java.util.stream.Stream;
                 """
                     id: snowflake
                     namespace: company.team
+                    
                     tasks:
                       - id: query
                         type: io.kestra.plugin.jdbc.snowflake.SnowflakeCLI
                         account: snowflake_account
-                        username: snowflake_username
-                        password: snowflake_password
+                        username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                        password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                         commands:
                           - snow sql --query="SELECT 1"
                     """

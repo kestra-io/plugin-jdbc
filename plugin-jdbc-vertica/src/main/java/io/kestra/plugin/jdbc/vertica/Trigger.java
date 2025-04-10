@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.vertica.Trigger
                     interval: "PT5M"
                     url: jdbc:vertica://127.0.0.1:56982/db
-                    username: vertica_user
-                    password: vertica_password
+                    username: "{{ secret('VERTICA_USERNAME') }}"
+                       password: "{{ secret('VERTICA_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

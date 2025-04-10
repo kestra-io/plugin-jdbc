@@ -46,6 +46,8 @@ import java.sql.SQLException;
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.jdbc.pinot.Trigger
+                    username: "{{ secret('PINOT_USERNAME') }}"
+                    password: "{{ secret('PINOT_PASSWORD') }}"
                     interval: "PT5M"
                     url: jdbc:pinot://localhost:9000
                     sql: "SELECT * FROM my_table"

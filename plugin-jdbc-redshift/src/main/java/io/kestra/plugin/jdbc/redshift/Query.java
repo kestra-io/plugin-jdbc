@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: select
                        type: io.kestra.plugin.jdbc.redshift.Query
                        url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
-                       username: admin
-                       password: admin_password
+                       username: "{{ secret('REDSHIFT_USERNAME') }}"
+                       password: "{{ secret('REDSHIFT_PASSWORD') }}"
                        sql: select * from redshift_types
                        fetchType: FETCH_ONE
                    """

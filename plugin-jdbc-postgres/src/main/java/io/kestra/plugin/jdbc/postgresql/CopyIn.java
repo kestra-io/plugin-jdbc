@@ -42,8 +42,8 @@ import jakarta.validation.constraints.NotNull;
                   - id: copy_in
                     type: io.kestra.plugin.jdbc.postgresql.CopyIn
                     url: jdbc:postgresql://127.0.0.1:5432/
-                    username: pg_user
-                    password: pg_password
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     format: CSV
                     from: "{{ outputs.export.uri }}"
                     table: my_destination_table

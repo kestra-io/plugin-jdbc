@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.sqlserver.Trigger
                     interval: "PT5M"
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
-                    username: sql_server_user
-                    password: sql_server_password
+                    username: "{{ secret('SQL_USERNAME') }}"
+                    password: "{{ secret('SQL_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

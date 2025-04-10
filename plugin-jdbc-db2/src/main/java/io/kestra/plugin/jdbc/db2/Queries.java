@@ -39,8 +39,8 @@ import java.util.Properties;
                   - id: queries
                     type: io.kestra.plugin.jdbc.db2.Queries
                     url: jdbc:db2://127.0.0.1:50000/
-                    username: db2inst
-                    password: db2_password
+                    username: "{{ secret('DB2_USERNAME') }}"
+                    password: "{{ secret('DB2_PASSWORD') }}"
                     sql: select * from employee; select * from laptop;
                     fetchType: FETCH
                 """
