@@ -13,8 +13,8 @@ jar {
 }
 
 dependencies {
-    implementation 'com.clickhouse:clickhouse-jdbc:0.7.2'
-    implementation 'com.clickhouse:clickhouse-jdbc:0.7.2'
+    implementation 'com.clickhouse:clickhouse-jdbc:0.8.3'
+    implementation 'com.clickhouse:clickhouse-jdbc:0.8.3'
     implementation 'org.lz4:lz4-java:1.8.0'
 
     implementation project(':plugin-jdbc')
