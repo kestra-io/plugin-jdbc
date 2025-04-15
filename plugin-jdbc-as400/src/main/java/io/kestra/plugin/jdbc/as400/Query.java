@@ -24,7 +24,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a AS400 database."
+    title = "Query an AS400 database."
 )
 @Plugin(
     examples = {

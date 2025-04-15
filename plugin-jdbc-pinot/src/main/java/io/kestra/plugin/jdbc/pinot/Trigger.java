@@ -23,7 +23,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Pinot database."
+    title = "Trigger a flow if a periodically executed Pinot query returns a non-empty result set."
 )
 @Plugin(
     examples = {

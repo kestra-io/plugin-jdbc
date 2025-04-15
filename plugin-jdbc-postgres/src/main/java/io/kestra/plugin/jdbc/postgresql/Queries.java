@@ -23,7 +23,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a PostgreSQL server."
+    title = "Run multiple PostgreSQL queries."
 )
 @Plugin(
     examples = {

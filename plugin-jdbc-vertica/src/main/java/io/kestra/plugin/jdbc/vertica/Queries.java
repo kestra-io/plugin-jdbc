@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a Vertica server."
+    title = "Run multiple Vertica database queries."
 )
 @Plugin(
     examples = {

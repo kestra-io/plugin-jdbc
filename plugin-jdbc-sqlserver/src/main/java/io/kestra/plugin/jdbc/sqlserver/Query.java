@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Microsoft SQL Server."
+    title = "Query a Microsoft SQL Server database."
 )
 @Plugin(
     examples = {

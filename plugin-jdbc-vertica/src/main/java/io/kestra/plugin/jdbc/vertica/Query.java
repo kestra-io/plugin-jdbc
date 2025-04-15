@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Vertica server."
+    title = "Query a Vertica database."
 )
 @Plugin(
     examples = {

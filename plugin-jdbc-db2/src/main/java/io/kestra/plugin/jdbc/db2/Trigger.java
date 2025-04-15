@@ -19,7 +19,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a DB2 database."
+    title = "Trigger a flow if a periodically executed DB2 query returns a non-empty result set."
 )
 @Plugin(
     examples = {

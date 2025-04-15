@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on an Apache Pinot server."
+    title = "Run multiple Apache Pinot queries."
 )
 @Plugin(
     examples = {

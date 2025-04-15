@@ -30,7 +30,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a MySQL database."
+    title = "Run multiple MySQL queries."
 )
 @Plugin(
     examples = {

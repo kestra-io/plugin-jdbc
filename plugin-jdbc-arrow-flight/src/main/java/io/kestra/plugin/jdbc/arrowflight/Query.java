@@ -23,7 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a database through Apache Arrow Flight SQL driver."
+    title = "Run an Apache Arrow Flight SQL query."
 )
 @Plugin(
     examples = {

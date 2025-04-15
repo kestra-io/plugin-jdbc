@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a Dremio database."
+    title = "Run multiple queries on a Dremio data lake."
 )
 @Plugin(
     examples = {

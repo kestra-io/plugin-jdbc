@@ -25,7 +25,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Snowflake server."
+    title = "Query a Snowflake database."
 )
 @Plugin(
     examples = {

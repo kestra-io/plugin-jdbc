@@ -27,7 +27,7 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Download data from Snowflake stage to Kestra's internal storage."
+    title = "Download data from a Snowflake stage to Kestra's internal storage."
 )
 @Plugin(
     examples = {

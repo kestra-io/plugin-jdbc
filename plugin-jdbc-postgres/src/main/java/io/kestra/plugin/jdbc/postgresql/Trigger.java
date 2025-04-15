@@ -19,7 +19,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a PostgreSQL database."
+    title = "Trigger a flow if a periodically executed PostgreSQL query returns a non-empty result set."
 )
 @Plugin(
     examples = {
