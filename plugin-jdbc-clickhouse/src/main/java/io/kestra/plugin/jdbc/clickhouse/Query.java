@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Clickhouse database."
+    title = "Query a ClickHouse database."
 )
 @Plugin(
     examples = {

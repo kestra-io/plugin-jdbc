@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a Oracle server"
+    title = "Run an Oracle batch-query."
 )
 @Plugin(
     examples = {

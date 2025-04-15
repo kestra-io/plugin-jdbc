@@ -19,7 +19,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a Clickhouse database."
+    title = "Run multiple ClickHouse queries."
 )
 @Plugin(
     examples = {

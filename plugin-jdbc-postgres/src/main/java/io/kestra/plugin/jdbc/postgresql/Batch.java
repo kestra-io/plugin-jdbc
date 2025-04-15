@@ -22,7 +22,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a PostgreSQL server."
+    title = "Run a PostgreSQL batch-query."
 )
 @Plugin(
     examples = {

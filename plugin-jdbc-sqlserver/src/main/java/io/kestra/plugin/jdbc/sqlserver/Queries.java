@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Preform multiple queries against a Microsoft SQL Server."
+    title = "Run multiple Microsoft SQL Server queries."
 )
 @Plugin(
     examples = {

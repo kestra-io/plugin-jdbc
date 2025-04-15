@@ -32,7 +32,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Queries on a SQLite database."
+    title = "Run multiple SQLite queries."
 )
 @Plugin(
     examples = {

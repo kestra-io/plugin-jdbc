@@ -27,7 +27,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a AS400 database."
+    title = "Run multiple AS400 database queries."
 )
 @Plugin(
     examples = {

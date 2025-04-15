@@ -26,8 +26,8 @@ import jakarta.validation.constraints.NotNull;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Load data into a PostgreSQL table.",
-    description = "Copys in CSV, Text, or Binary data into PostgreSQL table."
+    title = "Load a file into a PostgreSQL table.",
+    description = "Copies in CSV, Text, or Binary data into PostgreSQL table."
 )
 @Plugin(
     examples = {
