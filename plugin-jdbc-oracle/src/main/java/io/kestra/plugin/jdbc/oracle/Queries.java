@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on an Oracle database."
+    title = "Run multiple Oracle queries."
 )
 @Plugin(
     examples = {

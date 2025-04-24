@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run Snowflake commands."
+    title = "Run Snowflake CLI commands."
 )
 @Plugin(
     examples = {

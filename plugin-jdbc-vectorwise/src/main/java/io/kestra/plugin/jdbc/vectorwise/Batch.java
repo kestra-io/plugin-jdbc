@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query on a Vectorwise server."
+    title = "Run a Vectorwise database batch-query."
 )
 @Plugin(
     examples = {

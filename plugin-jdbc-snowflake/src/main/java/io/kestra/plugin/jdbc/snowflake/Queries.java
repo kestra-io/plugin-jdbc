@@ -25,7 +25,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a Snowflake server."
+    title = "Run multiple Snowflake queries."
 )
 @Plugin(
     examples = {

@@ -29,7 +29,7 @@ import java.util.*;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a SQLite server."
+    title = "Query a SQLite database."
 )
 @Plugin(
     examples = {

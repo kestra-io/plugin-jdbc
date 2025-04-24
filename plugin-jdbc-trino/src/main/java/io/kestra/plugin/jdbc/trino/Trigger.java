@@ -22,7 +22,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Trino database."
+    title = "Trigger a flow if a periodically executed Trino query returns a non-empty result set."
 )
 @Plugin(
     examples = {

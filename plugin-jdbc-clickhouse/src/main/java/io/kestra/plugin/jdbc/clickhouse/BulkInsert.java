@@ -23,7 +23,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Bulk Insert new rows into a ClickHouse database."
+    title = "Bulk-insert new rows into a ClickHouse database."
 )
 @Plugin(
     examples = {

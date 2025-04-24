@@ -24,7 +24,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a PostgreSQL server."
+    title = "Query a PostgreSQL database."
 )
 @Plugin(
     examples = {

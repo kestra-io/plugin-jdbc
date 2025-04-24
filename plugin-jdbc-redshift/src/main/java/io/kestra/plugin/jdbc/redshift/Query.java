@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Redshift server."
+    title = "Query a Redshift database."
 )
 @Plugin(
     examples = {

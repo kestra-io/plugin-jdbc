@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query on a Microsoft SQL Server."
+    title = "Run a Microsoft SQL Server batch-query."
 )
 @Plugin(
     examples = {

@@ -31,7 +31,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-	title = "Run clickhouse-local commands."
+	title = "Run clickhouse-local CLI commands."
 )
 @Plugin(
 	examples = {

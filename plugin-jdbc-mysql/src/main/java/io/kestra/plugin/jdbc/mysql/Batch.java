@@ -23,7 +23,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Execute a batch query to a MySQL server."
+    title = "Run a MySQL batch-query."
 )
 @Plugin(
     examples = {

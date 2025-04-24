@@ -36,7 +36,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a DuckDb Database."
+    title = "Query a DuckDB database."
 )
 @Plugin(
     examples = {

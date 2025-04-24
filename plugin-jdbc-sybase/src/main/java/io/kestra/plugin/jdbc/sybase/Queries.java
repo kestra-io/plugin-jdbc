@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Perform multiple queries on a Sybase database."
+    title = "Run multiple Sybase database queries."
 )
 @Plugin(
     examples = {

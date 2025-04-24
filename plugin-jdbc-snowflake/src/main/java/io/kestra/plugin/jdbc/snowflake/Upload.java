@@ -24,7 +24,8 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Upload data from an internal storage file to Snowflake stage. Make sure that the `stageName` follows the naming convention of `@databaseName.schemaName.%stageOrTableName`. For usage examples, check the Blueprints tagged with `Snowflake`."
+    title = "Upload data from an internal storage file to a Snowflake stage.",
+    description = "Make sure that the `stageName` follows the naming convention of `@databaseName.schemaName.%stageOrTableName`. For usage examples, check the Blueprints tagged with `Snowflake`."
 )
 @Plugin(
     examples = {

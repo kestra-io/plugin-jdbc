@@ -21,7 +21,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a MariaDB database."
+    title = "Trigger a flow if a periodically executed MariaDB query returns a non-empty result set."
 )
 @Plugin(
     examples = {

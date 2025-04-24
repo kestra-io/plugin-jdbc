@@ -22,7 +22,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for a query on a Snowflake database."
+    title = "Trigger a flow if a periodically executed Snowflake query returns a non-empty result set."
 )
 @Plugin(
     examples = {

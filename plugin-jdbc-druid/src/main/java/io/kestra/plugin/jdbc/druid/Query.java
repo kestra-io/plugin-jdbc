@@ -22,7 +22,7 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Query a Apache Druid database."
+        title = "Query an Apache Druid database."
 )
 @Plugin(
     examples = {

@@ -31,7 +31,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Mariadb database."
+    title = "Run multiple MariaDB queries."
 )
 @Plugin(
     examples = {

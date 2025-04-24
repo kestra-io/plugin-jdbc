@@ -22,7 +22,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a DuckDb database."
+    title = "Trigger a flow if a periodically executed DuckDB query returns a non-empty result set."
 )
 @Plugin(
     examples = {

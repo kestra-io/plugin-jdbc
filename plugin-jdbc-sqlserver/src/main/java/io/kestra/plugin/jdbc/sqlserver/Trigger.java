@@ -22,7 +22,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a Microsoft SQL Server database."
+    title = "Trigger a flow if a periodically executed Microsoft SQL Server query returns a non-empty result set."
 )
 @Plugin(
     examples = {

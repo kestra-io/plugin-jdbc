@@ -23,7 +23,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query to a database through Arrow Flight SQL driver."
+    title = "Trigger a flow if a periodically executed Arrow Flight SQL query returns a non-empty result set."
 )
 @Plugin(
     examples = {

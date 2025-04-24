@@ -20,7 +20,7 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Wait for query on a MySQL database."
+    title = "Trigger a flow if a periodically executed MySQL query returns a non-empty result set."
 )
 @Plugin(
     examples = {
