@@ -48,7 +48,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:vertica://127.0.0.1:56982/db
                     username: "{{ secret('VERTICA_USERNAME') }}"
-                       password: "{{ secret('VERTICA_PASSWORD') }}"
+                    password: "{{ secret('VERTICA_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """
