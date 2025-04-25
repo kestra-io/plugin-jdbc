@@ -38,8 +38,8 @@ import java.time.ZoneId;
                      - id: analyze_orders
                        type: io.kestra.plugin.jdbc.trino.Query
                        url: jdbc:trino://localhost:8080/tpch
-                       username: trino_user
-                       password: trino_password
+                       username: "{{ secret('TRINO_USERNAME') }}"
+                       password: "{{ secret('TRINO_PASSWORD') }}"
                        sql: |
                          select orderpriority as priority, sum(totalprice) as total
                          from tpch.tiny.orders

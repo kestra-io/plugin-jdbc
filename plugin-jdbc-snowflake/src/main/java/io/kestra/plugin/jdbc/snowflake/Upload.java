@@ -39,8 +39,8 @@ import java.sql.Connection;
                      - id: upload
                        type: io.kestra.plugin.jdbc.snowflake.Upload
                        url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
-                       username: snowflake_user
-                       password: snowflake_password
+                       username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                       password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                        from: '{{ outputs.extract.uri }}'
                        fileName: data.csv
                        prefix: raw

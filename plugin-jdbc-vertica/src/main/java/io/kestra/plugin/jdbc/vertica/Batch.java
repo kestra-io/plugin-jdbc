@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: query
                        type: io.kestra.plugin.jdbc.vertica.Query
                        url: jdbc:vertica://dev:56982/db
-                       username: vertica_user
-                       password: vertica_password
+                       username: "{{ secret('VERTICA_USERNAME') }}"
+                       password: "{{ secret('VERTICA_PASSWORD') }}"
                        sql: |
                          SELECT *
                          FROM xref
@@ -50,8 +50,8 @@ import java.time.ZoneId;
                        type: io.kestra.plugin.jdbc.vertica.Batch
                        from: "{{ outputs.query.uri }}"
                        url: jdbc:vertica://prod:56982/db
-                       username: vertica_user
-                       password: vertica_password
+                       username: "{{ secret('VERTICA_USERNAME') }}"
+                       password: "{{ secret('VERTICA_PASSWORD') }}"
                        sql: insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                    """
         ),

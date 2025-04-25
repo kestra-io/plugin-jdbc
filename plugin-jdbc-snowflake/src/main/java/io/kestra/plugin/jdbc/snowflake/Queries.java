@@ -40,8 +40,8 @@ import java.util.Properties;
                   - id: select
                     type: io.kestra.plugin.jdbc.snowflake.Queries
                     url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
-                    username: snowflake_user
-                    password: snowflake_password
+                    username: "{{ secret('SNOWFLAKE_USERNAME') }}"
+                    password: "{{ secret('SNOWFLAKE_PASSWORD') }}"
                     sql: select * from demo_db.public.customers; select * from demo_db.public.emplyees;
                     fetchType: FETCH
                 """

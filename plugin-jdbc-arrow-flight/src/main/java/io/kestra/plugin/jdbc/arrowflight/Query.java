@@ -38,8 +38,8 @@ import java.time.ZoneId;
                   - id: query
                     type: io.kestra.plugin.jdbc.arrowflight.Query
                     url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false
-                    username: db_user
-                    password: db_password
+                    username: "{{ secret('ARROWFLIGHT_USERNAME') }}"
+                    password: "{{ secret('ARROWFLIGHT_PASSWORD') }}"
                     sql: select * FROM departments
                     fetchType: FETCH
                 """
@@ -55,8 +55,8 @@ import java.time.ZoneId;
                   - id: query
                     type: io.kestra.plugin.jdbc.arrowflight.Query
                     url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
-                    username: dremio_user
-                    password: dremio_password
+                    username: "{{ secret('DREMIO_USERNAME') }}"
+                    password: "{{ secret('DREMIO_PASSWORD') }}"
                     sql: select * FROM departments
                     fetchType: FETCH
                 """

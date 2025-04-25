@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: queries
                        type: io.kestra.plugin.jdbc.sybase.Queries
                        url: jdbc:sybase:Tds:127.0.0.1:5000/
-                       username: syb_user
-                       password: syb_password
+                       username: "{{ secret('SYBASE_USERNAME') }}"
+                       password: "{{ secret('SYBASE_PASSWORD') }}"
                        sql: select count(*) from employee, select count(*) from laptop;
                        fetchType: FETCH_ONE
                    """

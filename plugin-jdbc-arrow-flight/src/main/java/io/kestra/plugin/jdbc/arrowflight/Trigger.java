@@ -46,8 +46,8 @@ import java.sql.SQLException;
                 triggers:
                   - id: watch
                     type: io.kestra.plugin.jdbc.arrowflight.Trigger
-                    username: dremio_user
-                    password: dremio_password
+                    username: "{{ secret('DREMIO_USERNAME') }}"
+                    password: "{{ secret('DREMIO_PASSWORD') }}"
                     url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
                     interval: "PT5M"
                     sql: "SELECT * FROM my_table"

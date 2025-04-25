@@ -47,8 +47,8 @@ import java.sql.SQLException;
                     type: io.kestra.plugin.jdbc.vectorwise.Trigger
                     interval: "PT5M"
                     url: jdbc:vectorwise://url:port/base
-                    username: admin
-                    password: admin_password
+                    username: "{{ secret('VECTORWISE_USERNAME') }}"
+                    password: "{{ secret('VECTORWISE_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

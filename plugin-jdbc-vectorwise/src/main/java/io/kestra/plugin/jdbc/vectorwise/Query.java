@@ -37,8 +37,8 @@ import java.time.ZoneId;
                      - id: query
                        type: io.kestra.plugin.jdbc.vectorwise.Query
                        url: jdbc:vectorwise://url:port/base
-                       username: admin
-                       password: admin_password
+                       username: "{{ secret('VECTORWISE_USERNAME') }}"
+                       password: "{{ secret('VECTORWISE_PASSWORD') }}"
                        sql: select * from vectorwise_types
                        fetchType: FETCH_ONE
                    """

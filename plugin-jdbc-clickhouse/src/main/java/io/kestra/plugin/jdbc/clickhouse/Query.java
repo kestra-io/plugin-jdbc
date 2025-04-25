@@ -37,8 +37,8 @@ import java.time.ZoneId;
                   - id: query
                     type: io.kestra.plugin.jdbc.clickhouse.Query
                     url: jdbc:clickhouse://127.0.0.1:56982/
-                    username: ch_user
-                    password: ch_password
+                    username: "{{ secret('CLICKHOUSE_USERNAME') }}"
+                    password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     sql: select * from clickhouse_types
                     fetchType: STORE
                 """
