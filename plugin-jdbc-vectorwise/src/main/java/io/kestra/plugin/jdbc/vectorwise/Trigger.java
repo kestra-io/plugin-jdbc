@@ -48,7 +48,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:vectorwise://url:port/base
                     username: "{{ secret('VECTORWISE_USERNAME') }}"
-                       password: "{{ secret('VECTORWISE_PASSWORD') }}"
+                    password: "{{ secret('VECTORWISE_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """
