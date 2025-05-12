@@ -18,5 +18,16 @@ dependencies {
     implementation("com.microsoft.sqlserver:mssql-jdbc:12.9.0.jre11-preview")
     implementation project(':plugin-jdbc')
 
+    // Connect using Microsoft Entra
+    // https://learn.microsoft.com/en-us/sql/connect/jdbc/connecting-using-azure-active-directory-authentication?view=sql-server-ver16#connect-using-activedirectorydefault-authentication-mode
+    api (group: 'com.azure', name: 'azure-identity') {
+        // exclude libraries already provided by Kestra
+        exclude group: 'com.fasterxml.jackson.core'
+        exclude group: 'com.fasterxml.jackson.dataformat', module: 'jackson-dataformat-xml'
+        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-jdk8'
+        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-jsr310'
+        exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-guava'
+    }
+
     testImplementation project(':plugin-jdbc').sourceSets.test.output
 }
