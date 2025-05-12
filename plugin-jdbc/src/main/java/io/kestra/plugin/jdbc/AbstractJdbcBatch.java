@@ -39,7 +39,6 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
     private Property<String> timeZoneId;
 
-    @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
