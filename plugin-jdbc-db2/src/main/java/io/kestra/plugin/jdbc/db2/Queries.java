@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.db2;
 
+import com.ibm.db2.jcc.DB2Driver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -56,7 +57,10 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.ibm.db2.jcc.DB2Driver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(DB2Driver.class::isInstance)) {
+            DriverManager.registerDriver(new DB2Driver());
+        }
     }
 
     @Override

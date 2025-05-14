@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.mysql;
 
+import com.mysql.cj.jdbc.Driver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -84,6 +85,9 @@ public class Trigger extends AbstractJdbcTrigger implements MySqlConnectionInter
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
+            DriverManager.registerDriver(new Driver());
+        }
     }
 }
