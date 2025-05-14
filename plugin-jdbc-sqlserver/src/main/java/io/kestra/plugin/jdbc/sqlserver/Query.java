@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
+import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -60,7 +61,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(SQLServerDriver.class::isInstance)) {
+            DriverManager.registerDriver(new SQLServerDriver());
+        }
     }
 
 }

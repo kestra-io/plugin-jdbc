@@ -7,6 +7,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.trino.jdbc.TrinoDriver;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -77,6 +78,9 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new io.trino.jdbc.TrinoDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(TrinoDriver.class::isInstance)) {
+            DriverManager.registerDriver(new TrinoDriver());
+        }
     }
 }

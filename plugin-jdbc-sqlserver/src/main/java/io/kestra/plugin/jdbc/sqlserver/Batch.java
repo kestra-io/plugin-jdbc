@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
+import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -61,7 +62,7 @@ import java.time.ZoneId;
             code = """
                 id: sqlserver_batch_query
                 namespace: company.team
-                
+
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.sqlserver.Query
@@ -73,7 +74,7 @@ import java.time.ZoneId;
                       FROM xref
                       LIMIT 1500;
                     fetchType: STORE
-                
+
                   - id: update",
                     type: io.kestra.plugin.jdbc.sqlserver.Batch
                     from: "{{ outputs.query.uri }}"
@@ -93,6 +94,9 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(SQLServerDriver.class::isInstance)) {
+            DriverManager.registerDriver(new SQLServerDriver());
+        }
     }
 }
