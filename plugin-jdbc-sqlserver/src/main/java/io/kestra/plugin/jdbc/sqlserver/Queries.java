@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
+import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -56,6 +57,9 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Abstrac
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.microsoft.sqlserver.jdbc.SQLServerDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(SQLServerDriver.class::isInstance)) {
+            DriverManager.registerDriver(new SQLServerDriver());
+        }
     }
 }

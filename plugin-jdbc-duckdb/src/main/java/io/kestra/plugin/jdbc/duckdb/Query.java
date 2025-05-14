@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.constraints.NotNull;
+import org.duckdb.DuckDBDriver;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
@@ -151,7 +152,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new org.duckdb.DuckDBDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(DuckDBDriver.class::isInstance)) {
+            DriverManager.registerDriver(new DuckDBDriver());
+        }
     }
 
     @Override
