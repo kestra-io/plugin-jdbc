@@ -10,6 +10,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.postgresql.Driver;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -50,7 +51,7 @@ import java.util.Properties;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:postgresql://prod:5433/
                     username: "{{ secret('POSTGRES_USERNAME') }}"
-                    password: "{{ secret('POSTGRES_PASSWORD') }}"    
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     sql: |
                       insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
@@ -89,16 +90,16 @@ import java.util.Properties;
             code = """
                 id: postgres_batch
                 namespace: company.team
-                
+
                 tasks:
                   - id: download_products_csv_file
                     type: io.kestra.plugin.core.http.Download
                     uri: https://huggingface.co/datasets/kestra/datasets/raw/main/csv/products.csv
-                
+
                   - id: products_csv_to_ion
                     type: io.kestra.plugin.serdes.csv.CsvToIon
                     from: "{{ outputs.download_products_csv_file.uri }}"
-                
+
                   - id: postgres_create_table
                     type: io.kestra.plugin.jdbc.postgresql.Query
                     url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
@@ -111,7 +112,7 @@ import java.util.Properties;
                         product_category varchar(50),
                         brand varchar(50)
                       )
-                
+
                   - id: postgres_batch_insert
                     type: io.kestra.plugin.jdbc.postgresql.Batch
                     url: "jdbc:postgresql://{{ secret('POSTGRES_HOST') }}:5432/postgres"
@@ -148,6 +149,9 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new org.postgresql.Driver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
+            DriverManager.registerDriver(new Driver());
+        }
     }
 }

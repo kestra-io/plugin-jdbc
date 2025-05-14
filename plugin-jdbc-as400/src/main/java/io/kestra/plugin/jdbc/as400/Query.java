@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.as400;
 
+import com.ibm.as400.access.AS400JDBCDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -59,7 +60,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.ibm.as400.access.AS400JDBCDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(AS400JDBCDriver.class::isInstance)) {
+            DriverManager.registerDriver(new AS400JDBCDriver());
+        }
     }
 
     @Override
