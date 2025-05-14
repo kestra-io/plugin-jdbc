@@ -8,6 +8,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.sqlite.JDBC;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -73,6 +74,9 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new org.sqlite.JDBC());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(JDBC.class::isInstance)) {
+            DriverManager.registerDriver(new JDBC());
+        }
     }
 }

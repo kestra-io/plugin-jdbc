@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sybase;
 
+import com.sybase.jdbc4.jdbc.SybDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -58,7 +59,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.sybase.jdbc4.jdbc.SybDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(SybDriver.class::isInstance)) {
+            DriverManager.registerDriver(new SybDriver());
+        }
     }
 
     @Override

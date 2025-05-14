@@ -12,6 +12,7 @@ import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+import oracle.jdbc.OracleDriver;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -63,7 +64,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(OracleDriver.class::isInstance)) {
+            DriverManager.registerDriver(new OracleDriver());
+        }
     }
 
 }
