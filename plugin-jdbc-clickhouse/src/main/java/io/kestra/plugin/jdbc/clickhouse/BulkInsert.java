@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
+import com.clickhouse.jdbc.ClickHouseDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.tasks.Output;
@@ -104,7 +105,10 @@ public class BulkInsert extends AbstractJdbcBatch implements RunnableTask<Abstra
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.clickhouse.jdbc.ClickHouseDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(ClickHouseDriver.class::isInstance)) {
+            DriverManager.registerDriver(new ClickHouseDriver());
+        }
     }
 
     @Override

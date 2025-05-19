@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.vectorwise;
 
+import com.ingres.jdbc.IngresDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.runners.RunContext;
@@ -76,6 +77,9 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.ingres.jdbc.IngresDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(IngresDriver.class::isInstance)) {
+            DriverManager.registerDriver(new IngresDriver());
+        }
     }
 }
