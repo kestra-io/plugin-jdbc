@@ -77,6 +77,9 @@ public class Trigger extends AbstractJdbcTrigger {
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new ArrowFlightJdbcDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(ArrowFlightJdbcDriver.class::isInstance)) {
+            DriverManager.registerDriver(new ArrowFlightJdbcDriver());
+        }
     }
 }

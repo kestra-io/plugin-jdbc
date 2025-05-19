@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.vertica;
 
+import com.vertica.jdbc.Driver;
 import io.kestra.plugin.jdbc.AutoCommitInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
@@ -50,7 +51,10 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new com.vertica.jdbc.Driver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
+            DriverManager.registerDriver(new Driver());
+        }
     }
 
     @Override

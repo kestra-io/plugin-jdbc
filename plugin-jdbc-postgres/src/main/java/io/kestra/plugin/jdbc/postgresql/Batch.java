@@ -10,6 +10,7 @@ import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.postgresql.Driver;
 
 import java.io.IOException;
 import java.sql.DriverManager;
@@ -78,6 +79,9 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new org.postgresql.Driver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
+            DriverManager.registerDriver(new Driver());
+        }
     }
 }

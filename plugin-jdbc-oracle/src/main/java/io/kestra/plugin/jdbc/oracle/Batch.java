@@ -11,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import oracle.jdbc.OracleDriver;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -61,6 +62,9 @@ public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new oracle.jdbc.OracleDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(OracleDriver.class::isInstance)) {
+            DriverManager.registerDriver(new OracleDriver());
+        }
     }
 }

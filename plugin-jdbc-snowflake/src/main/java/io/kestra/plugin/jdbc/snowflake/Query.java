@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
+import net.snowflake.client.jdbc.SnowflakeDriver;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -77,6 +78,9 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
 
     @Override
     public void registerDriver() throws SQLException {
-        DriverManager.registerDriver(new net.snowflake.client.jdbc.SnowflakeDriver());
+        // only register the driver if not already exist to avoid a memory leak
+        if (DriverManager.drivers().noneMatch(SnowflakeDriver.class::isInstance)) {
+            DriverManager.registerDriver(new SnowflakeDriver());
+        }
     }
 }
