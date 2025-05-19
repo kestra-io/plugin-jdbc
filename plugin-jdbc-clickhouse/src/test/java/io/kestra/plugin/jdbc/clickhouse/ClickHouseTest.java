@@ -1,19 +1,18 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -23,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-public class ClickHouseTest extends AbstractRdbmsTest {
+public class ClickHouseTest extends AbstractClickHouseTest {
     @SuppressWarnings("unchecked")
     @Test
     void select() throws Exception {
@@ -138,11 +137,6 @@ public class ClickHouseTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRows(), notNullValue());
         assertThat(runOutput.getSize(), is(1001L));
         assertThat(runOutput.getRows().stream().anyMatch(map -> map.get("String").equals("kestra")), is(true));
-    }
-
-    @Override
-    protected String getUrl() {
-        return "jdbc:clickhouse://127.0.0.1:28123/default";
     }
 
     @Override

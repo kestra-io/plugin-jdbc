@@ -45,6 +45,10 @@ services:
     ports:
       - "28123:8123"
       - "29000:9000"
+    environment:
+      CLICKHOUSE_USER: myuser
+      CLICKHOUSE_PASSWORD: mypassword
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
 
 #  db2:
 #    image: icr.io/db2_community/db2
