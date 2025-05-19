@@ -8,6 +8,7 @@ import io.micronaut.context.annotation.Property;
 import io.micronaut.context.annotation.Requires;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -24,6 +25,7 @@ import static org.hamcrest.Matchers.*;
 @KestraTest
 @Requires(property = "ROCKSET_APIKEY")
 @EnabledIfEnvironmentVariable(named = "ROCKSET_APIKEY", matches = ".*")
+@Disabled("Rocket didn't exist anymore")
 public class RocksetTest {
     @Inject
     RunContextFactory runContextFactory;
