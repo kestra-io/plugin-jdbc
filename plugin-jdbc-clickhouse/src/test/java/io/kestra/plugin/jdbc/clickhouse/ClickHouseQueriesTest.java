@@ -4,7 +4,6 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-public class ClickHouseQueriesTest extends AbstractRdbmsTest {
+public class ClickHouseQueriesTest extends AbstractClickHouseTest {
 
     @Test
     void testMultiSelectWithParameters() throws Exception {
@@ -169,11 +168,6 @@ public class ClickHouseQueriesTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
         assertThat(verifyOutput.getOutputs().size(), is(1));
         assertThat(verifyOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1L));
-    }
-
-    @Override
-    protected String getUrl() {
-        return "jdbc:clickhouse://127.0.0.1:28123/default";
     }
 
     @Override
