@@ -86,7 +86,7 @@ import jakarta.validation.constraints.NotNull;
                     table: products
                     header: true
                     delimiter: ","
-            """
+                """
         )
     }
 )
