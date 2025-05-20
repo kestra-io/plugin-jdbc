@@ -86,8 +86,8 @@ public class UploadDownloadTest {
         assertThat(downloadRun.getUri(), notNullValue());
 
         assertThat(
-            IOUtils.toString(this.storageInterface.get(null, null, downloadRun.getUri()), Charsets.UTF_8),
-            is(IOUtils.toString(this.storageInterface.get(null, null, put), Charsets.UTF_8))
+            IOUtils.toString(this.storageInterface.get(TenantService.MAIN_TENANT, null, downloadRun.getUri()), Charsets.UTF_8),
+            is(IOUtils.toString(this.storageInterface.get(TenantService.MAIN_TENANT, null, put), Charsets.UTF_8))
         );
     }
 }
