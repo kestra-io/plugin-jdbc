@@ -83,11 +83,11 @@ class DuckDbQueriesTest {
             .parameters(Property.of(Map.of("age", 30)))
             .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
             .sql(Property.of("""
-                CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
-                CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
+                CREATE TABLE IF NOT EXISTS employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
+                CREATE TABLE IF NOT EXISTS laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
 
-                INSERT INTO employee(id, name, age) VALUES (1, 'John', 25), (2, 'Bryan', 35);
-                INSERT INTO laptop(id, brand, model) VALUES (1, 'Apple', 'MacBook M3 16'), (2, 'LG', 'Gram');
+                INSERT OR IGNORE INTO employee(id, name, age) VALUES (1, 'John', 25), (2, 'Bryan', 35);
+                INSERT OR IGNORE INTO laptop(id, brand, model) VALUES (1, 'Apple', 'MacBook M3 16'), (2, 'LG', 'Gram');
 
                 SELECT * FROM employee where age > :age;
                 SELECT * FROM laptop;
@@ -152,7 +152,7 @@ class DuckDbQueriesTest {
         assertThat("Query name", runOutput.getOutputs().getLast().getRow().get("name"), is("Ailane"));
 
         assertThat(
-            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
+            IOUtils.toString(storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +

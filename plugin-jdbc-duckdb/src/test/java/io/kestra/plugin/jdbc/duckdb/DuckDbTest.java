@@ -6,6 +6,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -309,7 +310,7 @@ class DuckDbTest {
         Query.Output runOutput = task.run(runContext);
 
         assertThat(
-            IOUtils.toString(storageInterface.get(null, null, runOutput.getOutputFiles().get("out")), StandardCharsets.UTF_8),
+            IOUtils.toString(storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("out")), StandardCharsets.UTF_8),
             is( "id,name\n" +
                 "4814976,Viva\n" +
                 "1010871,Voomm\n" +

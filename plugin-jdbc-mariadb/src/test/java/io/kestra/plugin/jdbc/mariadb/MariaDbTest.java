@@ -59,7 +59,7 @@ public class MariaDbTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRow().get("myConcertId"), is("1"));
 
-//        assertThat(runOutput.getRow().get("char_column"), is("four"));
+        assertThat(runOutput.getRow().get("char_column"), is("four"));
         assertThat(runOutput.getRow().get("varchar_column"), is("This is a varchar"));
         assertThat(runOutput.getRow().get("text_column"), is("This is a text column data"));
         assertThat(runOutput.getRow().get("null_column"), nullValue());
