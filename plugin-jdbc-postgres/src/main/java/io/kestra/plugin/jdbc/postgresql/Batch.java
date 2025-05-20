@@ -121,7 +121,7 @@ import java.util.Properties;
                     from: "{{ outputs.products_csv_to_ion.uri }}"
                     sql: |
                       insert into products values (?, ?, ?, ?)
-            """
+              """
         )
     }
 )

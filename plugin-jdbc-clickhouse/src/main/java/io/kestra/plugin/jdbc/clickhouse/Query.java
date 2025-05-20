@@ -89,7 +89,7 @@ import java.time.ZoneId;
                     values:
                       url: jdbc:clickhouse://host.docker.internal:8123/
                       username: default
-            """
+              """
         )
     }
 )

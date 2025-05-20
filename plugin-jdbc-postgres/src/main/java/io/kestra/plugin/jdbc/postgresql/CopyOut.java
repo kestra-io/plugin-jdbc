@@ -70,7 +70,7 @@ import java.sql.Connection;
                   - id: log
                     type: io.kestra.plugin.core.log.Log
                     message: "{{ outputs.export.rowCount }}"
-            """
+                """
         )
     }
 )

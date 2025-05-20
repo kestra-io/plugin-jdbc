@@ -72,7 +72,7 @@ import java.util.Properties;
                       INSERT INTO products VALUES(3, 'expedite front-end schemas','Household','davis-martinez') ON CONFLICT (product_id) DO NOTHING;
                       INSERT INTO products VALUES(4, 'syndicate robust ROI','Outdoor','ruiz-price') ON CONFLICT (product_id) DO NOTHING;
                     fetchType: NONE
-            """
+                """
         )
     }
 )
