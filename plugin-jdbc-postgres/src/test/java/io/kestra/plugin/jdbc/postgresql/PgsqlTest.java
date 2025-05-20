@@ -199,7 +199,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getUri(), notNullValue());
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(null, null, runOutput.getUri())));
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getUri())));
         int lines = 0;
         while (bufferedReader.readLine() != null) {
             lines++;
