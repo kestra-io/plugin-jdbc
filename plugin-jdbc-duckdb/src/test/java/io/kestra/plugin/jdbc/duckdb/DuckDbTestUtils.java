@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 
 import java.io.File;
@@ -13,7 +14,7 @@ import java.util.Objects;
 public class DuckDbTestUtils {
     public static URI getCsvSourceUri(StorageInterface storageInterface) throws URISyntaxException, IOException {
         return storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()
@@ -25,7 +26,7 @@ public class DuckDbTestUtils {
 
     public static URI getDatabaseFileSourceUri(StorageInterface storageInterface) throws IOException, URISyntaxException {
         return storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbTest.class.getClassLoader()

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
@@ -168,7 +169,7 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
         URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
 
         URI input = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())

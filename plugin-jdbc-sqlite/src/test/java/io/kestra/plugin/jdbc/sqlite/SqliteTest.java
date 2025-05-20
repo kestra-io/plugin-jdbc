@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.sqlite;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -73,7 +74,7 @@ public class SqliteTest extends AbstractRdbmsTest {
         URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
 
         URI input = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())
@@ -111,7 +112,7 @@ public class SqliteTest extends AbstractRdbmsTest {
         URL resource = SqliteTest.class.getClassLoader().getResource("db/Chinook_Sqlite.sqlite");
 
         URI input = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())

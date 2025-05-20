@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.micronaut.context.annotation.Value;
 import jakarta.inject.Inject;
@@ -46,7 +47,7 @@ public class UploadDownloadTest {
         URL resource = UploadDownloadTest.class.getClassLoader().getResource("scripts/snowflake.sql");
 
         URI put = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/file/storage/snowflake.sql"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())

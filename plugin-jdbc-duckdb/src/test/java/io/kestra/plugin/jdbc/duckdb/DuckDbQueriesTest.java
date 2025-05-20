@@ -7,6 +7,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.apache.commons.io.IOUtils;
@@ -114,7 +115,7 @@ class DuckDbQueriesTest {
     @MethodSource("nullOrFilledDuckDbUrl") // six numbers
     void inputOutputFiles(String url) throws Exception {
         URI source = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/" + IdUtils.create()),
             new FileInputStream(new File(Objects.requireNonNull(DuckDbQueriesTest.class.getClassLoader()

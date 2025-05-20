@@ -6,6 +6,7 @@ import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.FlowInputOutput;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -241,7 +242,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
     @Test
     void updateFromFlow() throws Exception {
         Execution execution = runnerUtils.runOne(
-            null,
+            TenantService.MAIN_TENANT,
             "io.kestra.jdbc.postgres",
             "update_postgres",
             null,

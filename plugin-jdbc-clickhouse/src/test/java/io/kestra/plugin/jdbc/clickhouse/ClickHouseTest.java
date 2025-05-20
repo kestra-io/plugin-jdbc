@@ -6,6 +6,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -142,7 +143,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             );
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert taskUpdate = BulkInsert.builder()
             .from(Property.of(uri.toString()))
@@ -190,7 +191,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
             .url(Property.of(getUrl()))
@@ -218,7 +219,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
             .url(Property.of(getUrl()))

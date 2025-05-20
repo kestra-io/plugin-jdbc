@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
@@ -63,7 +64,7 @@ public class BatchTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(Property.of(getUrl()))
@@ -142,7 +143,7 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(Property.of(getUrl()))
@@ -173,7 +174,7 @@ public class BatchTest extends AbstractRdbmsTest {
             );
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(Property.of(getUrl()))
@@ -222,7 +223,7 @@ public class BatchTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(Property.of(getUrl()))
@@ -250,7 +251,7 @@ public class BatchTest extends AbstractRdbmsTest {
             ));
         }
 
-        URI uri = storageInterface.put(null, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
+        URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
             .url(Property.of(getUrl()))

@@ -5,6 +5,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
@@ -37,7 +38,7 @@ public class LoadTest {
         URL resource = LoadTest.class.getClassLoader().getResource("load.csv");
 
         URI put = storageInterface.put(
-            null,
+            TenantService.MAIN_TENANT,
             null,
             new URI("/file/storage/get.yml"),
             new FileInputStream(Objects.requireNonNull(resource).getFile())
