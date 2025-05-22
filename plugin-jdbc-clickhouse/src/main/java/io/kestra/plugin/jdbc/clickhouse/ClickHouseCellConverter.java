@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,10 +37,9 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
 
         if (columnTypeName.equals("DateTime")) {
             // date with no TZ, we use the server default one
-            return LocalDateTime
+            return ZonedDateTime
                 .parse(
-                    rs.getString(columnIndex),
-                    DATE_TIME_FORMAT
+                    rs.getString(columnIndex)
                 );
         } else if (columnTypeName.startsWith("DateTime")) {
             Matcher matcher = PATTERN.matcher(columnTypeName);
@@ -57,8 +57,7 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         }
 
         if (columnTypeName.equals("Int8")) {
-            Byte col = (Byte) columnVal;
-            return col.intValue();
+            return columnVal;
         }
 
         if (columnTypeName.equals("Date")) {
