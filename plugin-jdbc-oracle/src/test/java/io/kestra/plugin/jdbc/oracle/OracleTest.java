@@ -129,7 +129,7 @@ public class OracleTest extends AbstractRdbmsTest {
     @ParameterizedTest
     @NullSource
     @MethodSource("incorrectUrl")
-    void urlNotCorrectFormat_souldThrowException(Property<String> url) {
+    void urlNotCorrectFormat_shouldThrowException(Property<String> url) {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Query task = Query.builder()
@@ -146,8 +146,8 @@ public class OracleTest extends AbstractRdbmsTest {
 
     public static Stream<Arguments> incorrectUrl() {
         return Stream.of(
-            Arguments.of(new Property<>("")), //Empty URL
-            Arguments.of("jdbc:postgresql://127.0.0.1:64790/kestra") //Incorrect scheme
+            Arguments.of(new Property<>("")), // Empty URL
+            Arguments.of(new Property<>("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
         );
     }
 
