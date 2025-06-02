@@ -70,7 +70,7 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
-            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .additionalVars(this.additionalVars)
             .build();
         return query.run(runContext);

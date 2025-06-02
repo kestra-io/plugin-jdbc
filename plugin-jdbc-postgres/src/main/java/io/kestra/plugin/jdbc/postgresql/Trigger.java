@@ -55,7 +55,7 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionInterface {
     @Builder.Default
-    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<Boolean> ssl = Property.ofValue(false);
     protected Property<PostgresConnectionInterface.SslMode> sslMode;
     protected Property<String> sslRootCert;
     protected Property<String> sslCert;
@@ -75,7 +75,7 @@ public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionIn
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
-            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

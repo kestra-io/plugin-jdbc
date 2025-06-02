@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements JdbcQueriesInterface {
 
     @Builder.Default
-    protected Property<Boolean> transaction = Property.of(Boolean.TRUE);
+    protected Property<Boolean> transaction = Property.ofValue(Boolean.TRUE);
 
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();

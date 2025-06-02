@@ -44,12 +44,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FetchType.FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from clickhouse_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -83,13 +83,13 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FetchType.FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .parameters(Property.of(Map.of("num", 123)))
-            .sql(Property.of("select * from clickhouse_types where Int8 = :num"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .parameters(Property.ofValue(Map.of("num", 123)))
+            .sql(Property.ofValue("select * from clickhouse_types where Int8 = :num"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -103,12 +103,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FetchType.FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'"))
             .build();
 
         taskUpdate.run(runContext);
@@ -117,12 +117,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         Thread.sleep(500);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FetchType.FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select String from clickhouse_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select String from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -147,12 +147,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert taskUpdate = BulkInsert.builder()
-            .from(Property.of(uri.toString()))
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )"))
+            .from(Property.ofValue(uri.toString()))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )"))
             .build();
 
         taskUpdate.run(runContext);
@@ -161,12 +161,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         Thread.sleep(500);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select String from clickhouse_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select String from clickhouse_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -195,11 +195,11 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("clickhouse_ins"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("clickhouse_ins"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -223,12 +223,12 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         BulkInsert task = BulkInsert.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("clickhouse_types"))
-            .columns(Property.of(List.of("String")))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("clickhouse_types"))
+            .columns(Property.ofValue(List.of("String")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -244,11 +244,11 @@ public class ClickHouseTest extends AbstractClickHouseTest {
 
         Query task = Query.builder()
             .url(url)
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select String from clickhouse_types"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select String from clickhouse_types"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));

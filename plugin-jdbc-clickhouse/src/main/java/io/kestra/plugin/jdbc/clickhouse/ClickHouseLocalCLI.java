@@ -106,7 +106,7 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 			.withNamespaceFiles(namespaceFiles)
 			.withInputFiles(inputFiles)
 			.withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
-            .withInterpreter(Property.of(List.of("clickhouse-local")))
+            .withInterpreter(Property.ofValue(List.of("clickhouse-local")))
             .withBeforeCommands(this.beforeCommands)
             .withCommands(this.commands)
 			.run();

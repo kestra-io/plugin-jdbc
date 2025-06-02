@@ -74,13 +74,13 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
     protected Property<List<String>> outputFiles;
     protected Property<String> databaseUri;
     @Builder.Default
-    protected Property<Boolean> outputDbFile = Property.of(false);
+    protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
 
     @Builder.Default
-    private Property<String> url = Property.of(DEFAULT_URL);
+    private Property<String> url = Property.ofValue(DEFAULT_URL);
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -104,7 +104,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
     @NotNull
     public Property<String> getUrl() {
         if (DEFAULT_URL.equals(this.url.toString())) {
-            return Property.of(DEFAULT_URL + this.databaseFile);
+            return Property.ofValue(DEFAULT_URL + this.databaseFile);
         }
         return this.url;
     }
@@ -137,7 +137,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
 
                 builder.scheme("jdbc:duckdb");
 
-                this.url = Property.of(builder.build().toString());
+                this.url = Property.ofValue(builder.build().toString());
             } else {
                 throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }

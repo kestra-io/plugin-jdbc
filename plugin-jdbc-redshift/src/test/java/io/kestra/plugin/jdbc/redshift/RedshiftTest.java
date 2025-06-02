@@ -42,12 +42,12 @@ public class RedshiftTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from pgsql_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -85,23 +85,23 @@ public class RedshiftTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("update pgsql_types set d = 'D'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("update pgsql_types set d = 'D'"))
             .build();
 
         taskUpdate.run(runContext);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select d from pgsql_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select d from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);

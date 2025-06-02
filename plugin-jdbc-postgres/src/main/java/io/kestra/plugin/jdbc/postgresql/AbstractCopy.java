@@ -27,7 +27,7 @@ public abstract class AbstractCopy extends Task implements PostgresConnectionInt
     private Property<String> username;
     private Property<String> password;
     @Builder.Default
-    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<Boolean> ssl = Property.ofValue(false);
     protected Property<SslMode> sslMode;
     protected Property<String> sslRootCert;
     protected Property<String> sslCert;
@@ -49,7 +49,7 @@ public abstract class AbstractCopy extends Task implements PostgresConnectionInt
         title = "Selects the data format to be read or written."
     )
     @Builder.Default
-    protected Property<Format> format = Property.of(Format.TEXT);
+    protected Property<Format> format = Property.ofValue(Format.TEXT);
 
     @Schema(
         title = "Specifies copying the OID for each row.",

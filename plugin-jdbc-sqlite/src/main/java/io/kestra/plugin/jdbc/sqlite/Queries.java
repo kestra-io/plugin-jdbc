@@ -70,7 +70,7 @@ public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries
     protected Property<String> sqliteFile;
 
     @Builder.Default
-    protected Property<Boolean> outputDbFile = Property.of(false);
+    protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;

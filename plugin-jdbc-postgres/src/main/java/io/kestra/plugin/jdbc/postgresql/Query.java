@@ -57,7 +57,7 @@ import java.util.Properties;
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface {
     @Builder.Default
-    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<Boolean> ssl = Property.ofValue(false);
     protected Property<SslMode> sslMode;
     protected Property<String> sslRootCert;
     protected Property<String> sslCert;

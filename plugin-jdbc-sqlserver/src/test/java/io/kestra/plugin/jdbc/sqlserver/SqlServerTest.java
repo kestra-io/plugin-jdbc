@@ -29,12 +29,12 @@ public class SqlServerTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from sqlserver_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from sqlserver_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -73,24 +73,24 @@ public class SqlServerTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("UPDATE sqlserver_types SET t_varchar = 'D' WHERE t_varchar = 'test'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("UPDATE sqlserver_types SET t_varchar = 'D' WHERE t_varchar = 'test'"))
             .build();
 
         taskUpdate.run(runContext);
 
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select t_varchar from sqlserver_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select t_varchar from sqlserver_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
