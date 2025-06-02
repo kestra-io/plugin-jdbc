@@ -52,18 +52,18 @@ public class SnowflakeQueriesTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .warehouse(Property.of("COMPUTE_WH"))
-            .database(Property.of(database))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .database(Property.ofValue(database))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
                 """))
-            .parameters(Property.of(parameters))
+            .parameters(Property.ofValue(parameters))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);

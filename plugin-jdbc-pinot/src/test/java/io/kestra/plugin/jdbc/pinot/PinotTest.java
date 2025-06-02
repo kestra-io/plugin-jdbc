@@ -27,10 +27,10 @@ class PinotTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of("jdbc:pinot://localhost:49000"))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select \n" +
+            .url(Property.ofValue("jdbc:pinot://localhost:49000"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select \n" +
                 "  -- NULL as t_null,\n" +
                 "  'string' AS t_string,\n" +
                 "  CAST(2147483647 AS INT) as t_integer,\n" +

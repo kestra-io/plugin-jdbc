@@ -35,12 +35,12 @@ public class SqliteTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from lite_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from lite_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -81,13 +81,13 @@ public class SqliteTest extends AbstractRdbmsTest {
         );
 
         Query task = Query.builder()
-            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sqliteFile(Property.of(input.toString()))
-            .sql(Property.of("""
+            .url(Property.ofValue("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(input.toString()))
+            .sql(Property.ofValue("""
                 SELECT Genre.Name, COUNT(InvoiceLine.InvoiceLineId) AS TracksPurchased
                 FROM Genre
                 JOIN Track ON Genre.GenreId = Track.GenreId
@@ -120,13 +120,13 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         //Fetch and check
         Query task = Query.builder()
-            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sqliteFile(Property.of(input.toString()))
-            .sql(Property.of("""
+            .url(Property.ofValue("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(input.toString()))
+            .sql(Property.ofValue("""
                 SELECT * FROM Genre
                 """))
             .build();
@@ -138,14 +138,14 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         //Update DB and output file
         Query insert = Query.builder()
-            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(NONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sqliteFile(Property.of(input.toString()))
-            .outputDbFile(Property.of(true))
-            .sql(Property.of("""
+            .url(Property.ofValue("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(input.toString()))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("""
                 INSERT INTO Genre (GenreId, Name) VALUES (26, 'TestInsert');
                 """))
             .build();
@@ -154,13 +154,13 @@ public class SqliteTest extends AbstractRdbmsTest {
         //Check DB size
         //Update DB and output file
         Query check = Query.builder()
-            .url(Property.of("jdbc:sqlite:Chinook_Sqlite.sqlite"))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sqliteFile(Property.of(insertOutput.getDatabaseUri().toString()))
-            .sql(Property.of("""
+            .url(Property.ofValue("jdbc:sqlite:Chinook_Sqlite.sqlite"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(insertOutput.getDatabaseUri().toString()))
+            .sql(Property.ofValue("""
                 SELECT * FROM Genre;
                 """))
             .build();
@@ -175,23 +175,23 @@ public class SqliteTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("update lite_types set d = 'D'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("update lite_types set d = 'D'"))
             .build();
 
         taskUpdate.run(runContext);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select d from lite_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select d from lite_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);

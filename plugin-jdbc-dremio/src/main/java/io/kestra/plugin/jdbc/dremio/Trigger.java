@@ -70,7 +70,7 @@ public class Trigger extends AbstractJdbcTrigger implements DremioConnectionInte
             .store(this.isStore())
             .fetch(this.isFetch())
             .fetchOne(this.isFetchOne())
-            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

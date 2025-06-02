@@ -85,7 +85,7 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     )
     @NotNull
     @Builder.Default
-    private Property<Boolean> compress = Property.of(true);
+    private Property<Boolean> compress = Property.ofValue(true);
 
     @Override
     public Upload.Output run(RunContext runContext) throws Exception {
