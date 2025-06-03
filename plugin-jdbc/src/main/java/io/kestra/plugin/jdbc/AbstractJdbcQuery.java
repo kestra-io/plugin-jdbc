@@ -40,7 +40,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
         ) {
 
-            conn.setAutoCommit(true);
+            if (conn.getMetaData().supportsTransactions()) {
+                conn.setAutoCommit(true);
+            }
             stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
 
             logger.debug("Starting query: {}", renderedSql);

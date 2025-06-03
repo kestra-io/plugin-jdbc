@@ -106,7 +106,9 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE);
             PreparedStatement ps = connection.prepareStatement(sql);
         ) {
-            connection.setAutoCommit(false);
+            if (connection.getMetaData().supportsTransactions()) {
+                connection.setAutoCommit(false);
+            }
 
             int renderedChunk = runContext.render(this.chunk).as(Integer.class).orElseThrow();
 
@@ -119,7 +121,9 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                         addBatch(ps, parameterMetaData, row, cellConverter, connection, runContext);
                     }
                     int[] updatedRows = ps.executeBatch();
-                    connection.commit();
+                    if (connection.getMetaData().supportsTransactions()) {
+                        connection.commit();
+                    }
                     queryCount.incrementAndGet();
                     return Arrays.stream(updatedRows).sum();
                 }))
