@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
@@ -26,12 +27,16 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @Builder.Default
     private final Duration interval = Duration.ofSeconds(60);
 
+    @PluginProperty(group = "connection")
     private Property<String> url;
 
+    @PluginProperty(group = "connection")
     private Property<String> username;
 
+    @PluginProperty(group = "connection")
     private Property<String> password;
 
+    @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
 
     private Property<String> sql;

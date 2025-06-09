@@ -31,12 +31,16 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInterface {
+    @PluginProperty(group = "connection")
     private Property<String> url;
 
+    @PluginProperty(group = "connection")
     private Property<String> username;
 
+    @PluginProperty(group = "connection")
     private Property<String> password;
 
+    @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
 
     @io.swagger.v3.oas.annotations.media.Schema(

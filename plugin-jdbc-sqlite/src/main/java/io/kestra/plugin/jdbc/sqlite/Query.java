@@ -79,6 +79,7 @@ import java.util.*;
     }
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SqliteQueryInterface {
+    @PluginProperty(group = "connection")
     protected Property<String> sqliteFile;
 
     @Builder.Default

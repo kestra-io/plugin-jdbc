@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -57,11 +58,17 @@ import java.util.Properties;
 )
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface {
     @Builder.Default
+    @PluginProperty(group = "connection")
     protected Property<Boolean> ssl = Property.of(false);
+    @PluginProperty(group = "connection")
     protected Property<SslMode> sslMode;
+    @PluginProperty(group = "connection")
     protected Property<String> sslRootCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKey;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKeyPassword;
 
     @Override
