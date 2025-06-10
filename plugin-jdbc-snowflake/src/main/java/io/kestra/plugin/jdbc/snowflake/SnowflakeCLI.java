@@ -102,29 +102,34 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     @Schema(
         title = "The account to use for authentication."
     )
+    @PluginProperty(group = "connection")
     @NotNull
     protected Property<String> account;
 
     @Schema(
         title = "The username to use for authentication."
     )
+    @PluginProperty(group = "connection")
     @NotNull
     protected Property<String> username;
 
     @Schema(
         title = "The password to use for authentication."
     )
+    @PluginProperty(group = "connection")
     protected Property<String> password;
 
     @Schema(
         title = "The private key file for key pair authentication and key rotation for authentication/",
         description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='"
     )
+    @PluginProperty(group = "connection")
     protected Property<String> privateKey;
 
     @Schema(
         title = "Specifies the private key password for key pair authentication and key rotation."
     )
+    @PluginProperty(group = "connection")
     protected Property<String> privateKeyPassword;
 
     @Schema(

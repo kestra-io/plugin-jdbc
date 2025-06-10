@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sqlite;
 
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -8,6 +9,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public interface SqliteQueryInterface extends JdbcConnectionInterface {
+    @PluginProperty(group = "connection")
     @Schema(
         title = "Add sqlite file.",
         description = "The file must be from Kestra's internal storage"

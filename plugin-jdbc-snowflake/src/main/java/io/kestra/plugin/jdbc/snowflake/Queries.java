@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.snowflake;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -50,11 +51,23 @@ import java.util.Properties;
     }
 )
 public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, SnowflakeInterface {
+    
+    @PluginProperty(group = "connection")
     private Property<String> privateKey;
+
+    @PluginProperty(group = "connection")
     private Property<String> privateKeyPassword;
+
+    @PluginProperty(group = "connection")
     private Property<String> database;
+
+    @PluginProperty(group = "connection")
     private Property<String> warehouse;
+
+    @PluginProperty(group = "connection")
     private Property<String> schema;
+
+    @PluginProperty(group = "connection")
     private Property<String> role;
 
     @Override
