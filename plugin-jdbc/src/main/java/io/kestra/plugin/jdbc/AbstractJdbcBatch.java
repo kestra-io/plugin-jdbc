@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
-import reactor.core.publisher.Mono;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -39,13 +38,13 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
 
     private Property<String> timeZoneId;
 
+    @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
     @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
-    @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Insert query to be executed.",
         description = "The query must have as many question marks as the number of columns in the table." +
@@ -93,7 +92,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         }
 
         String sql;
-        if (columnsToUse != null && this.sql == null) {
+        if (!columnsToUse.isEmpty() && this.sql == null) {
             sql = constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse);
         } else {
             sql = runContext.render(this.sql).as(String.class).orElse(null);
