@@ -144,6 +144,55 @@ public class OracleTest extends AbstractRdbmsTest {
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
     }
 
+    @Test
+    void batchInsert_withZonedDateTime_shouldSucceed() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        try (var statement = getConnection().createStatement()) {
+            statement.execute("CREATE TABLE ZONED_TEST (id NUMBER, ts TIMESTAMP, PRIMARY KEY(id))");
+        }
+
+        java.io.File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+        ZonedDateTime zonedDateTime = ZonedDateTime.of(
+            LocalDateTime.of(2025, 6, 28, 10, 0, 0),
+            java.time.ZoneId.of("Europe/Paris")
+        );
+
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("id", 100);
+        data.put("ts", zonedDateTime);
+
+        try (var writer = new java.io.BufferedWriter(new java.io.FileWriter(tempFile))) {
+            writer.write(io.kestra.core.serializers.JacksonMapper.ofIon().writeValueAsString(data));
+        }
+
+        Batch batchTask = Batch.builder()
+            .url(Property.ofValue(this.getUrl()))
+            .username(Property.ofValue(this.getUsername()))
+            .password(Property.ofValue(this.getPassword()))
+            .from(Property.ofValue(runContext.storage().putFile(tempFile).toString()))
+            .sql(Property.ofValue("INSERT INTO ZONED_TEST (id, ts) VALUES (:id, :ts)"))
+            .build();
+
+        batchTask.run(runContext);
+
+        Query queryTask = Query.builder()
+            .url(Property.ofValue(this.getUrl()))
+            .username(Property.ofValue(this.getUsername()))
+            .password(Property.ofValue(this.getPassword()))
+            .sql(Property.ofValue("SELECT ts FROM ZONED_TEST WHERE id = 100"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .build();
+
+        AbstractJdbcQuery.Output queryOutput = queryTask.run(runContext);
+
+        assertThat(queryOutput.getRow(), notNullValue());
+
+        LocalDateTime insertedTimestamp = (LocalDateTime) queryOutput.getRow().get("TS");
+        assertThat(insertedTimestamp, is(zonedDateTime.withZoneSameInstant(java.time.ZoneId.of("Europe/Paris")).toLocalDateTime()));
+    }
+
     public static Stream<Arguments> incorrectUrl() {
         return Stream.of(
             Arguments.of(new Property<>("")), // Empty URL

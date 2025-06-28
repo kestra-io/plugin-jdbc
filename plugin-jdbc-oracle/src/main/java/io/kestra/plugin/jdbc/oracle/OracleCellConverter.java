@@ -101,19 +101,17 @@ public class OracleCellConverter extends AbstractCellConverter {
     ) throws Exception {
         Class<?> cls = parameterType.getClass(index);
 
-        if (cls ==  oracle.sql.TIMESTAMP.class) {
-            if (value instanceof LocalDateTime) {
-                ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
+        if (cls == oracle.sql.TIMESTAMP.class || cls == oracle.sql.TIMESTAMPLTZ.class) {
+            if (value instanceof LocalDateTime ldt) {
+                ps.setTimestamp(index, Timestamp.valueOf(ldt));
+                return ps;
+            } else if (value instanceof ZonedDateTime zdt) {
+                ps.setTimestamp(index, Timestamp.from(zdt.toInstant()));
                 return ps;
             }
-        } else if (cls ==  oracle.sql.TIMESTAMPTZ.class) {
+        }  else if (cls ==  oracle.sql.TIMESTAMPTZ.class) {
             if (value instanceof ZonedDateTime current) {
                 ps.setTimestamp(index, Timestamp.valueOf(current.toLocalDateTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getZone())));
-                return ps;
-            }
-        } else if (cls ==  oracle.sql.TIMESTAMPLTZ.class) {
-            if (value instanceof LocalDateTime) {
-                ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
                 return ps;
             }
         }
