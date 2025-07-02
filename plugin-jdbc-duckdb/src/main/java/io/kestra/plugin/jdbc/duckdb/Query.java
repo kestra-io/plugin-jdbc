@@ -25,6 +25,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.NotNull;
 import org.duckdb.DuckDBDriver;
@@ -251,7 +252,16 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         }
 
         final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
-        this.sql = new Property<>(configureFileSearchPathQuery +"\n" + this.sql.toString());
+        String sql = this.sql.toString();
+
+        // we transform filename column to show relative paths if filename parameter is used
+        if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
+            String escapedWorkingDir = workingDirectory.toString().replace("\\", "\\\\").replace("/", "\\/");
+            sql = "SELECT * REPLACE(regexp_replace(filename, '^" + escapedWorkingDir + "/', '') AS filename) FROM (" +
+                sql.replaceAll(";\\s*$", "") + ")";
+        }
+
+        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + sql);
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 
