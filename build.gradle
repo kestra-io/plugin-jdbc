@@ -185,7 +185,7 @@ subprojects { Project subproject ->
     apply plugin: "com.github.johnrengelman.shadow"
     apply plugin: "signing"
 
-    if (subproject.name != rootProject.name) {
+    if (subproject.path != ":plugin-jdbc") {
         shadowJar {
             dependsOn(":plugin-jdbc:shadowJar")
         }
