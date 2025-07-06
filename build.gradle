@@ -4,12 +4,10 @@ plugins {
     id 'jacoco-report-aggregation'
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
     id "com.github.johnrengelman.shadow" version "8.1.1" apply(false)
-    id 'ru.vyarus.java-lib' version '3.0.0' apply(false)
-    id 'ru.vyarus.github-info' version '2.0.0' apply(false)
     id 'signing'
-    id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "com.github.ben-manes.versions" version "0.52.0"
     id 'net.researchgate.release' version '3.1.0'
+    id "com.vanniktech.maven.publish" version "0.33.0"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -26,7 +24,7 @@ allprojects {
         mavenLocal()
         mavenCentral()
         if (isBuildSnapshot) {
-            maven { url "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
+            maven { url "https://central.sonatype.com/repository/maven-snapshots/" }
         }
         maven { url "https://maven.dremio.com/free/" }
         maven { url 'https://maven.jumpmind.com/repo/' }
@@ -182,42 +180,45 @@ tasks.named('check') {
 /**********************************************************************************************************************\
  * Publish
  **********************************************************************************************************************/
-nexusPublishing {
-    repositoryDescription = "${project.group}:${rootProject.name}:${project.version}"
-    useStaging = !isBuildSnapshot
-    repositories {
-        sonatype {
-            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-        }
-    }
-}
-
 subprojects { Project subproject ->
     apply plugin: "com.adarshr.test-logger"
     apply plugin: "com.github.johnrengelman.shadow"
-    apply plugin: "maven-publish"
     apply plugin: "signing"
-    apply plugin: 'ru.vyarus.github-info'
-    apply plugin: 'ru.vyarus.java-lib'
 
-    github {
-        user 'kestra-io'
-        repository 'plugin-jdbc'
-        license 'Apache'
-    }
-
-    if (subproject.name != "plugin-jdbc") {
+    if (subproject.path != ":plugin-jdbc") {
         shadowJar {
             dependsOn(":plugin-jdbc:shadowJar")
         }
-    }
 
-    maven.pom {
-        developers {
-            developer {
-                id = "tchiotludo"
-                name = "Ludovic Dehon"
+        apply plugin: "com.vanniktech.maven.publish"
+
+        mavenPublishing {
+            publishToMavenCentral(true)
+            signAllPublications()
+            coordinates("${project.group}", "${project.name}", "${project.version}")
+
+            pom {
+                name        = project.name
+                description = "${project.group}:${project.name}:${rootProject.version}"
+                url         = "https://github.com/kestra-io/${rootProject.name}"
+
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url  = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
+                }
+                developers {
+                    developer {
+                        id    = "tchiotludo"
+                        name  = "Ludovic Dehon"
+                        email = "ldehon@kestra.io"
+                    }
+                }
+                scm {
+                    connection = 'scm:git:'
+                    url = "https://github.com/kestra-io/${rootProject.name}"
+                }
             }
         }
     }

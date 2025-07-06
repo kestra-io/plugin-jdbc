@@ -54,11 +54,24 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         //Create connection in not autocommit mode to enable rollback on error
         Connection connection = null;
         Savepoint savepoint = null;
+        boolean supportsTx = false;
+
         try {
             connection = this.connection(runContext);
-            savepoint = initializeSavepoint(connection);
+            supportsTx = supportsTransactions(connection);
+            final boolean useTransactions = supportsTx && isTransactional;
 
-            connection.setAutoCommit(false);
+            if (supportsTx) {
+                try {
+                    connection.setAutoCommit(false);
+                } catch (SQLException e) {
+                    runContext.logger().warn("Auto-commit disabling not supported: {}", e.getMessage());
+                }
+            }
+
+            if (isTransactional && supportsTx) {
+                savepoint = initializeSavepoint(connection);
+            }
 
             String sqlRendered = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
             String[] queries = sqlRendered.split(";[^']");
@@ -69,18 +82,22 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
-                    if (!isTransactional) {
+                    if (!useTransactions && supportsTx) {
                         connection.commit();
                     }
                     totalSize = extractResultsFromResultSet(connection, stmt, runContext, cellConverter, totalSize, outputList);
                 }
             }
-            connection.commit();
+            if (useTransactions) {
+                connection.commit();
+            }
             runContext.metric(Counter.of("fetch.size",  totalSize, this.tags(runContext)));
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
-            rollbackIfTransactional(connection, savepoint, isTransactional);
+            if (supportsTx && isTransactional) {
+                rollbackIfTransactional(connection, savepoint, true);
+            }
             throw new RuntimeException(e);
         } finally {
             safelyCloseConnection(runContext, connection);
@@ -176,6 +193,15 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         return count;
     }
+
+    private boolean supportsTransactions(Connection connection) {
+        try {
+            return connection.getMetaData().supportsTransactions();
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
 
     @SuperBuilder
     @Getter

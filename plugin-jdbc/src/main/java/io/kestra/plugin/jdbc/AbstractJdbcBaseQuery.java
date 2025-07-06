@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -35,14 +36,19 @@ import java.util.regex.Pattern;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInterface {
+    
+    @PluginProperty(group = "connection")
     private Property<String> url;
 
+    @PluginProperty(group = "connection")
     private Property<String> username;
 
+    @PluginProperty(group = "connection")
     private Property<String> password;
 
+    @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
-
+    
     protected Property<String> sql;
 
     @Builder.Default

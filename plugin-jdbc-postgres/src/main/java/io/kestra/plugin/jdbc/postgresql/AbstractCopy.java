@@ -23,15 +23,24 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractCopy extends Task implements PostgresConnectionInterface {
+    @PluginProperty(group = "connection")
     private Property<String> url;
+    @PluginProperty(group = "connection")
     private Property<String> username;
+    @PluginProperty(group = "connection")
     private Property<String> password;
     @Builder.Default
+    @PluginProperty(group = "connection")
     protected Property<Boolean> ssl = Property.ofValue(false);
+    @PluginProperty(group = "connection")
     protected Property<SslMode> sslMode;
+    @PluginProperty(group = "connection")
     protected Property<String> sslRootCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKey;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKeyPassword;
 
     @Schema(

@@ -50,9 +50,17 @@ import java.sql.Connection;
     }
 )
 public class Download extends AbstractSnowflakeConnection implements RunnableTask<Download.Output> {
+    
+    @PluginProperty(group = "connection")
     private Property<String> database;
+
+    @PluginProperty(group = "connection")
     private Property<String> warehouse;
+
+    @PluginProperty(group = "connection")
     private Property<String> schema;
+
+    @PluginProperty(group = "connection")
     private Property<String> role;
 
     @Schema(

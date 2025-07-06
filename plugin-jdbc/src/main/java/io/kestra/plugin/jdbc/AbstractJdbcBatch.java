@@ -12,7 +12,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
-import reactor.core.publisher.Mono;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -31,21 +30,25 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInterface {
+    @PluginProperty(group = "connection")
     private Property<String> url;
 
+    @PluginProperty(group = "connection")
     private Property<String> username;
 
+    @PluginProperty(group = "connection")
     private Property<String> password;
 
+    @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
 
+    @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Source file URI"
     )
     @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
-    @NotNull
     @io.swagger.v3.oas.annotations.media.Schema(
         title = "Insert query to be executed.",
         description = "The query must have as many question marks as the number of columns in the table." +
@@ -93,7 +96,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         }
 
         String sql;
-        if (columnsToUse != null && this.sql == null) {
+        if (!columnsToUse.isEmpty() && this.sql == null) {
             sql = constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse);
         } else {
             sql = runContext.render(this.sql).as(String.class).orElse(null);
@@ -106,7 +109,9 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE);
             PreparedStatement ps = connection.prepareStatement(sql);
         ) {
-            connection.setAutoCommit(false);
+            if (connection.getMetaData().supportsTransactions()) {
+                connection.setAutoCommit(false);
+            }
 
             int renderedChunk = runContext.render(this.chunk).as(Integer.class).orElseThrow();
 
@@ -119,7 +124,9 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                         addBatch(ps, parameterMetaData, row, cellConverter, connection, runContext);
                     }
                     int[] updatedRows = ps.executeBatch();
-                    connection.commit();
+                    if (connection.getMetaData().supportsTransactions()) {
+                        connection.commit();
+                    }
                     queryCount.incrementAndGet();
                     return Arrays.stream(updatedRows).sum();
                 }))

@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -55,11 +56,17 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionInterface {
     @Builder.Default
+    @PluginProperty(group = "connection")
     protected Property<Boolean> ssl = Property.ofValue(false);
+    @PluginProperty(group = "connection")
     protected Property<PostgresConnectionInterface.SslMode> sslMode;
+    @PluginProperty(group = "connection")
     protected Property<String> sslRootCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslCert;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKey;
+    @PluginProperty(group = "connection")
     protected Property<String> sslKeyPassword;
 
     @Override

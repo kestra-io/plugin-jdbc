@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.micronaut.http.uri.UriBuilder;
@@ -22,16 +23,19 @@ public interface JdbcConnectionInterface {
         title = "The JDBC URL to connect to the database."
     )
     @NotNull
+    @PluginProperty(group = "connection")
     Property<String> getUrl();
 
     @Schema(
         title = "The database user."
     )
+    @PluginProperty(group = "connection")
     Property<String> getUsername();
 
     @Schema(
         title = "The database user's password."
     )
+    @PluginProperty(group = "connection")
     Property<String> getPassword();
 
     /**
@@ -49,6 +53,7 @@ public interface JdbcConnectionInterface {
      * @throws IllegalArgumentException if the URL is not valid or empty.
      */
     default String validateUrl(RunContext runContext) throws IllegalVariableEvaluationException, IllegalArgumentException {
+        
         String url = runContext.render(this.getUrl()).as(String.class).orElse(null);
 
         //Check if URL is empty

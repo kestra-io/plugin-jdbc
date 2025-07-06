@@ -28,6 +28,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
@@ -63,13 +64,13 @@ public class ClickHouseTest extends AbstractClickHouseTest {
         assertThat(runOutput.getRow().get("FixedString"), is("four"));
         assertThat(runOutput.getRow().get("Uuid"), is("6bbf0744-74b4-46b9-bb05-53905d4538e7"));
         assertThat(runOutput.getRow().get("Date"), is(LocalDate.parse("2030-12-25")));
-        assertThat(runOutput.getRow().get("DateTime"), is(LocalDateTime.parse("2004-10-19T08:23:54").atZone(ZoneId.of("Europe/Paris"))));
+        assertThat(runOutput.getRow().get("DateTime"), is(ZonedDateTime.parse("2004-10-19T10:23:54+04:00[Europe/Moscow]")));
         assertThat(runOutput.getRow().get("DateTimeNoTZ"), is(LocalDateTime.parse("2004-10-19T10:23:54")));
-        assertThat(runOutput.getRow().get("DateTime64"), is(LocalDateTime.parse("2004-10-19T08:23:54.999").atZone(ZoneId.of("Europe/Paris"))));
+        assertThat(runOutput.getRow().get("DateTime64"), is(ZonedDateTime.parse("2004-10-19T10:23:54.999+04:00[Europe/Moscow]")));
         assertThat(runOutput.getRow().get("Enum"), is("hello"));
         assertThat(runOutput.getRow().get("LowCardinality"), is("four"));
         assertThat(runOutput.getRow().get("Array"), is(new String[]{"a", "b"}));
-        assertThat(runOutput.getRow().get("Nested.NestedId"), is(new Byte[]{Byte.valueOf("123")}));
+        assertThat(runOutput.getRow().get("Nested.NestedId"), is(new Byte[] {123}));
         assertThat(runOutput.getRow().get("Nested.NestedString"), is(new String[]{"four"}));
         assertThat((List<Object>) runOutput.getRow().get("Tuple"), containsInAnyOrder("a", Byte.valueOf("1")));
         assertThat(runOutput.getRow().get("Nullable"), is(nullValue()));
@@ -152,7 +153,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(Property.ofValue("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 values( ? )"))
+            .sql(Property.ofValue("INSERT INTO clickhouse_types (String) VALUES(?) SETTINGS async_insert=1, wait_for_async_insert=1"))
             .build();
 
         taskUpdate.run(runContext);

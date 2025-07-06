@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.sqlite;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -53,6 +54,7 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface {
 
+    @PluginProperty(group = "connection")
     protected Property<String> sqliteFile;
 
     @Builder.Default

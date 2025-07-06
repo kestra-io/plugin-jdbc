@@ -85,12 +85,20 @@ public abstract class AbstractCellConverter {
 
     protected PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {
         Class<?> cls = parameterType.getClass(index);
+        String typeName = parameterType.getTypeName(index);
 
         try {
             if (value == null) {
                 ps.setNull(index, parameterType.getType(index));
                 return ps;
-            } else if (cls == Integer.class) {
+            }
+
+            if (typeName == null || "UNKNOWN".equalsIgnoreCase(typeName)) {
+                ps.setString(index, value.toString());
+                return ps;
+            }
+
+            else if (cls == Integer.class) {
                 ps.setInt(index, (Integer) value);
                 return ps;
             } else if (cls == Short.class) {
