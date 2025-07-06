@@ -56,30 +56,30 @@ public class UploadDownloadTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Upload upload = Upload.builder()
-            .url(Property.of("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
-            .username(Property.of(this.username))
-            .password(Property.of(this.password))
-            .warehouse(Property.of("COMPUTE_WH"))
-            .database(Property.of("UNITTEST"))
-            .from(Property.of(put.toString()))
-            .schema(Property.of("public"))
-            .stageName(Property.of("UNITSTAGE"))
-            .prefix(Property.of("ut_" + IdUtils.create()))
-            .fileName(Property.of("test.sql"))
+            .url(Property.ofValue("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
+            .username(Property.ofValue(this.username))
+            .password(Property.ofValue(this.password))
+            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .database(Property.ofValue("UNITTEST"))
+            .from(Property.ofValue(put.toString()))
+            .schema(Property.ofValue("public"))
+            .stageName(Property.ofValue("UNITSTAGE"))
+            .prefix(Property.ofValue("ut_" + IdUtils.create()))
+            .fileName(Property.ofValue("test.sql"))
             .build();
 
         Upload.Output uploadRun = upload.run(runContext);
         assertThat(uploadRun.getUri(), notNullValue());
 
         Download download = Download.builder()
-            .url(Property.of("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
-            .username(Property.of(this.username))
-            .password(Property.of(this.password))
-            .warehouse(Property.of("COMPUTE_WH"))
-            .database(Property.of("UNITTEST"))
-            .schema(Property.of("public"))
-            .stageName(Property.of("UNITSTAGE"))
-            .fileName(Property.of(uploadRun.getUri().toString()))
+            .url(Property.ofValue("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
+            .username(Property.ofValue(this.username))
+            .password(Property.ofValue(this.password))
+            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .database(Property.ofValue("UNITTEST"))
+            .schema(Property.ofValue("public"))
+            .stageName(Property.ofValue("UNITSTAGE"))
+            .fileName(Property.ofValue(uploadRun.getUri().toString()))
             .build();
 
         Download.Output downloadRun = download.run(runContext);

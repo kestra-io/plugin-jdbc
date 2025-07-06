@@ -37,11 +37,11 @@ public class Db2Test extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .sql(Property.of("SELECT 1 AS result FROM SYSIBM.SYSDUMMY1"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT 1 AS result FROM SYSIBM.SYSDUMMY1"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -56,12 +56,12 @@ public class Db2Test extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from db2_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from db2_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -99,23 +99,23 @@ public class Db2Test extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("update db2_types set VARCHAR_col = 'VARCHAR_col'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("update db2_types set VARCHAR_col = 'VARCHAR_col'"))
             .build();
 
         taskUpdate.run(runContext);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select VARCHAR_col from db2_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select VARCHAR_col from db2_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -128,23 +128,23 @@ public class Db2Test extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("update db2_types set BLOB_col = CAST('VARCHAR_col' AS BLOB)"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("update db2_types set BLOB_col = CAST('VARCHAR_col' AS BLOB)"))
             .build();
 
         taskUpdate.run(runContext);
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select BLOB_col from db2_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select BLOB_col from db2_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);

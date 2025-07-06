@@ -47,10 +47,10 @@ class DuckDbQueriesTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Queries task = Queries.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .parameters(Property.of(Map.of("age", 30)))
-            .sql(Property.of("""
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .parameters(Property.ofValue(Map.of("age", 30)))
+            .sql(Property.ofValue("""
                 CREATE TABLE employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
 
@@ -78,11 +78,11 @@ class DuckDbQueriesTest {
         URL resource = DuckDbQueriesTest.class.getClassLoader().getResource("db/duck.db");
 
         Queries task = Queries.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .parameters(Property.of(Map.of("age", 30)))
-            .url(Property.of("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
-            .sql(Property.of("""
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .parameters(Property.ofValue(Map.of("age", 30)))
+            .url(Property.ofValue("jdbc:duckdb:"+ Objects.requireNonNull(resource).getPath()))
+            .sql(Property.ofValue("""
                 CREATE TABLE IF NOT EXISTS employee (id INTEGER PRIMARY KEY, name VARCHAR, age INTEGER);
                 CREATE TABLE IF NOT EXISTS laptop (id INTEGER PRIMARY KEY, brand VARCHAR, model VARCHAR);
 
@@ -126,10 +126,10 @@ class DuckDbQueriesTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Queries.QueriesBuilder<?, ?> builder = Queries.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(Property.of(List.of("out")))
-            .fetchType(Property.of(FETCH_ONE))
+            .outputFiles(Property.ofValue(List.of("out")))
+            .fetchType(Property.ofValue(FETCH_ONE))
             .sql(new Property<>("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
                 COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
@@ -179,15 +179,15 @@ class DuckDbQueriesTest {
         final String expectedName = "Viva";
 
         var createTableAndFetchData = Queries.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .fetchType(Property.of(FETCH))
+            .fetchType(Property.ofValue(FETCH))
             .sql(new Property<>("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
                 SELECT * FROM new_tbl;
                 """)
             )
-            .outputDbFile(Property.of(true))
+            .outputDbFile(Property.ofValue(true))
             .build()
             .run(runContext);
 
@@ -199,13 +199,13 @@ class DuckDbQueriesTest {
             .get("name"), is(expectedName));
 
         var updateTableAndFetchData = Queries.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
-            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .fetchType(Property.ofValue(FETCH))
             .sql(new Property<>(
                 "UPDATE new_tbl SET name = 'TestUser' WHERE name = '" + expectedName + "'; \n" +
                 "SELECT * FROM new_tbl;")
             )
-            .databaseUri(Property.of(createTableAndFetchData.getDatabaseUri().toString()))
+            .databaseUri(Property.ofValue(createTableAndFetchData.getDatabaseUri().toString()))
             .build()
             .run(runContext);
 

@@ -30,10 +30,10 @@ class PinotQueriesTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Queries task = Queries.builder()
-            .url(Property.of("jdbc:pinot://localhost:49000"))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue("jdbc:pinot://localhost:49000"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 select count(*) as count from airlineStats;
                 """))
             .build();

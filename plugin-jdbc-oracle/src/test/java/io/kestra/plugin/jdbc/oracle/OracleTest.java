@@ -41,12 +41,12 @@ public class OracleTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from oracle_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from oracle_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -81,13 +81,13 @@ public class OracleTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .parameters(Property.of(Map.of("char", "aa")))
-            .sql(Property.of("select * from oracle_types where T_CHAR = :char"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .parameters(Property.ofValue(Map.of("char", "aa")))
+            .sql(Property.ofValue("select * from oracle_types where T_CHAR = :char"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -101,24 +101,24 @@ public class OracleTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query taskUpdate = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("UPDATE oracle_types SET T_VARCHAR = 'D' WHERE T_VARCHAR = 'bb'"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = 'D' WHERE T_VARCHAR = 'bb'"))
             .build();
 
         taskUpdate.run(runContext);
 
 
         Query taskGet = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select T_VARCHAR from oracle_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select T_VARCHAR from oracle_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
@@ -134,11 +134,11 @@ public class OracleTest extends AbstractRdbmsTest {
 
         Query task = Query.builder()
             .url(url)
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from oracle_types;"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from oracle_types;"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));

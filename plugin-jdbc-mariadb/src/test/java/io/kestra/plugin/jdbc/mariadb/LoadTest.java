@@ -45,27 +45,27 @@ public class LoadTest {
         );
 
         Query createTable = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
-            .sql(Property.of("CREATE TABLE IF NOT EXISTS discounts (\n" +
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
+            .sql(Property.ofValue("CREATE TABLE IF NOT EXISTS discounts (\n" +
                 "    id INT NOT NULL AUTO_INCREMENT,\n" +
                 "    title VARCHAR(255) NOT NULL,\n" +
                 "    expired_date DATE NOT NULL,\n" +
                 "    amount DECIMAL(10 , 2 ) NULL,\n" +
                 "    PRIMARY KEY (id)\n" +
                 ");"))
-            .fetchType(Property.of(NONE))
+            .fetchType(Property.ofValue(NONE))
             .build();
 
         createTable.run(runContext);
 
         Query load = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
             .inputFile(put.toString())
-            .fetchType(Property.of(NONE))
+            .fetchType(Property.ofValue(NONE))
             .sql(new Property<>("LOAD DATA LOCAL INFILE '{{ inputFile }}' \n" +
                 "INTO TABLE discounts \n" +
                 "FIELDS TERMINATED BY ',' \n" +
@@ -78,11 +78,11 @@ public class LoadTest {
         AbstractJdbcQuery.Output loadRun = load.run(runContext);
 
         Query out = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
-            .fetchType(Property.of(FETCH_ONE))
-            .sql(Property.of("SELECT COUNT(*) as count FROM discounts \n"))
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT COUNT(*) as count FROM discounts \n"))
             .build();
 
         AbstractJdbcQuery.Output outRun = out.run(runContext);
@@ -96,10 +96,10 @@ public class LoadTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query createTable = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
-            .sql(Property.of("CREATE TABLE IF NOT EXISTS passwd (\n" +
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
+            .sql(Property.ofValue("CREATE TABLE IF NOT EXISTS passwd (\n" +
                 "    password TEXT\n" +
                 ");"))
             .build();
@@ -107,10 +107,10 @@ public class LoadTest {
         createTable.run(runContext);
 
         Query load = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
-            .sql(Property.of("LOAD DATA LOCAL INFILE '/etc/passwd' \n" +
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
+            .sql(Property.ofValue("LOAD DATA LOCAL INFILE '/etc/passwd' \n" +
                 "INTO TABLE passwd \n" +
                 "FIELDS TERMINATED BY ',' \n" +
                 "ENCLOSED BY '\"'\n" +
@@ -121,11 +121,11 @@ public class LoadTest {
         load.run(runContext);
 
         Query result = Query.builder()
-            .url(Property.of("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
-            .username(Property.of("root"))
-            .password(Property.of("mariadb_passwd"))
-            .sql(Property.of("SELECT * FROM passwd"))
-            .fetchType(Property.of(FETCH))
+            .url(Property.ofValue("jdbc:mariadb://127.0.0.1:64791/kestra?allowLoadLocalInfile=true"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mariadb_passwd"))
+            .sql(Property.ofValue("SELECT * FROM passwd"))
+            .fetchType(Property.ofValue(FETCH))
             .build();
 
 
