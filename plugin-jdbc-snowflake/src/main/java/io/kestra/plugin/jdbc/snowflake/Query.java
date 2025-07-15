@@ -85,4 +85,23 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
             DriverManager.registerDriver(new SnowflakeDriver());
         }
     }
+
+    @Override
+    public void kill() {
+        try {
+            if (this.runningStatement != null && !this.runningStatement.isClosed()) {
+                this.runningStatement.cancel();
+            }
+        } catch (Exception e) {
+            // do nothing
+        }
+
+        try {
+            if (this.runningConnection != null && !this.runningConnection.isClosed()) {
+                this.runningConnection.close();
+            }
+        } catch (Exception e) {
+            // do nothing
+        }
+    }
 }
