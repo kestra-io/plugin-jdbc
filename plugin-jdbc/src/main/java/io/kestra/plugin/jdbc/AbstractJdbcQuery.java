@@ -1,13 +1,9 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
@@ -29,6 +25,12 @@ import java.util.Map;
 @NoArgsConstructor
 public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
 
+    @Setter
+    protected transient volatile Statement runningStatement;
+
+    @Setter
+    protected transient volatile Connection runningConnection;
+
     public AbstractJdbcBaseQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
@@ -39,6 +41,8 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             Connection conn = this.connection(runContext);
             Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
         ) {
+            this.runningConnection = conn;
+            this.runningStatement = stmt;
 
             if (conn.getMetaData().supportsTransactions()) {
                 conn.setAutoCommit(true);
@@ -48,20 +52,20 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             logger.debug("Starting query: {}", renderedSql);
 
             boolean isResult = switch (stmt) {
-                case PreparedStatement preparedStatement  -> {
-                    if (this.getParameters() == null) { //Null check for DuckDB which always use PreparedStatement
+                case PreparedStatement preparedStatement -> {
+                    if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
                         yield preparedStatement.execute(renderedSql);
                     }
                     yield preparedStatement.execute();
                 }
-                case Statement statment -> statment.execute(renderedSql);
+                case Statement statement -> statement.execute(renderedSql);
             };
 
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;
 
             if (isResult) {
-                try(ResultSet rs = stmt.getResultSet()) {
+                try (ResultSet rs = stmt.getResultSet()) {
                     //Populate result fro result set
                     switch (this.renderFetchType(runContext)) {
                         case FETCH_ONE -> {
@@ -90,8 +94,11 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                     }
                 }
             }
-            runContext.metric(Counter.of("fetch.size",  size, this.tags(runContext)));
+            runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
             return output.build();
+        } finally {
+            this.runningStatement = null;
+            this.runningConnection = null;
         }
     }
 }
