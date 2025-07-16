@@ -6,7 +6,7 @@ openssl genrsa -des3 -out certs/server/server.key -passout pass:p4ssphrase 2048
 openssl rsa -in certs/server/server.key -passin pass:p4ssphrase -out certs/server/server.key
 openssl req -new -nodes -key certs/server/server.key -out certs/server/server.csr -subj "/CN=postgresql"
 openssl x509 -req -in certs/server/server.csr -days 365 -CA certs/ca.crt -CAkey certs/ca.key -CAcreateserial -out certs/server/server.crt
-sudo chmod -R 600 certs/server/
+sudo chmod -R 775 certs/server/
 sudo chown -R 1001 certs/server/
 
 mkdir certs/client
