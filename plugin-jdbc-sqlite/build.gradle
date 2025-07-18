@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'org.xerial:sqlite-jdbc:3.50.1.0'
+    jdbcDriver 'org.xerial:sqlite-jdbc:3.50.2.0'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk18on:1.81'
     api 'org.bouncycastle:bcpkix-jdk18on:1.81'
