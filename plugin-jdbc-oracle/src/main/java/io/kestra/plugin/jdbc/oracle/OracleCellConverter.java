@@ -85,7 +85,7 @@ public class OracleCellConverter extends AbstractCellConverter {
 
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
         if (columnTypeName.equals("DATE")) {
-            return ((Timestamp) data).toLocalDateTime().toLocalDate();
+            return ((Timestamp) data).toLocalDateTime();
         }
 
         return super.convert(columnIndex, rs);
