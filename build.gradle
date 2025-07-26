@@ -28,6 +28,7 @@ allprojects {
         }
         maven { url "https://maven.dremio.com/free/" }
         maven { url 'https://maven.jumpmind.com/repo/' }
+        maven { url "https://talend-update.talend.com/nexus/content/repositories/libraries/" }
     }
 }
 
