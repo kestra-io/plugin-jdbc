@@ -51,17 +51,17 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -74,16 +74,16 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(FETCH_ONE))
-            .sql(Property.of("SELECT 'someString' as stringvalue, pg_sleep(0) as voidvalue"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT 'someString' as stringvalue, pg_sleep(0) as voidvalue"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -135,17 +135,17 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -160,17 +160,17 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id from pgsql_types where b='random'"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select concert_id from pgsql_types where b='random'"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -183,17 +183,17 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(STORE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(STORE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -215,16 +215,16 @@ public class PgsqlTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.keyNoPass()))
-            .fetchType(Property.of(FETCH_ONE))
-            .sql(Property.of("select item from pgsql_types")) // PG SQL composite field are not supported
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select item from pgsql_types")) // PG SQL composite field are not supported
             .build();
 
 
@@ -262,11 +262,11 @@ public class PgsqlTest extends AbstractRdbmsTest {
 
         Query task = Query.builder()
             .url(url)
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select item from pgsql_types;"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select item from pgsql_types;"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
@@ -312,47 +312,47 @@ public class PgsqlTest extends AbstractRdbmsTest {
     public static class PostgresConnection implements PostgresConnectionInterface {
         @Override
         public Property<String> getUrl() {
-            return Property.of(TestUtils.url());
+            return Property.ofValue(TestUtils.url());
         }
 
         @Override
         public Property<String> getUsername() {
-            return Property.of(TestUtils.username());
+            return Property.ofValue(TestUtils.username());
         }
 
         @Override
         public Property<String> getPassword() {
-            return Property.of(TestUtils.password());
+            return Property.ofValue(TestUtils.password());
         }
 
         @Override
         public Property<Boolean> getSsl() {
-            return Property.of(TestUtils.ssl());
+            return Property.ofValue(TestUtils.ssl());
         }
 
         @Override
         public Property<SslMode> getSslMode() {
-            return Property.of(TestUtils.sslMode());
+            return Property.ofValue(TestUtils.sslMode());
         }
 
         @Override
         public Property<String> getSslRootCert() {
-            return Property.of(TestUtils.ca());
+            return Property.ofValue(TestUtils.ca());
         }
 
         @Override
         public Property<String> getSslCert() {
-            return Property.of(TestUtils.cert());
+            return Property.ofValue(TestUtils.cert());
         }
 
         @Override
         public Property<String> getSslKey() {
-            return Property.of(TestUtils.key());
+            return Property.ofValue(TestUtils.key());
         }
 
         @Override
         public Property<String> getSslKeyPassword() {
-            return Property.of(TestUtils.keyPass());
+            return Property.ofValue(TestUtils.keyPass());
         }
 
         @Override

@@ -66,11 +66,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into oracle_types values( ? , ? , ?, ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into oracle_types values( ? , ? , ?, ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -97,11 +97,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into namedInsert values( ? , ? , ? )"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert values( ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -131,12 +131,12 @@ public class BatchTest extends AbstractRdbmsTest {
         columns.add("t_name");
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into namedInsert (t_id,t_name) values( ? , ? )"))
-            .columns(Property.of(columns))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert (t_id,t_name) values( ? , ? )"))
+            .columns(Property.ofValue(columns))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -180,11 +180,11 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("ORACLE_TYPES"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("ORACLE_TYPES"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -208,12 +208,12 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("namedInsert"))
-            .columns(Property.of(List.of("t_name")))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("namedInsert"))
+            .columns(Property.ofValue(List.of("t_name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

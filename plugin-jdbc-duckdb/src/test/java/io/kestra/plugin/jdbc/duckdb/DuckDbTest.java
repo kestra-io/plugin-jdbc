@@ -57,9 +57,9 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');\n" +
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');\n" +
                 "\n" +
                 "SET TimeZone='America/Los_Angeles';\n" +
                 "\n" +
@@ -187,10 +187,10 @@ class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:" + Objects.requireNonNull(resource).getPath()))
-            .sql(Property.of("SELECT * FROM duck_types"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .url(Property.ofValue("jdbc:duckdb:" + Objects.requireNonNull(resource).getPath()))
+            .sql(Property.ofValue("SELECT * FROM duck_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -225,11 +225,11 @@ class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:" + Objects.requireNonNull(resource).getPath()))
-            .parameters(Property.of(Map.of("num", 2147483647)))
-            .sql(Property.of("SELECT * FROM duck_types WHERE t_integer = :num"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .url(Property.ofValue("jdbc:duckdb:" + Objects.requireNonNull(resource).getPath()))
+            .parameters(Property.ofValue(Map.of("num", 2147483647)))
+            .sql(Property.ofValue("SELECT * FROM duck_types WHERE t_integer = :num"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -246,11 +246,11 @@ class DuckDbTest {
         URL resource = DuckDbTest.class.getClassLoader().getResource("db/duck.db");
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .url(Property.ofValue("jdbc:duckdb:"))
             .databaseFile(Path.of(Objects.requireNonNull(resource).toURI()))
-            .sql(Property.of("SELECT * FROM duck_types"))
+            .sql(Property.ofValue("SELECT * FROM duck_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -294,9 +294,9 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query.QueryBuilder<?, ?> builder = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(Property.of(List.of("out")))
+            .outputFiles(Property.ofValue(List.of("out")))
             .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);\n" +
                 "\n" +
                 "COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');"));
@@ -333,10 +333,10 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
-            .sql(Property.of("""
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .url(Property.ofValue("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
+            .sql(Property.ofValue("""
                 SELECT created_date, agency, complaint_type, landmark, resolution_description
                 FROM sample_data.nyc.service_requests
                 WHERE created_date >= '2021-01-01' AND created_date <= '2021-01-31' LIMIT 100;
@@ -354,13 +354,13 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .url(Property.of("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
-            .parameters(Property.of(Map.of(
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .url(Property.ofValue("jdbc:duckdb:md:my_db?motherduck_token=" + MOTHER_DUCK_TOKEN))
+            .parameters(Property.ofValue(Map.of(
                 "type", "Street Condition"
             )))
-            .sql(Property.of("""
+            .sql(Property.ofValue("""
                 SELECT created_date, agency, complaint_type, landmark, resolution_description
                 FROM sample_data.nyc.service_requests
                 WHERE complaint_type = :type LIMIT 100;
@@ -382,10 +382,10 @@ class DuckDbTest {
 
         //Original query
         var originalSelect = Query.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .databaseUri(Property.of(dbSource.toString()))
-            .sql(Property.of("SELECT * FROM new_table;"))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .databaseUri(Property.ofValue(dbSource.toString()))
+            .sql(Property.ofValue("SELECT * FROM new_table;"))
             .build().run(runContext);
 
         assertThat(originalSelect.getRows(), notNullValue());
@@ -395,19 +395,19 @@ class DuckDbTest {
 
         //Insert data and output DB file
         var update = Query.builder()
-            .fetchType(Property.of(NONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .databaseUri(Property.of(dbSource.toString()))
-            .sql(Property.of("INSERT  INTO new_table (i) VALUES (4);"))
-            .outputDbFile(Property.of(true))
+            .fetchType(Property.ofValue(NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .databaseUri(Property.ofValue(dbSource.toString()))
+            .sql(Property.ofValue("INSERT  INTO new_table (i) VALUES (4);"))
+            .outputDbFile(Property.ofValue(true))
             .build().run(runContext);
 
         //Check output
         var check = Query.builder()
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .databaseUri(Property.of(update.getDatabaseUri().toString())) // use output db from last task
-            .sql(Property.of("SELECT * FROM new_table;"))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .databaseUri(Property.ofValue(update.getDatabaseUri().toString())) // use output db from last task
+            .sql(Property.ofValue("SELECT * FROM new_table;"))
             .build().run(runContext);
 
         assertThat(check.getRows(), notNullValue());
@@ -424,19 +424,19 @@ class DuckDbTest {
         URI source = getCsvSourceUri(storageInterface);
 
         var createTable = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
-            .outputFiles(Property.of(List.of("out")))
+            .outputFiles(Property.ofValue(List.of("out")))
             .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
-            .outputDbFile(Property.of(true))
+            .outputDbFile(Property.ofValue(true))
             .build()
             .run(runContext);
 
         //Check table exists
         var getTable = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
-            .databaseUri(Property.of(createTable.getDatabaseUri().toString()))
-            .fetchType(Property.of(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .databaseUri(Property.ofValue(createTable.getDatabaseUri().toString()))
+            .fetchType(Property.ofValue(FETCH))
             .sql(new Property<>("SELECT * FROM new_tbl;"))
             .build()
             .run(runContext);
@@ -456,9 +456,9 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         var result = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(new Property<>(sql))
-            .fetchType(Property.of(FETCH))
+            .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
 
@@ -473,9 +473,9 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         var result = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(new Property<>("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
-            .fetchType(Property.of(FETCH))
+            .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
 
@@ -497,11 +497,11 @@ class DuckDbTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         var result = Query.builder()
-            .timeZoneId(Property.of("Europe/Paris"))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(new Property<>("""
                 SELECT array_value(1, 2, 3);
                 """))
-            .fetchType(Property.of(FETCH))
+            .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
 
@@ -515,9 +515,9 @@ class DuckDbTest {
 
         Query task = Query.builder()
             .url(url)
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("SELECT array_value(1, 2, 3);"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("SELECT array_value(1, 2, 3);"))
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));

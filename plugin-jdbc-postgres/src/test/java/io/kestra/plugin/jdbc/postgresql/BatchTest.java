@@ -68,18 +68,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.key()))
-            .sslKeyPassword(Property.of(TestUtils.keyPass()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into pgsql_types\n" +
+            .url(Property.ofValue(getUrl()))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into pgsql_types\n" +
                 "(\n" +
                 "  concert_id,\n" +
                 "  available,\n" +
@@ -160,17 +160,17 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.key()))
-            .sslKeyPassword(Property.of(TestUtils.keyPass()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into namedInsert values( ? , ? , ? )"))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert values( ? , ? , ? )"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -197,18 +197,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(TestUtils.url()))
-            .username(Property.of(TestUtils.username()))
-            .password(Property.of(TestUtils.password()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.key()))
-            .sslKeyPassword(Property.of(TestUtils.keyPass()))
-            .from(Property.of(uri.toString()))
-            .sql(Property.of("insert into namedInsert(id,name) values( ? , ? )"))
-            .columns(Property.of(Arrays.asList("id", "name")))
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id,name) values( ? , ? )"))
+            .columns(Property.ofValue(Arrays.asList("id", "name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -253,17 +253,17 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.key()))
-            .sslKeyPassword(Property.of(TestUtils.keyPass()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("pgsql_nosql"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("pgsql_nosql"))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
@@ -287,18 +287,18 @@ public class BatchTest extends AbstractRdbmsTest {
         URI uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new FileInputStream(tempFile));
 
         Batch task = Batch.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .ssl(Property.of(TestUtils.ssl()))
-            .sslMode(Property.of(TestUtils.sslMode()))
-            .sslRootCert(Property.of(TestUtils.ca()))
-            .sslCert(Property.of(TestUtils.cert()))
-            .sslKey(Property.of(TestUtils.key()))
-            .sslKeyPassword(Property.of(TestUtils.keyPass()))
-            .from(Property.of(uri.toString()))
-            .table(Property.of("namedInsert"))
-            .columns(Property.of(List.of("name")))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("namedInsert"))
+            .columns(Property.ofValue(List.of("name")))
             .build();
 
         AbstractJdbcBatch.Output runOutput = task.run(runContext);

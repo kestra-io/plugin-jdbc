@@ -32,12 +32,12 @@ public class TrinoTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
             .password(null)
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from trino_types"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from trino_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

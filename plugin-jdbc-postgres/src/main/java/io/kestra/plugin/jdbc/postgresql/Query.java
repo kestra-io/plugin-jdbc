@@ -59,7 +59,7 @@ import java.util.Properties;
 public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, PostgresConnectionInterface {
     @Builder.Default
     @PluginProperty(group = "connection")
-    protected Property<Boolean> ssl = Property.of(false);
+    protected Property<Boolean> ssl = Property.ofValue(false);
     @PluginProperty(group = "connection")
     protected Property<SslMode> sslMode;
     @PluginProperty(group = "connection")

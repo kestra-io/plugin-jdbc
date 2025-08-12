@@ -200,9 +200,9 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
             .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
-            .withInterpreter(Property.of(List.of("/bin/sh", "-c")))
+            .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
             .withCommands(
-                Property.of(
+                Property.ofValue(
                     Stream.concat(
                         Stream.of(
                             "snow connection add --connection-name=default-connection --default --no-interactive"

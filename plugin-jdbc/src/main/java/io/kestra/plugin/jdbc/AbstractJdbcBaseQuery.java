@@ -74,10 +74,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @NotNull
     @Builder.Default
-    protected Property<FetchType> fetchType = Property.of(FetchType.NONE);
+    protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Builder.Default
-    protected Property<Integer> fetchSize = Property.of(10000);
+    protected Property<Integer> fetchSize = Property.ofValue(10000);
 
     protected Property<Map<String, Object>> parameters;
 

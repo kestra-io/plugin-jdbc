@@ -38,16 +38,16 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
                 """))
-            .parameters(Property.of(parameters))
+            .parameters(Property.ofValue(parameters))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
@@ -72,12 +72,12 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 DROP TABLE IF EXISTS test_transaction;
                 CREATE TABLE test_transaction(id INTEGER PRIMARY KEY);
                 INSERT INTO test_transaction (id) VALUES (1);
@@ -91,12 +91,12 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
 
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 INSERT INTO test_transaction (id) VALUES (2);
                 INSERT INTO test_transaction (id) VALUES (3f);
                 """)) //Try inserting before failing
@@ -106,12 +106,12 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
                 """))//Try inserting before failing
             .build();
@@ -127,13 +127,13 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries insertOneAndFail = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .transaction(Property.of(false))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .transaction(Property.ofValue(false))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 DROP TABLE IF EXISTS test_transaction;
                 CREATE TABLE test_transaction(id INTEGER PRIMARY KEY);
                 INSERT INTO test_transaction (id) VALUES (1);
@@ -146,12 +146,12 @@ public class SqlServerQueriesTest extends AbstractRdbmsTest {
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
                 """)) //Try inserting before failing
             .build();

@@ -34,11 +34,11 @@ public class SnowflakeCLITest {
         var snowflakeCLI = SnowflakeCLI.builder()
             .id(IdUtils.create())
             .type(SnowflakeCLI.class.getName())
-            .account(Property.of(account))
-            .username(Property.of(username))
-            .password(Property.of(password))
+            .account(Property.ofValue(account))
+            .username(Property.ofValue(username))
+            .password(Property.ofValue(password))
             .commands(
-                Property.of(List.of("snow connection test")))
+                Property.ofValue(List.of("snow connection test")))
             .build();
 
         RunContext runContext = TestsUtils.mockRunContext(runContextFactory, snowflakeCLI, Map.of());

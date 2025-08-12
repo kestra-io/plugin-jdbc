@@ -64,10 +64,10 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
-    protected Property<FetchType> fetchType = Property.of(FetchType.NONE);
+    protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Builder.Default
-    protected Property<Integer> fetchSize = Property.of(10000);
+    protected Property<Integer> fetchSize = Property.ofValue(10000);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
