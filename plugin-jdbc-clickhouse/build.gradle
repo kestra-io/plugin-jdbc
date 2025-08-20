@@ -13,7 +13,14 @@ jar {
 }
 
 dependencies {
-    implementation 'com.clickhouse:clickhouse-jdbc:0.8.6'
+    implementation('com.clickhouse:clickhouse-jdbc:0.8.6') {
+        exclude group: 'org.apache.httpcomponents.core5'
+        exclude group: 'org.apache.httpcomponents.client5'
+    }
+
+    implementation 'org.apache.httpcomponents.core5:httpcore5:5.2.4'
+    implementation 'org.apache.httpcomponents.core5:httpcore5-h2:5.2.4'
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.3.1'
     implementation 'org.lz4:lz4-java:1.8.0'
 
     implementation project(':plugin-jdbc')
