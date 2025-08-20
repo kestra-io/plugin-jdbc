@@ -116,28 +116,28 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             full = true,
             title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
             code = """
-                    id: motherduck
-                    namespace: company.team
+                id: motherduck
+                namespace: company.team
 
-                    tasks:
-                      - id: query
-                        type: io.kestra.plugin.jdbc.duckdb.Query
-                        sql: |
-                          SELECT by, COUNT(*) as nr_comments
-                          FROM sample_data.hn.hacker_news
-                          GROUP BY by
-                          ORDER BY nr_comments DESC;
-                        fetchType: STORE
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    sql: |
+                      SELECT by, COUNT(*) as nr_comments
+                      FROM sample_data.hn.hacker_news
+                      GROUP BY by
+                      ORDER BY nr_comments DESC;
+                    fetchType: STORE
 
-                      - id: csv
-                        type: io.kestra.plugin.serdes.csv.IonToCsv
-                        from: "{{ outputs.query.uri }}"
+                  - id: csv
+                    type: io.kestra.plugin.serdes.csv.IonToCsv
+                    from: "{{ outputs.query.uri }}"
 
-                    pluginDefaults:
-                      - type: io.kestra.plugin.jdbc.duckdb.Query
-                        values:
-                          url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
-                          timeZoneId: Europe/Berlin
+                pluginDefaults:
+                  - type: io.kestra.plugin.jdbc.duckdb.Query
+                    values:
+                      url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
+                      timeZoneId: Europe/Berlin
                 """
         )
     }
