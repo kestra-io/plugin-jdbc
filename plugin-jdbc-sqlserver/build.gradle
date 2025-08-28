@@ -30,4 +30,5 @@ dependencies {
     }
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
