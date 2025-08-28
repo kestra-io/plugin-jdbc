@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.as400;
 
+import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.AS400JDBCDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
@@ -59,11 +60,14 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // only register the driver if not already exist to avoid a memory leak
         if (DriverManager.drivers().noneMatch(AS400JDBCDriver.class::isInstance)) {
             DriverManager.registerDriver(new AS400JDBCDriver());
+            AS400.setDefaultSignonHandler(new NonInteractiveSignonHandler());
         }
     }
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return super.connectionProperties(runContext, "jdbc:as400");
+        Properties props = super.connectionProperties(runContext, "jdbc:as400");
+            props.setProperty("com.ibm.as400.access.AS400.guiAvailable", "false");
+            return props;
     }
 }
