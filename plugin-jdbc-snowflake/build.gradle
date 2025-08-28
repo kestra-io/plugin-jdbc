@@ -21,4 +21,5 @@ dependencies {
 
     testImplementation group: "io.kestra", name: "script", version: kestraVersion
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

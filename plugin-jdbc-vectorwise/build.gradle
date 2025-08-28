@@ -15,5 +15,7 @@ jar {
 dependencies {
     jdbcDriver 'org.talend.libraries:iijdbc:6.0.0'
     implementation project(':plugin-jdbc')
+
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

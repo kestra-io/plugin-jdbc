@@ -17,6 +17,7 @@ dependencies {
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
 
 // https://stackoverflow.com/questions/9156379/ora-01882-timezone-region-not-found
