@@ -15,7 +15,7 @@ jar {
 dependencies {
     // Library that gives the ability to obtain tokens from Azure AD v2
     implementation("com.microsoft.azure:msal4j:1.23.0")
-    implementation("com.microsoft.sqlserver:mssql-jdbc:12.10.0.jre11")
+    implementation("com.microsoft.sqlserver:mssql-jdbc:13.2.0.jre11")
     implementation project(':plugin-jdbc')
 
     // Connect using Microsoft Entra
