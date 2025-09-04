@@ -1,12 +1,12 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.junit.annotations.KestraTest;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.runners.RunnerUtils;
 import io.kestra.core.storages.StorageInterface;
-import io.kestra.core.runners.StandAloneRunner;
 
 import jakarta.inject.Inject;
 import java.io.File;
@@ -20,12 +20,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Objects;
 
+@KestraTest(startRunner = true)
 public abstract class AbstractRdbmsTest {
     @Inject
     protected RunContextFactory runContextFactory;
-
-    @Inject
-    protected StandAloneRunner runner;
 
     @Inject
     protected RunnerUtils runnerUtils;
@@ -67,9 +65,6 @@ public abstract class AbstractRdbmsTest {
 
         if (flows != null) {
             repositoryLoader.load(flows);
-            if (!this.runner.isRunning()) {
-                this.runner.run();
-            }
         }
 
         initDatabase();
