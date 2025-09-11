@@ -13,8 +13,9 @@ jar {
 }
 
 dependencies {
-    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.3'
+    implementation 'org.mariadb.jdbc:mariadb-java-client:3.5.5'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

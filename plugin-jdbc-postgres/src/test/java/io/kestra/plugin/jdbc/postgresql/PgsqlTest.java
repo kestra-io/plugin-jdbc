@@ -9,7 +9,6 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * See :
  * - https://www.postgresql.org/docs/12/datatype.html
  */
-@KestraTest
 public class PgsqlTest extends AbstractRdbmsTest {
     @Inject
     private FlowInputOutput flowIO;
@@ -247,7 +245,7 @@ public class PgsqlTest extends AbstractRdbmsTest {
             "update_postgres",
             null,
             (flow, exec) -> flowIO.readExecutionInputs(flow, exec, INPUTS),
-            Duration.ofMinutes(5)
+            Duration.ofMinutes(1)
         );
 
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));

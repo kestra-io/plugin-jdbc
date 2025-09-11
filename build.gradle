@@ -3,11 +3,12 @@ plugins {
     id "idea"
     id 'jacoco-report-aggregation'
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
-    id "com.github.johnrengelman.shadow" version "8.1.1" apply(false)
+    id "com.gradleup.shadow" version "9.1.0" apply(false)
     id 'signing'
     id "com.github.ben-manes.versions" version "0.52.0"
     id 'net.researchgate.release' version '3.1.0'
-    id "com.vanniktech.maven.publish" version "0.33.0"
+    id "com.vanniktech.maven.publish" version "0.34.0"
+    id "io.kestra.gradle.inject-bom-versions" version "1.0.0"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -117,6 +118,8 @@ subprojects {
         testImplementation group: "io.kestra", name: "repository-memory", version: kestraVersion
         testImplementation group: "io.kestra", name: "runner-memory", version: kestraVersion
         testImplementation group: "io.kestra", name: "storage-local", version: kestraVersion
+        testImplementation group: "io.kestra", name: "scheduler", version: kestraVersion
+        testImplementation group: "io.kestra", name: "worker", version: kestraVersion
 
         // test
         testImplementation "org.junit.jupiter:junit-jupiter-engine"
@@ -125,7 +128,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.18.0'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.19.0'
     }
 }
 
@@ -182,7 +185,7 @@ tasks.named('check') {
  **********************************************************************************************************************/
 subprojects { Project subproject ->
     apply plugin: "com.adarshr.test-logger"
-    apply plugin: "com.github.johnrengelman.shadow"
+    apply plugin: "com.gradleup.shadow"
     apply plugin: "signing"
 
     if (subproject.path != ":plugin-jdbc") {
@@ -191,6 +194,7 @@ subprojects { Project subproject ->
         }
 
         apply plugin: "com.vanniktech.maven.publish"
+        apply plugin: "io.kestra.gradle.inject-bom-versions"
 
         mavenPublishing {
             publishToMavenCentral(true)

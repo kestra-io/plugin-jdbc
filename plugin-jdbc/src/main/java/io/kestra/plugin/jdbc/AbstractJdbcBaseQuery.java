@@ -51,16 +51,25 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     
     protected Property<String> sql;
 
+    /**
+     * @deprecated use fetchType: STORE instead
+     */
     @Builder.Default
     @Deprecated(since="0.19.0", forRemoval=true)
     private boolean store = false;
 
-    @Deprecated(since="0.19.0", forRemoval=true)
+    /**
+     * @deprecated use fetchType: FETCH_ONE instead
+     */
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean fetchOne = false;
 
-    @Deprecated(since="0.19.0", forRemoval=true)
+    /**
+     * @deprecated use fetchType: FETCH instead
+     */
     @Builder.Default
+    @Deprecated(since="0.19.0", forRemoval=true)
     private boolean fetch = false;
 
     @NotNull

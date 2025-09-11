@@ -70,7 +70,7 @@ public class OracleTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("T_NUMBER_5"), is(BigDecimal.valueOf(7456100)));
         assertThat(runOutput.getRow().get("T_BINARY_FLOAT"), is(7456123.89F));
         assertThat(runOutput.getRow().get("T_BINARY_DOUBLE"), is(7456123.89D));
-        assertThat(runOutput.getRow().get("T_DATE"), is(LocalDate.parse("1992-11-13")));
+        assertThat(runOutput.getRow().get("T_DATE"), is(LocalDateTime.parse("1992-11-13T00:00:00")));
         assertThat(runOutput.getRow().get("T_TIMESTAMP"), is(LocalDateTime.parse("1998-01-23T06:00:00")));
         assertThat(runOutput.getRow().get("T_TIMESTAMP_TIME_ZONE"), is(ZonedDateTime.parse("1998-01-23T06:00:00-05:00")));
         assertThat(runOutput.getRow().get("T_TIMESTAMP_LOCAL"), is(LocalDateTime.parse("1998-01-23T12:00:00")));

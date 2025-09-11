@@ -13,10 +13,11 @@ jar {
 }
 
 dependencies {
-    implementation("com.oracle.database.jdbc:ojdbc11:23.8.0.25.04")
+    implementation("com.oracle.database.jdbc:ojdbc11:23.9.0.25.07")
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
 
 // https://stackoverflow.com/questions/9156379/ora-01882-timezone-region-not-found

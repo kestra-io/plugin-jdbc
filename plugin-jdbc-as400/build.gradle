@@ -13,8 +13,9 @@ jar {
 }
 
 dependencies {
-    implementation 'net.sf.jt400:jt400:21.0.4'
+    implementation 'net.sf.jt400:jt400:21.0.5'
     implementation project(':plugin-jdbc')
 
     testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

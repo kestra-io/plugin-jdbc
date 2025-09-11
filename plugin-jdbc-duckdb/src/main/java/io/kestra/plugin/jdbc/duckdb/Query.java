@@ -25,6 +25,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.NotNull;
 import org.duckdb.DuckDBDriver;
@@ -115,28 +116,28 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
             full = true,
             title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
             code = """
-                    id: motherduck
-                    namespace: company.team
+                id: motherduck
+                namespace: company.team
 
-                    tasks:
-                      - id: query
-                        type: io.kestra.plugin.jdbc.duckdb.Query
-                        sql: |
-                          SELECT by, COUNT(*) as nr_comments
-                          FROM sample_data.hn.hacker_news
-                          GROUP BY by
-                          ORDER BY nr_comments DESC;
-                        fetchType: STORE
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    sql: |
+                      SELECT by, COUNT(*) as nr_comments
+                      FROM sample_data.hn.hacker_news
+                      GROUP BY by
+                      ORDER BY nr_comments DESC;
+                    fetchType: STORE
 
-                      - id: csv
-                        type: io.kestra.plugin.serdes.csv.IonToCsv
-                        from: "{{ outputs.query.uri }}"
+                  - id: csv
+                    type: io.kestra.plugin.serdes.csv.IonToCsv
+                    from: "{{ outputs.query.uri }}"
 
-                    pluginDefaults:
-                      - type: io.kestra.plugin.jdbc.duckdb.Query
-                        values:
-                          url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
-                          timeZoneId: Europe/Berlin
+                pluginDefaults:
+                  - type: io.kestra.plugin.jdbc.duckdb.Query
+                    values:
+                      url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
+                      timeZoneId: Europe/Berlin
                 """
         )
     }
@@ -251,7 +252,16 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
         }
 
         final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
-        this.sql = new Property<>(configureFileSearchPathQuery +"\n" + this.sql.toString());
+        String sql = this.sql.toString();
+
+        // we transform filename column to show relative paths if filename parameter is used
+        if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
+            String escapedWorkingDir = workingDirectory.toString().replace("\\", "\\\\").replace("/", "\\/");
+            sql = "SELECT * REPLACE(regexp_replace(filename, '^" + escapedWorkingDir + "/', '') AS filename) FROM (" +
+                sql.replaceAll(";\\s*$", "") + ")";
+        }
+
+        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + sql);
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 
