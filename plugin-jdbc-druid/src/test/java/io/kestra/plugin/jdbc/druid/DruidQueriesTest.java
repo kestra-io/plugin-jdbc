@@ -30,14 +30,14 @@ public class DruidQueriesTest {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Queries task = Queries.builder()
-                .url(Property.of("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
-                .fetchType(Property.of(FETCH))
-                .timeZoneId(Property.of("Europe/Paris"))
-                .parameters(Property.of(Map.of(
+                .url(Property.ofValue("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
+                .fetchType(Property.ofValue(FETCH))
+                .timeZoneId(Property.ofValue("Europe/Paris"))
+                .parameters(Property.ofValue(Map.of(
                     "limitLow", 2,
                     "limitHigh", 10))
                 )
-                .sql(Property.of("""
+                .sql(Property.ofValue("""
                         select * from products limit :limitLow;
                         select * from products limit :limitHigh;
                         """))

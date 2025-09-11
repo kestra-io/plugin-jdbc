@@ -81,7 +81,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     )
     @NotNull
     @Builder.Default
-    private Property<Boolean> compress = Property.of(true);
+    private Property<Boolean> compress = Property.ofValue(true);
 
     @Override
     public Download.Output run(RunContext runContext) throws Exception {

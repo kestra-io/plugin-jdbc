@@ -115,7 +115,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on Mariadb DB instance side.
         // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.
         // It actually just disables client-side caching of the entire response and gives you responses as they arrive as a result it has no effect on the DB
-        return this.isStore() ? Property.of(Integer.MIN_VALUE) : this.fetchSize;
+        return this.isStore() ? Property.ofValue(Integer.MIN_VALUE) : this.fetchSize;
     }
 
     @Override

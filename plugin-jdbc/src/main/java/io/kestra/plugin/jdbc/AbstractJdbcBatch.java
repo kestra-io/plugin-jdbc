@@ -63,7 +63,7 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     )
     @Builder.Default
     @NotNull
-    private Property<Integer> chunk = Property.of(1000);
+    private Property<Integer> chunk = Property.ofValue(1000);
 
     @Schema(
         title = "The columns to be inserted.",

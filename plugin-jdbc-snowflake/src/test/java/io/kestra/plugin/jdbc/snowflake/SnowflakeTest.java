@@ -46,15 +46,15 @@ public class SnowflakeTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .warehouse(Property.of("COMPUTE_WH"))
-            .database(Property.of("UNITTEST"))
-            .schema(Property.of("public"))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("select * from snowflake_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .database(Property.ofValue("UNITTEST"))
+            .schema(Property.ofValue("public"))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select * from snowflake_types"))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

@@ -29,10 +29,10 @@ public class DruidTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         Query task = Query.builder()
-                .url(Property.of("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
-                .fetchType(Property.of(FETCH_ONE))
-                .timeZoneId(Property.of("Europe/Paris"))
-                .sql(Property.of("""
+                .url(Property.ofValue("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
+                .fetchType(Property.ofValue(FETCH_ONE))
+                .timeZoneId(Property.ofValue("Europe/Paris"))
+                .sql(Property.ofValue("""
                         select
                           -- NULL as t_null,
                           'string' AS t_string,

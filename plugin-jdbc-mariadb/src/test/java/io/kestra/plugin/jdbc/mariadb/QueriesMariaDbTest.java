@@ -30,12 +30,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT firstName, lastName FROM employee;
                 SELECT brand FROM laptop;
                 """))
@@ -58,16 +58,16 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
         );
 
         Queries taskGet = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT firstName, lastName, age FROM employee where age > :age and age < :age + 10;
                 SELECT brand, model FROM laptop where brand = :brand and cpu_frequency > :cpu_frequency;
                 """))
-            .parameters(Property.of(parameters))
+            .parameters(Property.ofValue(parameters))
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
@@ -91,12 +91,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 DROP TABLE IF EXISTS animals;
                 CREATE TABLE animals (
                      id MEDIUMINT NOT NULL AUTO_INCREMENT,
@@ -123,12 +123,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 INSERT INTO test_transaction (name) VALUES ('test_1');
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
                 """))
@@ -140,12 +140,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
 
         //Queries should fail due to bad sql
         Queries queriesFail = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 INSERT INTO test_transaction (name) VALUES ('test_2');
                 INSERT INTO test_transaction (name) VALUES (1000f);
                 """)) //Try inserting before failing
@@ -155,12 +155,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
                 """))//Try inserting before failing
             .build();
@@ -176,13 +176,13 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
 
         //Queries should pass in a transaction
         Queries queriesFail = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .transaction(Property.of(false)) //No rollback on failure
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .transaction(Property.ofValue(false)) //No rollback on failure
+            .sql(Property.ofValue("""
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_1');
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_success_2');
                 INSERT INTO test_transaction (name) VALUES (10f);
@@ -195,12 +195,12 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
 
         //Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of("""
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
                 SELECT name FROM test_transaction;
                 """))
             .build();

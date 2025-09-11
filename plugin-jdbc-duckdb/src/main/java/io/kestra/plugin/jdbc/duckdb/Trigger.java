@@ -64,11 +64,11 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
     protected Property<String> databaseUri;
 
     @Builder.Default
-    protected Property<Boolean> outputDbFile = Property.of(false);
+    protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Override
     public Property<String> getUrl() {
-        return Property.of("jdbc:duckdb:" + databaseFile);
+        return Property.ofValue("jdbc:duckdb:" + databaseFile);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
-            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

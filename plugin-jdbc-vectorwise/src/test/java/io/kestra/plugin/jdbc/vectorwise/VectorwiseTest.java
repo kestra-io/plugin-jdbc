@@ -39,12 +39,12 @@ public class VectorwiseTest extends AbstractRdbmsTest {
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
         Query task = Query.builder()
-            .url(Property.of(getUrl()))
-            .username(Property.of(getUsername()))
-            .password(Property.of(getPassword()))
-            .fetchType(Property.of(FETCH_ONE))
-            .timeZoneId(Property.of("Europe/Paris"))
-            .sql(Property.of(new String (Files.readAllBytes( Paths.get("src/test/resources/scripts/vectorwise.sql")))))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue(new String (Files.readAllBytes( Paths.get("src/test/resources/scripts/vectorwise.sql")))))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);

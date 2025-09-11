@@ -58,7 +58,7 @@ public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface
     protected Property<String> sqliteFile;
 
     @Builder.Default
-    protected Property<Boolean> outputDbFile = Property.of(false);
+    protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
@@ -73,7 +73,7 @@ public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
-            .fetchType(Property.of(this.renderFetchType(runContext)))
+            .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

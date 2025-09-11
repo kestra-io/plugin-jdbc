@@ -146,14 +146,14 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
     @Builder.Default
-    private Property<String> url = Property.of(DEFAULT_URL);
+    private Property<String> url = Property.ofValue(DEFAULT_URL);
 
     protected Object inputFiles;
     protected Property<List<String>> outputFiles;
     protected Property<String> databaseUri;
 
     @Builder.Default
-    protected Property<Boolean> outputDbFile = Property.of(false);
+    protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Override
     @Schema(
@@ -164,7 +164,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
     @NotNull
     public Property<String> getUrl() {
         if (DEFAULT_URL.equals(this.url.toString())) {
-            return Property.of(DEFAULT_URL + this.databaseFile);
+            return Property.ofValue(DEFAULT_URL + this.databaseFile);
         }
         return this.url;
     }
@@ -200,7 +200,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
 
                 builder.scheme("jdbc:duckdb");
 
-                this.url = Property.of(builder.build().toString());
+                this.url = Property.ofValue(builder.build().toString());
             }
         } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();

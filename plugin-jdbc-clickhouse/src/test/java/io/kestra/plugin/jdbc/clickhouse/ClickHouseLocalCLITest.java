@@ -27,7 +27,7 @@ public class ClickHouseLocalCLITest {
 		ClickHouseLocalCLI clickhouseLocalCLI = ClickHouseLocalCLI.builder()
 			.id(IdUtils.create())
 			.type(ClickHouseLocalCLI.class.getName())
-            .commands(Property.of(List.of("SELECT * FROM system.tables")))
+            .commands(Property.ofValue(List.of("SELECT * FROM system.tables")))
             .build();
 
 		RunContext runContext = TestsUtils.mockRunContext(runContextFactory, clickhouseLocalCLI, Map.of());
