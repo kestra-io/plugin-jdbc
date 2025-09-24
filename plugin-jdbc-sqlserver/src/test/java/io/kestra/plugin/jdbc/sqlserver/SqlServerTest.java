@@ -98,6 +98,26 @@ public class SqlServerTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("t_varchar"), is("D"));
     }
 
+    @Test
+    void shouldReturnSizeZeroWhenEmptyResult() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("SELECT * FROM sqlserver_types WHERE 1=0"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), is(nullValue()));
+        assertThat(runOutput.getSize(), is(0L));
+    }
+
+
     @Override
     protected String getUrl() {
         return "jdbc:sqlserver://localhost:41433;trustServerCertificate=true";
