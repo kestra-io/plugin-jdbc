@@ -128,9 +128,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 long size = 0L;
                 switch (this.renderFetchType(runContext)) {
                     case FETCH_ONE -> {
-                        size = 1L;
+                        var result = fetchResult(rs, cellConverter, connection);
+                        size = (result == null ? 0L : 1L);
                         output
-                            .row(fetchResult(rs, cellConverter, connection))
+                            .row(result)
                             .size(size);
                     }
                     case STORE -> {

@@ -72,8 +72,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                             var result = fetchResult(rs, cellConverter, conn);
                             size = result == null ? 0L : 1L;
                             output
-                                .row(result)
-                                .size(size);
+                                .row(result);
                         }
                         case STORE -> {
                             File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
@@ -81,19 +80,18 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
                                 size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
                             }
                             output
-                                .uri(runContext.storage().putFile(tempFile))
-                                .size(size);
+                                .uri(runContext.storage().putFile(tempFile));
                         }
                         case FETCH -> {
                             List<Map<String, Object>> maps = new ArrayList<>();
                             size = fetchResults(stmt, rs, maps, cellConverter, conn);
                             output
-                                .rows(maps)
-                                .size(size);
+                                .rows(maps);
                         }
                     }
                 }
             }
+            output.size(size);
             runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
             return output.build();
         } finally {
