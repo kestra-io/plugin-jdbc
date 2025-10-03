@@ -41,7 +41,7 @@ services:
       - "56983:5432"
 
   postgres:
-    image: postgres
+    image: postgres:latest
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pg_passwd
@@ -127,7 +127,7 @@ services:
       - "45678:45678"
 
   druid_postgres:
-    image: postgres
+    image: postgres:latest
     container_name: druid_postgres
     environment:
       POSTGRES_USER: druid
