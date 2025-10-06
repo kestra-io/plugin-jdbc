@@ -18,6 +18,8 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add("-parameters")
 }
 
+final targetJavaVersion = JavaVersion.VERSION_21
+
 group "io.kestra.plugin"
 
 allprojects {
@@ -35,8 +37,12 @@ allprojects {
 
 subprojects {
     group "io.kestra.plugin"
-    sourceCompatibility = 21
-    targetCompatibility = 21
+
+    java {
+        sourceCompatibility = targetJavaVersion
+        targetCompatibility = targetJavaVersion
+    }
+
 
     apply plugin: "java-library"
     apply plugin: "idea"
