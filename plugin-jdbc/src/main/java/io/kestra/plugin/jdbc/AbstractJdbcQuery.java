@@ -37,6 +37,13 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
 
         String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
+        String[] statements = renderedSql.split(";[^']");
+        if (statements.length > 1) {
+            throw new IllegalArgumentException(
+                "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
+            );
+        }
+
         try (
             Connection conn = this.connection(runContext);
             Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
