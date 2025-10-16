@@ -42,7 +42,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             .map(String::trim)
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
-        
+
         if (statements > 1) {
             throw new IllegalArgumentException(
                 "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
