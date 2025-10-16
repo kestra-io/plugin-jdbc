@@ -43,6 +43,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery {
             .filter(s -> !s.isEmpty())
             .count();
 
+        System.out.println("Rendered SQL parts: {}" + Arrays.toString(renderedSql.split(";[^']")));
+
+
         if (statements > 1) {
             throw new IllegalArgumentException(
                 "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
