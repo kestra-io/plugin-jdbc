@@ -261,7 +261,7 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Outpu
                 sql.replaceAll(";\\s*$", "") + ")";
         }
 
-        this.sql = new Property<>("/* pragma_file_search_path='" + workingDirectory + "' */\n" + sql);
+        this.sql = new Property<>("SET file_search_path='" + workingDirectory + "';\n" + sql);
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 
