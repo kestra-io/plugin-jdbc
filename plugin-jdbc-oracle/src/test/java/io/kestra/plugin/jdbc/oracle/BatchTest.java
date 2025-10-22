@@ -266,6 +266,54 @@ public class BatchTest extends AbstractRdbmsTest {
         conn.close();
     }
 
+    @Test
+    public void shouldInsertNullWhenColumnMissing() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // Create a temporary ION file with missing column ("t_address" omitted)
+        File tempFile = File.createTempFile("missing_column_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            for (int i = 0; i < 3; i++) {
+                FileSerde.write(output, ImmutableMap.of(
+                    "t_id", i,
+                    "t_name", "Kestra_" + i
+                    // "t_address" is intentionally missing
+                ));
+            }
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        // Task: insert into table expecting (t_id, t_name, t_address)
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO namedInsert (t_id, t_name, t_address) VALUES (?, ?, ?)"))
+            .columns(Property.ofValue(List.of("t_id", "t_name", "t_address")))
+            .build();
+
+        boolean succeededWithoutOra17041 = false;
+
+        try {
+            AbstractJdbcBatch.Output runOutput = task.run(runContext);
+            succeededWithoutOra17041 = true;
+            assertThat(runOutput.getRowCount(), is(3L));
+        } catch (Exception e) {
+            System.out.println("Caught exception: " + e.getMessage());
+            succeededWithoutOra17041 = !e.getMessage().contains("ORA-17041");
+        }
+
+        assertThat("Should not trigger ORA-17041 when missing column (NULL should be inserted instead)",
+            succeededWithoutOra17041, is(true));
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:oracle:thin:@localhost:49161:XE";
