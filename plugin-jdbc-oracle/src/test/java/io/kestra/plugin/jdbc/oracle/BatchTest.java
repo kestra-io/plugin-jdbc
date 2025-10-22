@@ -221,6 +221,51 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRowCount(), is(5L));
     }
 
+    @Test
+    public void shouldRespectColumnOrder() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // Create .ion file with columns intentionally reversed in the data
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+        OutputStream output = new FileOutputStream(tempFile);
+        FileSerde.write(output, ImmutableMap.builder()
+            .put("t_name", "Kestra")
+            .put("t_id", 123)
+            .build()
+        );
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        // Explicit column order: t_id first
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert (t_id, t_name) values(?, ?)"))
+            .columns(Property.ofValue(List.of("t_id", "t_name")))
+            .build();
+
+        task.run(runContext);
+
+        var conn = getConnection();
+        var stmt = conn.prepareStatement("SELECT t_id, t_name FROM namedInsert WHERE t_id = 123");
+        var rs = stmt.executeQuery();
+
+        assertThat("Should have at least one row", rs.next(), is(true));
+        assertThat("Correct value for t_id", rs.getString("t_id"), is("123"));
+        assertThat("Correct value for t_name", rs.getString("t_name"), is("Kestra"));
+
+        rs.close();
+        stmt.close();
+        conn.close();
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:oracle:thin:@localhost:49161:XE";

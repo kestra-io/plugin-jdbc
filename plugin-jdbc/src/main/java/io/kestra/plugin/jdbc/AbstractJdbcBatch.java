@@ -180,13 +180,18 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         RunContext runContext
     ) throws Exception {
         if (o instanceof Map) {
-            Map<String, Object> map = ((Map<String, Object>) o);
-            ListIterator<String> iterKeys = new ArrayList<>(map.keySet()).listIterator();
-            int index = 0;
+            Map<String, Object> map = (Map<String, Object>) o;
             List<String> columnsValue = runContext.render(this.columns).asList(String.class);
-            while (iterKeys.hasNext()) {
-                String col = iterKeys.next();
-                if (columnsValue.isEmpty() || columnsValue.contains(col)) {
+            int index = 0;
+
+            if (!columnsValue.isEmpty()) {
+                for (String col : columnsValue) {
+                    index++;
+                    Object value = map.get(col);
+                    ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, value, index, connection);
+                }
+            } else {
+                for (String col : map.keySet()) {
                     index++;
                     ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, map.get(col), index, connection);
                 }
