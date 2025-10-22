@@ -1,8 +1,10 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -17,7 +19,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Properties;
-
 
 @SuperBuilder
 @ToString
@@ -74,6 +75,14 @@ import java.util.Properties;
                       INSERT INTO products VALUES(4, 'syndicate robust ROI','Outdoor','ruiz-price') ON CONFLICT (product_id) DO NOTHING;
                     fetchType: NONE
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )

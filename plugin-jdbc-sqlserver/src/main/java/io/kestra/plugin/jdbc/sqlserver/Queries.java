@@ -2,7 +2,9 @@ package io.kestra.plugin.jdbc.sqlserver;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
@@ -43,6 +45,14 @@ import java.time.ZoneId;
                     sql: select * from employee; select * from laptop;
                     fetchType: FETCH
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )
