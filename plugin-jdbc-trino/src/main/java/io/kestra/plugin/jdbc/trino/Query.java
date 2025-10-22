@@ -1,5 +1,7 @@
 package io.kestra.plugin.jdbc.trino;
 
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
 import lombok.EqualsAndHashCode;
@@ -53,6 +55,14 @@ import java.time.ZoneId;
                        type: io.kestra.plugin.serdes.csv.IonToCsv
                        from: "{{ outputs.analyze_orders.uri }}"
                    """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )

@@ -1,5 +1,7 @@
 package io.kestra.plugin.jdbc.oracle;
 
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -50,6 +52,14 @@ import java.time.ZoneId;
                     password: oracle_password
                     sql: "{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ); {% endfor %}"
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )

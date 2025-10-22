@@ -1,6 +1,8 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
 import com.clickhouse.jdbc.ClickHouseDriver;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -90,6 +92,14 @@ import java.time.ZoneId;
                       url: jdbc:clickhouse://host.docker.internal:8123/
                       username: default
               """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )

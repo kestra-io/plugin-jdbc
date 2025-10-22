@@ -1,6 +1,8 @@
 package io.kestra.plugin.jdbc.duckdb;
 
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.utils.IdUtils;
@@ -25,7 +27,6 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import jakarta.validation.constraints.NotNull;
 import org.duckdb.DuckDBDriver;
@@ -139,6 +140,14 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                       url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
                       timeZoneId: Europe/Berlin
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )
