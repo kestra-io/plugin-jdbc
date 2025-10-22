@@ -2,9 +2,10 @@ package io.kestra.plugin.jdbc.clickhouse;
 
 import com.clickhouse.jdbc.ClickHouseDriver;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -90,6 +91,26 @@ import java.time.ZoneId;
                     password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
                     table: YourTable
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "records",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records processed."
+        ),
+        @Metric(
+            name = "updated",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records updated."
+        ),
+        @Metric(
+            name = "query",
+            type = Counter.TYPE,
+            unit = "queries",
+            description = "The number of batch queries executed."
         )
     }
 )
