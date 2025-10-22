@@ -36,7 +36,7 @@ import java.util.regex.Pattern;
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInterface {
-
+    
     @PluginProperty(group = "connection")
     private Property<String> url;
 
@@ -48,13 +48,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
-
-    @Schema(
-        title = "SQL statement(s) to execute.",
-        description = """
-          Runs one or more SQL statements depending on the task type.
-          Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
-    )
+    
     protected Property<String> sql;
 
     /**
