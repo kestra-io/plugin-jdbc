@@ -36,7 +36,7 @@ final class DruidTestHelper {
         cleanupRunningTasks();
 
         System.out.println("Running inline ingestion...");
-        runInlineIngestion();
+//        runInlineIngestion();
 
         System.out.println("Waiting for datasource 'products' to be available...");
         waitForDatasource("products");

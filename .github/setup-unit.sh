@@ -47,3 +47,34 @@ CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 """
 
+### Druid test setup
+echo "waiting for Druid to be ready..."
+until curl -sf http://localhost:8888/status >/dev/null 2>&1; do
+  echo "Waiting for druid-router..."
+  sleep 3
+done
+
+until curl -sf http://localhost:11081/status >/dev/null 2>&1; do
+  echo "waiting for druid-coordinator..."
+  sleep 3
+done
+
+# preloading druid datasource
+curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "REPLACE INTO products OVERWRITE ALL WITH ext AS (
+      SELECT * FROM TABLE(EXTERN(
+        '\''{\"type\":\"inline\",\"data\":\"Index,Name\\n1,John\\n2,Alice\\n3,Bob\\n4,Carol\\n5,David\"}'\'',
+        '\''{\"type\":\"csv\",\"findColumnsFromHeader\":true}\"'\''
+      )) EXTEND (\"Index\" BIGINT, \"Name\" VARCHAR)
+    )
+    SELECT TIME_PARSE('\''2000-01-01 00:00:00'\'') AS __time, * FROM ext PARTITIONED BY ALL",
+    "context": {"executionMode": "ASYNC", "maxNumTasks": 2}
+  }' >/dev/null
+
+# wait for datasource to be available
+echo "Waiting for 'products' datasource"
+until curl -sf http://localhost:11081/druid/coordinator/v1/datasources | grep -q products; do
+  sleep 2
+done
