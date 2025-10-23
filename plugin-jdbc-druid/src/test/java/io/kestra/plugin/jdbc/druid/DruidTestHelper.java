@@ -10,6 +10,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 final class DruidTestHelper {
@@ -19,40 +20,62 @@ final class DruidTestHelper {
     }
 
     static void initServer() throws IOException, InterruptedException, TimeoutException {
-        String payload = """
-                {
-                    "context": {"waitUntilSegmentsLoad": true, "finalizeAggregations": false, "groupByEnableMultiValueUnnesting": false, "executionMode": "ASYNC", "maxNumTasks": 2},
-                    "header": true,
-                    "query": "REPLACE INTO \\"products\\" OVERWRITE ALL WITH \\"ext\\" AS (  SELECT * FROM TABLE(EXTERN('{\\"type\\":\\"http\\",\\"uris\\":[\\"https://drive.google.com/uc?id=1OT84-j5J5z2tHoUvikJtoJFInWmlyYzY&export=download\\"]}',\\n      '{\\"type\\":\\"csv\\",\\"findColumnsFromHeader\\":true}'\\n    )\\n  ) EXTEND (\\"index\\" BIGINT, \\"name\\" VARCHAR, \\"ean\\" BIGINT)) SELECT  TIMESTAMP '2000-01-01 00:00:00' AS \\"__time\\", \\"index\\",  \\"name\\",  \\"ean\\"FROM \\"ext\\" PARTITIONED BY ALL",
-                    "resultFormat": "array",
-                    "sqlTypesHeader": true,
-                    "typesHeader": true
-                }""";
         var httpClient = HttpClient.newHttpClient();
-        URI uri = URI.create("http://localhost:8888/druid/v2/sql/statements");
-        var httpRequest = HttpRequest.newBuilder(uri)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build();
-        var httpResponse = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-        var json = OBJECT_MAPPER.readTree(httpResponse.body());
-        String queryId = json.get("queryId").asText();
 
-        // we need to wait until Druid has processed the request
         Await.until(() -> {
             try {
-                URI queryUri =  URI.create("http://localhost:8888/druid/v2/sql/statements/"+ queryId);
-                var queryHttpRequest = HttpRequest.newBuilder(queryUri)
-                    .header("Accept", "application/json")
-                    .GET()
-                    .build();
-                var queryHttpResponse = httpClient.send(queryHttpRequest, HttpResponse.BodyHandlers.ofString());
-                var queryJson = OBJECT_MAPPER.readTree(queryHttpResponse.body());
-                String state = queryJson.get("state").asText();
-                return "ACCEPTED".equals(state) || "RUNNING".equals(state) || "SUCCESS".equals(state);
-            } catch (InterruptedException | IOException e) {
-                throw new RuntimeException(e);
+                var resp = httpClient.send(
+                    HttpRequest.newBuilder(URI.create("http://localhost:8888/status")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return resp.statusCode() == 200;
+            } catch (Exception e) {
+                return false;
             }
-        }, Duration.ofSeconds(1), Duration.ofMinutes(2));
+        }, Duration.ofSeconds(2), Duration.ofMinutes(1));
+
+        var query = """
+            REPLACE INTO "products" OVERWRITE ALL
+            WITH "ext" AS (
+              SELECT * FROM TABLE(EXTERN(
+                '{"type":"inline","data":"Index,Name\\n1,John\\n2,Alice\\n3,Bob"}',
+                '{"type":"csv","findColumnsFromHeader":true}'
+              )) EXTEND ("Index" BIGINT, "Name" VARCHAR)
+            )
+            SELECT TIMESTAMP '2000-01-01 00:00:00' AS "__time", * FROM "ext" PARTITIONED BY ALL
+            """;
+
+        var payload = OBJECT_MAPPER.writeValueAsString(Map.of(
+            "context", Map.of(
+                "waitUntilSegmentsLoad", true,
+                "executionMode", "ASYNC"
+            ),
+            "query", query,
+            "resultFormat", "array"
+        ));
+
+        var stmtUri = URI.create("http://localhost:8888/druid/v2/sql/statements");
+        var stmtRequest = HttpRequest.newBuilder(stmtUri)
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(payload))
+            .build();
+
+        var stmtResponse = httpClient.send(stmtRequest, HttpResponse.BodyHandlers.ofString());
+        var stmtJson = OBJECT_MAPPER.readTree(stmtResponse.body());
+        var queryId = stmtJson.get("queryId").asText();
+
+        // we wait for ingestion task to complete
+        Await.until(() -> {
+            try {
+                var tasks = httpClient.send(
+                    HttpRequest.newBuilder(URI.create("http://localhost:11081/druid/indexer/v1/completeTasks"))
+                        .GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return tasks.statusCode() == 200 && tasks.body().contains(queryId);
+            } catch (Exception e) {
+                return false;
+            }
+        }, Duration.ofSeconds(5), Duration.ofMinutes(1));
     }
 }
