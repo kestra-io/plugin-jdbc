@@ -21,7 +21,7 @@ final class DruidTestHelper {
     static void initServer() throws IOException, InterruptedException, TimeoutException {
         String payload = """
                 {
-                    "context": {"waitUntilSegmentsLoad": true, "finalizeAggregations": false, "groupByEnableMultiValueUnnesting": false, "executionMode":"async", "maxNumTasks": 2},
+                    "context": {"waitUntilSegmentsLoad": true, "finalizeAggregations": false, "groupByEnableMultiValueUnnesting": false, "executionMode": "ASYNC", "maxNumTasks": 2},
                     "header": true,
                     "query": "REPLACE INTO \\"products\\" OVERWRITE ALL WITH \\"ext\\" AS (  SELECT * FROM TABLE(EXTERN('{\\"type\\":\\"http\\",\\"uris\\":[\\"https://drive.google.com/uc?id=1OT84-j5J5z2tHoUvikJtoJFInWmlyYzY&export=download\\"]}',\\n      '{\\"type\\":\\"csv\\",\\"findColumnsFromHeader\\":true}'\\n    )\\n  ) EXTEND (\\"index\\" BIGINT, \\"name\\" VARCHAR, \\"ean\\" BIGINT)) SELECT  TIMESTAMP '2000-01-01 00:00:00' AS \\"__time\\", \\"index\\",  \\"name\\",  \\"ean\\"FROM \\"ext\\" PARTITIONED BY ALL",
                     "resultFormat": "array",
@@ -49,7 +49,7 @@ final class DruidTestHelper {
                 var queryHttpResponse = httpClient.send(queryHttpRequest, HttpResponse.BodyHandlers.ofString());
                 var queryJson = OBJECT_MAPPER.readTree(queryHttpResponse.body());
                 String state = queryJson.get("state").asText();
-                return "SUCCESS".equals(state);
+                return "ACCEPTED".equals(state) || "RUNNING".equals(state) || "SUCCESS".equals(state);
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException(e);
             }
