@@ -22,6 +22,7 @@ final class DruidTestHelper {
     static void initServer() throws IOException, InterruptedException, TimeoutException {
         waitForRouter();
         waitForIndexer();
+        waitForBroker();
         cleanupRunningTasks();
         runInlineIngestion();
         waitForIndexer();
@@ -43,6 +44,20 @@ final class DruidTestHelper {
                 );
             }
         }
+    }
+
+    private static void waitForBroker() throws TimeoutException {
+        Await.until(() -> {
+            try {
+                var r = HTTP.send(
+                    HttpRequest.newBuilder(URI.create("http://localhost:11082/status")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return r.statusCode() == 200;
+            } catch (Exception e) {
+                return false;
+            }
+        }, Duration.ofSeconds(2), Duration.ofMinutes(3));
     }
 
     private static void waitForIndexer() throws TimeoutException {
