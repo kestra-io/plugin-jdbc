@@ -6,50 +6,70 @@ import io.kestra.core.utils.Await;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.http.*;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 final class DruidTestHelper {
-    private static final ObjectMapper OBJECT_MAPPER = JacksonMapper.ofJson();
+    private static final ObjectMapper MAPPER = JacksonMapper.ofJson();
+    private static final HttpClient HTTP = HttpClient.newHttpClient();
+    private static final String ROUTER = "http://localhost:8888";
+    private static final String INDEXER = "http://localhost:11081";
 
-    private DruidTestHelper() {
-    }
+    private DruidTestHelper() {}
 
     static void initServer() throws IOException, InterruptedException, TimeoutException {
-        var httpClient = HttpClient.newHttpClient();
+        cleanupRunningTasks();
+        waitForRouter();
+        runInlineIngestion();
+    }
 
-        Await.until(() -> {
-            try {
-                var resp = httpClient.send(
-                    HttpRequest.newBuilder(URI.create("http://localhost:8888/status")).GET().build(),
+    private static void cleanupRunningTasks() throws IOException, InterruptedException {
+        var resp = HTTP.send(HttpRequest.newBuilder(URI.create(INDEXER + "/druid/indexer/v1/runningTasks")).GET().build(), HttpResponse.BodyHandlers.ofString());
+
+        if (resp.statusCode() == 200) {
+            var tasks = MAPPER.readTree(resp.body());
+            for (var t : tasks) {
+                var id = t.get("id").asText();
+                HTTP.send(
+                    HttpRequest.newBuilder(URI.create(INDEXER + "/druid/indexer/v1/task/" + id + "/shutdown"))
+                        .POST(HttpRequest.BodyPublishers.noBody())
+                        .build(),
                     HttpResponse.BodyHandlers.ofString()
                 );
-                return resp.statusCode() == 200;
+            }
+        }
+    }
+
+    private static void waitForRouter() throws TimeoutException {
+        Await.until(() -> {
+            try {
+                var r = HTTP.send(
+                    HttpRequest.newBuilder(URI.create(ROUTER + "/status")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return r.statusCode() == 200;
             } catch (Exception e) {
                 return false;
             }
         }, Duration.ofSeconds(2), Duration.ofMinutes(1));
+    }
 
+    private static void runInlineIngestion() throws IOException, InterruptedException, TimeoutException {
         var query = """
             REPLACE INTO "products" OVERWRITE ALL
             WITH "ext" AS (
               SELECT * FROM TABLE(EXTERN(
-                '{"type":"inline","data":"Index,Name\\n1,John\\n2,Alice\\n3,Bob"}',
+                '{"type":"inline","data":"Index,Name\\n1,John\\n2,Alice\\n3,Bob\\n4,Carol\\n5,David"}',
                 '{"type":"csv","findColumnsFromHeader":true}'
               )) EXTEND ("Index" BIGINT, "Name" VARCHAR)
             )
-            SELECT TIMESTAMP '2000-01-01 00:00:00' AS "__time", * FROM "ext" PARTITIONED BY ALL
+            SELECT TIME_PARSE('2000-01-01 00:00:00') AS "__time", * FROM "ext" PARTITIONED BY ALL
             """;
 
-        var payload = OBJECT_MAPPER.writeValueAsString(Map.of(
-            "context", Map.of(
-                "waitUntilSegmentsLoad", true,
-                "executionMode", "ASYNC"
-            ),
+        var payload = MAPPER.writeValueAsString(Map.of(
+            "context", Map.of("executionMode", "ASYNC", "maxNumTasks", 2),
             "query", query,
             "resultFormat", "array"
         ));
@@ -60,15 +80,14 @@ final class DruidTestHelper {
             .POST(HttpRequest.BodyPublishers.ofString(payload))
             .build();
 
-        var stmtResponse = httpClient.send(stmtRequest, HttpResponse.BodyHandlers.ofString());
-        var stmtJson = OBJECT_MAPPER.readTree(stmtResponse.body());
+        var stmtResponse = HTTP.send(stmtRequest, HttpResponse.BodyHandlers.ofString());
+        var stmtJson = MAPPER.readTree(stmtResponse.body());
         var queryId = stmtJson.get("queryId").asText();
 
-        // we wait for ingestion task to complete
         Await.until(() -> {
             try {
-                var tasks = httpClient.send(
-                    HttpRequest.newBuilder(URI.create("http://localhost:11081/druid/indexer/v1/completeTasks"))
+                var tasks = HTTP.send(
+                    HttpRequest.newBuilder(URI.create(INDEXER + "/druid/indexer/v1/runningTasks"))
                         .GET().build(),
                     HttpResponse.BodyHandlers.ofString()
                 );
@@ -76,6 +95,6 @@ final class DruidTestHelper {
             } catch (Exception e) {
                 return false;
             }
-        }, Duration.ofSeconds(5), Duration.ofMinutes(1));
+        }, Duration.ofSeconds(3), Duration.ofMinutes(1));
     }
 }

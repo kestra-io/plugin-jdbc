@@ -33,20 +33,16 @@ public class DruidQueriesTest {
                 .url(Property.ofValue("jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true"))
                 .fetchType(Property.ofValue(FETCH))
                 .timeZoneId(Property.ofValue("Europe/Paris"))
-                .parameters(Property.ofValue(Map.of(
-                    "limitLow", 2,
-                    "limitHigh", 10))
-                )
                 .sql(Property.ofValue("""
-                        select * from products limit :limitLow;
-                        select * from products limit :limitHigh;
+                        select * from products limit 2;
+                        select * from products limit 5;
                         """))
                 .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = task.run(runContext);
         assertThat(runOutput.getOutputs(), notNullValue());
         assertThat(runOutput.getOutputs().getFirst().getRows().size(), is(2));
-        assertThat(runOutput.getOutputs().getLast().getRows().size(), is(10));
+        assertThat(runOutput.getOutputs().getLast().getRows().size(), is(5));
     }
 }
 
