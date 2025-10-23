@@ -2,7 +2,9 @@ package io.kestra.plugin.jdbc.sqlserver;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
@@ -83,6 +85,26 @@ import java.time.ZoneId;
                     password: "{{ secret('SQL_PASSWORD') }}"
                     table: xref
               """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "records",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records processed."
+        ),
+        @Metric(
+            name = "updated",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records updated."
+        ),
+        @Metric(
+            name = "query",
+            type = Counter.TYPE,
+            unit = "queries",
+            description = "The number of batch queries executed."
         )
     }
 )

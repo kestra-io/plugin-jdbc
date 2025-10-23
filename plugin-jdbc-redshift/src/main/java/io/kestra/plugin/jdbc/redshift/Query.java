@@ -1,6 +1,8 @@
 package io.kestra.plugin.jdbc.redshift;
 
 import com.amazon.redshift.jdbc.Driver;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -43,6 +45,14 @@ import java.time.ZoneId;
                        sql: select * from redshift_types
                        fetchType: FETCH_ONE
                    """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )

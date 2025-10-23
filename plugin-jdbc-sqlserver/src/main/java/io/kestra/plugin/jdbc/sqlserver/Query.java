@@ -1,6 +1,8 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -50,6 +52,14 @@ import java.time.ZoneId;
                     password: "{{ secret('SQL_PASSWORD') }}"
                     sql: "{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}"
                 """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "fetch.size",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of fetched rows."
         )
     }
 )
