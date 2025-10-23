@@ -20,9 +20,12 @@ final class DruidTestHelper {
     private DruidTestHelper() {}
 
     static void initServer() throws IOException, InterruptedException, TimeoutException {
-        cleanupRunningTasks();
         waitForRouter();
+        waitForIndexer();
+        cleanupRunningTasks();
         runInlineIngestion();
+        waitForIndexer();
+        waitForDatasource("products");
     }
 
     private static void cleanupRunningTasks() throws IOException, InterruptedException {
@@ -42,6 +45,20 @@ final class DruidTestHelper {
         }
     }
 
+    private static void waitForIndexer() throws TimeoutException {
+        Await.until(() -> {
+            try {
+                var r = HTTP.send(
+                    HttpRequest.newBuilder(URI.create(INDEXER + "/status")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return r.statusCode() == 200;
+            } catch (Exception e) {
+                return false;
+            }
+        }, Duration.ofSeconds(2), Duration.ofMinutes(3));
+    }
+
     private static void waitForRouter() throws TimeoutException {
         Await.until(() -> {
             try {
@@ -53,7 +70,7 @@ final class DruidTestHelper {
             } catch (Exception e) {
                 return false;
             }
-        }, Duration.ofSeconds(2), Duration.ofMinutes(1));
+        }, Duration.ofSeconds(2), Duration.ofMinutes(3));
     }
 
     private static void runInlineIngestion() throws IOException, InterruptedException, TimeoutException {
@@ -95,6 +112,21 @@ final class DruidTestHelper {
             } catch (Exception e) {
                 return false;
             }
-        }, Duration.ofSeconds(3), Duration.ofMinutes(1));
+        }, Duration.ofSeconds(3), Duration.ofMinutes(3));
+    }
+
+    private static void waitForDatasource(String datasource) throws TimeoutException {
+        Await.until(() -> {
+            try {
+                var resp = HTTP.send(
+                    HttpRequest.newBuilder(URI.create(INDEXER + "/druid/coordinator/v1/datasources"))
+                        .GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return resp.statusCode() == 200 && resp.body().contains(datasource);
+            } catch (Exception e) {
+                return false;
+            }
+        }, Duration.ofSeconds(3), Duration.ofMinutes(3));
     }
 }
