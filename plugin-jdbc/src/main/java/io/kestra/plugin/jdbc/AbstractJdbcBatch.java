@@ -180,15 +180,38 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
         RunContext runContext
     ) throws Exception {
         if (o instanceof Map) {
-            Map<String, Object> map = ((Map<String, Object>) o);
-            ListIterator<String> iterKeys = new ArrayList<>(map.keySet()).listIterator();
-            int index = 0;
+            Map<String, Object> map = (Map<String, Object>) o;
             List<String> columnsValue = runContext.render(this.columns).asList(String.class);
-            while (iterKeys.hasNext()) {
-                String col = iterKeys.next();
-                if (columnsValue.isEmpty() || columnsValue.contains(col)) {
+            int index = 0;
+
+            if (!columnsValue.isEmpty()) {
+                // If a column is missing from the current row, bind NULL explicitly
+                // instead of skipping it. This ensures that all SQL placeholders '?'
+                // receive a bound value, preventing ORA-17041.
+                for (String col : columnsValue) {
+                    index++;
+                    Object value = map.containsKey(col) ? map.get(col) : null;
+
+                    // Explicit NULL binding safety: avoids "Unable to transform data with type 'null'"
+                    if (value == null) {
+                        Integer sqlType = parameterMetaData.getType(index);
+                        ps.setNull(index, sqlType != null ? sqlType : java.sql.Types.NULL);
+                    } else {
+                        ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, value, index, connection);
+                    }
+                }
+            } else {
+                int expectedParams = parameterMetaData.types.size();
+                for (String col : map.keySet()) {
                     index++;
                     ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, map.get(col), index, connection);
+                }
+
+                // Pad missing parameters with NULL until we reach the expected '?' count
+                while (index < expectedParams) {
+                    index++;
+                    Integer sqlType = parameterMetaData.getType(index);
+                    ps.setNull(index, sqlType != null ? sqlType : java.sql.Types.NULL);
                 }
             }
         } else if (o instanceof Collection) {
