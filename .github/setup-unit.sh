@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 echo "====== STARTING DRUID SETUP ======"
 echo "Time: $(date)"
@@ -60,7 +59,11 @@ echo "Starting: mariadb, sqlserver, postgres"
 echo ""
 echo "====== STARTING ALL DRUID SERVICES ======"
 echo "Starting all services with --wait..."
+
+set +e
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
+compose_exit_code=$?
+set -e
 
 echo ""
 echo "====== IMMEDIATE STATUS CHECK ======"
