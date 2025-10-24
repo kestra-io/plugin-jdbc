@@ -190,18 +190,16 @@ echo ""
 
 # preloading druid datasource
 echo "====== LOADING TEST DATASOURCE ======"
+echo "====== LOADING TEST DATASOURCE ======"
 curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
   -H "Content-Type: application/json" \
-  -d '{
-    "query": "REPLACE INTO products OVERWRITE ALL WITH ext AS (
-      SELECT * FROM TABLE(EXTERN(
-        '\''{\"type\":\"inline\",\"data\":\"Index,Name\\n1,John\\n2,Alice\\n3,Bob\\n4,Carol\\n5,David\"}'\'',
-        '\''{\"type\":\"csv\",\"findColumnsFromHeader\":true}\"'\''
-      )) EXTEND (\"Index\" BIGINT, \"Name\" VARCHAR)
-    )
-    SELECT TIME_PARSE('\''2000-01-01 00:00:00'\'') AS __time, * FROM ext PARTITIONED BY ALL",
-    "context": {"executionMode": "ASYNC", "maxNumTasks": 2}
-  }' >/dev/null
+  -d @- <<'EOF'
+{
+  "query": "REPLACE INTO products OVERWRITE ALL WITH ext AS (SELECT * FROM TABLE(EXTERN('{\"type\":\"inline\",\"data\":\"Index,Name\\n1,John\\n2,Alice\\n3,Bob\\n4,Carol\\n5,David\"}', '{\"type\":\"csv\",\"findColumnsFromHeader\":true}')) EXTEND (\"Index\" BIGINT, \"Name\" VARCHAR)) SELECT TIME_PARSE('2000-01-01 00:00:00') AS __time, * FROM ext PARTITIONED BY ALL",
+  "context": {"executionMode": "ASYNC", "maxNumTasks": 2}
+}
+EOF
+
 
 echo "====== WAITING FOR 'products' DATASOURCE (ingestion progress) ======"
 attempt=0
