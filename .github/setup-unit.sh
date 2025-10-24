@@ -203,10 +203,42 @@ curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
     "context": {"executionMode": "ASYNC", "maxNumTasks": 2}
   }' >/dev/null
 
-echo "Waiting for 'products' datasource..."
-until curl -sf http://localhost:11081/druid/coordinator/v1/datasources | grep -q products; do
+echo "====== WAITING FOR 'products' DATASOURCE (ingestion progress) ======"
+attempt=0
+while ! curl -sf http://localhost:11081/druid/coordinator/v1/datasources | grep -q products; do
+  attempt=$((attempt + 1))
+  echo "[$(date '+%H:%M:%S')] Waiting for datasource... attempt $attempt"
+
+  # Check for active tasks
+  active=$(curl -s http://localhost:8888/druid/indexer/v1/runningTasks | jq length)
+  pending=$(curl -s http://localhost:8888/druid/indexer/v1/pendingTasks | jq length)
+  complete=$(curl -s http://localhost:8888/druid/indexer/v1/completeTasks?max=5 | jq '.[].statusCode' | grep -c SUCCESS || true)
+
+  echo "    → Tasks: running=$active, pending=$pending, recent_success=$complete"
+
+  # Dump details every 5 loops (~10s)
+  if (( attempt % 5 == 0 )); then
+    echo "---- Last 5 running tasks ----"
+    curl -s http://localhost:8888/druid/indexer/v1/runningTasks | jq '.[] | {id, type, dataSource, createdTime}'
+    echo "---- MiddleManager logs (tail 10) ----"
+    docker logs druid_middlemanager --tail 10
+  fi
+
+  if (( attempt > 60 )); then
+    echo "❌ Timeout waiting for 'products' datasource."
+    echo "Dumping last 50 lines of all Druid logs for diagnostics..."
+    docker logs druid_router --tail 50
+    docker logs druid_middlemanager --tail 50
+    docker logs druid_coordinator --tail 50
+    docker logs druid_historical --tail 50
+    exit 1
+  fi
+
   sleep 2
 done
+
+echo "✓ Datasource 'products' detected after $attempt attempts!"
+
 
 echo "✓ Datasource loaded!"
 echo ""
