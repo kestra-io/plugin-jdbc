@@ -20,32 +20,25 @@ final class DruidTestHelper {
     private static final String ROUTER = "http://localhost:8888";
     private static final String COORDINATOR = "http://localhost:11081";
     private static final String INDEXER = "http://localhost:8888/druid/indexer/v1";
+    private static final String BROKER = "http://localhost:11082";
 
     private DruidTestHelper() {}
 
     static void initServer() throws IOException, InterruptedException, TimeoutException {
-        System.out.println("====== INITIALIZING DRUID ======");
         waitForRouter();
         waitForCoordinator();
+        waitForBroker();
         cleanupRunningTasks();
         runInlineIngestion();
         waitForDatasource("products");
-        System.out.println("====== DRUID READY ======");
     }
 
-    // ------------------------------------------------------------------------
-    // Health Checks
-    // ------------------------------------------------------------------------
     private static void waitForRouter() throws TimeoutException {
-        System.out.println("Waiting for Druid router...");
         Await.until(() -> isServiceUp(ROUTER + "/status"), Duration.ofSeconds(2), Duration.ofMinutes(5));
-        System.out.println("✓ Router ready");
     }
 
     private static void waitForCoordinator() throws TimeoutException {
-        System.out.println("Waiting for Druid coordinator...");
         Await.until(() -> isServiceUp(COORDINATOR + "/status"), Duration.ofSeconds(2), Duration.ofMinutes(5));
-        System.out.println("✓ Coordinator ready");
     }
 
     private static boolean isServiceUp(String url) {
@@ -62,9 +55,6 @@ final class DruidTestHelper {
         }
     }
 
-    // ------------------------------------------------------------------------
-    // Cleanup old tasks
-    // ------------------------------------------------------------------------
     private static void cleanupRunningTasks() throws IOException, InterruptedException {
         HttpResponse<String> resp = HTTP.send(
             HttpRequest.newBuilder(URI.create(INDEXER + "/runningTasks"))
@@ -76,7 +66,6 @@ final class DruidTestHelper {
             JsonNode tasks = MAPPER.readTree(resp.body());
             for (JsonNode t : tasks) {
                 String id = t.get("id").asText();
-                System.out.println("Shutting down leftover task: " + id);
                 HTTP.send(
                     HttpRequest.newBuilder(URI.create(INDEXER + "/task/" + id + "/shutdown"))
                         .POST(HttpRequest.BodyPublishers.noBody())
@@ -87,12 +76,11 @@ final class DruidTestHelper {
         }
     }
 
-    // ------------------------------------------------------------------------
-    // Ingestion
-    // ------------------------------------------------------------------------
-    private static void runInlineIngestion() throws IOException, InterruptedException, TimeoutException {
-        System.out.println("Starting inline ingestion for 'products'...");
+    private static void waitForBroker() throws TimeoutException {
+        Await.until(() -> isServiceUp(BROKER + "/status"), Duration.ofSeconds(2), Duration.ofMinutes(5));
+    }
 
+    private static void runInlineIngestion() throws IOException, InterruptedException, TimeoutException {
         String query = """
             REPLACE INTO products OVERWRITE ALL
             WITH ext AS (
@@ -124,15 +112,9 @@ final class DruidTestHelper {
 
         JsonNode json = MAPPER.readTree(resp.body());
         String queryId = json.path("queryId").asText(null);
-        if (queryId == null) {
-            System.err.println("⚠ No queryId returned. Full response: " + resp.body());
-        } else {
-            System.out.println("✓ Ingestion submitted, queryId=" + queryId);
-        }
 
-        // Wait for any successful ingestion task
+        // we waiit for successful ingestion task
         Await.until(DruidTestHelper::hasSuccessfulIngestionTask, Duration.ofSeconds(3), Duration.ofMinutes(5));
-        System.out.println("✓ Ingestion completed successfully.");
     }
 
     private static boolean hasSuccessfulIngestionTask() {
@@ -148,11 +130,7 @@ final class DruidTestHelper {
         }
     }
 
-    // ------------------------------------------------------------------------
-    // Datasource Availability
-    // ------------------------------------------------------------------------
     private static void waitForDatasource(String datasource) throws TimeoutException {
-        System.out.println("Waiting for datasource '" + datasource + "'...");
         Await.until(() -> {
             try {
                 HttpResponse<String> resp = HTTP.send(
@@ -165,6 +143,5 @@ final class DruidTestHelper {
                 return false;
             }
         }, Duration.ofSeconds(3), Duration.ofMinutes(5));
-        System.out.println("✓ Datasource '" + datasource + "' ready.");
     }
 }
