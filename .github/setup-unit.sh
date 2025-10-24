@@ -47,17 +47,70 @@ CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 """
 
-### Druid test setup
 echo "waiting for Druid to be ready..."
 until curl -sf http://localhost:8888/status >/dev/null 2>&1; do
   echo "Waiting for druid-router..."
   sleep 3
 done
+echo "Router is up!"
 
+echo "Waiting for druid-coordinator..."
+attempt=0
+max_attempts=40
 until curl -sf http://localhost:11081/status >/dev/null 2>&1; do
-  echo "waiting for druid-coordinator..."
+  attempt=$((attempt + 1))
+
+  if [ $attempt -ge $max_attempts ]; then
+    echo ""
+    echo "====== TIMEOUT - DIAGNOSTIC INFO ======"
+    echo ""
+
+    echo "1. All Druid Containers Status:"
+    docker ps -a | grep druid
+    echo ""
+
+    echo "2. Coordinator Restart Count:"
+    docker inspect druid_coordinator --format='RestartCount: {{.RestartCount}}'
+    echo ""
+
+    echo "3. Coordinator State:"
+    docker inspect druid_coordinator --format='State: {{.State.Status}}, Running: {{.State.Running}}, ExitCode: {{.State.ExitCode}}'
+    echo ""
+
+    echo "4. Last 50 Lines of Coordinator Logs:"
+    docker logs druid_coordinator --tail 50
+    echo ""
+
+    echo "5. Druid Postgres Status:"
+    docker ps | grep druid_postgres
+    echo ""
+
+    echo "6. Can coordinator reach postgres?"
+    docker exec druid_coordinator sh -c "pg_isready -h druid_postgres -p 5432 -U druid" 2>&1 || echo "pg_isready not available, trying nc..."
+    docker exec druid_coordinator sh -c "nc -zv druid_postgres 5432" 2>&1 || echo "Network check failed"
+    echo ""
+
+    echo "7. ZooKeeper Status:"
+    docker ps | grep druid_zookeeper
+    echo ""
+
+    echo "8. Postgres Logs (last 20 lines):"
+    docker logs druid_postgres --tail 20
+    echo ""
+
+    echo "====== END DIAGNOSTIC INFO ======"
+    exit 1
+  fi
+
+  if [ $((attempt % 5)) -eq 0 ]; then
+    echo "waiting for druid-coordinator... (attempt $attempt/$max_attempts - $((attempt * 3)) seconds elapsed)"
+  else
+    echo "waiting for druid-coordinator..."
+  fi
   sleep 3
 done
+
+echo "Coordinator is up!"
 
 # preloading druid datasource
 curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
@@ -78,3 +131,5 @@ echo "Waiting for 'products' datasource"
 until curl -sf http://localhost:11081/druid/coordinator/v1/datasources | grep -q products; do
   sleep 2
 done
+
+echo "Druid setup complete!"
