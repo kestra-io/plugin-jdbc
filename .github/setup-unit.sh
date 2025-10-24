@@ -1,3 +1,10 @@
+#!/bin/bash
+set -e
+
+echo "====== STARTING DRUID SETUP ======"
+echo "Time: $(date)"
+echo ""
+
 mkdir certs
 openssl req -new -x509 -days 365 -nodes -out certs/ca.crt -keyout certs/ca.key -subj "/CN=root-ca"
 
@@ -37,8 +44,46 @@ hostssl all all ::/0      md5
 local   all all trust
 EOF
 
+echo ""
+echo "====== CHECKING EXISTING DOCKER STATE ======"
+echo "Existing containers:"
+docker ps -a | grep -E "(druid|postgres|mariadb|sqlserver)" || echo "None"
+echo ""
+echo "Existing volumes:"
+docker volume ls | grep -E "(metadata|druid)" || echo "None"
+echo ""
+
+echo "====== STARTING DATABASES ======"
+echo "Starting: mariadb, sqlserver, postgres"
 docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres
+
+echo ""
+echo "====== STARTING ALL DRUID SERVICES ======"
+echo "Starting all services with --wait..."
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
+
+echo ""
+echo "====== CHECKING CONTAINER STATUS AFTER STARTUP ======"
+docker ps -a | grep -E "(druid|postgres)" | head -20
+echo ""
+
+echo "====== CHECKING druid_postgres SPECIFICALLY ======"
+if docker ps -a | grep druid_postgres | grep -q "Up"; then
+  echo "✓ druid_postgres is running"
+elif docker ps -a | grep druid_postgres | grep -q "Exited"; then
+  echo "✗ druid_postgres EXITED!"
+  echo ""
+  echo "Full logs from druid_postgres:"
+  docker logs druid_postgres
+  echo ""
+  echo "Container inspect:"
+  docker inspect druid_postgres --format='Status: {{.State.Status}}, ExitCode: {{.State.ExitCode}}, Error: {{.State.Error}}'
+  exit 1
+else
+  echo "✗ druid_postgres NOT FOUND!"
+  exit 1
+fi
+
 sleep 3
 
 docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
@@ -47,72 +92,85 @@ CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 """
 
-echo "waiting for Druid to be ready..."
+echo ""
+echo "====== WAITING FOR DRUID SERVICES ======"
+echo "Waiting for druid-router..."
+attempt=0
 until curl -sf http://localhost:8888/status >/dev/null 2>&1; do
-  echo "Waiting for druid-router..."
+  attempt=$((attempt + 1))
+  if [ $attempt -gt 60 ]; then
+    echo "Router timeout!"
+    docker logs druid_router --tail 30
+    exit 1
+  fi
+  echo "Waiting for druid-router... ($attempt)"
   sleep 3
 done
-echo "Router is up!"
+echo "✓ Router is up!"
 
+echo ""
 echo "Waiting for druid-coordinator..."
 attempt=0
-max_attempts=40
+max_attempts=60
+
 until curl -sf http://localhost:11081/status >/dev/null 2>&1; do
   attempt=$((attempt + 1))
 
+  # Check if druid_postgres is still running every 10 attempts
+  if [ $((attempt % 10)) -eq 0 ]; then
+    echo ""
+    echo "--- Status check at attempt $attempt ---"
+    if docker ps | grep -q druid_postgres; then
+      echo "✓ druid_postgres is still running"
+    else
+      echo "✗ druid_postgres STOPPED RUNNING!"
+      docker ps -a | grep druid_postgres
+      echo ""
+      echo "druid_postgres logs:"
+      docker logs druid_postgres --tail 50
+      exit 1
+    fi
+
+    if docker ps | grep -q druid_coordinator; then
+      echo "✓ druid_coordinator is running"
+      echo "Last 10 lines of coordinator logs:"
+      docker logs druid_coordinator --tail 10
+    else
+      echo "✗ druid_coordinator stopped!"
+      docker logs druid_coordinator --tail 50
+      exit 1
+    fi
+    echo "---"
+    echo ""
+  fi
+
   if [ $attempt -ge $max_attempts ]; then
     echo ""
-    echo "====== TIMEOUT - DIAGNOSTIC INFO ======"
+    echo "====== TIMEOUT - FULL DIAGNOSTIC ======"
     echo ""
-
-    echo "1. All Druid Containers Status:"
-    docker ps -a | grep druid
+    echo "All containers:"
+    docker ps -a
     echo ""
-
-    echo "2. Coordinator Restart Count:"
-    docker inspect druid_coordinator --format='RestartCount: {{.RestartCount}}'
+    echo "Coordinator logs (last 100 lines):"
+    docker logs druid_coordinator --tail 100
     echo ""
-
-    echo "3. Coordinator State:"
-    docker inspect druid_coordinator --format='State: {{.State.Status}}, Running: {{.State.Running}}, ExitCode: {{.State.ExitCode}}'
+    echo "Postgres logs (last 50 lines):"
+    docker logs druid_postgres --tail 50
     echo ""
-
-    echo "4. Last 50 Lines of Coordinator Logs:"
-    docker logs druid_coordinator --tail 50
-    echo ""
-
-    echo "5. Druid Postgres Status:"
-    docker ps | grep druid_postgres
-    echo ""
-
-    echo "6. Can coordinator reach postgres?"
-    docker exec druid_coordinator sh -c "pg_isready -h druid_postgres -p 5432 -U druid" 2>&1 || echo "pg_isready not available, trying nc..."
-    docker exec druid_coordinator sh -c "nc -zv druid_postgres 5432" 2>&1 || echo "Network check failed"
-    echo ""
-
-    echo "7. ZooKeeper Status:"
-    docker ps | grep druid_zookeeper
-    echo ""
-
-    echo "8. Postgres Logs (last 20 lines):"
-    docker logs druid_postgres --tail 20
-    echo ""
-
-    echo "====== END DIAGNOSTIC INFO ======"
+    echo "ZooKeeper logs (last 30 lines):"
+    docker logs druid_zookeeper --tail 30
     exit 1
   fi
 
-  if [ $((attempt % 5)) -eq 0 ]; then
-    echo "waiting for druid-coordinator... (attempt $attempt/$max_attempts - $((attempt * 3)) seconds elapsed)"
-  else
-    echo "waiting for druid-coordinator..."
-  fi
-  sleep 3
+  echo "waiting for druid-coordinator... ($attempt/$max_attempts)"
+  sleep 5
 done
 
-echo "Coordinator is up!"
+echo "✓ Coordinator is up!"
+echo ""
 
 # preloading druid datasource
+echo "====== LOADING TEST DATASOURCE ======"
 curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
   -H "Content-Type: application/json" \
   -d '{
@@ -126,10 +184,11 @@ curl -s -X POST http://localhost:8888/druid/v2/sql/statements \
     "context": {"executionMode": "ASYNC", "maxNumTasks": 2}
   }' >/dev/null
 
-# wait for datasource to be available
-echo "Waiting for 'products' datasource"
+echo "Waiting for 'products' datasource..."
 until curl -sf http://localhost:11081/druid/coordinator/v1/datasources | grep -q products; do
   sleep 2
 done
 
-echo "Druid setup complete!"
+echo "✓ Datasource loaded!"
+echo ""
+echo "====== DRUID SETUP COMPLETE ======"
