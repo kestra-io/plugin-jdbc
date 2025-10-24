@@ -41,7 +41,7 @@ services:
       - "56983:5432"
 
   postgres:
-    image: postgres
+    image: postgres:16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pg_passwd
@@ -127,14 +127,14 @@ services:
       - "45678:45678"
 
   druid_postgres:
-    image: postgres
+    image: postgres:16
     container_name: druid_postgres
     environment:
       POSTGRES_USER: druid
       POSTGRES_PASSWORD: FoolishPassword
       POSTGRES_DB: druid
     volumes:
-      - metadata_data:/var/lib/postgresql/data
+      - metadata_data:/var/lib/postgresql
 
   # Need 3.5 or later for druid container nodes
   druid_zookeeper:
