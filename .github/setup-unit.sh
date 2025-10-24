@@ -55,12 +55,28 @@ echo ""
 
 echo "====== STARTING DATABASES ======"
 echo "Starting: mariadb, sqlserver, postgres"
-docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres
+#docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres
 
 echo ""
 echo "====== STARTING ALL DRUID SERVICES ======"
 echo "Starting all services with --wait..."
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
+
+echo ""
+echo "====== IMMEDIATE STATUS CHECK ======"
+sleep 2
+if ! docker ps | grep -q druid_postgres; then
+  echo "✗ druid_postgres already exited!"
+  echo ""
+  echo "Exit code:"
+  docker inspect druid_postgres --format='ExitCode: {{.State.ExitCode}}'
+  echo ""
+  echo "FULL LOGS:"
+  docker logs druid_postgres
+  exit 1
+fi
+
+sleep 3
 
 echo ""
 echo "====== CHECKING CONTAINER STATUS AFTER STARTUP ======"
