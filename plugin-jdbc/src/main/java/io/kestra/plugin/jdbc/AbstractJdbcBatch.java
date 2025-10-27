@@ -4,6 +4,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
@@ -29,7 +30,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
-public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInterface {
+public abstract class AbstractJdbcBatch extends Task implements RunnableTask<AbstractJdbcBatch.Output>, JdbcStatementInterface {
     @PluginProperty(group = "connection")
     private Property<String> url;
 
@@ -79,8 +80,15 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
     )
     private Property<String> table;
 
+    // will be used when killing
+    @Getter(AccessLevel.NONE)
+    private transient volatile Statement runningStatement;
+    @Getter(AccessLevel.NONE)
+    private transient volatile Connection runningConnection;
+
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
+    @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
@@ -143,6 +151,9 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
                 .rowCount(count.get())
                 .updatedCount(updated)
                 .build();
+        } finally {
+            this.runningStatement = null;
+            this.runningConnection = null;
         }
     }
 
@@ -198,6 +209,26 @@ public abstract class AbstractJdbcBatch extends Task implements JdbcStatementInt
             }
         }
         ps.addBatch();
+    }
+
+    @Override
+    public void kill() {
+        try {
+            if (this.runningStatement != null && !this.runningStatement.isClosed()) {
+                this.runningStatement.cancel();
+                this.runningStatement.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            if (this.runningConnection != null && !this.runningConnection.isClosed()) {
+                this.runningConnection.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Builder

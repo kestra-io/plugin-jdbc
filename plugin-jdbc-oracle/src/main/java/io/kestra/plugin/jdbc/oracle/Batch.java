@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.oracle;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
@@ -86,7 +87,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, OracleConnectionInterface {
+public class Batch extends AbstractJdbcBatch implements OracleConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new OracleCellConverter(zoneId);

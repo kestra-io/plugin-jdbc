@@ -57,7 +57,7 @@ import java.util.Properties;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdbcQuery.Output>, SnowflakeInterface {
+public class Query extends AbstractJdbcQuery implements SnowflakeInterface {
 
     @PluginProperty(group = "connection")
     private Property<String> privateKey;
@@ -96,25 +96,6 @@ public class Query extends AbstractJdbcQuery implements RunnableTask<AbstractJdb
         // only register the driver if not already exist to avoid a memory leak
         if (DriverManager.drivers().noneMatch(SnowflakeDriver.class::isInstance)) {
             DriverManager.registerDriver(new SnowflakeDriver());
-        }
-    }
-
-    @Override
-    public void kill() {
-        try {
-            if (this.runningStatement != null && !this.runningStatement.isClosed()) {
-                this.runningStatement.cancel();
-            }
-        } catch (Exception e) {
-            // do nothing
-        }
-
-        try {
-            if (this.runningConnection != null && !this.runningConnection.isClosed()) {
-                this.runningConnection.close();
-            }
-        } catch (Exception e) {
-            // do nothing
         }
     }
 }

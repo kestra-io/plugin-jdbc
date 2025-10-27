@@ -142,7 +142,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Query extends AbstractJdbcQuery implements RunnableTask<Query.Output>, DuckDbQueryInterface {
+public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
     @Builder.Default

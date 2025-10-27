@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.redshift;
 import com.amazon.redshift.jdbc.Driver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
@@ -46,7 +47,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, RedshiftConnectionInterface {
+public class Queries extends AbstractJdbcQueries implements RedshiftConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new RedshiftCellConverter(zoneId);

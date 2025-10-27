@@ -4,7 +4,6 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -65,7 +64,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries.Output>, SqliteQueryInterface {
+public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface {
 
     @PluginProperty(group = "connection")
     protected Property<String> sqliteFile;
