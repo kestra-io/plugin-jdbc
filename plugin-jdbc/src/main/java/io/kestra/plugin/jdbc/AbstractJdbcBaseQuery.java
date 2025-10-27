@@ -215,6 +215,27 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
+    protected void kill (Statement statement) {
+        try {
+            if (statement != null && !statement.isClosed()) {
+                statement.cancel();
+                statement.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected void kill (Connection connection) {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @SuperBuilder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {

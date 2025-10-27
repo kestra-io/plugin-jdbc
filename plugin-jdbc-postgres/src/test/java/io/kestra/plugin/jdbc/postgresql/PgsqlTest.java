@@ -32,8 +32,10 @@ import java.util.Properties;
 import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.*;
+import static io.kestra.core.utils.Rethrow.throwRunnable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -268,6 +270,28 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .build();
 
         assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+    }
+
+    @Test
+    void kill() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("pg_sleep(5)"))
+            .build();
+
+        Thread.ofVirtual().start(throwRunnable(() -> task.run(runContext)));
+
+        assertDoesNotThrow(() -> task.kill());
     }
 
     public static Stream<Arguments> incorrectUrl() {
