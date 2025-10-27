@@ -4,7 +4,6 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.IdUtils;
@@ -66,7 +65,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<Queries.Output>, DuckDbQueryInterface {
+public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
 

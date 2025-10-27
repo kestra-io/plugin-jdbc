@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 import com.clickhouse.jdbc.ClickHouseDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -93,7 +94,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class BulkInsert extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, ClickhouseConnectionInterface {
+public class BulkInsert extends AbstractJdbcBatch implements ClickhouseConnectionInterface {
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

@@ -4,7 +4,6 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
@@ -77,7 +76,7 @@ import java.util.Properties;
         )
     }
 )
-public class Queries extends AbstractJdbcQueries implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, PostgresConnectionInterface {
+public class Queries extends AbstractJdbcQueries implements PostgresConnectionInterface {
     @Builder.Default
     @PluginProperty(group = "connection")
     protected Property<Boolean> ssl = Property.of(false);

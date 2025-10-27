@@ -3,7 +3,7 @@ package io.kestra.plugin.jdbc.vectorwise;
 import com.ingres.jdbc.IngresDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -85,7 +85,7 @@ import java.time.ZoneId;
         )
     }
 )
-public class Batch extends AbstractJdbcBatch implements RunnableTask<AbstractJdbcBatch.Output>, VetorwiseConnectionInterface {
+public class Batch extends AbstractJdbcBatch implements VetorwiseConnectionInterface {
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new VectorwiseCellConverter(zoneId);
