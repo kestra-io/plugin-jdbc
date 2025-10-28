@@ -2,8 +2,8 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.runners.RunContext;
-import name.neuhalfen.projects.crypto.bouncycastle.openpgp.BouncyGPG;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -13,7 +13,6 @@ import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JceInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
 
@@ -66,7 +65,7 @@ public abstract class PostgresService {
     private static synchronized void addProvider() {
         Provider bc = Security.getProvider("BC");
         if (bc == null) {
-            BouncyGPG.registerProvider();
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
