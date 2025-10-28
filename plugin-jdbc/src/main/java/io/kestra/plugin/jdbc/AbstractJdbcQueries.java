@@ -6,6 +6,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.utils.Rethrow;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
@@ -24,7 +25,10 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuperBuilder
 @ToString
@@ -42,7 +46,6 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
-    @Override
     public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
@@ -55,22 +58,21 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
-        try (Connection connection = this.connection(runContext)){
-            this.runningConnection =  connection;
-
-            supportsTx = supportsTransactions(connection);
+        try {
+            this.runningConnection = this.connection(runContext);
+            supportsTx = supportsTransactions(this.runningConnection);
             final boolean useTransactions = supportsTx && isTransactional;
 
             if (supportsTx) {
                 try {
-                    connection.setAutoCommit(false);
+                    this.runningConnection.setAutoCommit(false);
                 } catch (SQLException e) {
                     runContext.logger().warn("Auto-commit disabling not supported: {}", e.getMessage());
                 }
             }
 
             if (isTransactional && supportsTx) {
-                savepoint = initializeSavepoint(connection);
+                savepoint = initializeSavepoint(this.runningConnection);
             }
 
             String sqlRendered = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
@@ -78,25 +80,26 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             for (String query : queries) {
                 //Create statement, execute
-                try (PreparedStatement stmt = prepareStatement(runContext, connection, query)) {
+                try (PreparedStatement stmt = prepareStatement(runContext, this.runningConnection, query)) {
                     this.runningStatement = stmt;
-
                     stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
                     if (!useTransactions && supportsTx) {
-                        connection.commit();
+                        this.runningConnection.commit();
                     }
-                    totalSize = extractResultsFromResultSet(connection, stmt, runContext, cellConverter, totalSize, outputList);
+                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList);
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
                         break;
                     }
+                } finally {
+                    this.runningStatement = null;
                 }
             }
             if (useTransactions) {
-                connection.commit();
+                this.runningConnection.commit();
             }
             runContext.metric(Counter.of("fetch.size",  totalSize, this.tags(runContext)));
 
@@ -107,8 +110,18 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             }
             throw new RuntimeException(e);
         } finally {
-            this.runningStatement = null;
+            safelyCloseConnection(runContext, this.runningConnection);
             this.runningConnection = null;
+        }
+    }
+
+    private static void safelyCloseConnection(final RunContext runContext, final Connection connection) {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
         }
     }
 
@@ -200,16 +213,15 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
     }
 
+    @Override
+    public void kill() {
+        super.kill(this.runningStatement);
+        super.kill(this.runningConnection);
+    }
 
     @SuperBuilder
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
         List<AbstractJdbcQuery.Output> outputs;
-    }
-
-    @Override
-    public void kill() {
-        super.kill(this.runningStatement);
-        super.kill(this.runningConnection);
     }
 }
