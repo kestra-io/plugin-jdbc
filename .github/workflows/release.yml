@@ -11,7 +11,7 @@ on:
         required: false
       kestraVersion:
         description: "Kestra core version (e.g. 1.1.0)"
-        required: true
+        required: false
       dryRun:
         description: "If true, simulate the release without pushing or tagging"
         required: false
@@ -33,6 +33,5 @@ jobs:
           kestraVersion: ${{ github.event.inputs.kestraVersion }}
           nextVersion: ${{ github.event.inputs.nextVersion }}
           dryRun: ${{ github.event.inputs.dryRun }}
-          webhookUrl: ${{ secrets.KESTRA_WEBHOOK_URL_PLUGIN_RELEASE_INDEX }}
         env:
           GITHUB_PAT: ${{ secrets.GH_PERSONAL_TOKEN }}
