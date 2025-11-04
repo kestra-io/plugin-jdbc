@@ -26,7 +26,7 @@ tasks:
     duration: PT5S
 
   - id: create_table
-    type: io.kestra.plugin.jdbc.postgresql.Query
+    type: io.kestra.plugin.jdbc.postgresql.Queries
     sql: |
       CREATE SCHEMA sanitychecks;
       CREATE TABLE sanitychecks.test(
