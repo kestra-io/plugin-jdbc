@@ -45,7 +45,7 @@ import java.time.ZoneId;
                     fetchType: FETCH
 
                   - id: generate_update
-                    type: io.kestra.plugin.jdbc.sqlserver.Query
+                    type: io.kestra.plugin.jdbc.sqlserver.Queries
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
                     username: "{{ secret('SQL_USERNAME') }}"
                     password: "{{ secret('SQL_PASSWORD') }}"

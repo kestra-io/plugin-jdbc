@@ -64,7 +64,33 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     inputFiles:
                       in.csv: "{{ outputs.http_download.uri }}"
                 """
-        )
+        ),
+        @Example(
+            full = true,
+            title = "Execute a query that reads a CSV file, and outputs another CSV file.",
+            code = """
+                id: query_duckdb
+                namespace: company.team
+
+                tasks:
+                  - id: http_download
+                    type: io.kestra.plugin.core.http.Download
+                    uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
+
+                  - id: query
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: 'jdbc:duckdb:'
+                    timeZoneId: Europe/Paris
+                    sql: |-
+                      CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('data.csv', header=True);
+
+                      COPY (SELECT order_id, customer_name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
+                    inputFiles:
+                      data.csv: "{{ outputs.http_download.uri }}"
+                    outputFiles:
+                       - out
+                """
+        ),
     },
     metrics = {
         @Metric(

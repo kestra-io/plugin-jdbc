@@ -37,11 +37,14 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
         String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
+        runContext.logger().info("Executing query {}", renderedSql);
         long statements = Arrays.stream(renderedSql.split(";[^']"))
             .map(String::trim)
+            .filter(s -> !s.isEmpty())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
 
+        runContext.logger().info("Executing size query {} {} ", renderedSql, statements);
         if (statements > 1) {
             throw new IllegalArgumentException(
                 "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
