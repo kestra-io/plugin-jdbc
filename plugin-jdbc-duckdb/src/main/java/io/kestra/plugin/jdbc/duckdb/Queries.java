@@ -78,7 +78,7 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                     uri: "https://huggingface.co/datasets/kestra/datasets/raw/main/csv/orders.csv"
 
                   - id: query
-                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    type: io.kestra.plugin.jdbc.duckdb.Queries
                     url: 'jdbc:duckdb:'
                     timeZoneId: Europe/Paris
                     sql: |-
