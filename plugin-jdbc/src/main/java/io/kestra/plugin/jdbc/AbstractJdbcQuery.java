@@ -36,15 +36,15 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+        String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
-        long statements = Arrays.stream(renderedSql.split(";[^']"))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
+        long queriesAmount = Arrays.stream(getQueries(rSql))
+            .filter(s -> !s.isBlank())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
-            .count();
-        
-        if (statements > 1) {
+            .toList()
+            .size();
+
+        if (queriesAmount > 1) {
             throw new IllegalArgumentException(
                 "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
             );
@@ -65,21 +65,21 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;
 
-            try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, renderedSql)) {
+            try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rSql)) {
                 this.runningStatement = stmt;
 
                 stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
 
-                logger.debug("Starting query: {}", renderedSql);
+                logger.debug("Starting query: {}", rSql);
 
                 boolean isResult = switch (stmt) {
                     case PreparedStatement preparedStatement -> {
                         if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
-                            yield preparedStatement.execute(renderedSql);
+                            yield preparedStatement.execute(rSql);
                         }
                         yield preparedStatement.execute();
                     }
-                    case Statement statement -> statement.execute(renderedSql);
+                    case Statement statement -> statement.execute(rSql);
                 };
 
                 if (isResult) {
