@@ -13,7 +13,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -36,17 +35,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
         String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-
-        long statements = Arrays.stream(renderedSql.split(";[^']"))
-            .map(String::trim)
-            .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
-            .count();
-
-        if (statements > 1) {
-            throw new IllegalArgumentException(
-                "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
-            );
-        }
 
         try (
             Connection conn = this.connection(runContext);
