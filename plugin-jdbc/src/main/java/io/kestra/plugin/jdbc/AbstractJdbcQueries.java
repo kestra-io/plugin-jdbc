@@ -6,7 +6,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.utils.Rethrow;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
@@ -15,20 +14,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.sql.*;
+import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @SuperBuilder
 @ToString
@@ -43,6 +31,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     // will be used when killing
     @Getter(AccessLevel.NONE)
     private transient volatile Statement runningStatement;
+
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
@@ -54,7 +43,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         long totalSize = 0L;
         List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
 
-        //Create connection in not autocommit mode to enable rollback on error
+        // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
@@ -75,11 +64,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 savepoint = initializeSavepoint(this.runningConnection);
             }
 
-            String sqlRendered = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-            String[] queries = sqlRendered.split(";[^']");
+            String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            String[] queries = getQueries(rSql);
 
             for (String query : queries) {
-                //Create statement, execute
+                // Create statement, execute
                 try (PreparedStatement stmt = prepareStatement(runContext, this.runningConnection, query)) {
                     this.runningStatement = stmt;
                     stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
@@ -101,7 +90,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             if (useTransactions) {
                 this.runningConnection.commit();
             }
-            runContext.metric(Counter.of("fetch.size",  totalSize, this.tags(runContext)));
+            runContext.metric(Counter.of("fetch.size", totalSize, this.tags(runContext)));
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
@@ -113,6 +102,91 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             safelyCloseConnection(runContext, this.runningConnection);
             this.runningConnection = null;
         }
+    }
+
+    private static String[] getQueries(String sql) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        int len = sql.length();
+        boolean inString = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
+        int beginDepth = 0;
+
+        for (int i = 0; i < len; i++) {
+            char c = sql.charAt(i);
+            char next = (i + 1 < len) ? sql.charAt(i + 1) : '\0';
+
+            // --- handle comments ---
+            if (!inString && !inBlockComment && c == '-' && next == '-') {
+                inLineComment = true;
+            }
+            if (inLineComment && c == '\n') {
+                inLineComment = false;
+            }
+            if (!inString && !inLineComment && c == '/' && next == '*') {
+                inBlockComment = true;
+            }
+            if (inBlockComment && c == '*' && next == '/') {
+                inBlockComment = false;
+                current.append("*/");
+                i++;
+                continue;
+            }
+
+            if (inLineComment || inBlockComment) {
+                current.append(c);
+                continue;
+            }
+
+            // --- handle quoted strings ---
+            if (c == '\'' && !inString) {
+                inString = true;
+            } else if (c == '\'') {
+                inString = false;
+            }
+
+            current.append(c);
+
+            // --- track PL/SQL BEGIN ... END ---
+            if (!inString) {
+                String tail = current.toString().toUpperCase(Locale.ROOT);
+
+                if (tail.endsWith("BEGIN")) {
+                    beginDepth++;
+                }
+
+                // detect END;
+                if (tail.endsWith("END;")) {
+                    beginDepth = Math.max(0, beginDepth - 1);
+
+                    // --- END of PL/SQL block ---
+                    if (beginDepth == 0) {
+                        statements.add(current.toString().trim());
+                        current.setLength(0);
+                        continue;
+                    }
+                }
+            }
+
+            // --- normal SQL statement terminated by ; ---
+            if (beginDepth == 0 && c == ';' && !inString) {
+                String s = current.toString().trim();
+                if (!s.isEmpty()) {
+                    statements.add(s.substring(0, s.length() - 1)); // strip ;
+                }
+                current.setLength(0);
+            }
+        }
+
+        // last statement (no trailing ;)
+        String leftover = current.toString().trim();
+        if (!leftover.isEmpty()) {
+            statements.add(leftover);
+        }
+
+        return statements.toArray(new String[0]);
     }
 
     private static void safelyCloseConnection(final RunContext runContext, final Connection connection) {
@@ -132,10 +206,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              long totalSize,
                                              final List<Output> outputList) throws SQLException, IOException, IllegalVariableEvaluationException {
         try (ResultSet rs = stmt.getResultSet()) {
-            //When sql is not a select statement skip output creation
+            // When SQL is not a SELECT statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
-                //Populate result fro result set
+                // Populate result fro result set
                 long size = 0L;
                 switch (this.renderFetchType(runContext)) {
                     case FETCH_ONE -> {
@@ -187,7 +261,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         try {
             return conn.setSavepoint();
         } catch (SQLException e) {
-            //Savepoint not supported by this driver
+            // Savepoint not supported by this driver
             return null;
         }
     }
