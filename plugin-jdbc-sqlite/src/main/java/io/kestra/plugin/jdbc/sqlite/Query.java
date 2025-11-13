@@ -70,7 +70,7 @@ import java.util.*;
                     fetchType: FETCH
 
                   - id: use_fetched_data
-                    type: io.kestra.plugin.jdbc.sqlite.Query
+                    type: io.kestra.plugin.jdbc.sqlite.Queries
                     url: jdbc:sqlite:myfile.db
                     sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
                     sql: "{% for row in outputs.update.rows %} INSERT INTO pl_store_distribute (year_month,store_code, update_date) values ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') ); {% endfor %}"

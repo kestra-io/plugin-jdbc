@@ -40,9 +40,10 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
         long statements = Arrays.stream(renderedSql.split(";[^']"))
             .map(String::trim)
+            .filter(s -> !s.isEmpty())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
-
+        
         if (statements > 1) {
             throw new IllegalArgumentException(
                 "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
