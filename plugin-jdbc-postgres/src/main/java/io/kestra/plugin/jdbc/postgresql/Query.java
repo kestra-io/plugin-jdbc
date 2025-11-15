@@ -46,7 +46,7 @@ import java.util.Properties;
                     fetchType: FETCH
 
                   - id: use_fetched_data
-                    type: io.kestra.plugin.jdbc.postgresql.Query
+                    type: io.kestra.plugin.jdbc.postgresql.Queries
                     url: jdbc:postgresql://127.0.0.1:56982/
                     username: "{{ secret('POSTGRES_USERNAME') }}"
                     password: "{{ secret('POSTGRES_PASSWORD') }}"
