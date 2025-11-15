@@ -45,7 +45,7 @@ import java.time.ZoneId;
                     fetchType: FETCH
 
                   - id: generate_update
-                    type: io.kestra.plugin.jdbc.oracle.Query
+                    type: io.kestra.plugin.jdbc.oracle.Queries
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
                     password: oracle_password
