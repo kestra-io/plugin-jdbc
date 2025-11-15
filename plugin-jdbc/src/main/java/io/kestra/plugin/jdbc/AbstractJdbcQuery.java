@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
@@ -49,68 +50,119 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             );
         }
 
-        try (
-            Connection conn = this.connection(runContext);
-            Statement stmt = this.getParameters() == null ? this.createStatement(conn) : this.prepareStatement(runContext, conn, renderedSql)
-        ) {
+        Savepoint savepoint = null;
+        boolean supportsTx = false;
+
+        try (Connection conn = this.connection(runContext)) {
             this.runningConnection = conn;
-            this.runningStatement = stmt;
+            supportsTx = this.runningConnection.getMetaData().supportsTransactions();
 
-            if (conn.getMetaData().supportsTransactions()) {
-                conn.setAutoCommit(true);
+            if (supportsTx) {
+                conn.setAutoCommit(this.afterSQL == null);
+                savepoint = (this.afterSQL != null) ? initializeSavepoint(conn) : null;
             }
-            stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
-
-            logger.debug("Starting query: {}", renderedSql);
-
-            boolean isResult = switch (stmt) {
-                case PreparedStatement preparedStatement -> {
-                    if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
-                        yield preparedStatement.execute(renderedSql);
-                    }
-                    yield preparedStatement.execute();
-                }
-                case Statement statement -> statement.execute(renderedSql);
-            };
 
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;
 
-            if (isResult) {
-                try (ResultSet rs = stmt.getResultSet()) {
-                    //Populate result fro result set
-                    switch (this.renderFetchType(runContext)) {
-                        case FETCH_ONE -> {
-                            var result = fetchResult(rs, cellConverter, conn);
-                            size = result == null ? 0L : 1L;
-                            output
-                                .row(result)
-                                .size(size);
+            try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, renderedSql)) {
+                this.runningStatement = stmt;
+
+                stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
+
+                logger.debug("Starting query: {}", renderedSql);
+
+                boolean isResult = switch (stmt) {
+                    case PreparedStatement preparedStatement -> {
+                        if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
+                            yield preparedStatement.execute(renderedSql);
                         }
-                        case STORE -> {
-                            File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                            try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                                size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                        yield preparedStatement.execute();
+                    }
+                    case Statement statement -> statement.execute(renderedSql);
+                };
+
+                if (isResult) {
+                    try (ResultSet rs = stmt.getResultSet()) {
+                        //Populate result fro result set
+                        switch (this.renderFetchType(runContext)) {
+                            case FETCH_ONE -> {
+                                var result = fetchResult(rs, cellConverter, conn);
+                                size = result == null ? 0L : 1L;
+                                output
+                                    .row(result)
+                                    .size(size);
                             }
-                            output
-                                .uri(runContext.storage().putFile(tempFile))
-                                .size(size);
-                        }
-                        case FETCH -> {
-                            List<Map<String, Object>> maps = new ArrayList<>();
-                            size = fetchResults(stmt, rs, maps, cellConverter, conn);
-                            output
-                                .rows(maps)
-                                .size(size);
+                            case STORE -> {
+                                File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                                try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+                                    size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                                }
+                                output
+                                    .uri(runContext.storage().putFile(tempFile))
+                                    .size(size);
+                            }
+                            case FETCH -> {
+                                List<Map<String, Object>> maps = new ArrayList<>();
+                                size = fetchResults(stmt, rs, maps, cellConverter, conn);
+                                output
+                                    .rows(maps)
+                                    .size(size);
+                            }
                         }
                     }
                 }
             }
+
+            executeAfterSQL(runContext, conn, logger, supportsTx);
+
             runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
             return output.build();
+        } catch (Exception e) {
+            if (supportsTx && this.afterSQL != null) {
+                rollbackIfTransactional(this.runningConnection, savepoint);
+            }
+            throw e;
         } finally {
-            this.runningStatement = null;
             this.runningConnection = null;
+        }
+    }
+
+    private void executeAfterSQL(RunContext runContext, Connection conn, Logger logger, boolean supportsTx) throws IllegalVariableEvaluationException, SQLException {
+        // Execute afterSQL if present
+        if (this.afterSQL != null) {
+            String rAfterSQL = runContext.render(this.afterSQL).as(String.class, this.additionalVars).orElseThrow();
+
+            long afterSQLStatements = Arrays.stream(rAfterSQL.split(";[^']"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty() && !s.toLowerCase().startsWith("set file_search_path"))
+                .count();
+
+            if (afterSQLStatements > 1) {
+                throw new IllegalArgumentException(
+                    "Query task afterSQL supports only a single SQL statement. Use the Queries task to run multiple statements."
+                );
+            }
+
+            if (afterSQLStatements == 1) {
+                try (Statement afterStmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rAfterSQL)) {
+                    logger.debug("Executing afterSQL: {}", rAfterSQL);
+
+                    switch (afterStmt) {
+                        case PreparedStatement preparedStatement -> {
+                            // Null check for DuckDB which always use PreparedStatement
+                            if (this.getParameters() == null) preparedStatement.execute(rAfterSQL);
+                            preparedStatement.execute();
+                        }
+                        case Statement statement -> statement.execute(rAfterSQL);
+                    }
+                }
+
+                // Commit if transaction was used
+                if (supportsTx) {
+                    conn.commit();
+                }
+            }
         }
     }
 
@@ -118,5 +170,25 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     public void kill() {
         super.kill(this.runningStatement);
         super.kill(this.runningConnection);
+    }
+
+    private static Savepoint initializeSavepoint(final Connection conn) {
+        try {
+            return conn.setSavepoint();
+        } catch (SQLException e) {
+            //Savepoint not supported by this driver
+            return null;
+        }
+    }
+
+    private static void rollbackIfTransactional(final Connection connection,
+                                                final Savepoint savepoint) throws SQLException {
+        if (connection != null) {
+            if (savepoint != null) {
+                connection.rollback(savepoint);
+                return;
+            }
+            connection.rollback();
+        }
     }
 }

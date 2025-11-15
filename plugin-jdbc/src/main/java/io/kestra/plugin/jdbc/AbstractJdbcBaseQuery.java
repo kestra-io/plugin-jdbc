@@ -52,30 +52,39 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Schema(
         title = "SQL statement(s) to execute.",
         description = """
-          Runs one or more SQL statements depending on the task type.
-          Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
+            Runs one or more SQL statements depending on the task type.
+            Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
     )
     protected Property<String> sql;
+
+    @Schema(
+        title = "SQL to execute atomically after trigger query.",
+        description = """
+            Optional SQL executed in the same transaction as the main trigger query.
+            Typically updates processing flags to prevent duplicate processing.
+            Both sql and afterSQL queries commit together, ensuring consistency."""
+    )
+    protected Property<String> afterSQL;
 
     /**
      * @deprecated use fetchType: STORE instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean store = false;
 
     /**
      * @deprecated use fetchType: FETCH_ONE instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean fetchOne = false;
 
     /**
      * @deprecated use fetchType: FETCH instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean fetch = false;
 
     @NotNull
@@ -167,19 +176,19 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     public FetchType renderFetchType(RunContext runContext) throws IllegalVariableEvaluationException {
-        if(this.fetch) {
+        if (this.fetch) {
             return FetchType.FETCH;
-        } else if(this.fetchOne) {
+        } else if (this.fetchOne) {
             return FetchType.FETCH_ONE;
-        } else if(this.store) {
+        } else if (this.store) {
             return FetchType.STORE;
         }
         return runContext.render(fetchType).as(FetchType.class).orElseThrow();
     }
 
     protected PreparedStatement prepareStatement(final RunContext runContext,
-                                               final Connection conn,
-                                               final String sql) throws SQLException, IllegalVariableEvaluationException {
+                                                 final Connection conn,
+                                                 final String sql) throws SQLException, IllegalVariableEvaluationException {
 
         // Inject named parameters (ex: ':param')
         Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
@@ -215,7 +224,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
-    protected void kill (Statement statement) {
+    protected void kill(Statement statement) {
         try {
             if (statement != null && !statement.isClosed()) {
                 statement.cancel();
@@ -226,7 +235,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         }
     }
 
-    protected void kill (Connection connection) {
+    protected void kill(Connection connection) {
         try {
             if (connection != null && !connection.isClosed()) {
                 connection.close();
