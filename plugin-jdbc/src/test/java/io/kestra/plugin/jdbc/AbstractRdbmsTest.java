@@ -5,7 +5,7 @@ import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
 import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.runners.RunnerUtils;
+import io.kestra.core.runners.TestRunnerUtils;
 import io.kestra.core.storages.StorageInterface;
 
 import jakarta.inject.Inject;
@@ -26,7 +26,7 @@ public abstract class AbstractRdbmsTest {
     protected RunContextFactory runContextFactory;
 
     @Inject
-    protected RunnerUtils runnerUtils;
+    protected TestRunnerUtils runnerUtils;
 
     @Inject
     protected LocalFlowRepositoryLoader repositoryLoader;
