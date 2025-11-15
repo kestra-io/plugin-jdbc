@@ -52,17 +52,14 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
         Savepoint savepoint = null;
         boolean supportsTx = false;
-        Connection conn = this.connection(runContext);
 
-        try {
+        try (Connection conn = this.connection(runContext)) {
             this.runningConnection = conn;
             supportsTx = this.runningConnection.getMetaData().supportsTransactions();
 
-            if (this.afterSQL != null && supportsTx) {
-                conn.setAutoCommit(false);
-                savepoint = initializeSavepoint(conn);
-            } else if (supportsTx) {
-                conn.setAutoCommit(true);
+            if (supportsTx) {
+                conn.setAutoCommit(this.afterSQL == null);
+                savepoint = (this.afterSQL != null) ? initializeSavepoint(conn) : null;
             }
 
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
@@ -127,7 +124,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             }
             throw e;
         } finally {
-            safelyCloseConnection(runContext, this.runningConnection);
             this.runningConnection = null;
         }
     }
@@ -135,9 +131,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     private void executeAfterSQL(RunContext runContext, Connection conn, Logger logger, boolean supportsTx) throws IllegalVariableEvaluationException, SQLException {
         // Execute afterSQL if present
         if (this.afterSQL != null) {
-            String renderedAfterSQL = runContext.render(this.afterSQL).as(String.class, this.additionalVars).orElseThrow();
+            String rAfterSQL = runContext.render(this.afterSQL).as(String.class, this.additionalVars).orElseThrow();
 
-            long afterSQLStatements = Arrays.stream(renderedAfterSQL.split(";[^']"))
+            long afterSQLStatements = Arrays.stream(rAfterSQL.split(";[^']"))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.toLowerCase().startsWith("set file_search_path"))
                 .count();
@@ -149,17 +145,16 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             }
 
             if (afterSQLStatements == 1) {
-                try (Statement afterStmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, renderedAfterSQL)) {
-                    logger.debug("Executing afterSQL: {}", renderedAfterSQL);
+                try (Statement afterStmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rAfterSQL)) {
+                    logger.debug("Executing afterSQL: {}", rAfterSQL);
 
                     switch (afterStmt) {
                         case PreparedStatement preparedStatement -> {
-                            if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
-                                preparedStatement.execute(renderedAfterSQL);
-                            }
+                            // Null check for DuckDB which always use PreparedStatement
+                            if (this.getParameters() == null) preparedStatement.execute(rAfterSQL);
                             preparedStatement.execute();
                         }
-                        case Statement statement -> statement.execute(renderedAfterSQL);
+                        case Statement statement -> statement.execute(rAfterSQL);
                     }
                 }
 
@@ -194,16 +189,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                 return;
             }
             connection.rollback();
-        }
-    }
-
-    private static void safelyCloseConnection(final RunContext runContext, final Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
         }
     }
 }
