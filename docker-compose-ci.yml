@@ -46,13 +46,13 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: pg_passwd
       POSTGRES_DB: postgres
-#    volumes:
-#      - /Users/juhee.lee/IdeaProjects/plugin-jdbc/certs/ca.crt:/var/lib/postgresql/ca.crt:ro
-#      - /Users/juhee.lee/IdeaProjects/plugin-jdbc/certs/server/server.crt:/var/lib/postgresql/server.crt:ro
-#      - /Users/juhee.lee/IdeaProjects/plugin-jdbc/certs/server/server.key:/var/lib/postgresql/server.key:ro
-#      - /Users/juhee.lee/IdeaProjects/plugin-jdbc/plugin-jdbc-postgres/src/test/resources/ssl/postgresql.conf:/etc/postgresql/postgresql.conf:ro
-#      - /Users/juhee.lee/IdeaProjects/plugin-jdbc/plugin-jdbc-postgres/src/test/resources/ssl/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
-#    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    volumes:
+      - ./certs/ca.crt:/var/lib/postgresql/ca.crt:ro
+      - ./certs/server/server.crt:/var/lib/postgresql/server.crt:ro
+      - ./certs/server/server.key:/var/lib/postgresql/server.key:ro
+      - ./plugin-jdbc-postgres/src/test/resources/ssl/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./plugin-jdbc-postgres/src/test/resources/ssl/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
     ports:
       - "56982:5432"
 
