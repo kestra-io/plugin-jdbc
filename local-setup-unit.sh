@@ -65,7 +65,6 @@ sudo chown -R 1000 plugin-jdbc-postgres/src/test/resources/ssl/
 sudo chgrp -R 1000 plugin-jdbc-postgres/src/test/resources/ssl/
 sudo chmod -R 700 plugin-jdbc-postgres/src/test/resources/ssl/
 
-
 docker compose -f docker-compose-ci.yml down -v
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver
