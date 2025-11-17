@@ -61,9 +61,9 @@ openssl verify -CAfile certs/ca.crt certs/server/server.crt
 echo "Copying certificates to test resources..."
 cp certs/client/* plugin-jdbc-postgres/src/test/resources/ssl/
 cp certs/ca.crt plugin-jdbc-postgres/src/test/resources/ssl/
-sudo chown -R 1000 plugin-jdbc-postgres/src/test/resources/ssl/
-sudo chgrp -R 1000 plugin-jdbc-postgres/src/test/resources/ssl/
-sudo chmod -R 700 plugin-jdbc-postgres/src/test/resources/ssl/
+sudo chown -R "$USER":staff plugin-jdbc-postgres/src/test/resources/ssl
+sudo chmod -R 755 plugin-jdbc-postgres/src/test/resources/ssl
+
 
 docker compose -f docker-compose-ci.yml down -v
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait

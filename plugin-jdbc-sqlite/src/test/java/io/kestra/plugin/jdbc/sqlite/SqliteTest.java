@@ -21,12 +21,14 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
 import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class SqliteTest extends AbstractRdbmsTest {
@@ -197,6 +199,109 @@ public class SqliteTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
         assertThat(runOutput.getRow().get("d"), is("D"));
+    }
+
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE lite_types SET text_column = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types WHERE text_column = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE lite_types SET text_column = 'processed'"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithAfterSQL.run(runContext);
+
+        assertThat(runOutput.getRow().get("text_column"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("text_column"), is("processed"));
+
+        Query checkNoDuplicate = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types WHERE text_column = 'pending'"))
+            .build();
+
+        AbstractJdbcQuery.Output noDuplicateOutput = checkNoDuplicate.run(runContext);
+        assertThat(noDuplicateOutput.getRow(), nullValue());
+    }
+
+    @Test
+    void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE lite_types SET text_column = 'initial_value'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
+            .build();
+
+        assertThrows(Exception.class, () -> taskWithFailingAfterSQL.run(runContext));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("text_column"), is("initial_value"));
+    }
+
+    @Test
+    void afterSQLWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of("newStatus", "completed"));
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE lite_types SET text_column = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithParams = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types WHERE text_column = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE lite_types SET text_column = :newStatus"))
+            .parameters(Property.ofValue(Map.of("newStatus", "completed")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithParams.run(runContext);
+        assertThat(runOutput.getRow().get("text_column"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("text_column"), is("completed"));
     }
 
     @Override
