@@ -13,10 +13,12 @@ import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.time.*;
+import java.util.Map;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * See :
@@ -96,6 +98,129 @@ public class SqlServerTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
         assertThat(runOutput.getRow().get("t_varchar"), is("D"));
+    }
+
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE sqlserver_types SET t_varchar = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types WHERE t_varchar = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE sqlserver_types SET t_varchar = 'processed'"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithAfterSQL.run(runContext);
+
+        assertThat(runOutput.getRow().get("t_varchar"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("t_varchar"), is("processed"));
+
+        Query checkNoDuplicate = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types WHERE t_varchar = 'pending'"))
+            .build();
+
+        AbstractJdbcQuery.Output noDuplicateOutput = checkNoDuplicate.run(runContext);
+        assertThat(noDuplicateOutput.getRow(), nullValue());
+    }
+
+    @Test
+    void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE sqlserver_types SET t_varchar = 'initial'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types"))
+            .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
+            .build();
+
+        assertThrows(Exception.class, () -> taskWithFailingAfterSQL.run(runContext));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("t_varchar"), is("initial"));
+    }
+
+    @Test
+    void afterSQLWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of("newStatus", "completed"));
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE sqlserver_types SET t_varchar = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithParams = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types WHERE t_varchar = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE sqlserver_types SET t_varchar = :newStatus"))
+            .parameters(Property.ofValue(Map.of("newStatus", "completed")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithParams.run(runContext);
+        assertThat(runOutput.getRow().get("t_varchar"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT t_varchar FROM sqlserver_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("t_varchar"), is("completed"));
     }
 
     @Override

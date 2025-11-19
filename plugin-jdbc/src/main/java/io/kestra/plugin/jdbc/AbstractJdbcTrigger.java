@@ -41,6 +41,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     private Property<String> sql;
 
+    private Property<String> afterSQL;
+
     /**
      * @deprecated use fetchType: STORE instead
      */

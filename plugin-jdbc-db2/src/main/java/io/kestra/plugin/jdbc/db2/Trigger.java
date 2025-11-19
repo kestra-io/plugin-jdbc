@@ -66,6 +66,7 @@ public class Trigger extends AbstractJdbcTrigger implements Db2ConnectionInterfa
             .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
+            .afterSQL(this.getAfterSQL())
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())

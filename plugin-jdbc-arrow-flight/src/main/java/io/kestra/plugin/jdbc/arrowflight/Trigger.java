@@ -67,6 +67,7 @@ public class Trigger extends AbstractJdbcTrigger implements ArrowFlightConnectio
             .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
+            .afterSQL(this.getAfterSQL())
             .store(this.isStore())
             .fetch(this.isFetch())
             .fetchOne(this.isFetchOne())
