@@ -46,3 +46,9 @@ INSTALL SONAME 'auth_ed25519';
 CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 """
+
+echo "Configuring Oracle..."
+sleep 20
+docker exec plugin-jdbc-oracle-1 /bin/bash -c "export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe && export PATH=\$ORACLE_HOME/bin:\$PATH && export ORACLE_SID=XE && echo 'ALTER SYSTEM SET processes=500 SCOPE=SPFILE;' | sqlplus -s system/oracle"
+docker exec plugin-jdbc-oracle-1 /bin/bash -c "export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe && export PATH=\$ORACLE_HOME/bin:\$PATH && export ORACLE_SID=XE && echo 'ALTER SYSTEM SET sessions=555 SCOPE=SPFILE;' | sqlplus -s system/oracle"
+docker compose -f docker-compose-ci.yml restart oracle
