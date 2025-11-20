@@ -148,6 +148,11 @@ public class OracleTest extends AbstractRdbmsTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         try (var statement = getConnection().createStatement()) {
+            try {
+                statement.execute("DROP TABLE ZONED_TEST");
+            } catch (SQLException e) {
+                // ignore
+            }
             statement.execute("CREATE TABLE ZONED_TEST (id NUMBER, ts TIMESTAMP, PRIMARY KEY(id))");
         }
 
