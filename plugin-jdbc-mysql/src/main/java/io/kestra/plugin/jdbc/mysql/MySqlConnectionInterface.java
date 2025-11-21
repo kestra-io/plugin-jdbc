@@ -14,7 +14,7 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
     }
 
     default Properties createMysqlProperties(Properties props, Path workingDirectory,
-                                                      boolean isMultiQuery) {
+                                             boolean isMultiQuery) {
         URI url = URI.create((String) props.get("jdbc.url"));
         url = URI.create(url.getSchemeSpecificPart());
 
@@ -30,7 +30,7 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
 
         builder.scheme("jdbc:mysql");
 
-        if(isMultiQuery) {
+        if (isMultiQuery) {
             builder.queryParam("allowMultiQueries", true);
         }
 
