@@ -99,7 +99,7 @@ public class Queries extends AbstractJdbcQueries implements MySqlConnectionInter
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
+        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, true);
     }
 
     @Override
