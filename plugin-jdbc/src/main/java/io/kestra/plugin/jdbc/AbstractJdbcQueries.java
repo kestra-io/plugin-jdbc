@@ -4,6 +4,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -55,7 +56,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             supportsTx = supportsTransactions(this.runningConnection);
             final boolean useTransactions = supportsTx && isTransactional;
 
-            if (supportsTx) {
+            if (useTransactions) {
                 try {
                     this.runningConnection.setAutoCommit(false);
                 } catch (SQLException e) {
@@ -63,14 +64,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
             }
 
-            if (isTransactional && supportsTx) {
+            if (useTransactions) {
                 savepoint = initializeSavepoint(this.runningConnection);
             }
 
             String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
             boolean supportsMulti = supportsMultiStatements(this.runningConnection);
 
-            String[] queries = supportsMulti
+            boolean shouldBatchQueries = supportsMulti && useTransactions;
+
+            String[] queries = shouldBatchQueries
                 ? new String[]{rSql}
                 : getQueries(rSql);
 
@@ -81,7 +84,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
-                    if (!useTransactions && supportsTx) {
+                    if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
                     totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList);
@@ -127,13 +130,19 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
                                              final List<Output> outputList) throws SQLException, IOException, IllegalVariableEvaluationException {
-        try (ResultSet rs = stmt.getResultSet()) {
-            // When SQL is not a SELECT statement skip output creation
+        FetchType fetchType = this.renderFetchType(runContext);
+
+        while (true) {
+            ResultSet rs = stmt.getResultSet();
+            int updateCount = stmt.getUpdateCount();
+
+            // When sql is not a select statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
-                // Populate result fro result set
+
+                // Populate result from result set
                 long size = 0L;
-                switch (this.renderFetchType(runContext)) {
+                switch (fetchType) {
                     case FETCH_ONE -> {
                         size = 1L;
                         output
@@ -162,6 +171,19 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
                 totalSize += size;
                 outputList.add(output.build());
+            } else if (updateCount == -1) {
+                break;
+            }
+
+            boolean moreResults;
+            try {
+                moreResults = stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
+            } catch (SQLException e) {
+                moreResults = false;
+            }
+
+            if (!moreResults) {
+                break;
             }
         }
         return totalSize;

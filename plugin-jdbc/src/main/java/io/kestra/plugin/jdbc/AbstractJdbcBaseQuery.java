@@ -98,7 +98,9 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
-        "postgresql", "redshift", "snowflake", "microsoft", "sqlite", "sybase", "db2"
+        "redshift",
+        "snowflake",
+        "sybase"
     );
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);

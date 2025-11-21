@@ -29,7 +29,6 @@ public class RedshiftQueriesTest extends AbstractRdbmsTest {
     @Value("${redshift.url}")
     protected String url;
 
-
     @Value("${redshift.user}")
     protected String user;
 
