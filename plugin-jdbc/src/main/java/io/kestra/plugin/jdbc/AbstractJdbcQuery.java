@@ -80,7 +80,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
                 if (isResult) {
                     try (ResultSet rs = stmt.getResultSet()) {
-                        //Populate result fro result set
+                        // Populate result from result set
                         switch (this.renderFetchType(runContext)) {
                             case FETCH_ONE -> {
                                 var result = fetchResult(rs, cellConverter, conn);
