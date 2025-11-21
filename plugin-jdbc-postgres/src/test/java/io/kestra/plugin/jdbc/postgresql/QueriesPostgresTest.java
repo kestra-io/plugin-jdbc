@@ -44,7 +44,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(2));
+        assertThat(runOutput.getOutputs().size(), is(1)); // PostgreSQL returns a single output for multiple selects
         assertThat(runOutput.getOutputs().get(0), notNullValue());
         assertThat(runOutput.getOutputs().get(1), notNullValue());
     }
@@ -73,7 +73,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(2));
+        assertThat(runOutput.getOutputs().size(), is(1)); // PostgreSQL returns a single output for multiple selects
 
         List<Map<String, Object>> employees = runOutput.getOutputs().getFirst().getRows();
         assertThat("employees", employees, notNullValue());

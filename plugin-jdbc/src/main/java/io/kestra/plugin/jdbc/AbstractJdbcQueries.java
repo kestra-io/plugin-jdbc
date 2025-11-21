@@ -131,7 +131,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             // When SQL is not a SELECT statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
-                // Populate result fro result set
+                // Populate result from result set
                 long size = 0L;
                 switch (this.renderFetchType(runContext)) {
                     case FETCH_ONE -> {
