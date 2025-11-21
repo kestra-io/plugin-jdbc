@@ -104,10 +104,12 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
-
     protected Object inputFiles;
+
     protected Property<List<String>> outputFiles;
+
     protected Property<String> databaseUri;
+
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
@@ -124,7 +126,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
     @Override
     public void registerDriver() throws SQLException {
-        // only register the driver if not already exist to avoid a memory leak
+        // only register the driver if it doesn't already exist to avoid a memory leak
         if (DriverManager.drivers().noneMatch(DuckDBDriver.class::isInstance)) {
             DriverManager.registerDriver(new DuckDBDriver());
         }
@@ -146,7 +148,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Path workingDirectory = null;
+        Path workingDirectory;
 
         Map<String, String> outputFiles = null;
 
@@ -190,7 +192,6 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
         }
 
-        // inputFiles
         if (this.inputFiles != null) {
             Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
@@ -202,7 +203,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
-        //Read database from URI and put it into workingDir
+        // Read database from URI and put it into workingDir
         if (this.databaseUri != null) {
             String dbName = IdUtils.create();
             PluginUtilsService.createInputFiles(
@@ -226,7 +227,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         }
 
         final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
-        this.sql = new Property<>(configureFileSearchPathQuery +"\n" + this.sql.toString());
+        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + this.sql.toString());
 
         AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
 
@@ -238,9 +239,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
                 .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
         }
 
-        //Create and output DB URI
+        // Create and output DB URI
         URI dbUri = null;
-        if (Boolean.TRUE.equals(runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow())) {
+        if (runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow()) {
             dbUri = runContext.storage().putFile(new File(this.databaseFile.toUri()));
         }
 
