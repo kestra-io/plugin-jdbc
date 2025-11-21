@@ -68,7 +68,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             }
 
             String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-            String[] queries = getQueries(rSql);
+            boolean supportsMulti = supportsMultiStatements(this.runningConnection);
+
+            String[] queries = supportsMulti
+                ? new String[]{rSql}
+                : getQueries(rSql);
 
             for (String query : queries) {
                 // Create statement, execute

@@ -36,25 +36,21 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-
-        long queriesAmount = Arrays.stream(getQueries(rSql))
-            .filter(s -> !s.isBlank())
-            .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
-            .toList()
-            .size();
-
-        if (queriesAmount > 1) {
-            throw new IllegalArgumentException(
-                "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
-            );
-        }
-
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
         try (Connection conn = this.connection(runContext)) {
             this.runningConnection = conn;
+
+            String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            long queriesAmount = countQueries(this.runningConnection, rSql);
+
+            if (queriesAmount > 1) {
+                throw new IllegalArgumentException(
+                    "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
+                );
+            }
+
             supportsTx = this.runningConnection.getMetaData().supportsTransactions();
 
             if (supportsTx) {
@@ -126,6 +122,17 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         } finally {
             this.runningConnection = null;
         }
+    }
+
+    private long countQueries(Connection connection, String rSql) {
+        if (supportsMultiStatements(connection)) {
+            return 1;
+        }
+
+        return Arrays.stream(getQueries(rSql))
+            .filter(s -> !s.isBlank())
+            .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
+            .count();
     }
 
     private void executeAfterSQL(RunContext runContext, Connection conn, Logger logger, boolean supportsTx) throws IllegalVariableEvaluationException, SQLException {

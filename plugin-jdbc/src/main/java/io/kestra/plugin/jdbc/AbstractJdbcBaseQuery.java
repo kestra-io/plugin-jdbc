@@ -12,12 +12,7 @@ import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.BufferedWriter;
@@ -101,6 +96,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
+
+    private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
+        "postgresql", "redshift", "snowflake", "microsoft", "sqlite", "sybase", "db2"
+    );
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
@@ -307,6 +306,25 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         }
 
         return statements.toArray(new String[0]);
+    }
+
+    protected boolean supportsMultiStatements(Connection conn) {
+        try {
+            String driver = conn.getMetaData().getDriverName().toLowerCase();
+            String product = conn.getMetaData().getDatabaseProductName().toLowerCase();
+            String url = conn.getMetaData().getURL().toLowerCase();
+
+            boolean nativeSupport = MULTI_STATEMENT_DRIVERS.stream()
+                .anyMatch(s -> driver.contains(s) || product.contains(s));
+
+            boolean mysqlCompatible =
+                (driver.contains("mysql") || driver.contains("mariadb"))
+                    && url.contains("allowMultiQueries=true");
+
+            return nativeSupport || mysqlCompatible;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     protected void kill(Statement statement) {
