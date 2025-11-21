@@ -116,7 +116,7 @@ public class Query extends AbstractJdbcQuery implements MariaDbConnectionInterfa
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return MariaDbUtils.createMariaDbProperties(super.connectionProperties(runContext), this.workingDirectory, false);
+        return MariaDbUtils.createMariaDbProperties(super.connectionProperties(runContext), false);
     }
 
     @Override
