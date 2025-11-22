@@ -233,6 +233,179 @@ public class PgsqlTest extends AbstractRdbmsTest {
         });
     }
 
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE pgsql_types SET b = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE pgsql_types SET b = 'processed'"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithAfterSQL.run(runContext);
+
+        assertThat(runOutput.getRow().get("b"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("b"), is("processed"));
+
+        Query checkNoDuplicate = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
+            .build();
+
+        AbstractJdbcQuery.Output noDuplicateOutput = checkNoDuplicate.run(runContext);
+        assertThat(noDuplicateOutput.getRow(), nullValue());
+    }
+
+    @Test
+    void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE pgsql_types SET b = 'initial_value'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types"))
+            .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
+            .build();
+
+        assertThrows(Exception.class, () -> taskWithFailingAfterSQL.run(runContext));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("b"), is("initial_value"));
+    }
+
+    @Test
+    void afterSQLWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of("newStatus", "completed"));
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE pgsql_types SET b = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithParams = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE pgsql_types SET b = :newStatus"))
+            .parameters(Property.ofValue(Map.of("newStatus", "completed")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithParams.run(runContext);
+        assertThat(runOutput.getRow().get("b"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT b FROM pgsql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("b"), is("completed"));
+    }
+
     public static final Map<String, Object> INPUTS = ImmutableMap.of(
         "sslRootCert", TestUtils.ca(),
         "sslCert", TestUtils.cert(),
