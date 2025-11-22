@@ -91,7 +91,6 @@ public class LoadTest {
         assertThat(outRun.getRow().get("count"), is(3L));
     }
 
-
     @Test
     void onlyTmp() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
