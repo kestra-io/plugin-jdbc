@@ -63,7 +63,6 @@ public class Trigger extends AbstractJdbcTrigger implements MySqlConnectionInter
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         this.workingDirectory = runContext.workingDir().path();
 
-
         var query = Query.builder()
             .id(this.id)
             .type(Query.class.getName())
@@ -72,6 +71,7 @@ public class Trigger extends AbstractJdbcTrigger implements MySqlConnectionInter
             .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
+            .afterSQL(this.getAfterSQL())
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())

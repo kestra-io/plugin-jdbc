@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -191,6 +190,129 @@ public class OracleTest extends AbstractRdbmsTest {
 
         LocalDateTime insertedTimestamp = (LocalDateTime) queryOutput.getRow().get("TS");
         assertThat(insertedTimestamp, is(zonedDateTime.withZoneSameInstant(java.time.ZoneId.of("Europe/Paris")).toLocalDateTime()));
+    }
+
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = 'P'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types WHERE T_VARCHAR = 'P'"))
+            .afterSQL(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = 'D'"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithAfterSQL.run(runContext);
+
+        assertThat(runOutput.getRow().get("T_VARCHAR"), is("P"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("T_VARCHAR"), is("D"));
+
+        Query checkNoDuplicate = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types WHERE T_VARCHAR = 'P'"))
+            .build();
+
+        AbstractJdbcQuery.Output noDuplicateOutput = checkNoDuplicate.run(runContext);
+        assertThat(noDuplicateOutput.getRow(), nullValue());
+    }
+
+    @Test
+    void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = 'I'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types"))
+            .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
+            .build();
+
+        assertThrows(Exception.class, () -> taskWithFailingAfterSQL.run(runContext));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("T_VARCHAR"), is("I"));
+    }
+
+    @Test
+    void afterSQLWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of("newStatus", "C"));
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = 'P'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithParams = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types WHERE T_VARCHAR = 'P'"))
+            .afterSQL(Property.ofValue("UPDATE oracle_types SET T_VARCHAR = :newStatus"))
+            .parameters(Property.ofValue(Map.of("newStatus", "C")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithParams.run(runContext);
+        assertThat(runOutput.getRow().get("T_VARCHAR"), is("P"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT T_VARCHAR FROM oracle_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("T_VARCHAR"), is("C"));
     }
 
     public static Stream<Arguments> incorrectUrl() {

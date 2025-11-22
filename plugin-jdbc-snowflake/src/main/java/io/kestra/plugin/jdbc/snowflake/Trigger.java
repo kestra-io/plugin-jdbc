@@ -59,7 +59,7 @@ import java.sql.SQLException;
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
-    
+
     @PluginProperty(group = "connection")
     private Property<String> privateKey;
 
@@ -86,6 +86,7 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .url(this.getUrl())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
+            .afterSQL(this.getAfterSQL())
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
