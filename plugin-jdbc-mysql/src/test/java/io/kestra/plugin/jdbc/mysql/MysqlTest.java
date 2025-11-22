@@ -190,6 +190,129 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("concert_id"), is("1"));
     }
 
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("update mysql_types set c = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types where c = 'pending'"))
+            .afterSQL(Property.ofValue("update mysql_types set c = 'processed'"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithAfterSQL.run(runContext);
+
+        assertThat(runOutput.getRow().get("c"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("c"), is("processed"));
+
+        Query checkNoDuplicate = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types where c = 'pending'"))
+            .build();
+
+        AbstractJdbcQuery.Output noDuplicateOutput = checkNoDuplicate.run(runContext);
+        assertThat(noDuplicateOutput.getRow(), nullValue());
+    }
+
+    @Test
+    void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("update mysql_types set c = 'initial_value'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types"))
+            .afterSQL(Property.ofValue("update non_existent_table set x = 'y'"))
+            .build();
+
+        assertThrows(Exception.class, () -> taskWithFailingAfterSQL.run(runContext));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("c"), is("initial_value"));
+    }
+
+    @Test
+    void afterSQLWithParameters() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of("newStatus", "completed"));
+
+        Query setup = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("update mysql_types set c = 'pending'"))
+            .build();
+        setup.run(runContext);
+
+        Query taskWithParams = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types where c = 'pending'"))
+            .afterSQL(Property.ofValue("update mysql_types set c = :newStatus"))
+            .parameters(Property.ofValue(Map.of("newStatus", "completed")))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskWithParams.run(runContext);
+        assertThat(runOutput.getRow().get("c"), is("pending"));
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("select c from mysql_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("c"), is("completed"));
+    }
+
     @ParameterizedTest
     @NullSource
     @MethodSource("incorrectUrl")
