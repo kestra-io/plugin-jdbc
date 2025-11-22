@@ -22,7 +22,8 @@ import java.util.Map;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -31,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 @KestraTest
 public class OracleQueriesTest extends AbstractRdbmsTest {
+
     @Test
     void testMultiSelectWithParameters() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
@@ -64,7 +66,7 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
         assertThat("employee selected", employees.getFirst().get("FIRSTNAME"), is("John"));
         assertThat("employee selected", employees.getFirst().get("LASTNAME"), is("Doe"));
 
-        List<Map<String, Object>>laptops = runOutput.getOutputs().getLast().getRows();
+        List<Map<String, Object>> laptops = runOutput.getOutputs().getLast().getRows();
         assertThat("laptops", laptops, notNullValue());
         assertThat("laptops", laptops.size(), is(1));
         assertThat("selected laptop", laptops.getFirst().get("BRAND"), is("Apple"));
@@ -74,7 +76,7 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
     void testRollback() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
-        //Queries should pass in a transaction
+        // Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -92,7 +94,7 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
         assertThat(runOutput.getOutputs().size(), is(1));
         assertThat(runOutput.getOutputs().getFirst().getRow().get("TEST_ROLLBACK_COUNT"), is(BigDecimal.valueOf(1)));
 
-        //Queries should fail due to bad sql
+        // Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -102,12 +104,12 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("""
                 INSERT INTO test_rollback (n) VALUES (2);
                 INSERT INTO test_rollback (n) VALUES ('hello');
-                """))//Try inserting before failing
+                """)) // Try inserting before failing
             .build();
 
         assertThrows(Exception.class, () -> insertsFail.run(runContext));
 
-        //Final query to verify the amount of updated rows
+        // Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -128,7 +130,7 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
     void testNonTransactionalShouldNotRollback() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
-        //Queries should pass in a transaction
+        // Queries should pass in a transaction
         Queries insertOneAndFail = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -146,7 +148,7 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
         assertThrows(Exception.class, () -> insertOneAndFail.run(runContext));
 
-        //Final query to verify the amount of updated rows
+        // Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -155,12 +157,87 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("""
                 SELECT COUNT(n) as TRANSACTION_COUNT FROM test_transaction;
-                """)) //Try inserting before failing
+                """)) // Try inserting before failing
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
         assertThat(verifyOutput.getOutputs().size(), is(1));
         assertThat(verifyOutput.getOutputs().getFirst().getRow().get("TRANSACTION_COUNT"), is(BigDecimal.valueOf(1)));
+    }
+
+    @Test
+    void testPlsqlBlock() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        String plsql = """
+            BEGIN
+              FOR record IN (
+                SELECT ROWNUM n
+                FROM ( SELECT 1 just_a_column
+                  FROM dual
+                  GROUP BY CUBE(1,2,3,4,5,6,7,8,9) )
+                  WHERE ROWNUM <= 20
+                )
+                LOOP
+                  dbms_output.put_line(record.n);
+                END LOOP;
+            END;
+            """;
+
+        Queries task = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue(plsql))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+
+        assertThat(output, notNullValue());
+    }
+
+    @Test
+    void testOracleBeginEndWithOperations() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        Queries task = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .transaction(Property.ofValue(false))
+            .sql(Property.ofValue("""
+                    CREATE TABLE tx_oracle_ops (id NUMBER);
+
+                    -- First insert outside PL/SQL block
+                    INSERT INTO tx_oracle_ops (id) VALUES (1);
+
+                    -- PL/SQL BEGIN/END block with real operations inside
+                    BEGIN
+                        INSERT INTO tx_oracle_ops (id) VALUES (2);
+                        INSERT INTO tx_oracle_ops (id) VALUES (3);
+                    END;
+
+                    -- Final insert outside the block
+                    INSERT INTO tx_oracle_ops (id) VALUES (4);
+
+                    -- Only this SELECT should produce output
+                    SELECT COUNT(*) AS CNT FROM tx_oracle_ops;
+                """))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+
+        // Only the SELECT generates one output
+        assertThat(output.getOutputs().size(), is(1));
+
+        List<Map<String, Object>> rows = output.getOutputs().getFirst().getRows();
+        assertThat(rows.size(), is(1));
+
+        // 1 (before block) + 2,3 (in block) + 4 (after block)
+        assertThat(rows.getFirst().get("CNT"), is(BigDecimal.valueOf(4)));
     }
 
     @Override
@@ -178,7 +255,6 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
         return "oracle";
     }
 
-
     @Override
     @BeforeEach
     public void init() throws IOException, URISyntaxException, SQLException {
@@ -187,19 +263,20 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        deleteDb( "employee");
-        deleteDb("laptop");
-        deleteDb("test_rollback");
-        deleteDb("test_transaction");
+        deleteTable("employee");
+        deleteTable("laptop");
+        deleteTable("test_rollback");
+        deleteTable("test_transaction");
+        deleteTable("tx_oracle_ops");
 
         executeSqlScript("scripts/oracle_queries.sql");
     }
 
-    private void deleteDb(String dbName) {
+    private void deleteTable(String tableName) {
         try {
-            RunScript.execute(getConnection(), new StringReader("DROP TABLE " + dbName + ";"));
+            RunScript.execute(getConnection(), new StringReader("DROP TABLE " + tableName + ";"));
         } catch (Exception ignored) {
-            //Ignore if DB does not exists
+            // Ignore if table does not exist
         }
     }
 }
