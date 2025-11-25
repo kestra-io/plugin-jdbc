@@ -25,7 +25,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
-@Disabled("Disabled for CI")
 public class DB2QueriesTest extends AbstractRdbmsTest {
 
     @Test
@@ -187,9 +186,18 @@ public class DB2QueriesTest extends AbstractRdbmsTest {
         executeSqlScript("scripts/db2_queries.sql");
     }
 
+    private static volatile boolean initialized = false;
+
     @Override
     @BeforeEach
     public void init() throws IOException, URISyntaxException, SQLException {
-        initDatabase();
+        if (!initialized) {
+            synchronized (DB2QueriesTest.class) {
+                if (!initialized) {
+                    initDatabase();
+                    initialized = true;
+                }
+            }
+        }
     }
 }
