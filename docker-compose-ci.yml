@@ -73,22 +73,21 @@ services:
       CLICKHOUSE_PASSWORD: mypassword
       CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
 
-#  db2:
-#    image: icr.io/db2_community/db2
-#    ports:
-#      - "5023:50000"
-#    privileged: true
-#    env_file:
-#      - environment_db2
-#    volumes:
-#      - /Docker:/database
-#    healthcheck:
-#      test: ["CMD-SHELL", "su - db2inst1",  "db2 connect to sample"]
-#      interval: 15s
-#      retries: 7
-#      timeout: 240s
-#      start_period: 240s
-
+  db2:
+    image: icr.io/db2_community/db2
+    ports:
+      - "5023:50000"
+    privileged: true
+    env_file:
+      - environment_db2
+    volumes:
+      - /Docker:/database
+    healthcheck:
+      test: ["CMD-SHELL", "su - db2inst1 -c \"db2 connect to testdb\""]
+      interval: 10s
+      retries: 30
+      timeout: 240s
+      start_period: 420s
 
   oracle:
     image: wnameless/oracle-xe-11g-r2

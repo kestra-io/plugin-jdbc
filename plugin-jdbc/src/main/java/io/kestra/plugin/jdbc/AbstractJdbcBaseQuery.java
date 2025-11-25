@@ -98,8 +98,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
 
     private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
-        "db2",
-        "microsoft",
         "redshift",
         "snowflake",
         "sybase"
