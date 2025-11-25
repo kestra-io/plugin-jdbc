@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation('com.clickhouse:clickhouse-jdbc:0.8.6') {
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.4') {
         exclude group: 'org.apache.httpcomponents.core5'
         exclude group: 'org.apache.httpcomponents.client5'
     }
