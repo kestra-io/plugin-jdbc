@@ -37,9 +37,17 @@ hostssl all all ::/0      md5
 local   all all trust
 EOF
 
-docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres
+docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres db2
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
-sleep 3
+
+echo "Waiting for DB2 remote readiness..."
+for i in {1..60}; do
+  if docker exec plugin-jdbc-db2-1 su - db2inst1 -c "db2 connect to testdb" >/dev/null 2>&1; then
+    echo "DB2 ready."
+    break
+  fi
+  sleep 5
+done
 
 docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
 INSTALL SONAME 'auth_ed25519';
