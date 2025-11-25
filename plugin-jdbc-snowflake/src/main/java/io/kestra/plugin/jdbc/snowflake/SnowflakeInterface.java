@@ -11,7 +11,7 @@ import java.util.Properties;
 
 
 public interface SnowflakeInterface extends JdbcConnectionInterface {
-    
+
     @PluginProperty(group = "connection")
     @Schema(
         title = "Specifies the virtual warehouse to use once connected.",
@@ -44,8 +44,58 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     @PluginProperty(group = "connection")
     @Schema(
-        title = "Specifies the private key for key pair authentication and key rotation.",
-        description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='")
+        title = "Private key used for Snowflake key-pair authentication.",
+        description = """
+        Kestra supports multiple private key formats for Snowflake key-pair authentication.
+
+        You can provide your key in any of the following formats:
+
+        1. PKCS8 DER (base64-encoded, single-line)
+        2. PEM PKCS8:
+           -----BEGIN PRIVATE KEY-----
+           ...
+           -----END PRIVATE KEY-----
+
+        3. PEM PKCS1 RSA:
+           -----BEGIN RSA PRIVATE KEY-----
+           ...
+           -----END RSA PRIVATE KEY-----
+
+        4. Multiline or single-line input (Kestra will normalize automatically)
+        5. Encrypted PKCS8 (requires providing `privateKeyPassword`)
+
+        ## Recommended format
+
+        Snowflake recommends PKCS8.
+        If your key is in PKCS1 format, Kestra will automatically convert it.
+
+        ## Example: using a PEM PKCS8 key (recommended)
+        secret('SNOWFLAKE_PRIVATE_KEY') should contain:
+
+        -----BEGIN PRIVATE KEY-----
+        MIIEvQIBADANBgkqhkiG9w0BAQEFAASC...
+        ...
+        -----END PRIVATE KEY-----
+
+        ## Example: encrypted private key
+
+        privateKey: "{{ secret('SNOWFLAKE_PRIVATE_KEY') }}"
+        privateKeyPassword: "{{ secret('SNOWFLAKE_PRIVATE_KEY_PASSWORD') }}"
+
+        ## Converting a PEM key to unencrypted PKCS8 DER (optional)
+
+        openssl pkcs8 -topk8 -nocrypt -inform PEM -outform DER \\
+          -in private_key.pem \\
+          -out private_key.der
+
+        base64 -w 0 private_key.der > private_key.base64
+
+        You can then store the content of private_key.base64 as the Kestra secret.
+
+        Kestra automatically detects the format and performs the necessary conversions.
+        No manual header stripping or reformatting is required.
+        """
+    )
     Property<String> getPrivateKey();
 
     @PluginProperty(group = "connection")
