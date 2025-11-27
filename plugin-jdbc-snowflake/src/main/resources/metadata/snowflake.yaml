@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.snowflake
+name: "snowflake"
+title: "Snowflake"
+description: "This sub-group of plugins contains tasks for accessing the Snowflake database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

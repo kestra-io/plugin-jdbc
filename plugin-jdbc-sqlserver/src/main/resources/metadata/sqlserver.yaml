@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.sqlserver
+name: "sqlserver"
+title: "Sqlserver"
+description: "This sub-group of plugins contains tasks for accessing the SQL Sever database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc
+name: "jdbc"
+title: "Abstract JDBC"
+description: ""
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.sqlite
+name: "sqlite"
+title: "Sqlite"
+description: "This sub-group of plugins contains tasks for interacting with SQLite databases."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

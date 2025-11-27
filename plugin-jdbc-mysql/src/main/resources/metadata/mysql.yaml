@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.mysql
+name: "mysql"
+title: "Mysql"
+description: "This sub-group of plugins contains tasks for accessing the MySQL database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

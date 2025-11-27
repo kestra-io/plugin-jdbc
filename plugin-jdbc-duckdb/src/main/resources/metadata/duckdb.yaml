@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.duckdb
+name: "duckdb"
+title: "Duckdb"
+description: "This sub-group of plugins contains tasks for accessing the DuckDB database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
