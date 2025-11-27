@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.vertica
+name: "vertica"
+title: "Vertica"
+description: "This sub-group of plugins contains tasks for accessing the Vetica database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

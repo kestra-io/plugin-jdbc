@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.postgresql
+name: "postgresql"
+title: "Postgresql"
+description: "This sub-group of plugins contains tasks for accessing the PostgreSQL database."
+body: ""
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
