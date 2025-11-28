@@ -7,7 +7,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 public abstract class MariaDbUtils {
-    protected static Properties createMariaDbProperties(Properties props, Path workingDirectory, boolean isMultiQuery) {
+    protected static Properties createMariaDbProperties(Properties props, boolean isMultiQuery) {
         URI url = URI.create((String) props.get("jdbc.url"));
         url = URI.create(url.getSchemeSpecificPart());
 
