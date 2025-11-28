@@ -115,6 +115,17 @@ public class PostgresCellConverter extends AbstractCellConverter {
 
                 ps.setObject(index, jsonObject);
                 return ps;
+            } else if (value instanceof Map) {
+                PGobject jsonObject = new PGobject();
+                jsonObject.setType("json");
+                try {
+                    jsonObject.setValue(JacksonMapper.ofJson().writeValueAsString(value));
+                } catch (JsonProcessingException e) {
+                    throw new IllegalArgumentException("Invalid json object for PGobject", e);
+                }
+
+                ps.setObject(index, jsonObject);
+                return ps;
             }
         }
 
