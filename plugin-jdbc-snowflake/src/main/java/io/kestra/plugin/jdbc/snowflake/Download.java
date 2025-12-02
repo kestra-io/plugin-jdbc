@@ -50,7 +50,7 @@ import java.sql.Connection;
     }
 )
 public class Download extends AbstractSnowflakeConnection implements RunnableTask<Download.Output> {
-    
+
     @PluginProperty(group = "connection")
     private Property<String> database;
 
@@ -62,6 +62,9 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
 
     @PluginProperty(group = "connection")
     private Property<String> role;
+
+    @PluginProperty(dynamic = true)
+    private Property<String> queryTag;
 
     @Schema(
         title = "Snowflake stage name.",
