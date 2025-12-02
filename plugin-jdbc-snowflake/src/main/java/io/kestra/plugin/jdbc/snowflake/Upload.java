@@ -63,7 +63,6 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     @PluginProperty(group = "connection")
     private Property<String> role;
 
-    @PluginProperty(dynamic = true)
     private Property<String> queryTag;
 
     @Schema(

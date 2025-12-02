@@ -79,7 +79,6 @@ public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
     @PluginProperty(group = "connection")
     private Property<String> role;
 
-    @PluginProperty(dynamic = true)
     private Property<String> queryTag;
 
     @Override

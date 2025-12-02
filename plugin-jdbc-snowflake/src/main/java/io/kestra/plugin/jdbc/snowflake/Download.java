@@ -63,7 +63,6 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @PluginProperty(group = "connection")
     private Property<String> role;
 
-    @PluginProperty(dynamic = true)
     private Property<String> queryTag;
 
     @Schema(
