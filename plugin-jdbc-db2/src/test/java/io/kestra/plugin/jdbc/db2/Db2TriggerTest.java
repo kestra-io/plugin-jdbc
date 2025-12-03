@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.db2;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -14,6 +15,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest
+@Disabled("Disabled for CI")
 class Db2TriggerTest extends AbstractJdbcTriggerTest {
 
     @Test

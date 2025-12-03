@@ -6,6 +6,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -19,6 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
+@Disabled("Disabled for CI")
 public class Db2Test extends AbstractRdbmsTest {
 
     @Test

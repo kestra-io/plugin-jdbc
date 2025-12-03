@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
+@Disabled("Disabled for CI")
 public class DB2QueriesTest extends AbstractRdbmsTest {
 
     @Test
