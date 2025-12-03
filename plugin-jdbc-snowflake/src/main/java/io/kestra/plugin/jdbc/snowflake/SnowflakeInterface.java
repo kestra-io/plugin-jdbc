@@ -103,6 +103,13 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         title = "Specifies the private key password for key pair authentication and key rotation.")
     Property<String> getPrivateKeyPassword();
 
+    @PluginProperty(dynamic = true)
+    @Schema(
+        title = "Query tag for Snowflake session tracking",
+        description = "Optional string to tag queries executed within the session for monitoring and cost allocation"
+    )
+    Property<String> getQueryTag();
+
     /**
      * @deprecated use {@link #getPrivateKey()} instead
      */
@@ -138,6 +145,10 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
                 runContext.render(this.getPrivateKeyPassword()).as(String.class)
             );
             properties.put("privateKey", unencryptedPrivateKey);
+        }
+
+        if (this.getQueryTag() != null) {
+            properties.put("query_tag", runContext.render(this.getQueryTag()).as(String.class).orElseThrow());
         }
     }
 
