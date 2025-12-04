@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.redshift
 name: "redshift"
 title: "Redshift"
-description: "This sub-group of plugins contains tasks for accessing the Amazon Redshift database."
-body: ""
+description: "Tasks that connect to Amazon Redshift via JDBC to run queries and loads."
+body: "Provide the Redshift JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

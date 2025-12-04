@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.arrowflight
 name: "arrowflight"
-title: "Arrowflight"
-description: "This sub-group of plugins contains tasks for accessing a database through Apache Arrow Flight SQL."
-body: ""
+title: "Arrow Flight"
+description: "Tasks that connect to Apache Arrow Flight SQL via JDBC to run queries and loads."
+body: "Provide the Arrow Flight JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
