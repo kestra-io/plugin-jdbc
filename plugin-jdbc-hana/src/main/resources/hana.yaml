@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.hana
+name: "hana"
+title: "SAP HANA"
+description: "This sub-group of plugins contains tasks for accessing SAP HANA databases using the official SAP HANA JDBC driver (ngdbc.jar)."
+body: ""
+videos: []
+createdBy: "suraj-0628 - opensource contributor"
+managedBy: "Kestra Core Team"
