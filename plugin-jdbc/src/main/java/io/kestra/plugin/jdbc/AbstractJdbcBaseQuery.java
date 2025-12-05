@@ -12,12 +12,7 @@ import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.BufferedWriter;
@@ -101,6 +96,12 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
+
+    private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
+        "redshift",
+        "snowflake",
+        "sybase"
+    );
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
@@ -222,6 +223,110 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
+    }
+
+    protected static String[] getQueries(String sql) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+
+        int len = sql.length();
+        boolean inString = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
+        int beginDepth = 0;
+
+        for (int i = 0; i < len; i++) {
+            char c = sql.charAt(i);
+            char next = (i + 1 < len) ? sql.charAt(i + 1) : '\0';
+
+            // --- handle comments ---
+            if (!inString && !inBlockComment && c == '-' && next == '-') {
+                inLineComment = true;
+            }
+            if (inLineComment && c == '\n') {
+                inLineComment = false;
+            }
+            if (!inString && !inLineComment && c == '/' && next == '*') {
+                inBlockComment = true;
+            }
+            if (inBlockComment && c == '*' && next == '/') {
+                inBlockComment = false;
+                current.append("*/");
+                i++;
+                continue;
+            }
+
+            if (inLineComment || inBlockComment) {
+                current.append(c);
+                continue;
+            }
+
+            // --- handle quoted strings ---
+            if (c == '\'' && !inString) {
+                inString = true;
+            } else if (c == '\'') {
+                inString = false;
+            }
+
+            current.append(c);
+
+            // --- track PL/SQL BEGIN ... END ---
+            if (!inString) {
+                String tail = current.toString().toUpperCase(Locale.ROOT);
+
+                if (tail.endsWith("BEGIN")) {
+                    beginDepth++;
+                }
+
+                // detect END;
+                if (tail.endsWith("END;")) {
+                    beginDepth = Math.max(0, beginDepth - 1);
+
+                    // --- END of PL/SQL block ---
+                    if (beginDepth == 0) {
+                        statements.add(current.toString().trim());
+                        current.setLength(0);
+                        continue;
+                    }
+                }
+            }
+
+            // --- normal SQL statement terminated by ; ---
+            if (beginDepth == 0 && c == ';' && !inString) {
+                String s = current.toString().trim();
+                if (!s.isEmpty()) {
+                    statements.add(s.substring(0, s.length() - 1)); // strip ;
+                }
+                current.setLength(0);
+            }
+        }
+
+        // last statement (no trailing ;)
+        String leftover = current.toString().trim();
+        if (!leftover.isEmpty()) {
+            statements.add(leftover);
+        }
+
+        return statements.toArray(new String[0]);
+    }
+
+    protected boolean supportsMultiStatements(Connection conn) {
+        try {
+            String driver = conn.getMetaData().getDriverName().toLowerCase();
+            String product = conn.getMetaData().getDatabaseProductName().toLowerCase();
+            String url = conn.getMetaData().getURL().toLowerCase();
+
+            boolean nativeSupport = MULTI_STATEMENT_DRIVERS.stream()
+                .anyMatch(s -> driver.contains(s) || product.contains(s));
+
+            boolean mysqlCompatible =
+                (driver.contains("mysql") || driver.contains("mariadb"))
+                    && url.contains("allowMultiQueries=true");
+
+            return nativeSupport || mysqlCompatible;
+        } catch (SQLException e) {
+            return false;
+        }
     }
 
     protected void kill(Statement statement) {
