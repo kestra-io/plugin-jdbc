@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.sqlite
 name: "sqlite"
 title: "Sqlite"
-description: "This sub-group of plugins contains tasks for interacting with SQLite databases."
-body: ""
+description: "Tasks that connect to SQLite via JDBC to run queries and loads."
+body: "Provide the SQLite JDBC URL (file or memory) and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

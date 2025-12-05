@@ -50,7 +50,7 @@ import java.sql.Connection;
     }
 )
 public class Upload extends AbstractSnowflakeConnection implements RunnableTask<Upload.Output> {
-    
+
     @PluginProperty(group = "connection")
     private Property<String> database;
 
@@ -62,6 +62,8 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
 
     @PluginProperty(group = "connection")
     private Property<String> role;
+
+    private Property<String> queryTag;
 
     @Schema(
         title = "Path to the file to load to Snowflake stage."

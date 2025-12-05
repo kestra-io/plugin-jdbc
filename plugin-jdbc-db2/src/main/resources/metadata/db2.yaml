@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.db2
 name: "db2"
 title: "Db2"
-description: "This sub-group of plugins contains tasks for accessing the DB2 database."
-body: ""
+description: "Tasks that connect to IBM Db2 via JDBC to run queries and loads."
+body: "Provide the Db2 JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
