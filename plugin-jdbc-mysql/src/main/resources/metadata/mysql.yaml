@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.mysql
 name: "mysql"
 title: "Mysql"
-description: "This sub-group of plugins contains tasks for accessing the MySQL database."
-body: ""
+description: "Tasks that connect to MySQL via JDBC to run queries and loads."
+body: "Provide the MySQL JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
