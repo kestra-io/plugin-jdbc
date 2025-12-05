@@ -33,6 +33,14 @@ allprojects {
         maven { url 'https://maven.jumpmind.com/repo/' }
         maven { url "https://talend-update.talend.com/nexus/content/repositories/libraries/" }
     }
+
+    configurations.configureEach {
+        resolutionStrategy.capabilitiesResolution
+            .withCapability("org.lz4:lz4-java") {
+                select("at.yawk.lz4:lz4-java:1.8.1")
+                because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
+            }
+    }
 }
 
 subprojects {
