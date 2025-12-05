@@ -3,17 +3,17 @@ project.description = 'Query ClickHouse databases using Kestra\'s JDBC plugin in
 jar {
     manifest {
         attributes(
-                "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "ClickHouse",
-                "X-Kestra-Group": project.group + ".jdbc.clickhouse",
-                "X-Kestra-Description": project.description,
-                "X-Kestra-Version": project.version
+            "X-Kestra-Name": project.name,
+            "X-Kestra-Title": "ClickHouse",
+            "X-Kestra-Group": project.group + ".jdbc.clickhouse",
+            "X-Kestra-Description": project.description,
+            "X-Kestra-Version": project.version
         )
     }
 }
 
 dependencies {
-    implementation('com.clickhouse:clickhouse-jdbc:0.8.6') {
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.4') {
         exclude group: 'org.apache.httpcomponents.core5'
         exclude group: 'org.apache.httpcomponents.client5'
     }
@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.apache.httpcomponents.core5:httpcore5'
     implementation 'org.apache.httpcomponents.core5:httpcore5-h2'
     implementation 'org.apache.httpcomponents.client5:httpclient5'
-    implementation 'org.lz4:lz4-java:1.8.0'
+    implementation 'at.yawk.lz4:lz4-java:1.8.1'
 
     implementation project(':plugin-jdbc')
 
