@@ -153,7 +153,9 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(Property.ofValue("INSERT INTO clickhouse_types (String) VALUES(?) SETTINGS async_insert=1, wait_for_async_insert=1"))
+            // If you want to specify SETTINGS for INSERT query then you have to do it before the FORMAT clause since everything after FORMAT format_name is treated as data
+            // See: https://clickhouse.com/docs/sql-reference/statements/insert-into
+            .sql(Property.ofValue("INSERT INTO clickhouse_types (String) SETTINGS async_insert=1, wait_for_async_insert=1 VALUES(?)"))
             .build();
 
         taskUpdate.run(runContext);

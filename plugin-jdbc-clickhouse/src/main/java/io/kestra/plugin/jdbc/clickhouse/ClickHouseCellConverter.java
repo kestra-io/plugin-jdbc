@@ -65,7 +65,10 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
         }
 
         if (columnTypeName.equals("Int8")) {
-            return columnVal;
+            if (columnVal instanceof Number number) {
+                return number.intValue();
+            }
+            return Integer.parseInt(columnVal.toString());
         }
 
         if (columnTypeName.equals("Date")) {
@@ -95,13 +98,11 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
             return col.toString().substring(1);
         }
 
-        if (columnTypeName.equals("UInt64")) {
-            return switch (columnVal) {
-                case UnsignedLong unsigned -> unsigned.longValue();
-                case BigInteger bigInt -> bigInt.longValue();
-                case Number number -> number.longValue();
-                default -> throw new IllegalArgumentException("Unexpected type for UInt64: " + columnVal.getClass());
-            };
+        if (columnTypeName.equals("UInt8")) {
+            if (columnVal instanceof Number number) {
+                return number.intValue();
+            }
+            return Integer.parseInt(columnVal.toString());
         }
 
         if (columnTypeName.equals("UInt16")) {
@@ -110,6 +111,15 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
             } else {
                 throw new IllegalArgumentException("Unexpected type for UInt16: " + columnVal.getClass());
             }
+        }
+
+        if (columnTypeName.equals("UInt64")) {
+            return switch (columnVal) {
+                case UnsignedLong unsigned -> unsigned.longValue();
+                case BigInteger bigInt -> bigInt.longValue();
+                case Number number -> number.longValue();
+                default -> throw new IllegalArgumentException("Unexpected type for UInt64: " + columnVal.getClass());
+            };
         }
 
         if ("Float32".equals(columnTypeName)) {
