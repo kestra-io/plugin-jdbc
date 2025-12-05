@@ -96,8 +96,9 @@ public class PostgresCellConverter extends AbstractCellConverter {
     @Override
     public PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {
         Class<?> cls = parameterType.getClass(index);
+        String typeName = parameterType.getTypeName(index);
 
-        if (cls == PGInterval.class) {
+        if (cls == PGInterval.class || "interval".equalsIgnoreCase(typeName)) {
             Duration duration = this.parseDuration(value);
 
             if (duration != null) {
@@ -107,15 +108,27 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 ps.setObject(index, new PGInterval((String) value));
                 return ps;
             }
-        } else if (cls == PGobject.class) {
-            if (value instanceof String) {
-                PGobject jsonObject = new PGobject();
-                jsonObject.setType("json");
-                jsonObject.setValue((String) value);
+        }
 
-                ps.setObject(index, jsonObject);
-                return ps;
+        if ("json".equalsIgnoreCase(typeName) || "jsonb".equalsIgnoreCase(typeName)) {
+            PGobject jsonObject = new PGobject();
+            jsonObject.setType(typeName.toLowerCase());
+
+            if (value instanceof String string) {
+                jsonObject.setValue(string);
+            } else {
+                try {
+                    jsonObject.setValue(JacksonMapper.ofJson().writeValueAsString(value));
+                } catch (JsonProcessingException e) {
+                    throw new IllegalArgumentException(
+                        "Invalid JSON value for type '" + typeName + "' at index " + index,
+                        e
+                    );
+                }
             }
+
+            ps.setObject(index, jsonObject);
+            return ps;
         }
 
         return super.addPreparedStatementValue(ps, parameterType, value, index, connection);

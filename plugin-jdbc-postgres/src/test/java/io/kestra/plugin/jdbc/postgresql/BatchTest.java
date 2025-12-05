@@ -59,7 +59,10 @@ public class BatchTest extends AbstractRdbmsTest {
                 new int[]{100, 200, 300},
                 new String[][]{new String[]{"meeting", "lunch"}, new String[]{"training", "presentation"}},
                 "{\"color\":\"red\",\"value\":\"#f00\"}",
-                "{\"color\":\"blue\",\"value\":\"#0f0\"}",
+                ImmutableMap.of(
+                    "amount", new BigDecimal("149.9"),
+                    "currency", "EUR"
+                ),
                 Hex.decodeHex("DEADBEEF".toCharArray()),
                 "a quick brown fox jumped over the lazy dog"
             ));
