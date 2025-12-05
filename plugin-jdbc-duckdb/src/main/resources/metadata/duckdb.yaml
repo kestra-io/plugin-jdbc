@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.duckdb
 name: "duckdb"
 title: "Duckdb"
-description: "This sub-group of plugins contains tasks for accessing the DuckDB database."
-body: ""
+description: "Tasks that connect to DuckDB via JDBC to run queries and loads."
+body: "Provide the DuckDB JDBC URL, credentials (if any), and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"

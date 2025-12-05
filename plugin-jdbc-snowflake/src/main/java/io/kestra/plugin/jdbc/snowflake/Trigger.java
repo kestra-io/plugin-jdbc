@@ -78,6 +78,8 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
     @PluginProperty(group = "connection")
     private Property<String> role;
 
+    private Property<String> queryTag;
+
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         var queryBuilder = Query.builder()
@@ -87,6 +89,7 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
             .afterSQL(this.getAfterSQL())
+            .queryTag(this.getQueryTag())
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
