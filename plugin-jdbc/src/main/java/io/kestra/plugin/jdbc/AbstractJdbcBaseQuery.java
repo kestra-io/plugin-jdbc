@@ -17,9 +17,6 @@ import lombok.experimental.SuperBuilder;
 import org.jooq.Queries;
 import org.jooq.Query;
 import org.jooq.SQLDialect;
-import org.jooq.conf.ParseUnknownFunctions;
-import org.jooq.conf.ParseUnsupportedSyntax;
-import org.jooq.conf.Settings;
 import org.jooq.impl.DSL;
 
 import java.io.BufferedWriter;
@@ -233,19 +230,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected static String[] getQueries(String sql, SQLDialect dialect) {
-        if (sql == null || sql.isBlank()) {
-            return new String[0];
-        }
-
-        SQLDialect effectiveDialect = (dialect == null ? SQLDialect.DEFAULT : dialect);
-
-        Settings settings = new Settings()
-            .withParseDialect(effectiveDialect)
-            .withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
-            .withParseUnsupportedSyntax(ParseUnsupportedSyntax.IGNORE)
-            .withParseIgnoreCommercialOnlyFeatures(true);
-
-        Queries queries = DSL.using(effectiveDialect, settings)
+        Queries queries = DSL.using(SQLDialect.DEFAULT)
             .parser()
             .parse(sql);
 
