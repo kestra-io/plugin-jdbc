@@ -230,7 +230,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected static String[] getQueries(String sql, SQLDialect dialect) {
-        Queries queries = DSL.using(SQLDialect.DEFAULT)
+        Queries queries = DSL.using(dialect)
             .parser()
             .parse(sql);
 
