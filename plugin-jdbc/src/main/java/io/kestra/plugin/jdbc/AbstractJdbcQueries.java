@@ -9,6 +9,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.jooq.SQLDialect;
+import org.jooq.tools.jdbc.JDBCUtils;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -73,9 +75,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             boolean shouldBatchQueries = supportsMulti && useTransactions;
 
+            SQLDialect dialect = JDBCUtils.dialect(this.runningConnection);
+
             String[] queries = shouldBatchQueries
                 ? new String[]{rSql}
-                : getQueries(rSql);
+                : getQueries(rSql, dialect);
 
             for (String query : queries) {
                 // Create statement, execute

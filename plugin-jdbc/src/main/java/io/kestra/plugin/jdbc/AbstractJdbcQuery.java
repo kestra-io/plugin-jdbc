@@ -7,6 +7,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.jooq.SQLDialect;
+import org.jooq.tools.jdbc.JDBCUtils;
 import org.slf4j.Logger;
 
 import java.io.BufferedWriter;
@@ -129,7 +131,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             return 1;
         }
 
-        return Arrays.stream(getQueries(rSql))
+        SQLDialect dialect = JDBCUtils.dialect(connection);
+
+        return Arrays.stream(getQueries(rSql, dialect))
             .filter(s -> !s.isBlank())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
