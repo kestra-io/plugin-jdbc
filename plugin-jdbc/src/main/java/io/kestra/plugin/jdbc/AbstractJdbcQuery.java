@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
