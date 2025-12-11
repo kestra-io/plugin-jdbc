@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -30,6 +31,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     // will be used when killing
     @Getter(AccessLevel.NONE)
     private transient volatile Statement runningStatement;
+
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
@@ -45,6 +47,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             this.runningConnection = conn;
 
             String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            FetchType fetchType = this.renderFetchType(runContext);
             long queriesAmount = countQueries(this.runningConnection, rSql);
 
             if (queriesAmount > 1) {
@@ -66,7 +69,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rSql)) {
                 this.runningStatement = stmt;
 
-                stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
+                if (fetchType == FetchType.STORE) {
+                    stmt.setFetchSize(this.getFetchSize(runContext));
+                }
 
                 logger.debug("Starting query: {}", rSql);
 
@@ -83,7 +88,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                 if (isResult) {
                     try (ResultSet rs = stmt.getResultSet()) {
                         // Populate result from result set
-                        switch (this.renderFetchType(runContext)) {
+                        switch (fetchType) {
                             case FETCH_ONE -> {
                                 var result = fetchResult(rs, cellConverter, conn);
                                 size = result == null ? 0L : 1L;
@@ -185,7 +190,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         try {
             return conn.setSavepoint();
         } catch (SQLException e) {
-            //Savepoint not supported by this driver
+            // Savepoint not supported by this driver
             return null;
         }
     }

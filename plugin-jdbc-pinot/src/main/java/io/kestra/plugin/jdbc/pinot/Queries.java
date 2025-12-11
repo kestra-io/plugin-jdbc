@@ -1,9 +1,11 @@
 package io.kestra.plugin.jdbc.pinot;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -72,5 +74,10 @@ public class Queries extends AbstractJdbcQueries implements PinotConnectionInter
     @Override
     protected PreparedStatement createPreparedStatement(Connection conn, String preparedSql) throws SQLException {
         return conn.prepareStatement(preparedSql);
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }

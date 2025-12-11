@@ -1,18 +1,20 @@
 package io.kestra.plugin.jdbc.vectorwise;
 
 import com.ingres.jdbc.IngresDriver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.plugin.jdbc.AbstractCellConverter;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -69,4 +71,8 @@ public class Query extends AbstractJdbcQuery implements VetorwiseConnectionInter
         }
     }
 
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+    }
 }

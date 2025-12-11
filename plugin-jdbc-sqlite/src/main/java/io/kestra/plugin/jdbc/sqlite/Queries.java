@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.sqlite;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -145,5 +146,10 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
         if (DriverManager.drivers().noneMatch(JDBC.class::isInstance)) {
             DriverManager.registerDriver(new JDBC());
         }
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }

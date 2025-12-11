@@ -107,7 +107,7 @@ public class ClickHouseTest extends AbstractClickHouseTest {
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .fetchType(Property.ofValue(FetchType.NONE))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("ALTER TABLE clickhouse_types UPDATE String = 'D' WHERE String = 'four'"))
             .build();

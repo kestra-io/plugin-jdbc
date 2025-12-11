@@ -27,8 +27,8 @@ public class DuckDbCellConverter extends AbstractCellConverter {
 
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
-        if (data instanceof OffsetDateTime) {
-            return data;
+        if (data instanceof OffsetDateTime odt) {
+            return odt.withOffsetSameInstant(ZoneOffset.UTC);
         }
 
         if (columnTypeName.equalsIgnoreCase("TIMESTAMP")) {

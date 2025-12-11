@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.as400;
 
 import com.ibm.as400.access.AS400JDBCDriver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -77,5 +78,10 @@ public class Queries extends AbstractJdbcQueries implements As400ConnectionInter
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         return super.connectionProperties(runContext, "jdbc:as400");
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }

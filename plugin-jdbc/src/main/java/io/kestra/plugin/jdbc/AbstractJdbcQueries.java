@@ -71,6 +71,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             }
 
             String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            FetchType fetchType = this.renderFetchType(runContext);
             boolean supportsMulti = supportsMultiStatements(this.runningConnection);
 
             boolean shouldBatchQueries = supportsMulti && useTransactions;
@@ -83,13 +84,17 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 // Create statement, execute
                 try (PreparedStatement stmt = prepareStatement(runContext, this.runningConnection, query)) {
                     this.runningStatement = stmt;
-                    stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
+
+                    if (fetchType == FetchType.STORE) {
+                        stmt.setFetchSize(this.getFetchSize(runContext));
+                    }
+
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
                     if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
-                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList);
+                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList, fetchType);
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
@@ -131,9 +136,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final RunContext runContext,
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
-                                             final List<Output> outputList) throws SQLException, IOException, IllegalVariableEvaluationException {
-        FetchType fetchType = this.renderFetchType(runContext);
-
+                                             final List<Output> outputList,
+                                             final FetchType fetchType
+    ) throws SQLException, IOException {
         while (true) {
             ResultSet rs = stmt.getResultSet();
             int updateCount = stmt.getUpdateCount();

@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.duckdb;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -299,5 +300,10 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         if (DriverManager.drivers().noneMatch(DuckDBDriver.class::isInstance)) {
             DriverManager.registerDriver(new DuckDBDriver());
         }
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }
