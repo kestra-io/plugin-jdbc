@@ -266,6 +266,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         }
     }
 
+    protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
+
     @SuperBuilder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {

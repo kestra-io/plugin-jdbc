@@ -31,7 +31,6 @@ public class MysqlCellConverter extends AbstractCellConverter {
             case "timestamp" -> ((ResultSetImpl) rs).getLocalDateTime(columnIndex).toInstant(ZoneOffset.UTC);
             default -> super.convert(columnIndex, rs);
         };
-
     }
 
     @Override

@@ -13,7 +13,6 @@ public abstract class MariaDbUtils {
 
         UriBuilder builder = UriBuilder.of(url);
 
-        // see https://dev.mariadb.com/doc/connector-j/8.0/en/connector-j-reference-implementation-notes.html
         // By default, ResultSets are completely retrieved and stored in memory.
         builder.replaceQueryParam("useCursorFetch", true);
 

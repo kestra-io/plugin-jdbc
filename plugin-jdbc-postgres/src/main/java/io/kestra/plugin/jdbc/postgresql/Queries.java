@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.postgresql;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -121,4 +122,8 @@ public class Queries extends AbstractJdbcQueries implements PostgresConnectionIn
         }
     }
 
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+    }
 }

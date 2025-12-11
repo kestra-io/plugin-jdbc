@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.as400;
 
 import com.ibm.as400.access.AS400;
 import com.ibm.as400.access.AS400JDBCDriver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -10,7 +11,10 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
@@ -59,6 +63,7 @@ import java.util.Properties;
     }
 )
 public class Query extends AbstractJdbcQuery implements As400ConnectionInterface {
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new As400CellConverter(zoneId);
@@ -76,7 +81,12 @@ public class Query extends AbstractJdbcQuery implements As400ConnectionInterface
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties props = super.connectionProperties(runContext, "jdbc:as400");
-            props.setProperty("com.ibm.as400.access.AS400.guiAvailable", "false");
-            return props;
+        props.setProperty("com.ibm.as400.access.AS400.guiAvailable", "false");
+        return props;
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }

@@ -24,7 +24,7 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
         builder.queryParam("allowLoadLocalInfileInPath", workingDirectory.toAbsolutePath().toString());
         builder.replaceQueryParam("allowLoadLocalInfile", false);
 
-        // see https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-implementation-notes.html
+        // see https://dev.mysql.com/doc/connector-j/en/connector-j-reference-implementation-notes.html
         // By default, ResultSets are completely retrieved and stored in memory.
         builder.replaceQueryParam("useCursorFetch", true);
 

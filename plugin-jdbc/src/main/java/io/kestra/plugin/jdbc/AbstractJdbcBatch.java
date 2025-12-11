@@ -76,9 +76,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     @Schema(
         title = "The table from which column names will be retrieved.",
-        description =
-            "This property specifies the table name which will be used to retrieve the columns for the inserted values.\n" +
-                "You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically."
+        description = """
+            This property specifies the table name which will be used to retrieve the columns for the inserted values.
+            You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically.
+            """
     )
     private Property<String> table;
 
