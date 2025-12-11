@@ -14,10 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.jooq.Queries;
-import org.jooq.Query;
-import org.jooq.SQLDialect;
-import org.jooq.impl.DSL;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -229,14 +225,89 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
-    protected static String[] getQueries(String sql, SQLDialect dialect) {
-        Queries queries = DSL.using(dialect)
-            .parser()
-            .parse(sql);
+    protected static String[] getQueries(String sql) {
+        List<String> statements = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
 
-        return Arrays.stream(queries.queries())
-            .map(Query::getSQL)
-            .toArray(String[]::new);
+        int len = sql.length();
+        boolean inString = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
+        int beginDepth = 0;
+
+        for (int i = 0; i < len; i++) {
+            char c = sql.charAt(i);
+            char next = (i + 1 < len) ? sql.charAt(i + 1) : '\0';
+
+            // --- handle comments ---
+            if (!inString && !inBlockComment && c == '-' && next == '-') {
+                inLineComment = true;
+            }
+            if (inLineComment && c == '\n') {
+                inLineComment = false;
+            }
+            if (!inString && !inLineComment && c == '/' && next == '*') {
+                inBlockComment = true;
+            }
+            if (inBlockComment && c == '*' && next == '/') {
+                inBlockComment = false;
+                current.append("*/");
+                i++;
+                continue;
+            }
+
+            if (inLineComment || inBlockComment) {
+                current.append(c);
+                continue;
+            }
+
+            // --- handle quoted strings ---
+            if (c == '\'' && !inString) {
+                inString = true;
+            } else if (c == '\'') {
+                inString = false;
+            }
+
+            current.append(c);
+
+            // --- track PL/SQL BEGIN ... END ---
+            if (!inString) {
+                String tail = current.toString().toUpperCase(Locale.ROOT);
+
+                if (tail.endsWith("BEGIN")) {
+                    beginDepth++;
+                }
+
+                // detect END;
+                if (tail.endsWith("END;")) {
+                    beginDepth = Math.max(0, beginDepth - 1);
+
+                    // --- END of PL/SQL block ---
+                    if (beginDepth == 0) {
+                        statements.add(current.toString().trim());
+                        current.setLength(0);
+                        continue;
+                    }
+                }
+            }
+
+            // --- normal SQL statement terminated by ; ---
+            if (beginDepth == 0 && c == ';' && !inString) {
+                String s = current.toString().trim();
+                if (!s.isEmpty()) {
+                    statements.add(s.substring(0, s.length() - 1)); // strip ;
+                }
+                current.setLength(0);
+            }
+        }
+
+        // last statement (no trailing ;)
+        String leftover = current.toString().trim();
+        if (!leftover.isEmpty()) {
+            statements.add(leftover);
+        }
+
+        return statements.toArray(new String[0]);
     }
 
     protected boolean supportsMultiStatements(Connection conn) {
