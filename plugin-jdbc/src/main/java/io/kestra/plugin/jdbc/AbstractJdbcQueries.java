@@ -77,8 +77,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             SQLDialect dialect = JDBCUtils.dialect(this.runningConnection);
 
-            List<String> queries = shouldBatchQueries
-                ? List.of(rSql)
+            String[] queries = shouldBatchQueries
+                ? new String[]{rSql}
                 : getQueries(rSql, dialect);
 
             for (String query : queries) {
