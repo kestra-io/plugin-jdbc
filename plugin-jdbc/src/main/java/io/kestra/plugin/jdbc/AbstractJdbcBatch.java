@@ -24,13 +24,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
 
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
 @Getter
 @NoArgsConstructor
 public abstract class AbstractJdbcBatch extends Task implements RunnableTask<AbstractJdbcBatch.Output>, JdbcStatementInterface {
+
     @PluginProperty(group = "connection")
     private Property<String> url;
 
@@ -44,18 +44,20 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<String> timeZoneId;
 
     @NotNull
-    @io.swagger.v3.oas.annotations.media.Schema(
+    @Schema(
         title = "Source file URI"
     )
     @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
-    @io.swagger.v3.oas.annotations.media.Schema(
+    @Schema(
         title = "Insert query to be executed.",
-        description = "The query must have as many question marks as the number of columns in the table." +
-            "\nExample: 'insert into <table_name> values( ? , ? , ? )' for 3 columns." +
-            "\nIn case you do not want all columns, you need to specify it in the query in the columns property" +
-            "\nExample: 'insert into <table_name> (id, name) values( ? , ? )' for inserting data into 2 columns: 'id' and 'name'."
+        description = """
+            The query must have as many question marks as the number of columns in the table.
+            Example: 'INSERT INTO <table_name> VALUES( ? , ? , ? )' for 3 columns.
+            In case you do not want all columns, you need to specify it in the query in the columns property
+            Example: 'INSERT INTO <table_name> (id, name) VALUES( ? , ? )' for inserting data into 2 columns: 'id' and 'name'.
+            """
     )
     private Property<String> sql;
 
@@ -76,7 +78,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         title = "The table from which column names will be retrieved.",
         description =
             "This property specifies the table name which will be used to retrieve the columns for the inserted values.\n" +
-            "You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically."
+                "You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically."
     )
     private Property<String> table;
 

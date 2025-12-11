@@ -9,6 +9,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.postgresql.copy.CopyManager;
@@ -19,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.sql.Connection;
-import jakarta.validation.constraints.NotNull;
 
 @SuperBuilder
 @ToString
@@ -100,8 +100,9 @@ import jakarta.validation.constraints.NotNull;
     }
 )
 public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>, PostgresConnectionInterface {
+
     @NotNull
-    @io.swagger.v3.oas.annotations.media.Schema(
+    @Schema(
         title = "Source file URI."
     )
     @PluginProperty(internalStorageURI = true)

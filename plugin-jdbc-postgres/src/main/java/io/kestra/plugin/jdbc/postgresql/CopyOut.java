@@ -83,6 +83,7 @@ import java.sql.Connection;
     }
 )
 public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output>, PostgresConnectionInterface {
+
     @Schema(
         title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied.",
         description = "For INSERT, UPDATE and DELETE queries a RETURNING clause must be provided, and the target relation must not have a conditional rule, nor an ALSO rule, nor an INSTEAD rule that expands to multiple statements."
@@ -105,7 +106,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
 
             logger.debug("Starting query: {}", sql);
 
-            long rowsAffected  = copyManager.copyOut(sql, bufferedWriter);
+            long rowsAffected = copyManager.copyOut(sql, bufferedWriter);
             runContext.metric(Counter.of("rows", rowsAffected));
 
             bufferedWriter.flush();

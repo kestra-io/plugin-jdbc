@@ -50,6 +50,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Runs one or more SQL statements depending on the task type.
             Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
     )
+    @NotNull
     protected Property<String> sql;
 
     @Schema(
