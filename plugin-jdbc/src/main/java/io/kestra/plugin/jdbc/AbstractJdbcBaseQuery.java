@@ -232,26 +232,29 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
-    protected static String[] getQueries(String sql, SQLDialect dialect) {
-        if (sql == null || sql.isBlank()) {
-            return new String[0];
-        }
+    protected static List<String> getQueries(String sql, SQLDialect dialect) {
 
-        SQLDialect effectiveDialect = (dialect == null ? SQLDialect.DEFAULT : dialect);
+        return SimpleSqlSplitter.split(sql);
 
-        Settings settings = new Settings()
-            .withParseDialect(effectiveDialect)
-            .withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
-            .withParseUnsupportedSyntax(ParseUnsupportedSyntax.IGNORE)
-            .withParseIgnoreCommercialOnlyFeatures(true);
-
-        Queries queries = DSL.using(effectiveDialect, settings)
-            .parser()
-            .parse(sql);
-
-        return Arrays.stream(queries.queries())
-            .map(Query::getSQL)
-            .toArray(String[]::new);
+//        if (sql == null || sql.isBlank()) {
+//            return new String[0];
+//        }
+//
+//        SQLDialect effectiveDialect = (dialect == null ? SQLDialect.DEFAULT : dialect);
+//
+//        Settings settings = new Settings()
+//            .withParseDialect(effectiveDialect)
+//            .withParseUnknownFunctions(ParseUnknownFunctions.IGNORE)
+//            .withParseUnsupportedSyntax(ParseUnsupportedSyntax.IGNORE)
+//            .withParseIgnoreCommercialOnlyFeatures(true);
+//
+//        Queries queries = DSL.using(effectiveDialect, settings)
+//            .parser()
+//            .parse(sql);
+//
+//        return Arrays.stream(queries.queries())
+//            .map(Query::getSQL)
+//            .toArray(String[]::new);
     }
 
     protected boolean supportsMultiStatements(Connection conn) {

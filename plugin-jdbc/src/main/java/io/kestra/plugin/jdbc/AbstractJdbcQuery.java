@@ -133,7 +133,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
         SQLDialect dialect = JDBCUtils.dialect(connection);
 
-        return Arrays.stream(getQueries(rSql, dialect))
+        return getQueries(rSql, dialect).stream()
             .filter(s -> !s.isBlank())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
