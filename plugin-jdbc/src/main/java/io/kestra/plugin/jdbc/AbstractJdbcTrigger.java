@@ -39,6 +39,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @PluginProperty(group = "connection")
     private Property<String> timeZoneId;
 
+    @NotNull
     private Property<String> sql;
 
     private Property<String> afterSQL;
@@ -82,9 +83,11 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         RunContext runContext = conditionContext.getRunContext();
         Logger logger = runContext.logger();
 
+        String rSql = runContext.render(this.sql).as(String.class).orElseThrow();
+
         var run = runQuery(runContext);
 
-        logger.debug("Found '{}' rows from '{}'", run.getSize(), runContext.render(this.sql).as(String.class).orElse(null));
+        logger.debug("Found '{}' rows from '{}'", run.getSize(), rSql);
 
         if (Optional.ofNullable(run.getSize()).orElse(0L) == 0) {
             return Optional.empty();

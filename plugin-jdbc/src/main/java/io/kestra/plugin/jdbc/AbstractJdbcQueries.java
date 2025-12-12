@@ -4,9 +4,9 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.utils.Rethrow;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
@@ -15,20 +15,14 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Savepoint;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
 
 @SuperBuilder
 @ToString
@@ -43,6 +37,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     // will be used when killing
     @Getter(AccessLevel.NONE)
     private transient volatile Statement runningStatement;
+
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
@@ -54,7 +49,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         long totalSize = 0L;
         List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
 
-        //Create connection in not autocommit mode to enable rollback on error
+        // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
@@ -63,7 +58,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             supportsTx = supportsTransactions(this.runningConnection);
             final boolean useTransactions = supportsTx && isTransactional;
 
-            if (supportsTx) {
+            if (useTransactions) {
                 try {
                     this.runningConnection.setAutoCommit(false);
                 } catch (SQLException e) {
@@ -71,24 +66,35 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
             }
 
-            if (isTransactional && supportsTx) {
+            if (useTransactions) {
                 savepoint = initializeSavepoint(this.runningConnection);
             }
 
-            String sqlRendered = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-            String[] queries = sqlRendered.split(";[^']");
+            String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            FetchType fetchType = this.renderFetchType(runContext);
+            boolean supportsMulti = supportsMultiStatements(this.runningConnection);
+
+            boolean shouldBatchQueries = supportsMulti && useTransactions;
+
+            String[] queries = shouldBatchQueries
+                ? new String[]{rSql}
+                : getQueries(rSql);
 
             for (String query : queries) {
-                //Create statement, execute
+                // Create statement, execute
                 try (PreparedStatement stmt = prepareStatement(runContext, this.runningConnection, query)) {
                     this.runningStatement = stmt;
-                    stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
+
+                    if (fetchType == FetchType.STORE) {
+                        stmt.setFetchSize(this.getFetchSize(runContext));
+                    }
+
                     logger.debug("Starting query: {}", query);
                     stmt.execute();
-                    if (!useTransactions && supportsTx) {
+                    if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
-                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList);
+                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList, fetchType);
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
@@ -101,7 +107,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             if (useTransactions) {
                 this.runningConnection.commit();
             }
-            runContext.metric(Counter.of("fetch.size",  totalSize, this.tags(runContext)));
+            runContext.metric(Counter.of("fetch.size", totalSize, this.tags(runContext)));
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
@@ -130,14 +136,20 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final RunContext runContext,
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
-                                             final List<Output> outputList) throws SQLException, IOException, IllegalVariableEvaluationException {
-        try (ResultSet rs = stmt.getResultSet()) {
-            //When sql is not a select statement skip output creation
+                                             final List<Output> outputList,
+                                             final FetchType fetchType
+    ) throws SQLException, IOException {
+        while (true) {
+            ResultSet rs = stmt.getResultSet();
+            int updateCount = stmt.getUpdateCount();
+
+            // When sql is not a select statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
-                //Populate result fro result set
+
+                // Populate result from result set
                 long size = 0L;
-                switch (this.renderFetchType(runContext)) {
+                switch (fetchType) {
                     case FETCH_ONE -> {
                         size = 1L;
                         output
@@ -166,6 +178,19 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
                 totalSize += size;
                 outputList.add(output.build());
+            } else if (updateCount == -1) {
+                break;
+            }
+
+            boolean moreResults;
+            try {
+                moreResults = stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
+            } catch (SQLException e) {
+                moreResults = false;
+            }
+
+            if (!moreResults) {
+                break;
             }
         }
         return totalSize;
@@ -187,7 +212,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         try {
             return conn.setSavepoint();
         } catch (SQLException e) {
-            //Savepoint not supported by this driver
+            // Savepoint not supported by this driver
             return null;
         }
     }

@@ -1,36 +1,27 @@
 package io.kestra.plugin.jdbc.db2;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalTime;
+import java.time.*;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 @KestraTest
-@DisabledIf(
-    value = "isDisabled",
-    disabledReason = "The tests are disabled for CI, as db2 container have long time initialization"
-)
+@Disabled("Disabled for CI")
 public class Db2Test extends AbstractRdbmsTest {
-
-    static boolean isDisabled() {
-        return true;
-    }
 
     @Test
     void checkInitiation() throws Exception {
@@ -55,12 +46,17 @@ public class Db2Test extends AbstractRdbmsTest {
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
+        ZoneId zid = ZoneId.of("UTC");
+        Instant expectedDate = LocalDateTime.parse("2024-03-22T12:51:25")
+            .atZone(zid)
+            .toInstant();
+
         Query task = Query.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
             .fetchType(Property.ofValue(FETCH_ONE))
-            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .timeZoneId(Property.ofValue(zid.toString()))
             .sql(Property.ofValue("select * from db2_types"))
             .build();
 
@@ -80,14 +76,10 @@ public class Db2Test extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("GRAPHIC_COL"), is("g"));
         assertThat(runOutput.getRow().get("VARGRAPHIC_COL"), is("var graphic"));
 
-        assertThat(runOutput.getRow().get("DATE_COL").toString(), is("2024-03-22"));
         assertThat(runOutput.getRow().get("DATE_COL"), is(LocalDate.of(2024, 3, 22)));
-
-        assertThat(runOutput.getRow().get("TIME_COL").toString(), is("12:51:25"));
         assertThat(runOutput.getRow().get("TIME_COL"), is(LocalTime.parse("12:51:25")));
 
-        assertThat(runOutput.getRow().get("TIMESTAMP_COL").toString(), is("2024-03-22T10:51:25Z"));
-        assertThat(runOutput.getRow().get("TIMESTAMP_COL"), is(Instant.parse("2024-03-22T10:51:25.0Z")));
+        assertThat(runOutput.getRow().get("TIMESTAMP_COL"), is(expectedDate));
 
         assertThat(runOutput.getRow().get("BLOB_COL"), nullValue());
         assertThat(runOutput.getRow().get("CLOB_COL"), nullValue());

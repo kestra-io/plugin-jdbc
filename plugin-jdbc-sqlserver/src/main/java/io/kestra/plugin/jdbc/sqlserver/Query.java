@@ -1,8 +1,10 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -76,4 +78,8 @@ public class Query extends AbstractJdbcQuery implements SqlServerConnectionInter
         }
     }
 
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+    }
 }

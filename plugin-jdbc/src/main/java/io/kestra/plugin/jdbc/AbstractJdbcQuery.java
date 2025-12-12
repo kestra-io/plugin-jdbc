@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -18,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -28,6 +31,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     // will be used when killing
     @Getter(AccessLevel.NONE)
     private transient volatile Statement runningStatement;
+
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
@@ -36,25 +40,22 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        String renderedSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-
-        long statements = Arrays.stream(renderedSql.split(";[^']"))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
-            .count();
-        
-        if (statements > 1) {
-            throw new IllegalArgumentException(
-                "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
-            );
-        }
-
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
         try (Connection conn = this.connection(runContext)) {
             this.runningConnection = conn;
+
+            String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+            FetchType fetchType = this.renderFetchType(runContext);
+            long queriesAmount = countQueries(this.runningConnection, rSql);
+
+            if (queriesAmount > 1) {
+                throw new IllegalArgumentException(
+                    "Query task support only a single SQL statement. Use the Queries task to run multiple statements."
+                );
+            }
+
             supportsTx = this.runningConnection.getMetaData().supportsTransactions();
 
             if (supportsTx) {
@@ -65,27 +66,29 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;
 
-            try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, renderedSql)) {
+            try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rSql)) {
                 this.runningStatement = stmt;
 
-                stmt.setFetchSize(runContext.render(this.getFetchSize()).as(Integer.class).orElseThrow());
+                if (fetchType == FetchType.STORE) {
+                    stmt.setFetchSize(this.getFetchSize(runContext));
+                }
 
-                logger.debug("Starting query: {}", renderedSql);
+                logger.debug("Starting query: {}", rSql);
 
                 boolean isResult = switch (stmt) {
                     case PreparedStatement preparedStatement -> {
                         if (this.getParameters() == null) { // Null check for DuckDB which always use PreparedStatement
-                            yield preparedStatement.execute(renderedSql);
+                            yield preparedStatement.execute(rSql);
                         }
                         yield preparedStatement.execute();
                     }
-                    case Statement statement -> statement.execute(renderedSql);
+                    case Statement statement -> statement.execute(rSql);
                 };
 
                 if (isResult) {
                     try (ResultSet rs = stmt.getResultSet()) {
-                        //Populate result fro result set
-                        switch (this.renderFetchType(runContext)) {
+                        // Populate result from result set
+                        switch (fetchType) {
                             case FETCH_ONE -> {
                                 var result = fetchResult(rs, cellConverter, conn);
                                 size = result == null ? 0L : 1L;
@@ -126,6 +129,17 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         } finally {
             this.runningConnection = null;
         }
+    }
+
+    private long countQueries(Connection connection, String rSql) {
+        if (supportsMultiStatements(connection)) {
+            return 1;
+        }
+
+        return Arrays.stream(getQueries(rSql))
+            .filter(s -> !s.isBlank())
+            .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
+            .count();
     }
 
     private void executeAfterSQL(RunContext runContext, Connection conn, Logger logger, boolean supportsTx) throws IllegalVariableEvaluationException, SQLException {
@@ -176,7 +190,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         try {
             return conn.setSavepoint();
         } catch (SQLException e) {
-            //Savepoint not supported by this driver
+            // Savepoint not supported by this driver
             return null;
         }
     }
