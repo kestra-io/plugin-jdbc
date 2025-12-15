@@ -167,4 +167,19 @@ class SqlSplitterTest {
         assertEquals("SELECT 1", queries[0]);
         assertEquals("SELECT 2", queries[1]);
     }
+
+    @Test
+    void postgresJsonDollarQuoteContainingSemicolonMustNotSplit() {
+        String sql = """
+        SELECT jsonb_array_elements_text($${"data":["ITEM; WITH SEMICOLON"]}$$::jsonb -> 'data') AS value;
+        """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(
+            "SELECT jsonb_array_elements_text($${\"data\":[\"ITEM; WITH SEMICOLON\"]}$$::jsonb -> 'data') AS value",
+            queries[0]
+        );
+    }
 }
