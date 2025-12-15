@@ -1,6 +1,6 @@
 group: io.kestra.plugin.jdbc.mysql
 name: "mysql"
-title: "Mysql"
+title: "MySQL"
 description: "Tasks that connect to MySQL via JDBC to run queries and loads."
 body: "Provide the MySQL JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []

@@ -1,6 +1,6 @@
 group: io.kestra.plugin.jdbc.pinot
 name: "pinot"
-title: "Pinot"
+title: "Apache Pinot"
 description: "Tasks that connect to Apache Pinot via JDBC to run queries and loads."
 body: "Provide the Pinot JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []

@@ -9,7 +9,10 @@ import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.*;
 import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 
 public abstract class AbstractCellConverter {
@@ -145,8 +148,12 @@ public abstract class AbstractCellConverter {
                     ps.setDate(index, Date.valueOf((LocalDate) value));
                     return ps;
                 }
-                if (value instanceof LocalDateTime) {
+                else if (value instanceof LocalDateTime) {
                     ps.setDate(index, Date.valueOf(((LocalDateTime) value).toLocalDate()));
+                    return ps;
+                }
+                else if (value instanceof String) {
+                    ps.setTimestamp(index, parseStringToTimestamp((String) value));
                     return ps;
                 }
             } else if (cls == java.sql.Time.class) {
@@ -160,6 +167,9 @@ public abstract class AbstractCellConverter {
                 } else if (value instanceof Instant) {
                     Instant current = (Instant) value;
                     ps.setTime(index, Time.valueOf(LocalTime.from(current.atZone(this.zoneId))));
+                    return ps;
+                } else if(value instanceof String) {
+                    ps.setTimestamp(index, parseStringToTimestamp((String) value));
                     return ps;
                 }
             } else if (cls == java.sql.Timestamp.class) {
@@ -179,6 +189,10 @@ public abstract class AbstractCellConverter {
                     return ps;
                 } else if (value instanceof LocalDate) {
                     ps.setTimestamp(index, Timestamp.valueOf(((LocalDate) value).atStartOfDay()));
+                    return ps;
+                }
+                else if (value instanceof String) {
+                    ps.setTimestamp(index, parseStringToTimestamp((String) value));
                     return ps;
                 }
             } else if (cls == Boolean.class) {
@@ -220,6 +234,39 @@ public abstract class AbstractCellConverter {
 
         throw addPreparedStatementException(parameterType, index, value, null);
     }
+
+    protected Timestamp parseStringToTimestamp(String value) {
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+            // for Standard ISO formats (T separator)
+            .appendOptional(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+
+            // JDBC format (Space separator): "yyyy-MM-dd HH:mm:ss"
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S")) // With milliseconds
+
+            // fallback to just Date
+            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
+            .toFormatter();
+
+        TemporalAccessor temporal = formatter.parseBest(
+            value,
+            ZonedDateTime::from,
+            LocalDateTime::from,
+            LocalDate::from
+        );
+
+        return switch (temporal) {
+            case ZonedDateTime zdt -> Timestamp.from(zdt.toInstant());
+            case LocalDateTime ldt -> Timestamp.valueOf(ldt);
+            case LocalDate ld      -> Timestamp.valueOf(ld.atStartOfDay());
+            default                -> throw new IllegalArgumentException(
+                "Unsupported date format: " + value + " (parsed as: " + temporal.getClass().getSimpleName() + ")"
+            );
+        };
+    }
+
 
     protected Duration parseDuration(Object value) {
         if (value instanceof Duration) {

@@ -1,6 +1,6 @@
 group: io.kestra.plugin.jdbc.sqlserver
 name: "sqlserver"
-title: "Sqlserver"
+title: "Microsoft SQL Server"
 description: "Tasks that connect to SQL Server via JDBC to run queries and loads."
 body: "Provide the SQL Server JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
