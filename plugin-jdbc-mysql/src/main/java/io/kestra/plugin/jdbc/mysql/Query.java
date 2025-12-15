@@ -1,22 +1,20 @@
 package io.kestra.plugin.jdbc.mysql;
 
 import com.mysql.cj.jdbc.Driver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.nio.file.Path;
@@ -120,11 +118,12 @@ public class Query extends AbstractJdbcQuery implements MySqlConnectionInterface
     }
 
     @Override
-    public Property<Integer> getFetchSize() {
-        // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on MySql DB instance side.
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on the MySQL instance side.
         // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.
         // It actually just disables client-side caching of the entire response and gives you responses as they arrive as a result it has no effect on the DB
-        return this.isStore() ? Property.ofValue(Integer.MIN_VALUE) : this.fetchSize;
+        return this.renderFetchType(runContext) == FetchType.STORE ?
+            Integer.MIN_VALUE : runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 
     @Override

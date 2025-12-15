@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
+ * See : https://dev.mysql.com/doc/connector-j/en/connector-j-reference-type-conversions.html
  */
 @KestraTest
 @Disabled("Issue with EOFException")

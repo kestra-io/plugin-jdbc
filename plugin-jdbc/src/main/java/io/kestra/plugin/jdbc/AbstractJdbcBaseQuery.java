@@ -12,12 +12,7 @@ import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.io.BufferedWriter;
@@ -55,6 +50,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Runs one or more SQL statements depending on the task type.
             Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
     )
+    @NotNull
     protected Property<String> sql;
 
     @Schema(
@@ -101,6 +97,12 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
     private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
+
+    private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
+        "redshift",
+        "snowflake",
+        "sybase"
+    );
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
@@ -224,6 +226,25 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
     }
 
+    protected boolean supportsMultiStatements(Connection conn) {
+        try {
+            String driver = conn.getMetaData().getDriverName().toLowerCase();
+            String product = conn.getMetaData().getDatabaseProductName().toLowerCase();
+            String url = conn.getMetaData().getURL().toLowerCase();
+
+            boolean nativeSupport = MULTI_STATEMENT_DRIVERS.stream()
+                .anyMatch(s -> driver.contains(s) || product.contains(s));
+
+            boolean mysqlCompatible =
+                (driver.contains("mysql") || driver.contains("mariadb"))
+                    && url.contains("allowMultiQueries=true");
+
+            return nativeSupport || mysqlCompatible;
+        } catch (SQLException e) {
+            return false;
+        }
+    }
+
     protected void kill(Statement statement) {
         try {
             if (statement != null && !statement.isClosed()) {
@@ -244,6 +265,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             throw new RuntimeException(e);
         }
     }
+
+    protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
 
     @SuperBuilder
     @Getter

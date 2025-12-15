@@ -82,7 +82,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
         assertThat("employee selected", employees.getFirst().get("first_name"), is("John"));
         assertThat("employee selected", employees.getFirst().get("last_name"), is("Doe"));
 
-        List<Map<String, Object>>laptops = runOutput.getOutputs().getLast().getRows();
+        List<Map<String, Object>> laptops = runOutput.getOutputs().getLast().getRows();
         assertThat("laptops", laptops, notNullValue());
         assertThat("laptops", laptops.size(), is(1));
         assertThat("selected laptop", laptops.getFirst().get("brand"), is("Apple"));
@@ -192,7 +192,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
         long expectedUpdateNumber = 1L;
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
-        //Queries should pass in a transaction
+        // Queries should pass in a transaction
         Queries queriesPass = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -209,7 +209,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
         assertThat(runOutput.getOutputs().size(), is(1));
         assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
 
-        //Queries should fail due to bad sql
+        // Queries should fail due to bad sql
         Queries queriesFail = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -219,7 +219,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("""
                 INSERT INTO test_transaction (name) VALUES ('test_2');
                 INSERT INTO test_transaction (name) VALUES (1000f);
-                """)) //Try inserting before failing
+                """)) // Try inserting before failing
             .build();
 
         assertThrows(Exception.class, () -> queriesFail.run(runContext));
@@ -233,7 +233,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("""
                 SELECT COUNT(id) as transaction_count FROM test_transaction;
-                """)) //Try inserting before failing
+                """)) // Try inserting before failing
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput verifyOutput = verifyQuery.run(runContext);
@@ -245,7 +245,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
     void testMultiQueriesNonTransactionalShouldNotRollback() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
-        //Queries should pass in a transaction
+        // Queries should pass in a transaction
         Queries queriesFail = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -259,12 +259,12 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
                 INSERT INTO test_transaction (name) VALUES (10f);
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_1');
                 INSERT INTO test_transaction (name) VALUES ('test_no_rollback_fail_2');
-                """)) //Expect failure with 2 inserts
+                """)) // Expect failure with 2 inserts
             .build();
 
         assertThrows(Exception.class, () -> queriesFail.run(runContext));
 
-        //Final query to verify the amount of updated rows
+        // Final query to verify the amount of updated rows
         Queries verifyQuery = Queries.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
@@ -284,6 +284,59 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
 
         assertThat(names.size(), is(2));
         assertThat(names, containsInAnyOrder("test_no_rollback_success_1", "test_no_rollback_success_2"));
+    }
+
+    @Test
+    void testDoDollarBlock() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        // DO $$ ... $$ block with multiple statements inside
+        String plpgsql = """
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'categories') THEN
+                    CREATE TABLE categories (
+                        id SERIAL PRIMARY KEY,
+                        name VARCHAR(40)
+                    );
+
+                    INSERT INTO categories (name) VALUES ('Games');
+                    INSERT INTO categories (name) VALUES ('Multimedia');
+                    INSERT INTO categories (name) VALUES ('Productivity');
+                    INSERT INTO categories (name) VALUES ('Tools');
+                    INSERT INTO categories (name) VALUES ('Health');
+                    INSERT INTO categories (name) VALUES ('Lifestyle');
+                    INSERT INTO categories (name) VALUES ('Other');
+                END IF;
+            END
+            $$;
+            """;
+
+        Queries task = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(NONE)) // DO blocks never return rows
+            .sql(Property.ofValue(plpgsql))
+            .build();
+
+        // Should NOT throw an exception
+        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+        assertThat(output, notNullValue());
+
+        // Verify content was actually inserted
+        Queries check = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT COUNT(*) AS cnt FROM categories;"))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput verify = check.run(runContext);
+
+        assertThat(verify.getOutputs().size(), is(1));
+        assertThat(verify.getOutputs().getFirst().getRow().get("cnt"), is(7L));
     }
 
     @Override

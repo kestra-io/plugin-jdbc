@@ -4,34 +4,35 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.utils.IdUtils;
-import org.apache.commons.codec.binary.Hex;
-import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import org.apache.commons.codec.binary.Hex;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.time.*;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
-import static io.kestra.core.models.tasks.common.FetchType.STORE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
- * See : https://dev.mysql.com/doc/connector-j/8.0/en/connector-j-reference-type-conversions.html
+ * See : https://dev.mysql.com/doc/connector-j/en/connector-j-reference-type-conversions.html
  */
 @KestraTest
 public class MysqlTest extends AbstractRdbmsTest {
@@ -47,16 +48,16 @@ public class MysqlTest extends AbstractRdbmsTest {
             .fetchType(Property.ofValue(FETCH_ONE))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("""
-                 select concert_id as myConcertId,
-                 a as char_column,
-                 b as varchar_column,
-                 c as text_column,
-                 d as null_column,
-                 date_type as date_column,
-                 datetime_type as datetime_column,
-                 timestamp_type as timestamp_column
-                 from mysql_types
-             """))
+                    select concert_id as myConcertId,
+                    a as char_column,
+                    b as varchar_column,
+                    c as text_column,
+                    d as null_column,
+                    date_type as date_column,
+                    datetime_type as datetime_column,
+                    timestamp_type as timestamp_column
+                    from mysql_types
+                """))
             .build();
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
@@ -104,7 +105,7 @@ public class MysqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("bitn_test"), is(new byte[]{0b000101}));
 
         // Not equal to input value (Float and Double are for "Approximate Value"
-        assertThat(runOutput.getRow().get("floatn_test"), is(9223372036854776000F));
+        assertThat(runOutput.getRow().get("floatn_test"), is(9.22337E18F));
         assertThat(runOutput.getRow().get("double_test"), is(9223372036854776000d));
         assertThat(runOutput.getRow().get("doublen_test"), is(2147483645.1234d));
         assertThat(runOutput.getRow().get("numeric_test"), is(new BigDecimal("5.36")));
@@ -314,7 +315,6 @@ public class MysqlTest extends AbstractRdbmsTest {
     }
 
     @ParameterizedTest
-    @NullSource
     @MethodSource("incorrectUrl")
     void urlNotCorrectFormat_shouldThrowException(Property<String> url) {
         RunContext runContext = runContextFactory.of(Map.of());

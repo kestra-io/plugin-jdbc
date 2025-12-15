@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.db2;
 
 import com.ibm.db2.jcc.DB2Driver;
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
@@ -75,5 +76,10 @@ public class Queries extends AbstractJdbcQueries implements Db2ConnectionInterfa
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         return super.connectionProperties(runContext, this.getScheme());
+    }
+
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }
