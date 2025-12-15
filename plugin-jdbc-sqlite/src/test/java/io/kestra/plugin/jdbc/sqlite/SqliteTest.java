@@ -1,12 +1,12 @@
 package io.kestra.plugin.jdbc.sqlite;
 
 import com.google.common.collect.ImmutableMap;
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.core.junit.annotations.KestraTest;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +24,7 @@ import java.time.LocalTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.UUID;
 
 import static io.kestra.core.models.tasks.common.FetchType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class SqliteTest extends AbstractRdbmsTest {
+
     @Test
     void select() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -302,6 +304,52 @@ public class SqliteTest extends AbstractRdbmsTest {
 
         AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
         assertThat(verifyOutput.getRow().get("text_column"), is("completed"));
+    }
+
+    @Test
+    void outputDbFileTrueWithoutSqliteFile_shouldCreateAndOutputDatabase() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        String dbName = "created-" + UUID.randomUUID() + ".sqlite";
+
+        // 1) Create table (new DB file, no sqliteFile provided)
+        Query create = Query.builder()
+            .url(Property.ofValue("jdbc:sqlite:" + dbName))
+            .fetchType(Property.ofValue(NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, name TEXT);"))
+            .build();
+
+        Query.Output createOutput = create.run(runContext);
+        assertThat(createOutput.getDatabaseUri(), notNullValue());
+
+        // 2) Insert row (reuse DB from internal storage)
+        Query insert = Query.builder()
+            .url(Property.ofValue("jdbc:sqlite:" + dbName))
+            .fetchType(Property.ofValue(NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(createOutput.getDatabaseUri().toString()))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("INSERT INTO t (id, name) VALUES (1, 'hello');"))
+            .build();
+
+        Query.Output insertOutput = insert.run(runContext);
+        assertThat(insertOutput.getDatabaseUri(), notNullValue());
+
+        // 3) Read back (reuse DB from internal storage)
+        Query readBack = Query.builder()
+            .url(Property.ofValue("jdbc:sqlite:" + dbName))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(insertOutput.getDatabaseUri().toString()))
+            .sql(Property.ofValue("SELECT name FROM t WHERE id = 1;"))
+            .build();
+
+        AbstractJdbcQuery.Output readOutput = readBack.run(runContext);
+
+        assertThat(readOutput.getRow(), notNullValue());
+        assertThat(readOutput.getRow().get("name"), is("hello"));
     }
 
     @Override

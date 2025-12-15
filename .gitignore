@@ -20,4 +20,5 @@ plugin-jdbc-postgres/src/test/resources/ssl/
 openssl.cnf
 
 plugin-jdbc-sqlite/temp
+plugin-jdbc-sqlite/*.sqlite
 plugin-jdbc-duckdb/*.db

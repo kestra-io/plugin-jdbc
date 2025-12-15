@@ -158,9 +158,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
         Map<String, String> outputFiles = null;
 
-        var renderedUrl = runContext.render(this.url).as(String.class).orElseThrow();
-        if (!DEFAULT_URL.equals(renderedUrl) && this.databaseFile == null) {
-            String filePath = renderedUrl.replace("jdbc:duckdb:", "");
+        var rUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        if (!DEFAULT_URL.equals(rUrl) && this.databaseFile == null) {
+            String filePath = rUrl.replace("jdbc:duckdb:", "");
 
             Path path = Path.of(filePath);
             if (path.isAbsolute()) {
@@ -184,7 +184,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             } else {
                 throw new IllegalArgumentException("The database file path is not valid (Path to database file must be absolute)");
             }
-        } else if (DEFAULT_URL.equals(renderedUrl) && this.databaseFile != null) {
+        } else if (DEFAULT_URL.equals(rUrl) && this.databaseFile != null) {
             workingDirectory = databaseFile.toAbsolutePath().getParent();
 
             additionalVars.put("dbFilePath", databaseFile.toAbsolutePath());
@@ -222,12 +222,11 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
         }
 
-        // outputFiles
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-        if (!renderedOutputFiles.isEmpty()) {
+        var rOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        if (!rOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
-                renderedOutputFiles,
+                rOutputFiles,
                 additionalVars
             );
         }
