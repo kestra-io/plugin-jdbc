@@ -1,6 +1,6 @@
 group: io.kestra.plugin.jdbc.druid
 name: "druid"
-title: "Druid"
+title: "Apache Druid"
 description: "Tasks that connect to Apache Druid via JDBC to run queries and loads."
 body: "Provide the Druid JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
