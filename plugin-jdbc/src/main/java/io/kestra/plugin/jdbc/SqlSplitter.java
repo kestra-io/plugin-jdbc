@@ -20,6 +20,9 @@ public class SqlSplitter {
         boolean inDollarQuote = false;
         String dollarTag = null; // e.g. "$$" or "$json$"
 
+        boolean inBacktick = false;
+        boolean inSquareBracket = false;
+
         int beginDepth = 0;
         boolean sawEndToken = false;
         StringBuilder token = new StringBuilder();
@@ -66,6 +69,36 @@ public class SqlSplitter {
                         i += tagLen - 1;
                         inDollarQuote = false;
                         dollarTag = null;
+                    }
+                }
+                continue;
+            }
+
+            if (inBacktick) {
+                current.append(c);
+
+                // MySQL escape for backtick inside identifier is `` (double backtick)
+                if (c == '`') {
+                    if (next == '`') {
+                        current.append(next);
+                        i++;
+                    } else {
+                        inBacktick = false;
+                    }
+                }
+                continue;
+            }
+
+            if (inSquareBracket) {
+                current.append(c);
+
+                // SQL Server escape for ']' inside identifier is ']]'
+                if (c == ']') {
+                    if (next == ']') {
+                        current.append(next);
+                        i++;
+                    } else {
+                        inSquareBracket = false;
                     }
                 }
                 continue;
@@ -147,6 +180,34 @@ public class SqlSplitter {
                 } else {
                     inSingleQuote = true;
                 }
+                continue;
+            }
+
+            // Backtick-quoted identifier (MySQL/MariaDB/Snowflake/BigQuery)
+            if (!inSingleQuote && c == '`') {
+                // flush token
+                if (!token.isEmpty()) {
+                    String t = token.toString().toUpperCase(Locale.ROOT);
+                    lastTokenUpper = t;
+                    token.setLength(0);
+                }
+
+                inBacktick = true;
+                current.append(c);
+                continue;
+            }
+
+            // SQL Server bracket-quoted identifier
+            if (!inSingleQuote && c == '[') {
+                // flush token
+                if (!token.isEmpty()) {
+                    String t = token.toString().toUpperCase(Locale.ROOT);
+                    lastTokenUpper = t;
+                    token.setLength(0);
+                }
+
+                inSquareBracket = true;
+                current.append(c);
                 continue;
             }
 

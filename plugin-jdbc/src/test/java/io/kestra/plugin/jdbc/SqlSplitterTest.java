@@ -171,8 +171,8 @@ class SqlSplitterTest {
     @Test
     void postgresJsonDollarQuoteContainingSemicolonMustNotSplit() {
         String sql = """
-        SELECT jsonb_array_elements_text($${"data":["ITEM; WITH SEMICOLON"]}$$::jsonb -> 'data') AS value;
-        """;
+            SELECT jsonb_array_elements_text($${"data":["ITEM; WITH SEMICOLON"]}$$::jsonb -> 'data') AS value;
+            """;
 
         String[] queries = SqlSplitter.getQueries(sql);
 
@@ -181,5 +181,40 @@ class SqlSplitterTest {
             "SELECT jsonb_array_elements_text($${\"data\":[\"ITEM; WITH SEMICOLON\"]}$$::jsonb -> 'data') AS value",
             queries[0]
         );
+    }
+
+    @Test
+    void postgresTaggedDollarQuoteContainingSemicolonMustNotSplit() {
+        String sql = """
+            SELECT $json${"data":["ITEM; WITH SEMICOLON"]}$json$::json -> 'data' AS value;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(
+            "SELECT $json${\"data\":[\"ITEM; WITH SEMICOLON\"]}$json$::json -> 'data' AS value",
+            queries[0]
+        );
+    }
+
+    @Test
+    void backtickQuotedIdentifiersWithSemicolonsShouldNotSplit() {
+        String sql = "SELECT `id;hello` FROM t; SELECT 2;";
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals("SELECT `id;hello` FROM t", queries[0]);
+        assertEquals("SELECT 2", queries[1]);
+    }
+
+    @Test
+    void sqlServerBracketQuotedIdentifiersWithSemicolonsShouldNotSplit() {
+        String sql = "SELECT [id;hello] FROM t; SELECT 2;";
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals("SELECT [id;hello] FROM t", queries[0]);
+        assertEquals("SELECT 2", queries[1]);
     }
 }
