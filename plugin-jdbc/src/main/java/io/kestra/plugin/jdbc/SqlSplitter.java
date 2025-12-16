@@ -13,6 +13,7 @@ public class SqlSplitter {
         int len = sql.length();
 
         boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
         boolean inLineComment = false;
         boolean inBlockComment = false;
 
@@ -104,8 +105,33 @@ public class SqlSplitter {
                 continue;
             }
 
+            // Double-quoted identifier (Postgres)
+            if (!inSingleQuote && c == '"') {
+                // flush token
+                if (!token.isEmpty()) {
+                    String t = token.toString().toUpperCase(Locale.ROOT);
+                    lastTokenUpper = t;
+                    token.setLength(0);
+                }
+
+                current.append(c);
+
+                if (inDoubleQuote) {
+                    // Escaped double quote inside identifier => ""
+                    if (next == '"') {
+                        current.append(next);
+                        i++;
+                    } else {
+                        inDoubleQuote = false;
+                    }
+                } else {
+                    inDoubleQuote = true;
+                }
+                continue;
+            }
+
             // Start comments (only when not in a single quote)
-            if (!inSingleQuote && c == '-' && next == '-') {
+            if (!inSingleQuote && !inDoubleQuote && c == '-' && next == '-') {
                 // flush token
                 if (!token.isEmpty()) {
                     String t = token.toString().toUpperCase(Locale.ROOT);
@@ -127,7 +153,7 @@ public class SqlSplitter {
                 continue;
             }
 
-            if (!inSingleQuote && c == '/' && next == '*') {
+            if (!inSingleQuote && !inDoubleQuote && c == '/' && next == '*') {
                 // flush token
                 if (!token.isEmpty()) {
                     String t = token.toString().toUpperCase(Locale.ROOT);
@@ -184,7 +210,7 @@ public class SqlSplitter {
             }
 
             // Backtick-quoted identifier (MySQL/MariaDB/Snowflake/BigQuery)
-            if (!inSingleQuote && c == '`') {
+            if (!inSingleQuote && !inDoubleQuote && c == '`') {
                 // flush token
                 if (!token.isEmpty()) {
                     String t = token.toString().toUpperCase(Locale.ROOT);
@@ -198,7 +224,7 @@ public class SqlSplitter {
             }
 
             // SQL Server bracket-quoted identifier
-            if (!inSingleQuote && c == '[') {
+            if (!inSingleQuote && !inDoubleQuote && c == '[') {
                 // flush token
                 if (!token.isEmpty()) {
                     String t = token.toString().toUpperCase(Locale.ROOT);
@@ -212,7 +238,7 @@ public class SqlSplitter {
             }
 
             // Start Postgres dollar-quoted string (only when not in a single quote)
-            if (!inSingleQuote && c == '$') {
+            if (!inSingleQuote && !inDoubleQuote && c == '$') {
                 // detect $tag$ (including $$)
                 int closing = sql.indexOf('$', i + 1);
                 if (closing != -1) {
@@ -252,7 +278,7 @@ public class SqlSplitter {
             current.append(c);
 
             // Track BEGIN/END only outside strings/comments/dollar
-            if (!inSingleQuote) {
+            if (!inSingleQuote && !inDoubleQuote) {
                 if (isWordChar(c)) {
                     token.append(c);
                 } else {
@@ -292,7 +318,7 @@ public class SqlSplitter {
             }
 
             // Split on semicolon only when not inside string and not inside BEGIN...END
-            if (beginDepth == 0 && c == ';' && !inSingleQuote) {
+            if (beginDepth == 0 && c == ';' && !inSingleQuote && !inDoubleQuote) {
                 String s = current.toString().trim();
                 if (!s.isEmpty()) {
                     // strip trailing ';'
