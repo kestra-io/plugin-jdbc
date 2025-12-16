@@ -217,4 +217,49 @@ class SqlSplitterTest {
         assertEquals("SELECT [id;hello] FROM t", queries[0]);
         assertEquals("SELECT 2", queries[1]);
     }
+
+    @Test
+    void postgresDoubleQuotedIdentifierWithSemicolonMustNotSplit() {
+        String sql = """
+            -- 1) Setup schema + table
+            CREATE SCHEMA IF NOT EXISTS public;
+
+            CREATE TABLE IF NOT EXISTS public.events_demo (
+              id        BIGINT PRIMARY KEY,
+              event_name TEXT NOT NULL,
+              user_id    BIGINT NOT NULL,
+              ts_local   TIMESTAMP WITHOUT TIME ZONE,
+              ts_zoned   TIMESTAMPTZ
+            );
+
+            -- 2) Use quoted identifiers (double quotes)
+            ALTER TABLE public.events_demo
+              ADD COLUMN IF NOT EXISTS "note;with:semicolon" TEXT;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(3, queries.length);
+
+        assertEquals("""
+            -- 1) Setup schema + table
+            CREATE SCHEMA IF NOT EXISTS public
+            """.trim(), queries[0]);
+
+        assertEquals("""
+            CREATE TABLE IF NOT EXISTS public.events_demo (
+              id        BIGINT PRIMARY KEY,
+              event_name TEXT NOT NULL,
+              user_id    BIGINT NOT NULL,
+              ts_local   TIMESTAMP WITHOUT TIME ZONE,
+              ts_zoned   TIMESTAMPTZ
+            )
+            """.trim(), queries[1]);
+
+        assertEquals("""
+            -- 2) Use quoted identifiers (double quotes)
+            ALTER TABLE public.events_demo
+              ADD COLUMN IF NOT EXISTS "note;with:semicolon" TEXT
+            """.trim(), queries[2]);
+    }
 }
