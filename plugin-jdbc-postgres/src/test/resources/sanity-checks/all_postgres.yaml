@@ -3,33 +3,34 @@ namespace: sanitychecks.plugin-jdbc
 
 variables:
   postgres_password: sanity
-  postgres_user: test 
+  postgres_user: test
+  postgres_db: sanitychecksdb
 
 tasks:
-
   - id: port
     type: io.kestra.plugin.core.debug.Return
     format: "{{ randomPort() }}"
 
   - id: dockerStart
     type: io.kestra.plugin.docker.Run
-    containerImage: postgres
+    containerImage: postgres:16
     portBindings:
       - "{{ outputs.port.value }}:5432"
     wait: false
     env:
       POSTGRES_PASSWORD: "{{ vars.postgres_password }}"
       POSTGRES_USER: "{{ vars.postgres_user }}"
+      POSTGRES_DB: "{{ vars.postgres_db }}"
 
   - id: sleep
     type: io.kestra.plugin.core.flow.Sleep
-    duration: PT5S
+    duration: PT15S
 
   - id: create_table
     type: io.kestra.plugin.jdbc.postgresql.Queries
     sql: |
-      CREATE SCHEMA sanitychecks;
-      CREATE TABLE sanitychecks.test(
+      CREATE SCHEMA IF NOT EXISTS sanitychecks;
+      CREATE TABLE IF NOT EXISTS sanitychecks.test(
         field1 INT,
         field2 INT
       );
@@ -52,34 +53,32 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.postgresql.Query
-    sql: SELECT * FROM sanitychecks.test;
     fetchType: FETCH
+    sql: SELECT * FROM sanitychecks.test ORDER BY field1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.postgresql.Queries
     fetchType: STORE
     sql: |
-      SELECT * FROM sanitychecks.test;
-      SELECT * FROM sanitychecks.test LIMIT 1;
-
+      SELECT * FROM sanitychecks.test ORDER BY field1;
+      SELECT * FROM sanitychecks.test ORDER BY field1 LIMIT 1;
 
   - id: copyout
     type: io.kestra.plugin.jdbc.postgresql.CopyOut
     format: CSV
-    sql: SELECT * FROM sanitychecks.test LIMIT 2
+    sql: SELECT * FROM sanitychecks.test ORDER BY field1 LIMIT 2
     header: true
     delimiter: ","
-
 
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
-      - "{{ outputs.copyin.rowCount == 3}}"
+      - "{{ outputs.copyin.rowCount == 3 }}"
       - "{{ outputs.query.rows[0].field1 == 1 }}"
       - "{{ outputs.query.rows[1].field2 == 4 }}"
       - "{{ outputs.queries.outputs[0].size == 3 }}"
       - "{{ outputs.queries.outputs[1].size == 1 }}"
-      - "{{ outputs.copyout.rowCount == 2}}"
+      - "{{ outputs.copyout.rowCount == 2 }}"
 
 finally:
   - id: dockerStop
@@ -95,4 +94,4 @@ pluginDefaults:
     values:
       username: "{{ vars.postgres_user }}"
       password: "{{ vars.postgres_password }}"
-      url: jdbc:postgresql://localhost:{{ outputs.port.value }}/
+      url: "jdbc:postgresql://host.docker.internal:{{ outputs.port.value }}/{{ vars.postgres_db }}"
