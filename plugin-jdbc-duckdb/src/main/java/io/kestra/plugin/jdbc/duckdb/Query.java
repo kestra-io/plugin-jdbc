@@ -1,22 +1,23 @@
 package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
-import io.kestra.core.utils.IdUtils;
-import io.micronaut.http.uri.UriBuilder;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+import io.micronaut.http.uri.UriBuilder;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import org.duckdb.DuckDBDriver;
 
 import java.io.File;
 import java.net.URI;
@@ -28,9 +29,6 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import jakarta.validation.constraints.NotNull;
-import org.duckdb.DuckDBDriver;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
@@ -136,6 +134,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     protected Property<List<String>> outputFiles;
     protected Property<String> databaseUri;
 
+    @Schema(
+        title = "Whether to store or not the database file in the internal storage"
+    )
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
@@ -212,7 +213,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
             );
         }
 
-        //Read database from URI and put it into workingDir
+        // Read database from URI and put it into workingDir
         if (this.databaseUri != null) {
             String dbName = IdUtils.create();
             PluginUtilsService.createInputFiles(
@@ -257,9 +258,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
         }
 
-        //Create and output DB URI
+        // Create and output DB URI
         URI dbUri = null;
-        if (Boolean.TRUE.equals(runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow())) {
+        if (runContext.render(this.getOutputDbFile()).as(Boolean.class).orElseThrow()) {
             dbUri = runContext.storage().putFile(new File(this.databaseFile.toUri()));
         }
 
