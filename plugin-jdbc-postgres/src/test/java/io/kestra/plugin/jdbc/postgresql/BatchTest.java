@@ -306,6 +306,49 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRowCount(), is(5L));
     }
 
+    @Test
+    void insertIsoTimestampString() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile(
+            this.getClass().getSimpleName().toLowerCase() + "_iso_",
+            ".trs"
+        );
+        OutputStream output = new FileOutputStream(tempFile);
+
+        FileSerde.write(output, Arrays.asList(
+            1,
+            "2025-02-01T07:15:30Z"
+        ));
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .ssl(Property.ofValue(TestUtils.ssl()))
+            .sslMode(Property.ofValue(TestUtils.sslMode()))
+            .sslRootCert(Property.ofValue(TestUtils.ca()))
+            .sslCert(Property.ofValue(TestUtils.cert()))
+            .sslKey(Property.ofValue(TestUtils.key()))
+            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue(
+                "INSERT INTO events_iso_test (id, created_at) VALUES (?, ?)"
+            ))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRowCount(), is(1L));
+    }
+
     @Override
     protected String getUrl() {
         return TestUtils.url();

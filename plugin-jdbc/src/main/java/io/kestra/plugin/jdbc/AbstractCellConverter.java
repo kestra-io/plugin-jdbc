@@ -163,6 +163,8 @@ public abstract class AbstractCellConverter {
                     return ps;
                 }
             } else if (cls == java.sql.Timestamp.class) {
+                value = parseIsoTimestamp(value);
+
                 if (value instanceof LocalDateTime) {
                     ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
                     return ps;
@@ -239,6 +241,30 @@ public abstract class AbstractCellConverter {
         }
 
         return null;
+    }
+
+    protected Object parseIsoTimestamp(Object value) {
+        if (!(value instanceof String stringValue)) {
+            return value;
+        }
+
+        try {
+            return OffsetDateTime.parse(stringValue);
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            return ZonedDateTime.parse(stringValue);
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            return Instant.parse(stringValue);
+        } catch (DateTimeParseException ignored) {}
+
+        try {
+            return LocalDateTime.parse(stringValue);
+        } catch (DateTimeParseException ignored) {}
+
+        return value;
     }
 
     protected Exception addPreparedStatementException(AbstractJdbcBatch.ParameterType parameterType, int index, Object value, Throwable e) {
