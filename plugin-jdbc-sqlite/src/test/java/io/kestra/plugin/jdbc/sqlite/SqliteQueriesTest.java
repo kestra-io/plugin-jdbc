@@ -215,6 +215,47 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
         assertThat(checkOutput.getOutputs().getFirst().getRows().stream().anyMatch(row -> row.get("Name").equals("TestInsert")), is(true));
     }
 
+    @Test
+    void outputDbFileTrueWithoutSqliteFile_shouldCreateAndOutputDatabase_groupInsertAndSelect() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        String dbName = "created-" + UUID.randomUUID() + ".sqlite";
+
+        // 1) Create table (new DB file, no sqliteFile provided)
+        Queries create = Queries.builder()
+            .url(Property.ofValue("jdbc:sqlite:" + dbName))
+            .fetchType(Property.ofValue(NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("CREATE TABLE IF NOT EXISTS t (id INTEGER PRIMARY KEY, name TEXT);"))
+            .build();
+
+        Queries.Output createOutput = create.run(runContext);
+        assertThat(createOutput.getDatabaseUri(), notNullValue());
+
+        // 2) Insert + Select in the same task (reuse DB from internal storage)
+        Queries insertAndSelect = Queries.builder()
+            .url(Property.ofValue("jdbc:sqlite:" + dbName))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sqliteFile(Property.ofValue(createOutput.getDatabaseUri().toString()))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("""
+            INSERT INTO t (id, name) VALUES (1, 'hello');
+            SELECT name FROM t WHERE id = 1;
+            """))
+            .build();
+
+        Queries.Output out = insertAndSelect.run(runContext);
+
+        // MultiQueryOutput: only the SELECT should produce a fetch output
+        assertThat(out.getDatabaseUri(), notNullValue());
+        assertThat(out.getOutputs(), notNullValue());
+        assertThat(out.getOutputs().size(), is(1));
+        assertThat(out.getOutputs().getFirst().getRow(), notNullValue());
+        assertThat(out.getOutputs().getFirst().getRow().get("name"), is("hello"));
+    }
+
     @Override
     protected String getUrl() {
         return TestUtils.url();

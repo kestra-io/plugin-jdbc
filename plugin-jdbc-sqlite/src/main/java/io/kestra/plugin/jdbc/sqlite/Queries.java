@@ -16,8 +16,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.sqlite.JDBC;
 
-import java.io.File;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -32,7 +32,20 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple SQLite queries."
+    title = "Run multiple SQLite queries.",
+    description = """
+        Executes multiple SQL statements sequentially against a SQLite database,
+        optionally within a single transaction.
+
+        The database can be:
+        - reused from a previous task via `sqliteFile`,
+        - referenced directly through the JDBC URL,
+        - or created and persisted when `outputDbFile` is enabled.
+
+        When `outputDbFile` is set to `true`, the database used during execution
+        is uploaded to Kestra internal storage and exposed as `outputs.<taskId>.databaseUri`,
+        enabling database reuse across tasks.
+        """
 )
 @Plugin(
     examples = {
@@ -48,18 +61,10 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.sqlite.Queries
                     url: jdbc:sqlite:myfile.db
                     sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
-                    sql: select * from pgsql_types
-                    fetchType: FETCH
-
-                  - id: use_fetched_data
-                    type: io.kestra.plugin.jdbc.sqlite.Queries
-                    url: jdbc:sqlite:myfile.db
-                    sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
                     sql: |
-                        {% for row in outputs.update.rows %}
-                            INSERT INTO pl_store_distribute (year_month,store_code, update_date)
-                            VALUES ({{row.play_time}}, {{row.concert_id}}, TO_TIMESTAMP('{{row.timestamp_type}}', 'YYYY-MM-DDTHH:MI:SS.US') );
-                        {% endfor %}"
+                      SELECT * FROM my_table;
+                      UPDATE my_table SET col = 'x';
+                    fetchType: FETCH
                 """
         )
     },
@@ -74,49 +79,125 @@ import java.util.Properties;
 )
 public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface {
 
+    @Builder.Default
     @PluginProperty(group = "connection")
+    @Schema(
+        title = "The JDBC URL to connect to the database.",
+        description = "Example: `jdbc:sqlite:mydb.sqlite`",
+        defaultValue = "jdbc:sqlite:"
+    )
+    private Property<String> url = Property.ofValue("jdbc:sqlite:");
+
+    @PluginProperty(group = "connection")
+    @Schema(
+        title = "SQLite database file (optional)",
+        description = """
+            Optional URI to an existing SQLite database file stored in Kestra internal storage.
+
+            When provided, the file is downloaded into the task working directory and used
+            as the SQLite database for the query execution.
+            """
+    )
     protected Property<String> sqliteFile;
 
+    @Schema(
+        title = "Output the SQLite database file",
+        description = """
+            When set to `true`, the SQLite database file used during execution
+            is uploaded to Kestra internal storage and exposed as `outputs.<taskId>.databaseUri`.
+            """,
+        defaultValue = "false"
+    )
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;
 
+    @Getter(AccessLevel.NONE)
+    protected transient Path databaseFile;
+
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        Properties properties = super.connectionProperties(runContext);
-        return SqliteQueryUtils.buildSqliteProperties(properties, runContext);
+        Properties props = super.connectionProperties(runContext);
+
+        // If we decided to use a file-backed DB in working dir, force JDBC to that exact file
+        if (this.databaseFile != null) {
+            props.put("jdbc.url", "jdbc:sqlite:" + this.databaseFile.toAbsolutePath());
+        }
+
+        return SqliteQueryUtils.buildSqliteProperties(props, runContext);
+    }
+
+    private static String extractDbPath(String jdbcUrl) {
+        return jdbcUrl == null ? "" : jdbcUrl.replaceFirst("^jdbc:sqlite:", "");
+    }
+
+    private static boolean isMemoryDb(String dbPath) {
+        if (dbPath == null) {
+            return true;
+        }
+        String p = dbPath.trim().toLowerCase();
+        return p.isEmpty()
+            || p.equals(":memory:")
+            || p.startsWith("file::memory:")
+            || (p.startsWith("file:") && p.contains("mode=memory"));
     }
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        Properties properties = super.connectionProperties(runContext);
-
-        URI url = URI.create((String) properties.get("jdbc.url"));
-
         this.workingDirectory = runContext.workingDir().path();
 
-        Optional<String> sqliteFileOptional = runContext.render(this.sqliteFile).as(String.class);
-        String fileName = null;
-        if (sqliteFileOptional.isPresent()) {
+        Optional<String> rSqliteFile = runContext.render(this.sqliteFile).as(String.class);
+        boolean rOutputDbFile = runContext.render(this.outputDbFile).as(Boolean.class).orElse(false);
 
-            // Get file name from url scheme parts, to be equally same as in connection url
-            fileName = url.getSchemeSpecificPart().split(":")[1];
+        String rUrl = runContext.render(getUrl()).as(String.class).orElseThrow();
+        String dbPath = extractDbPath(rUrl);
 
-            PluginUtilsService.createInputFiles(
-                runContext,
-                workingDirectory,
-                Map.of(fileName, sqliteFileOptional.get()),
-                additionalVars
-            );
+        boolean needsFileDb = rSqliteFile.isPresent() || rOutputDbFile;
+
+        if (needsFileDb) {
+            String fileName;
+
+            // If URL targets an in-memory DB, generate a temp file name so we can persist/upload it.
+            if (isMemoryDb(dbPath)) {
+                fileName = runContext.workingDir()
+                    .createTempFile(".sqlite")
+                    .getFileName()
+                    .toString();
+            } else {
+                fileName = Path.of(dbPath).getFileName().toString();
+            }
+
+            this.databaseFile = workingDirectory.resolve(fileName).normalize();
+
+            // If sqliteFile is provided, download it under the expected fileName in working directory
+            if (rSqliteFile.isPresent()) {
+                PluginUtilsService.createInputFiles(
+                    runContext,
+                    workingDirectory,
+                    Map.of(fileName, rSqliteFile.get()),
+                    additionalVars
+                );
+            }
+        } else {
+            // Keep default behavior (e.g., test harness DBs)
+            this.databaseFile = null;
         }
 
         AbstractJdbcQueries.MultiQueryOutput multiQueryOutput = super.run(runContext);
 
         URI dbUri = null;
-        if (Boolean.TRUE.equals(runContext.render(this.outputDbFile).as(Boolean.class).orElseThrow()) && sqliteFileOptional.isPresent()) {
-            dbUri = runContext.storage().putFile(new File(workingDirectory.toString() + "/" + fileName), fileName);
+        if (rOutputDbFile && this.databaseFile != null) {
+            // Ensure file exists before upload (SQLite may create lazily depending on operations)
+            if (!Files.exists(this.databaseFile)) {
+                Files.createFile(this.databaseFile);
+            }
+
+            dbUri = runContext.storage().putFile(
+                this.databaseFile.toFile(),
+                this.databaseFile.getFileName().toString()
+            );
         }
 
         return Output.builder()
@@ -151,5 +232,10 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
         return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+    }
+
+    @Override
+    public Property<String> getUrl() {
+        return this.url;
     }
 }
