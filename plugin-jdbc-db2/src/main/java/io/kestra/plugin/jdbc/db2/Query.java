@@ -76,6 +76,6 @@ public class Query extends AbstractJdbcQuery implements Db2ConnectionInterface {
 
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
     }
 }

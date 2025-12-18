@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.duckdb;
+package io.kestra.plugin.jdbc.mariadb;
 
 import io.kestra.core.junit.annotations.ExecuteFlow;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -14,9 +14,9 @@ import static org.hamcrest.Matchers.is;
 class RunnerTest {
 
     @Test
-    @ExecuteFlow("sanity-checks/all_duckdb.yaml")
-    void all_duckdb(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(7));
+    @ExecuteFlow("sanity-checks/all_mariadb.yaml")
+    void all_mariadb(Execution execution) {
+        assertThat(execution.getTaskRunList(), hasSize(11));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

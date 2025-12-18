@@ -257,7 +257,7 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
 
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
     }
 
     @Override
