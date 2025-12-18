@@ -51,20 +51,46 @@ import java.util.Properties;
     examples = {
         @Example(
             full = true,
-            title = "Execute multiple queries, using existing sqlite file, and pass the results to another task.",
+            title = "Execute multiple queries, using existing SQLite file, and pass the results to another task.",
             code = """
                 id: sqlite_query_using_file
                 namespace: company.team
 
                 tasks:
-                  - id: update
+                  - id: init_db
                     type: io.kestra.plugin.jdbc.sqlite.Queries
                     url: jdbc:sqlite:myfile.db
-                    sqliteFile: {{ outputs.get.outputFiles['myfile.sqlite'] }}
+                    outputDbFile: true
                     sql: |
-                      SELECT * FROM my_table;
-                      UPDATE my_table SET col = 'x';
+                      CREATE TABLE IF NOT EXISTS pgsql_types (
+                        play_time TEXT,
+                        concert_id INTEGER,
+                        timestamp_type TEXT
+                      );
+                      INSERT INTO pgsql_types (play_time, concert_id, timestamp_type) VALUES ('2024-01', 1, '2024-01-01T12:00:00');
+
+                  - id: select
+                    type: io.kestra.plugin.jdbc.sqlite.Queries
+                    url: jdbc:sqlite:myfile.db
+                    sqliteFile: "{{ outputs.init_db.databaseUri }}"
+                    outputDbFile: true
+                    sql: select * from pgsql_types
                     fetchType: FETCH
+
+                  - id: use_fetched_data
+                    type: io.kestra.plugin.jdbc.sqlite.Queries
+                    url: jdbc:sqlite:myfile.db
+                    sqliteFile: "{{ outputs.select.databaseUri }}"
+                    sql: |
+                        CREATE TABLE IF NOT EXISTS pl_store_distribute (
+                          year_month TEXT,
+                          store_code INTEGER,
+                          update_date TEXT
+                        );
+                        {% for row in outputs.select.outputs[0].rows %}
+                            INSERT INTO pl_store_distribute (year_month, store_code, update_date)
+                            VALUES ('{{row.play_time}}', {{row.concert_id}}, '{{row.timestamp_type}}');
+                        {% endfor %}
                 """
         )
     },
