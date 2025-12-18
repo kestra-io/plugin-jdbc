@@ -57,13 +57,60 @@ import java.util.Properties;
                 namespace: company.team
 
                 tasks:
-                  - id: update
+                  - id: create_table
                     type: io.kestra.plugin.jdbc.sqlite.Query
                     url: jdbc:sqlite:myfile.db
-                    sql: select * from my_table
+                    outputDbFile: true
+                    sql: |
+                      CREATE TABLE IF NOT EXISTS pgsql_types (
+                          concert_id INTEGER,
+                          available INTEGER,
+                          a TEXT,
+                          b TEXT,
+                          c TEXT,
+                          d TEXT,
+                          play_time TEXT,
+                          library_record TEXT,
+                          floatn_test REAL,
+                          double_test REAL,
+                          real_test REAL,
+                          numeric_test NUMERIC,
+                          date_type DATE,
+                          time_type TIME,
+                          timez_type DATETIME,
+                          timestamp_type DATETIME,
+                          timestampz_type DATETIME,
+                          interval_type TEXT,
+                          pay_by_quarter TEXT,
+                          schedule TEXT,
+                          json_type TEXT,
+                          blob_type BLOB
+                      );
+                    fetchType: NONE
+
+                  - id: select
+                    type: io.kestra.plugin.jdbc.sqlite.Query
+                    url: jdbc:sqlite:myfile.db
+                    sqliteFile: "{{ outputs.create_table.databaseUri }}"
+                    outputDbFile: true
+                    sql: |
+                      SELECT concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, blob_type FROM pgsql_types;
                     fetchType: FETCH
+
+                  - id: iterate_and_insert
+                    type: io.kestra.plugin.core.flow.ForEach
+                    values: "{{ outputs.select.rows }}"
+                    tasks:
+                      - id: insert_row
+                        type: io.kestra.plugin.jdbc.sqlite.Query
+                        url: jdbc:sqlite:myfile.db
+                        sqliteFile: "{{ outputs.select.databaseUri }}"
+                        sql: |
+                          INSERT INTO pl_store_distribute (year_month, store_code, update_date)
+                          VALUES ('{{ taskrun.value.play_time }}', {{ taskrun.value.concert_id }}, '{{ taskrun.value.timestamp_type }}');
+                        fetchType: NONE
                 """
-        )
+        ),
     },
     metrics = {
         @Metric(
