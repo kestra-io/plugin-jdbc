@@ -102,11 +102,7 @@ public class Queries extends AbstractJdbcQueries implements MariaDbConnectionInt
 
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
-        // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on the MariaDB instance side.
-        // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.
-        // It actually just disables client-side caching of the entire response and gives you responses as they arrive as a result it has no effect on the DB
-        return this.renderFetchType(runContext) == FetchType.STORE ?
-            Integer.MIN_VALUE : runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
     }
 
     @Override

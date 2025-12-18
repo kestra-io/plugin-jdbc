@@ -3,11 +3,11 @@ project.description = 'Query MariaDB databases using the Kestra JDBC plugin.'
 jar {
     manifest {
         attributes(
-                "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "MariaDB",
-                "X-Kestra-Group": project.group + ".jdbc.mariadb",
-                "X-Kestra-Description": project.description,
-                "X-Kestra-Version": project.version
+            "X-Kestra-Name": project.name,
+            "X-Kestra-Title": "MariaDB",
+            "X-Kestra-Group": project.group + ".jdbc.mariadb",
+            "X-Kestra-Description": project.description,
+            "X-Kestra-Version": project.version
         )
     }
 }

@@ -1,0 +1,87 @@
+id: all_mariadb
+namespace: sanitychecks.plugin-jdbc
+
+variables:
+  mariadb_password: sanity
+  mariadb_user: test
+  mariadb_db: sanitychecks
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: mariadb:11
+    portBindings:
+      - "{{ outputs.port.value }}:3306"
+    wait: false
+    env:
+      MARIADB_ROOT_PASSWORD: "{{ vars.mariadb_password }}"
+      MARIADB_DATABASE: "{{ vars.mariadb_db }}"
+      MARIADB_USER: "{{ vars.mariadb_user }}"
+      MARIADB_PASSWORD: "{{ vars.mariadb_password }}"
+
+  - id: sleep
+    type: io.kestra.plugin.core.flow.Sleep
+    duration: PT15S
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.mariadb.Query
+    fetchType: NONE
+    sql: |
+      CREATE TABLE IF NOT EXISTS test(
+        field1 INT,
+        field2 INT
+      );
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.mariadb.Queries
+    fetchType: NONE
+    sql: |
+      INSERT INTO test(field1, field2) VALUES (1, 2);
+      INSERT INTO test(field1, field2) VALUES (3, 4);
+      INSERT INTO test(field1, field2) VALUES (4, 5);
+
+  - id: query
+    type: io.kestra.plugin.jdbc.mariadb.Query
+    fetchType: FETCH
+    sql: SELECT * FROM test ORDER BY field1;
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.mariadb.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM test ORDER BY field1;
+      SELECT * FROM test ORDER BY field1 LIMIT 1;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.mariadb.Query
+    fetchType: STORE
+    sql: SELECT * FROM test ORDER BY field1 LIMIT 2;
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.query.rows[0].field1 == 1 }}"
+      - "{{ outputs.query.rows[1].field2 == 4 }}"
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 1 }}"
+      - "{{ outputs.select_and_store.size == 2 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.mariadb
+    values:
+      username: "{{ vars.mariadb_user }}"
+      password: "{{ vars.mariadb_password }}"
+      url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
