@@ -1,0 +1,94 @@
+id: all_db2
+namespace: sanitychecks.plugin-jdbc
+
+variables:
+  db2_password: sanity
+  db2_instance: db2inst1
+  db2_db: SANITYDB
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: icr.io/db2_community/db2
+    portBindings:
+      - "{{ outputs.port.value }}:50000"
+    wait: false
+    privileged: true
+    env:
+      LICENSE: accept
+      DB2INSTANCE: "{{ vars.db2_instance }}"
+      DB2INST1_PASSWORD: "{{ vars.db2_password }}"
+      DBNAME: "{{ vars.db2_db }}"
+
+  - id: wait_for_db2
+    type: io.kestra.plugin.jdbc.db2.Query
+    fetchType: NONE
+    sql: "VALUES 1"
+    retry:
+      type: constant
+      interval: PT10S
+      maxAttempt: 90
+
+  - id: create_schema_and_table
+    type: io.kestra.plugin.jdbc.db2.Queries
+    fetchType: NONE
+    sql: |
+      CREATE SCHEMA SANITYCHECKS;
+      CREATE TABLE SANITYCHECKS.TEST(
+        FIELD1 INT,
+        FIELD2 INT
+      );
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.db2.Queries
+    fetchType: NONE
+    sql: |
+      INSERT INTO SANITYCHECKS.TEST(FIELD1, FIELD2) VALUES (1, 2);
+      INSERT INTO SANITYCHECKS.TEST(FIELD1, FIELD2) VALUES (3, 4);
+      INSERT INTO SANITYCHECKS.TEST(FIELD1, FIELD2) VALUES (4, 5);
+
+  - id: query
+    type: io.kestra.plugin.jdbc.db2.Query
+    fetchType: FETCH
+    sql: SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1;
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.db2.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1;
+      SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1 FETCH FIRST 1 ROW ONLY;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.db2.Query
+    fetchType: STORE
+    sql: SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1 FETCH FIRST 2 ROWS ONLY;
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - '{{ outputs.query["rows"]["1"]["FIELD1"] }}'
+      - '{{ outputs.query["rows"]["1"]["FIELD2"] }}'
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 1 }}"
+      - "{{ outputs.select_and_store.size == 2 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.db2
+    values:
+      username: "{{ vars.db2_instance }}"
+      password: "{{ vars.db2_password }}"
+      url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
