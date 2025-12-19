@@ -72,4 +72,8 @@ public class Query extends AbstractJdbcQuery implements HanaConnectionInterface 
     public Properties connectionProperties(RunContext runContext) throws Exception {
         return super.connectionProperties(runContext, this.getScheme());
     }
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
+    }
 }

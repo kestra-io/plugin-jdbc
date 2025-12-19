@@ -19,7 +19,7 @@ dependencies {
     // Core Kestra JDBC module
     implementation project(':plugin-jdbc')
 
-    // Match DuckDB test configuration exactly
+    //test configuration to use plugin-jdbc test classes
     testImplementation project(':plugin-jdbc').sourceSets.test.output
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

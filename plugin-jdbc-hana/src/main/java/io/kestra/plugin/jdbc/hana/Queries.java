@@ -40,7 +40,9 @@ import java.util.Properties;
                     url: jdbc:sap://127.0.0.1:39015/?databaseName=SYSTEMDB
                     username: "{{ secret('HANA_USERNAME') }}"
                     password: "{{ secret('HANA_PASSWORD') }}"
-                    sql: select * from TABLE1; select * from TABLE2;
+                     sql: |
+                      SELECT * FROM table1;
+                      SELECT * FROM table2;
                     fetchType: FETCH
             """
         )
@@ -71,5 +73,9 @@ public class Queries extends AbstractJdbcQueries implements HanaConnectionInterf
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         return super.connectionProperties(runContext, this.getScheme());
+    }
+    @Override
+    protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.fetchSize).as(Integer.class).orElse(Integer.MIN_VALUE);
     }
 }
