@@ -31,7 +31,7 @@ tasks:
     retry:
       type: constant
       interval: PT10S
-      maxAttempt: 30
+      maxAttempt: 90
 
   - id: create_schema_and_table
     type: io.kestra.plugin.jdbc.db2.Queries

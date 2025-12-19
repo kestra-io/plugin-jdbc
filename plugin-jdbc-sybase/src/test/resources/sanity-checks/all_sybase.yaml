@@ -25,7 +25,7 @@ tasks:
     retry:
       type: constant
       interval: PT10S
-      maxAttempt: 60
+      maxAttempt: 90
 
   - id: query
     type: io.kestra.plugin.jdbc.sybase.Query

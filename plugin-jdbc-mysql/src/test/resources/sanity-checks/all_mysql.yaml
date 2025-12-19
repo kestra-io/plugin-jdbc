@@ -30,7 +30,7 @@ tasks:
 
   - id: wait_for_mysql
     type: io.kestra.plugin.core.flow.Sleep
-    duration: PT15S
+    duration: PT30S
 
   - id: create_table
     type: io.kestra.plugin.jdbc.mysql.Query
