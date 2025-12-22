@@ -237,7 +237,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
             boolean mysqlCompatible =
                 (driver.contains("mysql") || driver.contains("mariadb"))
-                    && url.contains("allowMultiQueries=true");
+                    && url.contains("allowmultiqueries=true");
 
             return nativeSupport || mysqlCompatible;
         } catch (SQLException e) {
