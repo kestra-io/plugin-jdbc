@@ -16,7 +16,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow("sanity-checks/all_clickhouse.yaml")
     void all_clickhouse(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(12));
+        assertThat(execution.getTaskRunList(), hasSize(11));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }
