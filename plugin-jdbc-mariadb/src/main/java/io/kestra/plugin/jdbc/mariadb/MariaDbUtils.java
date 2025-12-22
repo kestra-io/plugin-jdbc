@@ -3,7 +3,6 @@ package io.kestra.plugin.jdbc.mariadb;
 import io.micronaut.http.uri.UriBuilder;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Properties;
 
 public abstract class MariaDbUtils {
@@ -18,7 +17,7 @@ public abstract class MariaDbUtils {
 
         builder.scheme("jdbc:mariadb");
 
-        if(isMultiQuery) {
+        if (isMultiQuery) {
             builder.queryParam("allowMultiQueries", true);
         }
 

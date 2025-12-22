@@ -31,6 +31,23 @@ public class SqlSplitter {
         boolean doDollarBlock = false;
         String lastTokenUpper = null;
 
+        // Oracle PL/SQL: DECLARE ... BEGIN ... END; is a single anonymous block.
+        // We treat DECLARE as opening a block, and the subsequent BEGIN as the same block (no extra nesting).
+        boolean inDeclareSection = false;
+
+        // Oracle PL/SQL DDL (PACKAGE / PACKAGE BODY / PROCEDURE / FUNCTION / TRIGGER / TYPE):
+        // Those can contain semicolons without any top-level BEGIN...END. Only the final END ...; ends the statement.
+        int plsqlDdlDepth = 0;
+
+        // Track CREATE [OR REPLACE] <object_type>
+        boolean sawCreate = false;
+        boolean sawOr = false;
+        boolean sawReplace = false;
+
+        // Small mutable holder for lastTokenUpper (so helper can update it).
+        String[] lastTokenHolder = new String[1];
+        lastTokenHolder[0] = null;
+
         for (int i = 0; i < len; i++) {
             char c = sql.charAt(i);
             char next = (i + 1 < len) ? sql.charAt(i + 1) : '\0';
@@ -107,12 +124,15 @@ public class SqlSplitter {
 
             // Double-quoted identifier (Postgres)
             if (!inSingleQuote && c == '"') {
-                // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
 
                 current.append(c);
 
@@ -132,21 +152,15 @@ public class SqlSplitter {
 
             // Start comments (only when not in a single quote)
             if (!inSingleQuote && !inDoubleQuote && c == '-' && next == '-') {
-                // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-
-                    if ("BEGIN".equals(t)) {
-                        beginDepth++;
-                        sawEndToken = false;
-                    } else if ("END".equals(t)) {
-                        sawEndToken = true;
-                    } else {
-                        sawEndToken = false;
-                    }
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
 
                 inLineComment = true;
                 current.append(c); // keep the comment text
@@ -154,21 +168,15 @@ public class SqlSplitter {
             }
 
             if (!inSingleQuote && !inDoubleQuote && c == '/' && next == '*') {
-                // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-
-                    if ("BEGIN".equals(t)) {
-                        beginDepth++;
-                        sawEndToken = false;
-                    } else if ("END".equals(t)) {
-                        sawEndToken = true;
-                    } else {
-                        sawEndToken = false;
-                    }
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
 
                 inBlockComment = true;
                 current.append(c); // keep the comment text
@@ -177,21 +185,15 @@ public class SqlSplitter {
 
             // Start / end single-quoted strings (handle doubled quotes '')
             if (c == '\'') {
-                // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-
-                    if ("BEGIN".equals(t)) {
-                        beginDepth++;
-                        sawEndToken = false;
-                    } else if ("END".equals(t)) {
-                        sawEndToken = true;
-                    } else {
-                        sawEndToken = false;
-                    }
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
 
                 current.append(c);
 
@@ -212,11 +214,16 @@ public class SqlSplitter {
             // Backtick-quoted identifier (MySQL/MariaDB/Snowflake/BigQuery)
             if (!inSingleQuote && !inDoubleQuote && c == '`') {
                 // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
+                lastTokenUpper = state.lastTokenUpper;
 
                 inBacktick = true;
                 current.append(c);
@@ -225,12 +232,15 @@ public class SqlSplitter {
 
             // SQL Server bracket-quoted identifier
             if (!inSingleQuote && !inDoubleQuote && c == '[') {
-                // flush token
-                if (!token.isEmpty()) {
-                    String t = token.toString().toUpperCase(Locale.ROOT);
-                    lastTokenUpper = t;
-                    token.setLength(0);
-                }
+                TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                    plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                beginDepth = state.beginDepth;
+                sawEndToken = state.sawEndToken;
+                inDeclareSection = state.inDeclareSection;
+                plsqlDdlDepth = state.plsqlDdlDepth;
+                sawCreate = state.sawCreate;
+                sawOr = state.sawOr;
+                sawReplace = state.sawReplace;
 
                 inSquareBracket = true;
                 current.append(c);
@@ -245,21 +255,16 @@ public class SqlSplitter {
                     String candidate = sql.substring(i, closing + 1); // "$$" or "$tag$"
                     // Valid tag: starts/ends with $, contains only letters/digits/underscore between
                     if (candidate.length() >= 2 && isValidDollarTag(candidate)) {
-                        // flush token
-                        if (!token.isEmpty()) {
-                            String t = token.toString().toUpperCase(Locale.ROOT);
-                            lastTokenUpper = t;
-                            token.setLength(0);
-
-                            if ("BEGIN".equals(t)) {
-                                beginDepth++;
-                                sawEndToken = false;
-                            } else if ("END".equals(t)) {
-                                sawEndToken = true;
-                            } else {
-                                sawEndToken = false;
-                            }
-                        }
+                        TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                            plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                        beginDepth = state.beginDepth;
+                        sawEndToken = state.sawEndToken;
+                        inDeclareSection = state.inDeclareSection;
+                        plsqlDdlDepth = state.plsqlDdlDepth;
+                        sawCreate = state.sawCreate;
+                        sawOr = state.sawOr;
+                        sawReplace = state.sawReplace;
+                        lastTokenUpper = state.lastTokenUpper;
 
                         if ("DO".equals(lastTokenUpper)) {
                             doDollarBlock = true;
@@ -283,21 +288,32 @@ public class SqlSplitter {
                     token.append(c);
                 } else {
                     if (!token.isEmpty()) {
-                        String t = token.toString().toUpperCase(Locale.ROOT);
-                        lastTokenUpper = t;
-                        token.setLength(0);
-
-                        if ("BEGIN".equals(t)) {
-                            beginDepth++;
-                            sawEndToken = false;
-                        } else if ("END".equals(t)) {
-                            sawEndToken = true;
-                        } else {
-                            sawEndToken = false;
-                        }
+                        TokenState state = flushToken(token, beginDepth, sawEndToken, inDeclareSection,
+                            plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder);
+                        beginDepth = state.beginDepth;
+                        sawEndToken = state.sawEndToken;
+                        inDeclareSection = state.inDeclareSection;
+                        plsqlDdlDepth = state.plsqlDdlDepth;
+                        sawCreate = state.sawCreate;
+                        sawOr = state.sawOr;
+                        sawReplace = state.sawReplace;
                     }
 
                     if (c == ';') {
+                        // Close PL/SQL DDL unit on final "END ...;"
+                        if (plsqlDdlDepth > 0 && sawEndToken) {
+                            plsqlDdlDepth = Math.max(0, plsqlDdlDepth - 1);
+                            sawEndToken = false;
+
+                            if (plsqlDdlDepth == 0 && beginDepth == 0) {
+                                statements.add(current.toString().trim());
+                                current.setLength(0);
+                                doDollarBlock = false;
+                                inDeclareSection = false; // reset oracle declare state
+                                continue;
+                            }
+                        }
+
                         if (beginDepth > 0 && sawEndToken) {
                             beginDepth = Math.max(0, beginDepth - 1);
                             sawEndToken = false;
@@ -306,6 +322,7 @@ public class SqlSplitter {
                                 statements.add(current.toString().trim());
                                 current.setLength(0);
                                 doDollarBlock = false;
+                                inDeclareSection = false; // reset oracle declare state
                                 continue;
                             }
                         } else {
@@ -318,7 +335,8 @@ public class SqlSplitter {
             }
 
             // Split on semicolon only when not inside string and not inside BEGIN...END
-            if (beginDepth == 0 && c == ';' && !inSingleQuote && !inDoubleQuote) {
+            // (and not inside PL/SQL DDL unit like CREATE PACKAGE / CREATE TRIGGER ...)
+            if (beginDepth == 0 && plsqlDdlDepth == 0 && c == ';' && !inSingleQuote && !inDoubleQuote) {
                 String s = current.toString().trim();
                 if (!s.isEmpty()) {
                     // strip trailing ';'
@@ -341,6 +359,88 @@ public class SqlSplitter {
         return statements.toArray(new String[0]);
     }
 
+    /**
+     * Flush current token (word) and update state machine.
+     * <p>
+     * Rules:
+     * - BEGIN increases beginDepth, except if it immediately follows an Oracle DECLARE section (same block).
+     * - DECLARE increases beginDepth and enables "inDeclareSection" until the following BEGIN.
+     * - END sets sawEndToken=true (actual depth decrement happens when encountering the ';' after END).
+     */
+    private static TokenState flushToken(
+        StringBuilder token,
+        int beginDepth,
+        boolean sawEndToken,
+        boolean inDeclareSection,
+        int plsqlDdlDepth,
+        boolean sawCreate,
+        boolean sawOr,
+        boolean sawReplace,
+        String[] lastTokenHolder
+    ) {
+        if (token.isEmpty()) {
+            return new TokenState(beginDepth, sawEndToken, inDeclareSection,
+                plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder[0]);
+        }
+
+        String t = token.toString().toUpperCase(Locale.ROOT);
+        lastTokenHolder[0] = t;
+        token.setLength(0);
+
+        // Detect "CREATE [OR REPLACE] <plsql_object>" to enter PL/SQL DDL mode
+        if ("CREATE".equals(t)) {
+            sawCreate = true;
+            sawOr = false;
+            sawReplace = false;
+        } else if (sawCreate && "OR".equals(t)) {
+            sawOr = true;
+        } else if (sawCreate && sawOr && "REPLACE".equals(t)) {
+            sawReplace = true;
+        } else if (sawCreate) {
+            // t is the object type (or something else)
+            if ("PACKAGE".equals(t) || "PROCEDURE".equals(t) || "FUNCTION".equals(t)
+                || "TRIGGER".equals(t) || "TYPE".equals(t)) {
+                // PACKAGE BODY is two tokens; we enter on PACKAGE already; BODY doesn't change anything.
+                plsqlDdlDepth++;
+            }
+            sawCreate = false;
+            sawOr = false;
+            sawReplace = false;
+        }
+
+        if ("DECLARE".equals(t)) {
+            beginDepth++;
+            inDeclareSection = true;
+            sawEndToken = false;
+        } else if ("BEGIN".equals(t)) {
+            if (inDeclareSection) {
+                // DECLARE ... BEGIN is one single Oracle anonymous block, do not increment nesting here.
+                inDeclareSection = false;
+            } else {
+                beginDepth++;
+            }
+            sawEndToken = false;
+        } else if ("END".equals(t)) {
+            sawEndToken = true;
+        } else {
+            // If we previously saw END, keep sawEndToken=true to support "END <label>;"
+            // BUT cancel it for END IF / END LOOP / END CASE which should not close a BEGIN...END block.
+            if (sawEndToken) {
+                if ("IF".equals(t) || "LOOP".equals(t) || "CASE".equals(t)) {
+                    sawEndToken = false;
+                } else {
+                    // label or other identifier after END => keep true until ';'
+                    sawEndToken = true;
+                }
+            } else {
+                sawEndToken = false;
+            }
+        }
+
+        return new TokenState(beginDepth, sawEndToken, inDeclareSection,
+            plsqlDdlDepth, sawCreate, sawOr, sawReplace, lastTokenHolder[0]);
+    }
+
     private static boolean isValidDollarTag(String tag) {
         // "$$" is valid
         if ("$$".equals(tag)) return true;
@@ -358,5 +458,17 @@ public class SqlSplitter {
 
     private static boolean isWordChar(char c) {
         return Character.isLetterOrDigit(c) || c == '_';
+    }
+
+    private record TokenState(
+        int beginDepth,
+        boolean sawEndToken,
+        boolean inDeclareSection,
+        int plsqlDdlDepth,
+        boolean sawCreate,
+        boolean sawOr,
+        boolean sawReplace,
+        String lastTokenUpper
+    ) {
     }
 }
