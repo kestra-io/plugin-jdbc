@@ -1,0 +1,93 @@
+id: all_sqlserver
+namespace: sanitychecks.plugin-jdbc
+
+variables:
+  sqlserver_sa_password: "Str0ngPassw0rd!"
+  sqlserver_db: "master"
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: mcr.microsoft.com/mssql/server:2022-latest
+    portBindings:
+      - "{{ outputs.port.value }}:1433"
+    wait: false
+    env:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "{{ vars.sqlserver_sa_password }}"
+      MSSQL_PID: "Express"
+
+  - id: sleep
+    type: io.kestra.plugin.core.flow.Sleep
+    duration: PT20S
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.sqlserver.Queries
+    fetchType: NONE
+    sql: |
+      IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'sanitychecks')
+      BEGIN
+        EXEC('CREATE SCHEMA sanitychecks');
+      END;
+
+      IF OBJECT_ID('sanitychecks.test', 'U') IS NULL
+      BEGIN
+        CREATE TABLE sanitychecks.test (
+          field1 INT,
+          field2 INT
+        );
+      END;
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.sqlserver.Queries
+    fetchType: NONE
+    sql: |
+      INSERT INTO sanitychecks.test(field1, field2) VALUES (1, 2);
+      INSERT INTO sanitychecks.test(field1, field2) VALUES (3, 4);
+      INSERT INTO sanitychecks.test(field1, field2) VALUES (4, 5);
+
+  - id: query
+    type: io.kestra.plugin.jdbc.sqlserver.Query
+    fetchType: FETCH
+    sql: SELECT * FROM sanitychecks.test ORDER BY field1;
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.sqlserver.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM sanitychecks.test ORDER BY field1;
+      SELECT * FROM sanitychecks.test ORDER BY field1 OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.sqlserver.Query
+    fetchType: STORE
+    sql: SELECT * FROM sanitychecks.test ORDER BY field1 OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY;
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.query.rows[0].field1 == 1 }}"
+      - "{{ outputs.query.rows[1].field2 == 4 }}"
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 1 }}"
+      - "{{ outputs.select_and_store.size == 2 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.sqlserver
+    values:
+      username: "sa"
+      password: "{{ vars.sqlserver_sa_password }}"
+      url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"

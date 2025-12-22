@@ -94,4 +94,4 @@ pluginDefaults:
     values:
       username: "{{ vars.postgres_user }}"
       password: "{{ vars.postgres_password }}"
-      url: "jdbc:postgresql://host.docker.internal:{{ outputs.port.value }}/{{ vars.postgres_db }}"
+      url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"

@@ -1,0 +1,68 @@
+id: all_sybase
+namespace: test.plugin-jdbc
+
+variables:
+  sybase_user: sa
+  sybase_password: myPassword
+  sybase_db: master
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: datagrip/sybase:16.0
+    portBindings:
+      - "{{ outputs.port.value }}:5000"
+    wait: false
+
+  - id: wait_for_sybase
+    type: io.kestra.plugin.jdbc.sybase.Query
+    fetchType: NONE
+    sql: "SELECT 1"
+    retry:
+      type: constant
+      interval: PT10S
+      maxAttempt: 90
+
+  - id: query
+    type: io.kestra.plugin.jdbc.sybase.Query
+    fetchType: FETCH
+    sql: |
+      SELECT TOP 3
+        name,
+        type
+      FROM sysobjects
+      ORDER BY name
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.sybase.Queries
+    fetchType: STORE
+    sql: |
+      SELECT TOP 3 name, type FROM sysobjects ORDER BY name
+      SELECT TOP 1 name, type FROM sysobjects ORDER BY name
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.query.rows[0].name is not empty }}"
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 1 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.sybase
+    values:
+      username: "{{ vars.sybase_user }}"
+      password: "{{ vars.sybase_password }}"
+      url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"

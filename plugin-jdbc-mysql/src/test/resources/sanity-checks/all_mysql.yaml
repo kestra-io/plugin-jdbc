@@ -30,7 +30,7 @@ tasks:
 
   - id: wait_for_mysql
     type: io.kestra.plugin.core.flow.Sleep
-    duration: PT15S
+    duration: PT30S
 
   - id: create_table
     type: io.kestra.plugin.jdbc.mysql.Query
@@ -87,6 +87,6 @@ finally:
 pluginDefaults:
   - type: io.kestra.plugin.jdbc.mysql
     values:
-      url: "jdbc:mysql://host.docker.internal:{{ outputs.port.value }}/{{ vars.mysql_db }}?allowMultiQueries=true&useSSL=false&allowPublicKeyRetrieval=true"
+      url: "jdbc:mysql://localhost:{{ outputs.port.value }}/{{ vars.mysql_db }}?allowMultiQueries=true&useSSL=false&allowPublicKeyRetrieval=true"
       username: "{{ vars.mysql_user }}"
       password: "{{ vars.mysql_password }}"
