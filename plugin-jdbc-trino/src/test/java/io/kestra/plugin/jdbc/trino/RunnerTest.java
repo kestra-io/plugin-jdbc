@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.mysql;
+package io.kestra.plugin.jdbc.trino;
 
 import io.kestra.core.junit.annotations.ExecuteFlow;
 import io.kestra.core.junit.annotations.KestraTest;
