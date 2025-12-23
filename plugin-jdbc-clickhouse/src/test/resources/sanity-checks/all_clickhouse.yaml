@@ -1,0 +1,93 @@
+id: all_clickhouse
+namespace: sanitychecks.plugin-jdbc
+
+variables:
+  clickhouse_user: default
+  clickhouse_password: sanity
+  clickhouse_db: sanitychecks
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: clickhouse/clickhouse-server:latest
+    portBindings:
+      - "{{ outputs.port.value }}:8123"
+    wait: false
+    env:
+      CLICKHOUSE_PASSWORD: "{{ vars.clickhouse_password }}"
+
+  - id: wait_for_clickhouse
+    type: io.kestra.plugin.jdbc.clickhouse.Query
+    fetchType: NONE
+    sql: SELECT 1
+    retry:
+      type: constant
+      interval: PT5S
+      maxAttempt: 60
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.clickhouse.Queries
+    fetchType: NONE
+    sql: |
+      CREATE DATABASE IF NOT EXISTS {{ vars.clickhouse_db }};
+      CREATE TABLE IF NOT EXISTS {{ vars.clickhouse_db }}.test (
+        field1 Int32,
+        field2 Int32
+      )
+      ENGINE = MergeTree
+      ORDER BY field1;
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.clickhouse.Query
+    fetchType: NONE
+    sql: |
+      INSERT INTO {{ vars.clickhouse_db }}.test (field1, field2) VALUES
+        (1, 2),
+        (3, 4),
+        (4, 5)
+
+  - id: query
+    type: io.kestra.plugin.jdbc.clickhouse.Query
+    fetchType: FETCH
+    sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.clickhouse.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1;
+      SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1 LIMIT 1;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.clickhouse.Query
+    fetchType: STORE
+    sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1 LIMIT 2
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - '{{ outputs.query["rows"]["0"]["field1"] == 1 }}'
+      - '{{ outputs.query["rows"]["1"]["field2"] == 4 }}'
+      - '{{ outputs.queries["outputs"]["0"]["size"] == 3 }}'
+      - '{{ outputs.queries["outputs"]["1"]["size"] == 1 }}'
+      - "{{ outputs.select_and_store.size == 2 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.clickhouse
+    values:
+      url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+      username: "{{ vars.clickhouse_user }}"
+      password: "{{ vars.clickhouse_password }}"
