@@ -145,53 +145,45 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             // When sql is not a select statement skip output creation
             if (rs != null) {
-                Output.OutputBuilder<?, ?> output = Output.builder();
+                try (rs) {
+                    Output.OutputBuilder<?, ?> output = Output.builder();
 
-                // Populate result from result set
-                long size = 0L;
-                switch (fetchType) {
-                    case FETCH_ONE -> {
-                        size = 1L;
-                        output
-                            .row(fetchResult(rs, cellConverter, connection))
-                            .size(size);
-                    }
-                    case STORE -> {
-                        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                    // Populate result from result set
+                    long size = 0L;
+                    switch (fetchType) {
+                        case FETCH_ONE -> {
+                            size = 1L;
+                            output
+                                .row(fetchResult(rs, cellConverter, connection))
+                                .size(size);
                         }
-                        output
-                            .uri(runContext.storage().putFile(tempFile))
-                            .size(size);
+                        case STORE -> {
+                            File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                            try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+                                size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                            }
+                            output
+                                .uri(runContext.storage().putFile(tempFile))
+                                .size(size);
+                        }
+                        case FETCH -> {
+                            List<Map<String, Object>> maps = new ArrayList<>();
+                            size = fetchResults(stmt, rs, maps, cellConverter, connection);
+                            output
+                                .rows(maps)
+                                .size(size);
+                        }
+                        case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
+                        default ->
+                            throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
                     }
-                    case FETCH -> {
-                        List<Map<String, Object>> maps = new ArrayList<>();
-                        size = fetchResults(stmt, rs, maps, cellConverter, connection);
-                        output
-                            .rows(maps)
-                            .size(size);
-                    }
-                    case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
-                    default ->
-                        throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+                    totalSize += size;
+                    outputList.add(output.build());
                 }
-                totalSize += size;
-                outputList.add(output.build());
             } else if (updateCount == -1) {
                 break;
             }
-
-            boolean moreResults;
-            try {
-                moreResults = stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
-            } catch (SQLException e) {
-                moreResults = false;
-            }
-
-            if (!moreResults) {
-                break;
-            }
+            stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
         }
         return totalSize;
     }
