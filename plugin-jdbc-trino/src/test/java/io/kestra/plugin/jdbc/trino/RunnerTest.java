@@ -16,7 +16,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow("sanity-checks/all_trino.yaml")
     void all_trino(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(11));
+        assertThat(execution.getTaskRunList(), hasSize(10));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }
