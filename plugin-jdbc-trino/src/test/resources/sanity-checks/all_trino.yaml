@@ -1,0 +1,75 @@
+id: all_trino
+namespace: sanitychecks.plugin-jdbc
+
+variables:
+  trino_user: kestra
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: trinodb/trino:latest
+    portBindings:
+      - "{{ outputs.port.value }}:8080"
+    wait: false
+
+  - id: wait_for_trino
+    type: io.kestra.plugin.jdbc.trino.Query
+    fetchType: NONE
+    sql: "SELECT 1"
+    retry:
+      type: constant
+      interval: PT5S
+      maxAttempt: 60
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.trino.Query
+    fetchType: NONE
+    sql: |
+      CREATE TABLE IF NOT EXISTS memory.default.test (
+        field1 INTEGER,
+        field2 INTEGER
+      )
+
+  - id: insert_1
+    type: io.kestra.plugin.jdbc.trino.Query
+    fetchType: NONE
+    sql: |
+      INSERT INTO memory.default.test VALUES (1, 2)
+
+  - id: insert_2
+    type: io.kestra.plugin.jdbc.trino.Query
+    fetchType: NONE
+    sql: |
+      INSERT INTO memory.default.test VALUES (3, 4)
+
+  - id: query
+    type: io.kestra.plugin.jdbc.trino.Query
+    fetchType: FETCH
+    sql: |
+      SELECT * FROM memory.default.test ORDER BY field1
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - '{{ outputs.query["rows"]["0"]["field1"] == 1 }}'
+      - '{{ outputs.query["rows"]["0"]["field2"] == 2 }}'
+      - '{{ outputs.query["rows"]["1"]["field1"] == 3 }}'
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.trino
+    values:
+      username: "{{ vars.trino_user }}"
+      url: "jdbc:trino://localhost:{{ outputs.port.value }}"
