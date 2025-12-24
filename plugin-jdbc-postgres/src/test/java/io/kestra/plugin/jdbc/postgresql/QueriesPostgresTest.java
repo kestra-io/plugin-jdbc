@@ -89,7 +89,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
     }
 
     @Test
-    void testMultiSelectWithParametersWithColonCloseTo() throws Exception {
+    void testMultiQueriesWithParametersWithColonCloseTo() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries setup = Queries.builder()
