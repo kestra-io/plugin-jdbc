@@ -147,7 +147,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
-        boolean isResult;
+        boolean hasMoreResults;
         long count = 0;
 
         do {
@@ -156,8 +156,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                 c.accept(map);
                 count++;
             }
-            isResult = stmt.getMoreResults();
-        } while (isResult);
+            hasMoreResults = stmt.getMoreResults();
+        } while (hasMoreResults);
 
         return count;
     }
@@ -237,7 +237,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
             boolean mysqlCompatible =
                 (driver.contains("mysql") || driver.contains("mariadb"))
-                    && url.contains("allowMultiQueries=true");
+                    && url.contains("allowmultiqueries=true");
 
             return nativeSupport || mysqlCompatible;
         } catch (SQLException e) {
