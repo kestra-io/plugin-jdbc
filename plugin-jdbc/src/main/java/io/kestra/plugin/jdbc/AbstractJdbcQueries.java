@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
@@ -41,13 +40,13 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
-    public AbstractJdbcQueries.MultiQueryOutput run(RunContext runContext) throws Exception {
+    public MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
         final boolean isTransactional = runContext.render(this.transaction).as(Boolean.class).orElseThrow();
         long totalSize = 0L;
-        List<AbstractJdbcQuery.Output> outputList = new LinkedList<>();
+        List<Output> outputList = new LinkedList<>();
 
         // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
@@ -94,7 +93,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
-                    totalSize = extractResultsFromResultSet(this.runningConnection, stmt, runContext, cellConverter, totalSize, outputList, fetchType);
+                    totalSize = extractResultsFromResultSet(
+                        this.runningConnection,
+                        stmt,
+                        runContext,
+                        cellConverter,
+                        totalSize,
+                        outputList,
+                        fetchType,
+                        shouldBatchQueries
+                    );
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
@@ -112,7 +120,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
             if (supportsTx && isTransactional) {
-                rollbackIfTransactional(this.runningConnection, savepoint, true);
+                rollbackIfTransactional(this.runningConnection, savepoint);
             }
             throw new RuntimeException(e);
         } finally {
@@ -137,17 +145,74 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
                                              final List<Output> outputList,
-                                             final FetchType fetchType
+                                             final FetchType fetchType,
+                                             final boolean multiStatements
     ) throws SQLException, IOException {
+
+        // ---------------------------------------------------------------------
+        // Case 1: single statement execution (split mode)
+        // - One execute() => at most one ResultSet
+        // - Do NOT call getMoreResults() (some drivers like Pinot can hang)
+        // - Do NOT call getUpdateCount() before consuming the ResultSet (Pinot can invalidate it)
+        // ---------------------------------------------------------------------
+        if (!multiStatements) {
+            ResultSet rs = stmt.getResultSet();
+
+            // When SQL is not a SELECT statement skip output creation
+            if (rs == null) {
+                return totalSize;
+            }
+
+            Output.OutputBuilder<?, ?> output = Output.builder();
+
+            long size = 0L;
+            switch (fetchType) {
+                case FETCH_ONE -> {
+                    size = 1L;
+                    output
+                        .row(fetchResult(rs, cellConverter, connection))
+                        .size(size);
+                }
+                case STORE -> {
+                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                    try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
+                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                    }
+                    output
+                        .uri(runContext.storage().putFile(tempFile))
+                        .size(size);
+                }
+                case FETCH -> {
+                    List<Map<String, Object>> maps = new ArrayList<>();
+                    size = fetchResults(stmt, rs, maps, cellConverter, connection);
+                    output
+                        .rows(maps)
+                        .size(size);
+                }
+                case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
+                default ->
+                    throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+            }
+
+            totalSize += size;
+            outputList.add(output.build());
+
+            return totalSize;
+        }
+
+        // ---------------------------------------------------------------------
+        // Case 2: multi statements execution (batched)
+        // - One execute() => multiple results (ResultSet or updateCount)
+        // - Use JDBC standard pattern: getResultSet/getUpdateCount + getMoreResults
+        // ---------------------------------------------------------------------
         while (true) {
             ResultSet rs = stmt.getResultSet();
             int updateCount = stmt.getUpdateCount();
 
-            // When sql is not a select statement skip output creation
+            // When SQL is not a SELECT statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
 
-                // Populate result from result set
                 long size = 0L;
                 switch (fetchType) {
                     case FETCH_ONE -> {
@@ -176,30 +241,24 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     default ->
                         throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
                 }
+
                 totalSize += size;
                 outputList.add(output.build());
             } else if (updateCount == -1) {
+                // End of results
                 break;
             }
 
-            boolean moreResults;
-            try {
-                moreResults = stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
-            } catch (SQLException e) {
-                moreResults = false;
-            }
-
-            if (!moreResults) {
-                break;
-            }
+            // Move to the next result
+            stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
         }
+
         return totalSize;
     }
 
     private static void rollbackIfTransactional(final Connection connection,
-                                                final Savepoint savepoint,
-                                                final boolean isTransactional) throws SQLException {
-        if (isTransactional && connection != null) {
+                                                final Savepoint savepoint) throws SQLException {
+        if (connection != null) {
             if (savepoint != null) {
                 connection.rollback(savepoint);
                 return;
@@ -247,6 +306,6 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @SuperBuilder
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
-        List<AbstractJdbcQuery.Output> outputs;
+        List<Output> outputs;
     }
 }

@@ -50,7 +50,7 @@ class DuckDbQueriesTest {
     private StorageInterface storageInterface;
 
     @Test
-    void multiSelect() throws Exception {
+    void multiQueries() throws Exception {
         RunContext runContext = runContextFactory.of(Map.of());
 
         Queries task = Queries.builder()
@@ -79,7 +79,7 @@ class DuckDbQueriesTest {
     }
 
     @Test
-    void multiSelectFromExistingFileInUrl() throws Exception {
+    void multiQueriesFromExistingFileInUrl() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         URL resource = DuckDbQueriesTest.class.getClassLoader().getResource("db/duck.db");
