@@ -145,7 +145,7 @@ subprojects {
         testImplementation group: 'com.h2database', name: 'h2'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.20.0'
 
-        testImplementation "io.kestra.plugin:plugin-docker:1.2.1" // for sanity checks
+        testImplementation "io.kestra.plugin:plugin-docker:1.2.2" // for sanity checks
     }
 }
 
