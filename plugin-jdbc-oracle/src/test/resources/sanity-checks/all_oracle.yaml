@@ -98,4 +98,4 @@ pluginDefaults:
     values:
       username: "{{ vars.oracle_user }}"
       password: "{{ vars.oracle_user_password }}"
-      url: "jdbc:oracle:thin:@//host.docker.internal:{{ outputs.port.value }}/{{ vars.oracle_service }}"
+      url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
