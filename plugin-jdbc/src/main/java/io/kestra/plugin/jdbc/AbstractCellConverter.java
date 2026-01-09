@@ -82,8 +82,9 @@ public abstract class AbstractCellConverter {
         }
 
         String columnName = rs.getMetaData().getColumnLabel(columnIndex);
+        String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
-        throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported");
+        throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported, the column type is '" + columnTypeName + "'");
     }
 
     protected PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {
