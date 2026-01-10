@@ -1,0 +1,9 @@
+group: io.kestra.plugin.jdbc.hana
+name: "hana"
+title: "SAP HANA"
+
+description: "Tasks that query SAP HANA using the official SAP HANA JDBC driver (ngdbc.jar)."
+body: "Use these tasks to run single or multiple SQL statements or trigger flows based on query results in SAP HANA with the bundled ngdbc driver. Provide a SAP HANA JDBC URL (jdbc:sap://...), credentials, and your SQL along with fetch options (fetchType/fetchSize/store) to control how result sets are returned and persisted."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
