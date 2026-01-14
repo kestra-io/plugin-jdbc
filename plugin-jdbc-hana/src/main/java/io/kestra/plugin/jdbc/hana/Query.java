@@ -17,6 +17,9 @@ import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.Properties;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+
+
 @SuperBuilder
 @Getter
 @NoArgsConstructor
