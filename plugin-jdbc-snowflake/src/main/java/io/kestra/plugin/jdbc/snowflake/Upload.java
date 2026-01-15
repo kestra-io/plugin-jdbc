@@ -73,7 +73,12 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
 
     @Schema(
         title = "Snowflake stage name.",
-        description = "This can either be a stage name or a table name."
+        description = """
+            This can either be a stage name or a table name.
+
+            Snowflake automatically uppercases unquoted identifiers.
+            If your database, schema, table, or stage was created using mixed-case naming, you must wrap those identifiers in double quotes.
+            """
     )
     @NotNull
     private Property<String> stageName;

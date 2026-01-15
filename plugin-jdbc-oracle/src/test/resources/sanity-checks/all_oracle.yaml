@@ -1,0 +1,101 @@
+id: all_oracle
+namespace: test.plugin-jdbc
+
+variables:
+  oracle_password: password
+  oracle_user: testuser
+  oracle_user_password: password
+  oracle_service: FREEPDB1
+
+tasks:
+  - id: port
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{ randomPort() }}"
+
+  - id: dockerStart
+    type: io.kestra.plugin.docker.Run
+    containerImage: gvenzl/oracle-free:latest
+    portBindings:
+      - "{{ outputs.port.value }}:1521"
+    wait: false
+    env:
+      ORACLE_PASSWORD: "{{ vars.oracle_password }}"
+      APP_USER: "{{ vars.oracle_user }}"
+      APP_USER_PASSWORD: "{{ vars.oracle_user_password }}"
+    volumes:
+      - "oracle-test-data:/opt/oracle/oradata"
+
+  - id: wait_for_oracle
+    type: io.kestra.plugin.jdbc.oracle.Query
+    fetchType: NONE
+    sql: SELECT 1 FROM dual
+    retry:
+      type: constant
+      interval: PT10S
+      maxAttempt: 120
+
+  - id: create_table
+    type: io.kestra.plugin.jdbc.oracle.Query
+    fetchType: NONE
+    sql: |
+      BEGIN
+        EXECUTE IMMEDIATE 'CREATE TABLE test (field1 NUMBER, field2 NUMBER)';
+      EXCEPTION
+        WHEN OTHERS THEN
+          IF SQLCODE != -955 THEN RAISE; END IF;
+      END;
+
+  - id: cleanup
+    type: io.kestra.plugin.jdbc.oracle.Query
+    fetchType: NONE
+    sql: TRUNCATE TABLE test
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.oracle.Queries
+    fetchType: NONE
+    sql: |
+      INSERT INTO test(field1, field2) VALUES (1, 2);
+      INSERT INTO test(field1, field2) VALUES (3, 4);
+      INSERT INTO test(field1, field2) VALUES (4, 5);
+
+  - id: query
+    type: io.kestra.plugin.jdbc.oracle.Query
+    fetchType: FETCH
+    sql: SELECT * FROM test ORDER BY field1
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.oracle.Queries
+    fetchType: STORE
+    sql: |
+      SELECT * FROM test ORDER BY field1;
+      SELECT * FROM test ORDER BY field1 FETCH FIRST 1 ROWS ONLY;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.oracle.Query
+    fetchType: STORE
+    sql: SELECT * FROM test ORDER BY field1 FETCH FIRST 2 ROWS ONLY
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - '{{ outputs.query["rows"]["0"]["FIELD1"] == 1 }}'
+      - '{{ outputs.query["rows"]["1"]["FIELD2"] == 4 }}'
+      - '{{ outputs.queries["outputs"]["0"]["size"] == 3 }}'
+      - '{{ outputs.queries["outputs"]["1"]["size"] == 1 }}'
+      - "{{ outputs.select_and_store.size == 2 }}"
+
+finally:
+  - id: dockerStop
+    type: io.kestra.plugin.docker.Stop
+    containerId: "{{ outputs.dockerStart.taskRunner.containerId }}"
+    kill: true
+
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.oracle
+    values:
+      username: "{{ vars.oracle_user }}"
+      password: "{{ vars.oracle_user_password }}"
+      url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"

@@ -262,4 +262,198 @@ class SqlSplitterTest {
               ADD COLUMN IF NOT EXISTS "note;with:semicolon" TEXT
             """.trim(), queries[2]);
     }
+
+    @Test
+    void oracleDeclareBeginEndAnonymousBlockSingleStatement() {
+        String sql = """
+            declare
+              v_number number;
+            BEGIN
+            FOR record IN (
+              SELECT ROWNUM n
+              FROM ( SELECT 1 just_a_column
+                FROM dual
+                GROUP BY CUBE(1,2,3,4,5,6,7,8,9) )
+                WHERE ROWNUM <= 20
+              )
+              LOOP
+                dbms_output.put_line(record.n);
+              END LOOP;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void plsqlEndWithLabelShouldCloseBlock() {
+        String sql = """
+            BEGIN
+              NULL;
+            END my_block;
+            SELECT 1;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals("""
+            BEGIN
+              NULL;
+            END my_block;
+            """.trim(), queries[0]);
+        assertEquals("SELECT 1", queries[1]);
+    }
+
+    @Test
+    void plsqlEndIfMustNotCloseBeginBlock() {
+        String sql = """
+            BEGIN
+              IF 1 = 1 THEN
+                NULL;
+              END IF;
+              NULL;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void createProcedureWithEndLabelSingleStatement() {
+        String sql = """
+            CREATE OR REPLACE PROCEDURE p AS
+            BEGIN
+              NULL;
+            END p;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void plsqlEndLoopMustNotCloseBeginBlock() {
+        String sql = """
+            BEGIN
+              FOR i IN 1..3 LOOP
+                NULL;
+              END LOOP;
+              NULL;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void plsqlEndCaseMustNotCloseBeginBlock() {
+        String sql = """
+            BEGIN
+              CASE 1
+                WHEN 1 THEN NULL;
+                ELSE NULL;
+              END CASE;
+              NULL;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void nestedPlsqlBlocksSingleStatement() {
+        String sql = """
+            BEGIN
+              BEGIN
+                NULL;
+              END;
+              NULL;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void plsqlBlockWithExceptionSingleStatement() {
+        String sql = """
+            BEGIN
+              NULL;
+            EXCEPTION
+              WHEN OTHERS THEN
+                NULL;
+            END;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void createPackageWithEndLabelSingleStatement() {
+        String sql = """
+            CREATE OR REPLACE PACKAGE pkg AS
+              PROCEDURE p;
+            END pkg;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void createPackageBodyWithEndLabelSingleStatement() {
+        String sql = """
+            CREATE OR REPLACE PACKAGE BODY pkg AS
+              PROCEDURE p IS
+              BEGIN
+                NULL;
+              END p;
+            END pkg;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void createTriggerWithEndLabelSingleStatement() {
+        String sql = """
+            CREATE OR REPLACE TRIGGER trg
+            BEFORE INSERT ON t
+            FOR EACH ROW
+            BEGIN
+              NULL;
+            END trg;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
 }

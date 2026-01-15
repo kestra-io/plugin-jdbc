@@ -359,4 +359,114 @@ class DuckDbTest {
             Arguments.of(new Property<>("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
         );
     }
+
+    @Test
+    void selectWithStructAndJson() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // Create a JSON file in storage
+        String jsonContent = "{\"a\":{\"b\":1}}";
+        URI jsonFileUri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/" + IdUtils.create() + ".json"),
+            new java.io.ByteArrayInputStream(jsonContent.getBytes(StandardCharsets.UTF_8))
+        );
+
+        // Query that selects both STRUCT and JSON types
+        var result = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .inputFiles(Map.of("data.json", jsonFileUri.toString()))
+            .sql(new Property<>("SELECT a AS a_struct, a::JSON AS a_json FROM read_json('data.json')"))
+            .fetchType(Property.ofValue(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+        assertThat(result.getRows().size(), is(1));
+        
+        Map<String, Object> row = result.getRows().getFirst();
+        
+        // Verify STRUCT type is converted to Map/Object (not throwing exception)
+        Object aStruct = row.get("a_struct");
+        assertThat(aStruct, notNullValue());
+        // STRUCT should be converted to a Map or Object, not a DuckDBStruct instance
+        assertThat(aStruct instanceof Map || aStruct instanceof String, is(true));
+        
+        // Verify JSON type is converted to Map/Object
+        Object aJson = row.get("a_json");
+        assertThat(aJson, notNullValue());
+        // JSON should be converted to a Map/Object
+        assertThat(aJson instanceof Map, is(true));
+        
+        // Verify the content - both should have the nested structure
+        if (aStruct instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> structMap = (Map<String, Object>) aStruct;
+            assertThat(structMap.containsKey("b"), is(true));
+            assertThat(structMap.get("b"), is(1));
+        }
+        
+        if (aJson instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jsonMap = (Map<String, Object>) aJson;
+            assertThat(jsonMap.containsKey("b"), is(true));
+            assertThat(jsonMap.get("b"), is(1));
+        }
+    }
+
+    @Test
+    void selectWithStructOnly() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // Test with a simple STRUCT
+        var result = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(new Property<>("SELECT {'key1': 1, 'key2': 'value'} AS struct_col"))
+            .fetchType(Property.ofValue(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+        assertThat(result.getRows().size(), is(1));
+        
+        Map<String, Object> row = result.getRows().getFirst();
+        Object structCol = row.get("struct_col");
+        
+        // Should not throw exception - STRUCT should be converted
+        assertThat(structCol, notNullValue());
+        assertThat(structCol instanceof Map || structCol instanceof String, is(true));
+    }
+
+    @Test
+    void selectWithJsonOnly() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // Test with a JSON type
+        var result = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(new Property<>("SELECT '{\"key\": \"value\", \"number\": 42}'::JSON AS json_col"))
+            .fetchType(Property.ofValue(FETCH))
+            .build()
+            .run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+        assertThat(result.getRows().size(), is(1));
+        
+        Map<String, Object> row = result.getRows().getFirst();
+        Object jsonCol = row.get("json_col");
+        
+        // Should not throw exception - JSON should be parsed
+        assertThat(jsonCol, notNullValue());
+        assertThat(jsonCol instanceof Map, is(true));
+        
+        // Verify content
+        if (jsonCol instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jsonMap = (Map<String, Object>) jsonCol;
+            assertThat(jsonMap.containsKey("key"), is(true));
+            assertThat(jsonMap.get("key"), is("value"));
+            assertThat(jsonMap.get("number"), is(42));
+        }
+    }
 }
