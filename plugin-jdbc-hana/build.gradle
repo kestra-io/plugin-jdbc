@@ -1,0 +1,32 @@
+project.description = "Manage data in SAP HANA with Kestra's JDBC plugin."
+
+jar {
+    manifest {
+        attributes(
+            "X-Kestra-Name": project.name,
+            "X-Kestra-Title": "SAP HANA",
+            "X-Kestra-Group": project.group + ".jdbc.hana",
+            "X-Kestra-Description": project.description,
+            "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    // SAP HANA official JDBC driver (ngdbc.jar)
+    implementation("com.sap.cloud.db.jdbc:ngdbc:2.26.12")
+
+    // Core Kestra JDBC module
+    implementation project(':plugin-jdbc')
+
+    //test configuration to use plugin-jdbc test classes
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
+
+    //missing dependencies 
+    testImplementation("org.testcontainers:testcontainers")
+    testImplementation("org.testcontainers:junit-jupiter")
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+
+}
