@@ -1,0 +1,17 @@
+id: hana-listen
+namespace: io.kestra.plugin.jdbc.hana
+
+triggers:
+  - id: listen
+    type: io.kestra.plugin.jdbc.hana.Trigger
+    url: "{{ trigger.url }}"
+    username: "{{ trigger.username }}"
+    password: "{{ trigger.password }}"
+    sql: "SELECT 1 FROM DUMMY"
+    fetchType: FETCH
+
+
+tasks:
+  - id: noop
+    type: io.kestra.core.tasks.log.Log
+    message: "Triggered"
