@@ -22,3 +22,9 @@ dependencies {
     testImplementation project(':plugin-jdbc').sourceSets.test.output
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
+
+shadowJar {
+    archiveClassifier.set(null)
+    mergeServiceFiles()
+    minimize ()
+}
