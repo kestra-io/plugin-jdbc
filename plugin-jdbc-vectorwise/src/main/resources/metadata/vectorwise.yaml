@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.vectorwise
 name: "vectorwise"
-title: "Vectorwise"
-description: "Tasks that connect to Vectorwise via JDBC to run queries and loads."
-body: "Provide the Vectorwise JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
+title: "Actian Vector (VectorWise) "
+description: "Tasks that connect to Actian Vector (VectorWise)  via JDBC to run queries and loads."
+body: "Provide the Actian Vector (VectorWise)  JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
