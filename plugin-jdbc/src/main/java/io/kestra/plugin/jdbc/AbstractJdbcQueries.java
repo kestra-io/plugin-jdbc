@@ -1,9 +1,11 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -116,6 +118,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 this.runningConnection.commit();
             }
             runContext.metric(Counter.of("fetch.size", totalSize, this.tags(runContext)));
+
+            upsertAssets(runContext, queries, this.runningConnection);
 
             return MultiQueryOutput.builder().outputs(outputList).build();
         } catch (Exception e) {
@@ -294,6 +298,14 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             return connection.getMetaData().supportsTransactions();
         } catch (SQLException e) {
             return false;
+        }
+    }
+
+    private void upsertAssets(RunContext runContext, String[] queries, Connection conn)
+        throws SQLException, QueueException, IllegalVariableEvaluationException {
+
+        for (String query : queries) {
+            upsertAsset(runContext, conn, query);
         }
     }
 
