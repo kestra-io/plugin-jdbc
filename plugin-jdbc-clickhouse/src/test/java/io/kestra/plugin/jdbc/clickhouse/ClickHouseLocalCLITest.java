@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.clickhouse;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.DefaultRunContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.IdUtils;
@@ -31,6 +32,7 @@ public class ClickHouseLocalCLITest {
             .build();
 
 		RunContext runContext = TestsUtils.mockRunContext(runContextFactory, clickhouseLocalCLI, Map.of());
+		runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
 
 		ScriptOutput output = clickhouseLocalCLI.run(runContext);
 

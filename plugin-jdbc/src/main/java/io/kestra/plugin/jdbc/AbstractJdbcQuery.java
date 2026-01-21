@@ -120,6 +120,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             executeAfterSQL(runContext, conn, logger, supportsTx);
 
             runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
+
+            upsertAsset(runContext, conn, rSql);
+
             return output.build();
         } catch (Exception e) {
             if (supportsTx && this.afterSQL != null) {

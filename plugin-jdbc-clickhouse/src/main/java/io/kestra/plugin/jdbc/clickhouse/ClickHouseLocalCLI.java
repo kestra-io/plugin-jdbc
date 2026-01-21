@@ -96,7 +96,9 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 
 	@Override
 	public ScriptOutput run(RunContext runContext) throws Exception {
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        var renderedOutputFiles = this.outputFiles == null
+            ? List.<String>of()
+            : runContext.render(this.outputFiles).asList(String.class);
 
 		return new CommandsWrapper(runContext)
 			.withWarningOnStdErr(true)
