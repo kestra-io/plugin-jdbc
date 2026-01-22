@@ -1,10 +1,10 @@
-project.description = 'Integrate Vectorwise analytical databases with Kestra\'s JDBC plugin.'
+project.description = 'Integrate Actian Vector (VectorWise) analytical databases with Kestra\'s JDBC plugin.'
 
 jar {
     manifest {
         attributes(
                 "X-Kestra-Name": project.name,
-                "X-Kestra-Title": "Actian Vector",
+                "X-Kestra-Title": "Actian Vector (VectorWise)",
                 "X-Kestra-Group": project.group + ".jdbc.vectorwise",
                 "X-Kestra-Description": project.description,
                 "X-Kestra-Version": project.version
