@@ -14,7 +14,7 @@ jar {
 
 dependencies {
     // SAP HANA official JDBC driver (ngdbc.jar)
-    implementation("com.sap.cloud.db.jdbc:ngdbc:2.26.12")
+    implementation("com.sap.cloud.db.jdbc:ngdbc:2.27.7")
 
     // Core Kestra JDBC module
     implementation project(':plugin-jdbc')
