@@ -37,7 +37,7 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.capabilitiesResolution
             .withCapability("org.lz4:lz4-java") {
-                select("at.yawk.lz4:lz4-java:1.10.2")
+                select("at.yawk.lz4:lz4-java:1.10.3")
                 because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
             }
     }
