@@ -561,3 +561,5 @@ public class PgsqlTest extends AbstractRdbmsTest {
         executeSqlScript("scripts/postgres.sql");
     }
 }
+
+
