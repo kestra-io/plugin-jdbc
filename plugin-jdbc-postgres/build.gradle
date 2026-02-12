@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'org.postgresql:postgresql:42.7.8'
+    jdbcDriver 'org.postgresql:postgresql:42.7.9'
     implementation project(':plugin-jdbc')
     api 'org.bouncycastle:bcprov-jdk18on'
     api 'org.bouncycastle:bcpkix-jdk18on'
