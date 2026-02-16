@@ -1,6 +1,8 @@
 @PluginSubGroup(
     description = "This sub-group of plugins contains tasks for accessing the Vetica database.",
-    categories = PluginSubGroup.PluginCategory.DATABASE
+    categories = {
+        PluginSubGroup.PluginCategory.DATA
+    }
 )
 package io.kestra.plugin.jdbc.vertica;
 
