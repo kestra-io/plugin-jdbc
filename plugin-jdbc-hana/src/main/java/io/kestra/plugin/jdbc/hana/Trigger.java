@@ -20,7 +20,8 @@ import java.sql.SQLException;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Trigger when a SAP HANA query returns rows."
+    title = "Wait for query results on SAP HANA and trigger flow",
+    description = "Periodically polls a SAP HANA database by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Supports parameterized queries and afterSQL for marking processed rows. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {

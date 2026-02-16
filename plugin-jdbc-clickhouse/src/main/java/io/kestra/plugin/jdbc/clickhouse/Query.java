@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a ClickHouse database."
+    title = "Execute a single SQL query against ClickHouse",
+    description = "Runs one SQL statement and fetches results from ClickHouse columnar database. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                     url: jdbc:clickhouse://127.0.0.1:56982/
                     username: "{{ secret('CLICKHOUSE_USERNAME') }}"
                     password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
-                    sql: select * from clickhouse_types
+                    sql: SELECT * FROM clickhouse_types
                     fetchType: STORE
                 """
         ),

@@ -24,12 +24,12 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Bulk-insert new rows into a ClickHouse database."
+    title = "Bulk insert rows into ClickHouse with JDBC batch"
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Insert rows from another table to a Clickhouse database using asynchronous inserts.",
+            title = "Insert rows from another table to ClickHouse with async inserts",
             full = true,
             code = """
                 id: clickhouse_bulk_insert
@@ -50,7 +50,7 @@ import java.time.ZoneId;
                 """
         ),
         @Example(
-            title = "Insert data into specific columns via a SQL query to a ClickHouse database using asynchronous inserts.",
+            title = "Insert into selected columns using async inserts",
             full = true,
             code = """
                 id: clickhouse_bulk_insert
@@ -71,7 +71,7 @@ import java.time.ZoneId;
                 """
         ),
         @Example(
-            title = "Insert data into specific columns via a SQL query to a ClickHouse database using asynchronous inserts.",
+            title = "Auto-generate INSERT using table column discovery",
             full = true,
             code = """
                 id: clickhouse_bulk_insert

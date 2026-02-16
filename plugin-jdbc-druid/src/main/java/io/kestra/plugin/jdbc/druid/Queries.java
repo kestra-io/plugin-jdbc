@@ -25,7 +25,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Run multiple Apache Druid queries."
+        title = "Execute multiple SQL statements against Apache Druid",
+        description = "Runs multiple SQL statements against Apache Druid real-time analytics database. Optimized for fast aggregations and time-series queries. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -41,7 +42,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.druid.Queries
                     url: jdbc:avatica:remote:url=http://localhost:8888/druid/v2/sql/avatica/;transparent_reconnection=true
                     sql: |
-                      SELECT * FROM wikiticker; SELECT * FROM product;
+                      SELECT * FROM wikiticker WHERE __time >= TIMESTAMP '2023-01-01 00:00:00'; SELECT * FROM product LIMIT 1000;
                     fetchType: STORE
                 """
         )

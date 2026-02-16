@@ -29,7 +29,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Snowflake queries."
+    title = "Execute multiple SQL statements against Snowflake",
+    description = "Runs multiple SQL statements separated by semicolons in Snowflake cloud data warehouse. Snowflake natively supports multi-statement execution. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {

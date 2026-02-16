@@ -45,20 +45,19 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     private Property<String> timeZoneId;
 
     @Schema(
-        title = "SQL statement(s) to execute.",
+        title = "SQL statement(s) to execute",
         description = """
-            Runs one or more SQL statements depending on the task type.
-            Query tasks support a single SQL statement, while Queries tasks can run multiple statements separated by semicolons."""
+            Runs one or more SQL statements rendered with flow variables.
+            Query tasks accept a single statement; Queries tasks can execute multiple statements separated by semicolons"""
     )
     @NotNull
     protected Property<String> sql;
 
     @Schema(
-        title = "SQL to execute atomically after trigger query.",
+        title = "SQL to execute after main query in same transaction",
         description = """
-            Optional SQL executed in the same transaction as the main trigger query.
-            Typically updates processing flags to prevent duplicate processing.
-            Both sql and afterSQL queries commit together, ensuring consistency."""
+            Optional SQL executed in the same transaction after the main statement.
+            Useful for marking rows as processed to avoid duplicates; only a single statement is allowed. Commit covers both sql and afterSQL"""
     )
     protected Property<String> afterSQL;
 
@@ -83,13 +82,25 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean fetch = false;
 
+    @Schema(
+        title = "Result fetching mode",
+        description = "FETCH returns all rows, FETCH_ONE returns the first row only, STORE streams rows to internal storage (ION), NONE returns no data. Default: NONE"
+    )
     @NotNull
     @Builder.Default
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
+    @Schema(
+        title = "Number of rows to fetch per database round trip",
+        description = "Controls JDBC fetch size for STORE mode. Default: 10,000 rows; use Integer.MIN_VALUE for MySQL streaming. Ignored for FETCH and FETCH_ONE"
+    )
     @Builder.Default
     protected Property<Integer> fetchSize = Property.ofValue(10000);
 
+    @Schema(
+        title = "Named parameter bindings for SQL query",
+        description = "Map of parameter names to values. Use :name placeholders rendered then bound as prepared-statement parameters; supports nulls and typed values"
+    )
     protected Property<Map<String, Object>> parameters;
 
     @Builder.Default
@@ -272,27 +283,27 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "Map containing the first row of fetched data.",
-            description = "Only populated if `fetchOne` parameter is set to true."
+            title = "First row of fetched data",
+            description = "Only populated when fetchType is FETCH_ONE"
         )
         @JsonInclude
         private final Map<String, Object> row;
 
         @Schema(
-            title = "List of map containing rows of fetched data.",
-            description = "Only populated if `fetch` parameter is set to true."
+            title = "List of all fetched rows",
+            description = "Only populated when fetchType is FETCH"
         )
         private final List<Map<String, Object>> rows;
 
         @Schema(
-            title = "The URI of the result file on Kestra's internal storage (.ion file / Amazon Ion formatted text file).",
-            description = "Only populated if `store` is set to true."
+            title = "URI of stored results in internal storage",
+            description = "Only populated when fetchType is STORE; file is stored in internal storage using ION format"
         )
         private final URI uri;
 
         @Schema(
-            title = "The number of rows fetched.",
-            description = "Only populated if `store` or `fetch` parameter is set to true."
+            title = "Number of rows fetched",
+            description = "Only populated when fetchType is FETCH or STORE"
         )
         private final Long size;
     }

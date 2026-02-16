@@ -26,7 +26,8 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 @ToString
 @EqualsAndHashCode
 @Schema(
-    title = "Execute a SELECT query on SAP HANA."
+    title = "Execute a single SQL query against SAP HANA",
+    description = "Runs one SQL statement against SAP HANA in-memory database. Optimized for real-time analytics and transactional workloads. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {

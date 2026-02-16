@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple queries on a Dremio data lake."
+    title = "Execute multiple SQL statements using Dremio",
+    description = "Runs multiple SQL statements using Dremio data lakehouse platform. Supports querying data lakes, databases, and cloud storage. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -43,8 +44,8 @@ import java.time.ZoneId;
                     url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
                     username: dremio_token
                     password: samplePersonalAccessToken
-                    sql: select * FROM source.database.table; select * FROM source.database.table;
-                    fetchType: FETCH_ONE
+                    sql: SELECT * FROM source.database.table; SELECT * FROM source.database.table;
+                    fetchType: FETCH
                 """
         )
     },

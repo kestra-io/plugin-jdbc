@@ -23,7 +23,8 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow if a periodically executed Trino query returns a non-empty result set."
+    title = "Wait for query results on Trino and trigger flow",
+    description = "Periodically polls Trino by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. WARNING: Do NOT include a semicolon at the end of your SQL query. Supports parameterized queries and afterSQL. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {

@@ -24,7 +24,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a Vertica database batch-query."
+    title = "Bulk insert rows into Vertica using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Optimized for Vertica's columnar storage. Supports auto-commit for databases without transaction support."
 )
 @Plugin(
     examples = {
@@ -45,7 +46,6 @@ import java.time.ZoneId;
                          SELECT *
                          FROM xref
                          LIMIT 1500;
-                       fetchType: FETCH
                        fetchType: STORE
 
                      - id: update
@@ -58,33 +58,32 @@ import java.time.ZoneId;
                    """
         ),
         @Example(
-            title = "Fetch rows from a table and bulk insert to another one, without using sql query.",
+            title = "Fetch rows from a table and bulk insert to another one, without writing the INSERT statement.",
             full = true,
-            code = {
-                "id: vertica_batch_query",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.vertica.Query",
-                "    url: jdbc:vertica://dev:56982/db",
-                "    username: vertica_user",
-                "    password: vertica_passwd",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM xref",
-                "      LIMIT 1500;",
-                "    fetchType: FETCH",
-                "    fetchType: STORE",
-                "",
-                "  - id: update",
-                "    type: io.kestra.plugin.jdbc.vertica.Batch",
-                "    from: \"{{ outputs.query.uri }}\"",
-                "    url: jdbc:vertica://prod:56982/db",
-                "    username: vertica_user",
-                "    password: vertica_passwd",
-                "    table: xref",
-            }
+            code = """
+                id: vertica_batch_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.vertica.Query
+                    url: jdbc:vertica://dev:56982/db
+                    username: vertica_user
+                    password: vertica_passwd
+                    sql: |
+                      SELECT *
+                      FROM xref
+                      LIMIT 1500;
+                    fetchType: STORE
+
+                  - id: update
+                    type: io.kestra.plugin.jdbc.vertica.Batch
+                    from: "{{ outputs.query.uri }}"
+                    url: jdbc:vertica://prod:56982/db
+                    username: vertica_user
+                    password: vertica_passwd
+                    table: xref
+            """
         )
     },
     metrics = {

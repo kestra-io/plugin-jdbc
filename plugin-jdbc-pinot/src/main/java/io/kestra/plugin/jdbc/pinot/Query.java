@@ -25,7 +25,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query an Apache Pinot database."
+    title = "Execute a SQL query against Apache Pinot",
+    description = "Runs a SQL statement against Apache Pinot real-time OLAP database. Optimized for low-latency analytics on streaming and batch data. Supports parameterized queries, transactions with afterSQL, and all fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -44,6 +45,7 @@ import java.time.ZoneId;
                     sql: |
                       SELECT *
                       FROM airlineStats
+                      WHERE __time >= 1672531200000 -- 2023-01-01T00:00:00Z in millis
                     fetchType: FETCH
                 """
         )

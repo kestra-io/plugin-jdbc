@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Sybase database."
+    title = "Execute a single SQL query against Sybase ASE",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                        url: jdbc:sybase:Tds:127.0.0.1:5000/
                        username: "{{ secret('SYBASE_USERNAME') }}"
                        password: "{{ secret('SYBASE_PASSWORD') }}"
-                       sql: select * from syb_types
+                       sql: SELECT * FROM syb_types
                        fetchType: FETCH_ONE
                    """
         )

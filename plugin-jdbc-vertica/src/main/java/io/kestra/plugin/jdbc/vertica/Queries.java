@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Vertica database queries."
+    title = "Execute multiple SQL statements against Vertica",
+    description = "Runs multiple SQL statements against Vertica columnar analytics database. Optimized for analytical workloads and data warehousing. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -38,13 +39,13 @@ import java.time.ZoneId;
                    namespace: company.team
 
                    tasks:
-                     - id: queries
-                       type: io.kestra.plugin.jdbc.vertica.Queries
-                       url: jdbc:vertica://127.0.0.1:56982/db
-                       username: "{{ secret('VERTICA_USERNAME') }}"
-                       password: "{{ secret('VERTICA_PASSWORD') }}"
-                       sql: select * from customer
-                       fetchType: FETCH_ONE
+                    - id: queries
+                      type: io.kestra.plugin.jdbc.vertica.Queries
+                      url: jdbc:vertica://127.0.0.1:56982/db
+                      username: "{{ secret('VERTICA_USERNAME') }}"
+                      password: "{{ secret('VERTICA_PASSWORD') }}"
+                      sql: SELECT * FROM customer
+                      fetchType: FETCH_ONE
                    """
         )
     },

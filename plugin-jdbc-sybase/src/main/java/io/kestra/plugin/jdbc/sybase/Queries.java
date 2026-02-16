@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Sybase database queries."
+    title = "Execute multiple SQL statements against Sybase ASE",
+    description = "Runs multiple SQL statements separated by semicolons. Sybase ASE natively supports multi-statement execution. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                        url: jdbc:sybase:Tds:127.0.0.1:5000/
                        username: "{{ secret('SYBASE_USERNAME') }}"
                        password: "{{ secret('SYBASE_PASSWORD') }}"
-                       sql: select count(*) from employee, select count(*) from laptop;
+                       sql: SELECT count(*) FROM employee; SELECT count(*) FROM laptop;
                        fetchType: FETCH_ONE
                    """
         )

@@ -23,7 +23,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow if a periodically executed DuckDB query returns a non-empty result set."
+    title = "Wait for query results on DuckDB and trigger flow",
+    description = "Periodically polls a DuckDB database by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Supports parameterized queries and afterSQL for marking processed rows. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {

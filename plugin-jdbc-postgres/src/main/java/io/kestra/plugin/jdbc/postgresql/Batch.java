@@ -25,7 +25,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a PostgreSQL batch-query."
+    title = "Bulk insert rows into PostgreSQL using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Supports auto-commit for databases without transaction support."
 )
 @Plugin(
     examples = {
@@ -83,7 +84,7 @@ import java.util.Properties;
                     url: jdbc:postgresql://prod:5433/
                     username: "{{ secret('POSTGRES_USERNAME') }}"
                     password: "{{ secret('POSTGRES_PASSWORD') }}"
-                    table: xre
+                    table: xref
                 """
         ),
         @Example(

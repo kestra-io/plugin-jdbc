@@ -24,7 +24,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a Vectorwise database batch-query."
+    title = "Bulk insert rows into Vectorwise using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Optimized for Vectorwise's columnar storage. Supports auto-commit for databases without transaction support."
 )
 @Plugin(
     examples = {
@@ -59,30 +60,30 @@ import java.time.ZoneId;
         @Example(
             title = "Fetch rows from a table and bulk insert to another one without using sql query.",
             full = true,
-            code = {
-                "id: vectorwise_batch_query",
-                "namespace: company.team",
-                "",
-                "tasks:",
-                "  - id: query",
-                "    type: io.kestra.plugin.jdbc.vectorwise.Query",
-                "    url: jdbc:vectorwise://dev:port/base",
-                "    username: admin",
-                "    password: admin_passwd",
-                "    sql: |",
-                "      SELECT *",
-                "      FROM xref",
-                "      LIMIT 1500;",
-                "    fetchType: STORE",
-                "",
-                "  - id: update",
-                "    type: io.kestra.plugin.jdbc.vectorwise.Batch",
-                "    from: \"{{ outputs.query.uri }}\"",
-                "    url: jdbc:vectorwise://prod:port/base",
-                "    username: admin",
-                "    password: admin_passwd",
-                "    table: xref",
-            }
+            code = """
+                id: vectorwise_batch_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.vectorwise.Query
+                    url: jdbc:vectorwise://dev:port/base
+                    username: admin
+                    password: admin_passwd
+                    sql: |
+                      SELECT *
+                      FROM xref
+                      LIMIT 1500;
+                    fetchType: STORE
+
+                  - id: update
+                    type: io.kestra.plugin.jdbc.vectorwise.Batch
+                    from: "{{ outputs.query.uri }}"
+                    url: jdbc:vectorwise://prod:port/base
+                    username: admin
+                    password: admin_passwd
+                    table: xref
+            """
         )
     },
     metrics = {
@@ -120,5 +121,4 @@ public class Batch extends AbstractJdbcBatch implements VetorwiseConnectionInter
         }
     }
 }
-
 

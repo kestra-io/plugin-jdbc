@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Redshift queries."
+    title = "Execute multiple SQL statements against Amazon Redshift",
+    description = "Runs multiple SQL statements separated by semicolons in Amazon Redshift cloud data warehouse. Redshift natively supports multi-statement execution. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                        url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
                        username: "{{ secret('REDSHIFT_USERNAME') }}"
                        password: "{{ secret('REDSHIFT_PASSWORD') }}"
-                       sql: select count(*) from employee; select count(*) from laptop;
+                       sql: SELECT count(*) FROM employee; SELECT count(*) FROM laptop;
                        fetchType: FETCH_ONE
                    """
         )

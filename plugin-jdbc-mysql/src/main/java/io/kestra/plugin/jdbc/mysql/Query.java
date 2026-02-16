@@ -30,7 +30,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a MySQL database."
+    title = "Execute a single SQL query against MySQL",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). For STORE mode, uses streaming (Integer.MIN_VALUE fetchSize) to minimize memory usage. Supports LOAD DATA LOCAL INFILE via inputFile property."
 )
 @Plugin(
     examples = {
@@ -65,7 +66,7 @@ import java.util.Properties;
 
                   - id: query
                     type: io.kestra.plugin.jdbc.mysql.Query
-                    url: jdbc:mysql://127.0.0.1:3306/
+                    url: jdbc:mysql://127.0.0.1:3306/products?allowLoadLocalInfile=true
                     username: mysql_user
                     password: mysql_password
                     inputFile: "{{ outputs.http_download.uri }}"
@@ -90,8 +91,8 @@ import java.util.Properties;
 )
 public class Query extends AbstractJdbcQuery implements MySqlConnectionInterface {
     @Schema(
-        title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
-        description = "The file must be from Kestra's internal storage"
+        title = "Input file for LOAD DATA LOCAL INFILE operations",
+        description = "URI to a file in Kestra's internal storage (kestra://). Used with MySQL's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables"
     )
     @PluginProperty(dynamic = true)
     protected String inputFile;

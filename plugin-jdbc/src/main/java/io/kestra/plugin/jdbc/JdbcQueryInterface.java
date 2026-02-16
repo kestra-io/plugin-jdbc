@@ -11,7 +11,7 @@ import java.util.Map;
 
 public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
-        title = "The SQL query to run."
+        title = "The SQL query to run"
     )
     Property<String> getSql();
 
@@ -43,7 +43,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isFetchOne();
 
     @Schema(
-        title = "Number of rows that should be fetched.",
+        title = "Number of rows that should be fetched",
         description = "Gives the JDBC driver a hint as to the number of rows that should be fetched from the database " +
             "when more rows are needed for this ResultSet object. If the fetch size specified is zero, the JDBC driver " +
             "ignores the value and is free to make its own best guess as to what the fetch size should be. Ignored if " +
@@ -52,7 +52,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     Property<Integer> getFetchSize();
 
     @Schema(
-            title = "The way you want to store data.",
+            title = "The way you want to store data",
             description = "FETCH_ONE - output the first row.\n"
                     + "FETCH - output all rows as output variable.\n"
                     + "STORE - store all rows to a file.\n"

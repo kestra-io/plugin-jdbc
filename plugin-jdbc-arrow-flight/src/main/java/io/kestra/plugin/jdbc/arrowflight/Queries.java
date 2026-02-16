@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Apache Arrow Flight SQL queries."
+    title = "Execute multiple SQL statements using Apache Arrow Flight SQL",
+    description = "Runs multiple SQL statements using Apache Arrow Flight SQL protocol for high-performance data transfer. Arrow Flight uses columnar data format and gRPC for efficient communication. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {

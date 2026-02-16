@@ -38,7 +38,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple DuckDB queries."
+    title = "Execute multiple SQL statements against DuckDB",
+    description = "Runs multiple SQL statements in DuckDB embedded analytical database. Supports reading from CSV, Parquet, and JSON files directly. Can work with in-memory databases or persistent database files. Supports parameterized queries, transactions (default enabled), and all fetch modes. Can output the database file to internal storage."
 )
 @Plugin(
     examples = {

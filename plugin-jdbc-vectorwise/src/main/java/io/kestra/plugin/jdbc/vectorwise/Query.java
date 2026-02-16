@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Vectorwise database."
+    title = "Execute a single SQL query against Vectorwise",
+    description = "Runs one SQL statement against Actian Vector (formerly Vectorwise) columnar analytics database. Optimized for analytical workloads and high-performance queries. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {

@@ -32,7 +32,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple SQLite queries.",
+    title = "Execute multiple SQL statements against SQLite",
     description = """
         Executes multiple SQL statements sequentially against a SQLite database,
         optionally within a single transaction.
@@ -74,7 +74,7 @@ import java.util.Properties;
                     url: jdbc:sqlite:myfile.db
                     sqliteFile: "{{ outputs.init_db.databaseUri }}"
                     outputDbFile: true
-                    sql: select * from pgsql_types
+                    sql: SELECT * FROM pgsql_types
                     fetchType: FETCH
 
                   - id: use_fetched_data

@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Vertica database."
+    title = "Execute a single SQL query against Vertica",
+    description = "Runs one SQL statement against Vertica columnar analytics database. Optimized for analytical workloads and data warehousing. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
