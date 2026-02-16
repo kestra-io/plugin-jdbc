@@ -3,11 +3,11 @@ plugins {
     id "idea"
     id 'jacoco-report-aggregation'
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
-    id "com.gradleup.shadow" version "9.3.0" apply(false)
+    id "com.gradleup.shadow" version "9.3.1" apply(false)
     id 'signing'
     id "com.github.ben-manes.versions" version "0.53.0"
     id 'net.researchgate.release' version '3.1.0'
-    id "com.vanniktech.maven.publish" version "0.35.0"
+    id "com.vanniktech.maven.publish" version "0.36.0"
     id "io.kestra.gradle.inject-bom-versions" version "1.0.0"
 }
 
@@ -37,7 +37,7 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.capabilitiesResolution
             .withCapability("org.lz4:lz4-java") {
-                select("at.yawk.lz4:lz4-java:1.10.2")
+                select("at.yawk.lz4:lz4-java:1.10.3")
                 because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
             }
     }
@@ -143,7 +143,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.20.0'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.21.0'
 
         testImplementation "io.kestra.plugin:plugin-docker:1.2.1" // for sanity checks
     }

@@ -179,6 +179,38 @@ public class ClickHouseTest extends AbstractClickHouseTest {
     }
 
     @Test
+    void updateNullableInt8() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query taskUpdate = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.NONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("ALTER TABLE clickhouse_types UPDATE Nullable = 123 WHERE Nullable IS NULL"))
+            .build();
+
+        taskUpdate.run(runContext);
+
+        // clickhouse need some to refresh
+        Thread.sleep(500);
+
+        Query taskGet = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("select Nullable from clickhouse_types"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = taskGet.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("Nullable"), is(123));
+    }
+
+    @Test
     public void noSqlForInsert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 

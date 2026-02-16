@@ -64,7 +64,7 @@ public class ClickHouseCellConverter extends AbstractCellConverter {
             return rs.getObject(columnIndex, ZonedDateTime.class);
         }
 
-        if (columnTypeName.equals("Int8")) {
+        if (columnTypeName.equals("Int8") || columnTypeName.equals("Nullable(Int8)")) {
             if (columnVal instanceof Number number) {
                 return number.intValue();
             }
