@@ -26,7 +26,8 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple SAP HANA queries."
+    title = "Execute multiple SQL statements against SAP HANA",
+    description = "Runs multiple SQL statements against SAP HANA in-memory database. Optimized for real-time analytics and transactional workloads. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
                     url: jdbc:sap://127.0.0.1:39015/?databaseName=SYSTEMDB
                     username: "{{ secret('HANA_USERNAME') }}"
                     password: "{{ secret('HANA_PASSWORD') }}"
-                     sql: |
+                    sql: |
                       SELECT * FROM table1;
                       SELECT * FROM table2;
                     fetchType: FETCH

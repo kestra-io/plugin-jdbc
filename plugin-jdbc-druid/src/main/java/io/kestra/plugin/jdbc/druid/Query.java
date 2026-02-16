@@ -25,7 +25,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-        title = "Query an Apache Druid database."
+        title = "Execute a SQL query against Apache Druid",
+        description = "Runs a SQL statement against Apache Druid real-time analytics database. Optimized for fast aggregations and time-series queries. Supports parameterized queries, transactions with afterSQL, and all fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -43,6 +44,7 @@ import java.time.ZoneId;
                     sql: |
                       SELECT *
                       FROM wikiticker
+                      WHERE __time >= TIMESTAMP '2023-01-01 00:00:00'
                     fetchType: STORE
                 """
         )

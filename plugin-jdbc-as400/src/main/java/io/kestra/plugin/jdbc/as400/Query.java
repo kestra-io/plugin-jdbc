@@ -31,12 +31,13 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query an AS400 database."
+    title = "Execute a single SQL query against IBM AS/400 (iSeries)",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode. Based on DB2 implementation."
 )
 @Plugin(
     examples = {
         @Example(
-            title = "Send a SQL query to a AS400 Database and fetch a row as output.",
+            title = "Send a SQL query to an AS400 Database and fetch a row as output.",
             full = true,
             code = """
                 id: as400_query
@@ -48,7 +49,7 @@ import java.util.Properties;
                     url: jdbc:as400://127.0.0.1:50000/
                     username: "{{ secret('AS400_USERNAME') }}"
                     password: "{{ secret('AS400_PASSWORD') }}"
-                    sql: select * from as400_types
+                    sql: SELECT * FROM as400_types
                     fetchType: FETCH_ONE
                 """
         )

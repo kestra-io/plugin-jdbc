@@ -45,40 +45,40 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     @NotNull
     @Schema(
-        title = "Source file URI"
+        title = "Input file from internal storage",
+        description = "URI of the source file (kestra://) containing rows to insert"
     )
     @PluginProperty(internalStorageURI = true)
     private Property<String> from;
 
     @Schema(
-        title = "Insert query to be executed.",
+        title = "Parameterized INSERT statement to execute",
         description = """
-            The query must have as many question marks as the number of columns in the table.
-            Example: 'INSERT INTO <table_name> VALUES( ? , ? , ? )' for 3 columns.
-            In case you do not want all columns, you need to specify it in the query in the columns property
-            Example: 'INSERT INTO <table_name> (id, name) VALUES( ? , ? )' for inserting data into 2 columns: 'id' and 'name'.
+            Prepared INSERT with ? placeholders for each bound column.
+            Example: INSERT INTO <table_name> VALUES (?, ?, ?) for three columns; use column list if inserting a subset
             """
     )
     private Property<String> sql;
 
     @Schema(
-        title = "The size of chunk for every bulk request."
+        title = "Batch size per executeBatch call",
+        description = "Number of rows sent per JDBC batch before commit; default 1,000"
     )
     @Builder.Default
     @NotNull
     private Property<Integer> chunk = Property.ofValue(1000);
 
     @Schema(
-        title = "The columns to be inserted.",
-        description = "If not provided, `?` count need to match the `from` number of columns."
+        title = "Columns bound to placeholders",
+        description = "Ordered column names matching ? placeholders; if omitted, placeholder count must match all columns in the input row"
     )
     private Property<List<String>> columns;
 
     @Schema(
-        title = "The table from which column names will be retrieved.",
+        title = "Table used to auto-discover columns",
         description = """
-            This property specifies the table name which will be used to retrieve the columns for the inserted values.
-            You can use it instead of specifying manually the columns in the `columns` property. In this case, the `sql` property can also be omitted, an INSERT statement would be generated automatically.
+            Retrieves column names from the given table when `columns` is empty.
+            If `sql` is also omitted, an INSERT statement is generated automatically using the discovered columns
             """
     )
     private Property<String> table;
@@ -260,10 +260,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The rows count.")
+        @Schema(title = "Total rows read")
         private final Long rowCount;
 
-        @Schema(title = "The updated rows count.")
+        @Schema(title = "Rows inserted or updated")
         private final Integer updatedCount;
     }
 

@@ -26,8 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a data lake using Trino query engine.",
-    description = "Make sure NOT to include semicolon at the end of your SQL query. Adding semicolon at the end will result in an error. If you want to test this integration, search for Trino in Blueprints - you'll find detailed instructions there."
+    title = "Execute a SQL query using Trino query engine",
+    description = "Runs a SQL statement using Trino distributed SQL query engine. Supports querying data lakes, databases, and various data sources. WARNING: Do NOT include a semicolon at the end of your SQL query - it will result in an error. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -49,7 +49,6 @@ import java.time.ZoneId;
                          from tpch.tiny.orders
                          group by orderpriority
                          order by orderpriority
-                       fetchType: FETCH
                        fetchType: STORE
 
                      - id: csv_report

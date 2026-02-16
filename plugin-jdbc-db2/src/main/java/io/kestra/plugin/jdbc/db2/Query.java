@@ -24,7 +24,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a DB2 database."
+    title = "Execute a single SQL query against IBM DB2",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -41,7 +42,7 @@ import java.util.Properties;
                     url: jdbc:db2://127.0.0.1:50000/
                     username: "{{ secret('DB2_USERNAME') }}"
                     password: "{{ secret('DB2_PASSWORD') }}"
-                    sql: select * from db2_types
+                    sql: SELECT * FROM db2_types
                     fetchType: FETCH_ONE
                 """
         )

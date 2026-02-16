@@ -24,7 +24,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run an Oracle batch-query."
+    title = "Bulk insert rows into Oracle Database using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Supports auto-commit for databases without transaction support. Handles NULL values explicitly to avoid ORA-17041 errors."
 )
 @Plugin(
     examples = {
@@ -44,7 +45,7 @@ import java.time.ZoneId;
                     sql: |
                       SELECT *
                       FROM xref
-                      LIMIT 1500;
+                      FETCH FIRST 1500 ROWS ONLY;
                     fetchType: STORE
 
                   - id: update
@@ -73,7 +74,7 @@ import java.time.ZoneId;
                     sql: |
                       SELECT *
                       FROM xref
-                      LIMIT 1500;
+                      FETCH FIRST 1500 ROWS ONLY;
                     fetchType: STORE
 
                   - id: update

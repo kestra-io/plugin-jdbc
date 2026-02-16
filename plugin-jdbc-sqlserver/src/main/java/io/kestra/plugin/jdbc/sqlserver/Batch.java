@@ -24,7 +24,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a Microsoft SQL Server batch-query."
+    title = "Bulk insert rows into Microsoft SQL Server using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Supports auto-commit for databases without transaction support."
 )
 @Plugin(
     examples = {
@@ -42,9 +43,8 @@ import java.time.ZoneId;
                     username: "{{ secret('SQL_USERNAME') }}"
                     password: "{{ secret('SQL_PASSWORD') }}"
                     sql: |
-                      SELECT *
-                      FROM xref
-                      LIMIT 1500;
+                      SELECT TOP (1500) *
+                      FROM xref;
                     fetchType: STORE
 
                   - id: update
@@ -71,12 +71,11 @@ import java.time.ZoneId;
                     username: sql_server_user
                     password: sql_server_passwd
                     sql: |
-                      SELECT *
-                      FROM xref
-                      LIMIT 1500;
+                      SELECT TOP (1500) *
+                      FROM xref;
                     fetchType: STORE
 
-                  - id: update",
+                  - id: update
                     type: io.kestra.plugin.jdbc.sqlserver.Batch
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:sqlserver://prod:41433;trustServerCertificate=true

@@ -30,7 +30,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Snowflake database."
+    title = "Execute a single SQL query against Snowflake",
+    description = "Runs one SQL statement and fetches results in Snowflake cloud data warehouse. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -47,7 +48,7 @@ import java.util.Properties;
                     url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
                     username: snowflake_user
                     password: snowflake_password
-                    sql: select * from demo_db.public.customers
+                    sql: SELECT * FROM demo_db.public.customers
                     fetchType: FETCH
 
                   - id: generate_update
@@ -55,7 +56,7 @@ import java.util.Properties;
                     url: jdbc:snowflake://<account_identifier>.snowflakecomputing.com
                     username: snowflake_user
                     password: snowflake_password
-                    sql: "INSERT INTO demo_db.public.customers_new (year_month, store_code, update_date) values {% for row in outputs.update.rows %} ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ) {% if not loop.last %}, {% endif %}; {% endfor %}"
+                    sql: "INSERT INTO demo_db.public.customers_new (year_month, store_code, update_date) values {% for row in outputs.select.rows %} ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ) {% if not loop.last %}, {% endif %} {% endfor %}"
                 """
         )
     },

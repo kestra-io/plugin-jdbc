@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Redshift database."
+    title = "Execute a single SQL query against Amazon Redshift",
+    description = "Runs one SQL statement and fetches results from Amazon Redshift cloud data warehouse. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                        url: jdbc:redshift://123456789.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
                        username: "{{ secret('REDSHIFT_USERNAME') }}"
                        password: "{{ secret('REDSHIFT_PASSWORD') }}"
-                       sql: select * from redshift_types
+                       sql: SELECT * FROM redshift_types
                        fetchType: FETCH_ONE
                    """
         )

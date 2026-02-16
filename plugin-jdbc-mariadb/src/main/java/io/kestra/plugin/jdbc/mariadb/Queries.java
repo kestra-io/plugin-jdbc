@@ -30,7 +30,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple MariaDB queries."
+    title = "Execute multiple SQL statements against MariaDB",
+    description = "Runs multiple SQL statements separated by semicolons. To enable multi-statement execution, add `allowMultiQueries=true` to the JDBC URL. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows. Supports LOAD DATA LOCAL INFILE via inputFile property."
 )
 @Plugin(
     examples = {
@@ -44,7 +45,7 @@ import java.util.Properties;
                   - id: test_queries_insert
                     type: io.kestra.plugin.jdbc.mariadb.Queries
                     fetchType: FETCH
-                    url: jdbc:mariadb://mariadb:3306/kestra
+                    url: jdbc:mariadb://mariadb:3306/kestra?allowMultiQueries=true
                     username: "${{secret('MARIADB_USERNAME')}}"
                     password: "${{secret('MARIADB_PASSWORD')}}"
                     sql: "{{ read('populate.sql') }}"
@@ -73,8 +74,8 @@ import java.util.Properties;
 public class Queries extends AbstractJdbcQueries implements MariaDbConnectionInterface {
 
     @Schema(
-        title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
-        description = "The file must be from Kestra's internal storage"
+        title = "Input file for LOAD DATA LOCAL INFILE operations",
+        description = "URI to a file in Kestra's internal storage (kestra://). Used with MariaDB's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables"
     )
     @PluginProperty(dynamic = true)
     protected String inputFile;

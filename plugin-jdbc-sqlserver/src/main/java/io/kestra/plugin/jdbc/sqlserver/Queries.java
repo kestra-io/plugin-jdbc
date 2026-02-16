@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Microsoft SQL Server queries."
+    title = "Execute multiple SQL statements against Microsoft SQL Server",
+    description = "Runs multiple SQL statements separated by semicolons, either sequentially or within a transaction. Supports parameterized queries and all fetch modes. Set transaction to false to disable transactional behavior (default is true). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {

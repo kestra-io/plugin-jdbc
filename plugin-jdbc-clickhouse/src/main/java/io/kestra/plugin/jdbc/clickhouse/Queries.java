@@ -23,7 +23,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple ClickHouse queries."
+    title = "Execute multiple SQL statements against ClickHouse",
+    description = "Runs multiple SQL statements separated by semicolons in ClickHouse columnar database. Supports parameterized queries, transactions (default enabled), and all fetch modes. Set transaction to false to disable transactional behavior. Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -40,7 +41,7 @@ import java.time.ZoneId;
                     url: jdbc:clickhouse://127.0.0.1:56982/
                     username: "{{ secret('CLICKHOUSE_USERNAME') }}"
                     password: "{{ secret('CLICKHOUSE_PASSWORD') }}"
-                    sql: select * from employee; select * from laptop;
+                    sql: SELECT * FROM employee; SELECT * FROM laptop;
                     fetchType: STORE
                 """
         )

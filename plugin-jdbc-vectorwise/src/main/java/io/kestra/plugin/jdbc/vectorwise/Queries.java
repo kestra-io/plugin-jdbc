@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Vectorwise database queries."
+    title = "Execute multiple SQL statements against Vectorwise",
+    description = "Runs multiple SQL statements against Actian Vector (formerly Vectorwise) columnar analytics database. Optimized for analytical workloads and high-performance queries. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                        url: jdbc:vectorwise://url:port/base
                        username: "{{ secret('VECTORWISE_USERNAME') }}"
                        password: "{{ secret('VECTORWISE_PASSWORD') }}"
-                       sql: select count(*) from employee; select count(*) from laptop;
+                       sql: SELECT count(*) FROM employee; SELECT count(*) FROM laptop;
                        fetchType: FETCH_ONE
                    """
         )

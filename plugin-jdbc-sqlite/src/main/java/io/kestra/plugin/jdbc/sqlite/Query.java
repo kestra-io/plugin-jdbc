@@ -33,7 +33,7 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a SQLite database.",
+    title = "Execute a single SQL query against SQLite",
     description = """
         Executes a single SQL query against a SQLite database.
 

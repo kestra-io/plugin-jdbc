@@ -25,7 +25,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run a MySQL batch-query."
+    title = "Bulk insert rows into MySQL using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts using JDBC batch operations. Data is processed in chunks (default 1,000 rows) to optimize memory and performance. Uses generateSimpleParameterMetadata=true connection property for improved compatibility. Supports auto-commit for databases without transaction support."
 )
 @Plugin(
     examples = {

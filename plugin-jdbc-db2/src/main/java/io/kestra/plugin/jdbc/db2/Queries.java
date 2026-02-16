@@ -27,7 +27,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple DB2 queries."
+    title = "Execute multiple SQL statements against IBM DB2",
+    description = "Runs multiple SQL statements separated by semicolons, either sequentially or within a transaction. Supports parameterized queries and all fetch modes. Set transaction to false to disable transactional behavior (default is true). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -44,7 +45,7 @@ import java.util.Properties;
                     url: jdbc:db2://127.0.0.1:50000/
                     username: "{{ secret('DB2_USERNAME') }}"
                     password: "{{ secret('DB2_PASSWORD') }}"
-                    sql: select * from employee; select * from laptop;
+                    sql: SELECT * FROM employee; SELECT * FROM laptop;
                     fetchType: FETCH
                 """
         )

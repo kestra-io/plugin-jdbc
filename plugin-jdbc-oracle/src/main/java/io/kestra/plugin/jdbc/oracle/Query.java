@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query an Oracle database."
+    title = "Execute a single SQL query against Oracle Database",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -43,7 +44,7 @@ import java.time.ZoneId;
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
                     password: oracle_password
-                    sql: select * from source
+                    sql: SELECT * FROM source
                     fetchType: FETCH
 
                   - id: generate_update

@@ -25,7 +25,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple Apache Pinot queries."
+    title = "Execute multiple SQL statements against Apache Pinot",
+    description = "Runs multiple SQL statements against Apache Pinot real-time OLAP database. Optimized for low-latency analytics on streaming and batch data. Supports parameterized queries, transactions (default enabled), and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -42,8 +43,8 @@ import java.time.ZoneId;
                     username: "{{ secret('PINOT_USERNAME') }}"
                     password: "{{ secret('PINOT_PASSWORD') }}"
                     sql: |
-                      SELECT * FROM airlineStats;
-                      SELECT * FROM airlineStats;
+                      SELECT * FROM airlineStats WHERE __time >= 1672531200000;
+                      SELECT * FROM airlineStats LIMIT 1000;
                     fetchType: FETCH
                 """
         )

@@ -23,7 +23,8 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow if a periodically executed Arrow Flight SQL query returns a non-empty result set."
+    title = "Wait for query results on Apache Arrow Flight SQL and trigger flow",
+    description = "Periodically polls a database using Apache Arrow Flight SQL protocol by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Supports parameterized queries and afterSQL for marking processed rows. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {
@@ -50,7 +51,8 @@ import java.sql.SQLException;
                     password: "{{ secret('DREMIO_PASSWORD') }}"
                     url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
                     interval: "PT5M"
-                    sql: "SELECT * FROM my_table"
+                    sql: "SELECT id, status FROM my_table WHERE status = 'NEW'"
+                    afterSQL: "UPDATE my_table SET status = 'PROCESSED' WHERE status = 'NEW'"
                     fetchType: FETCH
                 """
         )

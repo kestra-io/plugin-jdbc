@@ -26,7 +26,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a Microsoft SQL Server database."
+    title = "Execute a single SQL query against Microsoft SQL Server",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode."
 )
 @Plugin(
     examples = {
@@ -51,7 +52,7 @@ import java.time.ZoneId;
                     url: jdbc:sqlserver://localhost:41433;trustServerCertificate=true
                     username: "{{ secret('SQL_USERNAME') }}"
                     password: "{{ secret('SQL_PASSWORD') }}"
-                    sql: "{% for row in outputs.update.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{row.year_month}}, {{row.store_code}}, '{{row.date}}'); {% endfor %}"
+                    sql: "{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, '{{ row.date }}'); {% endfor %}"
                 """
         )
     },

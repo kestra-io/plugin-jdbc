@@ -27,7 +27,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run an Apache Arrow Flight SQL query."
+    title = "Execute a SQL query using Apache Arrow Flight SQL",
+    description = "Runs a SQL statement using Apache Arrow Flight SQL protocol for high-performance data transfer. Arrow Flight uses columnar data format and gRPC for efficient communication. Supports parameterized queries, transactions with afterSQL, and all fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -44,7 +45,7 @@ import java.time.ZoneId;
                     url: jdbc:arrow-flight-sql://localhost:31010/?useEncryption=false
                     username: "{{ secret('ARROWFLIGHT_USERNAME') }}"
                     password: "{{ secret('ARROWFLIGHT_PASSWORD') }}"
-                    sql: select * FROM departments
+                    sql: SELECT * FROM departments
                     fetchType: FETCH
                 """
         ),
@@ -58,10 +59,10 @@ import java.time.ZoneId;
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.arrowflight.Query
-                    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public
+                    url: jdbc:arrow-flight-sql://dremio-coordinator:32010/?schema=postgres.public&useEncryption=false
                     username: "{{ secret('DREMIO_USERNAME') }}"
                     password: "{{ secret('DREMIO_PASSWORD') }}"
-                    sql: select * FROM departments
+                    sql: SELECT * FROM departments
                     fetchType: FETCH
                 """
         )

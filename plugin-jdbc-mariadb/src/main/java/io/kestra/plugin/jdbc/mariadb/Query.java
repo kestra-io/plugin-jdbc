@@ -34,7 +34,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Query a MariaDB database."
+    title = "Execute a single SQL query against MariaDB",
+    description = "Runs one SQL statement and fetches results. Supports parameterized queries, transactions with afterSQL, and multiple fetch modes (FETCH, FETCH_ONE, STORE). Default fetchSize is 10,000 rows for STORE mode. Supports LOAD DATA LOCAL INFILE via inputFile property for efficient CSV loading."
 )
 @Plugin(
     examples = {
@@ -69,7 +70,7 @@ import java.util.Properties;
 
                   - id: query
                     type: io.kestra.plugin.jdbc.mariadb.Query
-                    url: jdbc:mariadb://127.0.0.1:3306/
+                    url: jdbc:mariadb://127.0.0.1:3306/products?allowLoadLocalInfile=true
                     username: mariadb_user
                     password: mariadb_password
                     inputFile: "{{ outputs.http_download.uri }}"
@@ -80,6 +81,7 @@ import java.util.Properties;
                       ENCLOSED BY '"'
                       LINES TERMINATED BY '\\n'
                       IGNORE 1 ROWS;
+                    fetchType: NONE
                 """
         )
     },
@@ -94,8 +96,8 @@ import java.util.Properties;
 )
 public class Query extends AbstractJdbcQuery implements MariaDbConnectionInterface {
     @Schema(
-        title = "Add input file to be loaded with `LOAD DATA LOCAL`.",
-        description = "The file must be from Kestra's internal storage"
+        title = "Input file for LOAD DATA LOCAL INFILE operations",
+        description = "URI to a file in Kestra's internal storage (kestra://). Used with MariaDB's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables"
     )
     @PluginProperty(dynamic = true)
     protected String inputFile;

@@ -21,7 +21,8 @@ import java.sql.SQLException;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Trigger a flow if a periodically executed SQLite query returns a non-empty result set."
+    title = "Wait for query results on SQLite and trigger flow",
+    description = "Periodically polls a SQLite database by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Supports parameterized queries and afterSQL for marking processed rows. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {

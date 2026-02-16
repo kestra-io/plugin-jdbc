@@ -30,7 +30,8 @@ import java.util.Properties;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run multiple AS400 database queries."
+    title = "Execute multiple SQL statements against IBM AS/400 (iSeries)",
+    description = "Runs multiple SQL statements separated by semicolons, either sequentially or within a transaction. Supports parameterized queries and all fetch modes. Set transaction to false to disable transactional behavior (default is true). Default fetchSize is 10,000 rows for STORE mode. Based on DB2 implementation."
 )
 @Plugin(
     examples = {
@@ -47,7 +48,7 @@ import java.util.Properties;
                     url: jdbc:as400://127.0.0.1:50000/
                     username: "{{ secret('AS400_USERNAME') }}"
                     password: "{{ secret('AS400_PASSWORD') }}"
-                    sql: select * from employee; select * from laptops;
+                    sql: SELECT * FROM employee; SELECT * FROM laptops;
                     fetchType: FETCH
                 """
         )

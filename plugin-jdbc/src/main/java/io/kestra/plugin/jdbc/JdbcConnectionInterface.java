@@ -20,14 +20,14 @@ import org.apache.commons.lang3.StringUtils;
 
 public interface JdbcConnectionInterface {
     @Schema(
-        title = "The JDBC URL to connect to the database."
+        title = "The JDBC URL to connect to the database"
     )
     @NotNull
     @PluginProperty(group = "connection")
     Property<String> getUrl();
 
     @Schema(
-        title = "The database user."
+        title = "The database user"
     )
     @PluginProperty(group = "connection")
     Property<String> getUsername();
