@@ -227,7 +227,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         }
 
         // outputFiles
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        var renderedOutputFiles = this.outputFiles == null
+            ? List.<String>of()
+            : runContext.render(this.outputFiles).asList(String.class);
         if (!renderedOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
