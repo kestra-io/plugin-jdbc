@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static io.kestra.core.utils.Rethrow.throwFunction;
+import io.kestra.core.models.enums.MonacoLanguages;
 
 @SuperBuilder
 @ToString
@@ -58,6 +59,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             Example: INSERT INTO <table_name> VALUES (?, ?, ?) for three columns; use column list if inserting a subset
             """
     )
+    @PluginProperty(language = MonacoLanguages.SQL)
     private Property<String> sql;
 
     @Schema(

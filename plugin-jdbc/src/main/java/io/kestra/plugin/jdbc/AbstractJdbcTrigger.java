@@ -18,6 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kestra.core.models.enums.MonacoLanguages;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -40,8 +42,10 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     private Property<String> timeZoneId;
 
     @NotNull
+    @PluginProperty(language = MonacoLanguages.SQL)
     private Property<String> sql;
 
+    @PluginProperty(language = MonacoLanguages.SQL)
     private Property<String> afterSQL;
 
     /**

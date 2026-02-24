@@ -28,6 +28,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.kestra.core.models.enums.MonacoLanguages;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -54,6 +56,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Query tasks accept a single statement; Queries tasks can execute multiple statements separated by semicolons"""
     )
     @NotNull
+    @PluginProperty(language = MonacoLanguages.SQL)
     protected Property<String> sql;
 
     @Schema(
@@ -62,6 +65,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Optional SQL executed in the same transaction after the main statement.
             Useful for marking rows as processed to avoid duplicates; only a single statement is allowed. Commit covers both sql and afterSQL"""
     )
+    @PluginProperty(language = MonacoLanguages.SQL)
     protected Property<String> afterSQL;
 
     /**
