@@ -1,6 +1,6 @@
 @PluginSubGroup(
     description = "Tasks that query SAP HANA using the official SAP HANA JDBC driver (ngdbc.jar).",
-    categories = PluginSubGroup.PluginCategory.DATABASE
+    categories = PluginSubGroup.PluginCategory.DATA
 )
 package io.kestra.plugin.jdbc.hana;
 
