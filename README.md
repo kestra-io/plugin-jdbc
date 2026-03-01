@@ -57,7 +57,7 @@
   * [for Snowflake](https://kestra.io/plugins/plugin-jdbc-snowflake/)
   * [for SQL Server](https://kestra.io/plugins/plugin-jdbc-sqlserver/)
   * [for Trino](https://kestra.io/plugins/plugin-jdbc-trino/)
-  * [for Vectorwise](https://kestra.io/plugins/plugin-jdbc-vectorwise/)
+  * [for Actian Vector](https://kestra.io/plugins/plugin-jdbc-actianvector/)
   * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   * ...and more!
 
