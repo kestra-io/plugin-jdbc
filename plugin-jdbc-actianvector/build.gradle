@@ -1,0 +1,21 @@
+project.description = 'Integrate Actian Vector (VectorWise) analytical databases with Kestra\'s JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+                "X-Kestra-Name": project.name,
+                "X-Kestra-Title": "Actian Vector",
+                "X-Kestra-Group": project.group + ".jdbc.actianvector",
+                "X-Kestra-Description": project.description,
+                "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    jdbcDriver 'org.talend.libraries:iijdbc:6.0.0'
+    implementation project(':plugin-jdbc')
+
+    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
+}
