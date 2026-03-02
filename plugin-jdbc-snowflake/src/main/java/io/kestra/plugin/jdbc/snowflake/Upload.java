@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import net.snowflake.client.jdbc.SnowflakeConnection;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -111,25 +110,18 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
             Connection conn = this.connection(runContext);
             InputStream inputStream = runContext.storage().getFile(from);
         ) {
-            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
-            String prefix = runContext.render(this.prefix).as(String.class).orElseThrow();
-            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            var prefix = runContext.render(this.prefix).as(String.class).orElseThrow();
+            var filename = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var compress = runContext.render(this.compress).as(Boolean.class).orElseThrow();
 
             logger.info("Starting upload to stage '{}' on '{}' with name '{}'", stageName, prefix, filename);
 
-            conn
-                .unwrap(SnowflakeConnection.class)
-                .uploadStream(
-                    stageName,
-                    prefix,
-                    inputStream,
-                    filename,
-                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
-                );
+            SnowflakeCompatibility.uploadStream(conn, stageName, prefix, inputStream, filename, compress);
 
             return Output
                 .builder()
-                .uri(URI.create(StringUtils.stripEnd(prefix, "/") + "/" + filename + (runContext.render(this.compress).as(Boolean.class).orElseThrow() ? ".gz" : "")))
+                .uri(URI.create(StringUtils.stripEnd(prefix, "/") + "/" + filename + (compress ? ".gz" : "")))
                 .build();
         }
     }
