@@ -20,6 +20,9 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.sql.Connection;
 
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.enums.MonacoLanguages;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -88,6 +91,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied.",
         description = "For INSERT, UPDATE and DELETE queries a RETURNING clause must be provided, and the target relation must not have a conditional rule, nor an ALSO rule, nor an INSTEAD rule that expands to multiple statements."
     )
+    @PluginProperty(language = MonacoLanguages.SQL)
     protected Property<String> sql;
 
     @Override
