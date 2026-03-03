@@ -8,6 +8,8 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 public class SqliteCellConverter extends AbstractCellConverter {
 
@@ -27,7 +29,11 @@ public class SqliteCellConverter extends AbstractCellConverter {
 
         return switch (columnTypeName.toLowerCase()) {
             case "date" -> LocalDate.parse(resultSet.getString(columnIndex));
-            case "datetime", "timestamp" -> resultSet.getTimestamp(columnIndex).toInstant();
+            case "datetime", "timestamp" -> {
+                var calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId));
+                var timestamp = resultSet.getTimestamp(columnIndex, calendar);
+                yield timestamp != null ? timestamp.toInstant() : null;
+            }
             case "time" -> LocalTime.parse(resultSet.getString(columnIndex));
             default -> super.convert(columnIndex, resultSet);
         };
