@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.SnowflakeConnection;
+import net.snowflake.client.api.connection.UploadStreamConfig;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 
@@ -106,30 +107,28 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     public Upload.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
 
-        URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
+        var rFrom = new URI(runContext.render(this.from).as(String.class).orElseThrow());
         try (
             Connection conn = this.connection(runContext);
-            InputStream inputStream = runContext.storage().getFile(from);
+            InputStream inputStream = runContext.storage().getFile(rFrom);
         ) {
-            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
-            String prefix = runContext.render(this.prefix).as(String.class).orElseThrow();
-            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rStageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            var rPrefix = runContext.render(this.prefix).as(String.class).orElseThrow();
+            var rFileName = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rCompress = runContext.render(this.compress).as(Boolean.class).orElseThrow();
 
-            logger.info("Starting upload to stage '{}' on '{}' with name '{}'", stageName, prefix, filename);
+            logger.info("Starting upload to stage '{}' on '{}' with name '{}'", rStageName, rPrefix, rFileName);
 
-            conn
-                .unwrap(SnowflakeConnection.class)
-                .uploadStream(
-                    stageName,
-                    prefix,
-                    inputStream,
-                    filename,
-                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
-                );
+            var snowflakeConnection = conn.unwrap(SnowflakeConnection.class);
+            var uploadConfig = UploadStreamConfig.builder()
+                .setDestPrefix(rPrefix)
+                .setCompressData(rCompress)
+                .build();
+            snowflakeConnection.uploadStream(rStageName, rFileName, inputStream, uploadConfig);
 
             return Output
                 .builder()
-                .uri(URI.create(StringUtils.stripEnd(prefix, "/") + "/" + filename + (runContext.render(this.compress).as(Boolean.class).orElseThrow() ? ".gz" : "")))
+                .uri(URI.create(StringUtils.stripEnd(rPrefix, "/") + "/" + rFileName + (rCompress ? ".gz" : "")))
                 .build();
         }
     }
