@@ -4,18 +4,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
-import net.snowflake.client.jdbc.SnowflakeDateWithTimezone;
-import net.snowflake.client.jdbc.SnowflakeTimeWithTimezone;
-import net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.List;
 
 public class SnowflakeCellConverter extends AbstractCellConverter {
     static final protected ObjectMapper MAPPER = JacksonMapper.ofJson();
+    private static final List<String> SNOWFLAKE_TIME_WITH_TIMEZONE_CLASS_NAMES = List.of(
+        "net.snowflake.client.jdbc.SnowflakeTimeWithTimezone",
+        "net.snowflake.client.internal.jdbc.SnowflakeTimeWithTimezone"
+    );
+    private static final List<String> SNOWFLAKE_TIMESTAMP_WITH_TIMEZONE_CLASS_NAMES = List.of(
+        "net.snowflake.client.jdbc.SnowflakeTimestampWithTimezone",
+        "net.snowflake.client.internal.jdbc.SnowflakeTimestampWithTimezone"
+    );
+    private static final List<String> SNOWFLAKE_DATE_WITH_TIMEZONE_CLASS_NAMES = List.of(
+        "net.snowflake.client.jdbc.SnowflakeDateWithTimezone",
+        "net.snowflake.client.internal.jdbc.SnowflakeDateWithTimezone"
+    );
 
     public SnowflakeCellConverter(ZoneId zoneId) {
         super(zoneId);
@@ -24,28 +36,25 @@ public class SnowflakeCellConverter extends AbstractCellConverter {
     @SneakyThrows
     @Override
     public Object convertCell(int columnIndex, ResultSet rs, Connection connection) throws SQLException {
-        Object data = rs.getObject(columnIndex);
+        var data = rs.getObject(columnIndex);
 
         if (data == null) {
             return null;
         }
 
-        Object columnVal = rs.getObject(columnIndex);
-        String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
+        var columnVal = rs.getObject(columnIndex);
+        var columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
-        if (columnVal instanceof SnowflakeTimeWithTimezone) {
-            SnowflakeTimeWithTimezone col = (SnowflakeTimeWithTimezone) columnVal;
-            return col.toLocalTime();
+        if (isSnowflakeType(columnVal, SNOWFLAKE_TIME_WITH_TIMEZONE_CLASS_NAMES) && columnVal instanceof Time time) {
+            return time.toLocalTime();
         }
 
-        if (columnVal instanceof SnowflakeTimestampWithTimezone) {
-            SnowflakeTimestampWithTimezone col = (SnowflakeTimestampWithTimezone) columnVal;
-            return col.toInstant();
+        if (isSnowflakeType(columnVal, SNOWFLAKE_TIMESTAMP_WITH_TIMEZONE_CLASS_NAMES) && columnVal instanceof Timestamp timestamp) {
+            return timestamp.toInstant();
         }
 
-        if (columnVal instanceof SnowflakeDateWithTimezone) {
-            SnowflakeDateWithTimezone col = (SnowflakeDateWithTimezone) columnVal;
-            return col.toLocalDate();
+        if (isSnowflakeType(columnVal, SNOWFLAKE_DATE_WITH_TIMEZONE_CLASS_NAMES) && columnVal instanceof Date date) {
+            return date.toLocalDate();
         }
 
         if (List.of("VARIANT", "OBJECT", "ARRAY", "GEOGRAPHY").contains(columnTypeName)) {
@@ -53,5 +62,9 @@ public class SnowflakeCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    private static boolean isSnowflakeType(Object value, List<String> classNames) {
+        return classNames.contains(value.getClass().getName());
     }
 }

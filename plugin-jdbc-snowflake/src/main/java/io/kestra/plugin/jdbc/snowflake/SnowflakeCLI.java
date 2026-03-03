@@ -161,27 +161,32 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-        var renderedCommands = runContext.render(this.commands).asList(String.class);
+        var rOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        var rCommands = runContext.render(this.commands).asList(String.class);
+        var rAccount = runContext.render(this.account).as(String.class).orElseThrow();
+        var rUsername = runContext.render(this.username).as(String.class).orElseThrow();
         var envVarsWithDefaultAuthentication = Optional.ofNullable(env).orElse(new HashMap<>());
         envVarsWithDefaultAuthentication.putAll(Map.of(
-            "SNOWFLAKE_ACCOUNT", runContext.render(this.account).as(String.class).orElseThrow(),
-            "SNOWFLAKE_USER", runContext.render(this.username).as(String.class).orElseThrow()
+            "SNOWFLAKE_ACCOUNT", rAccount,
+            "SNOWFLAKE_USER", rUsername
 
         ));
         if (this.password != null) {
+            var rPassword = runContext.render(this.password).as(String.class).orElseThrow();
             envVarsWithDefaultAuthentication.putAll(Map.of(
-                "SNOWFLAKE_PASSWORD", runContext.render(this.password).as(String.class).orElseThrow()
+                "SNOWFLAKE_PASSWORD", rPassword
             ));
         }
         if (this.privateKey != null) {
+            var rPrivateKey = runContext.render(this.privateKey).as(String.class).orElseThrow();
+            var rPrivateKeyPassword = runContext.render(this.privateKeyPassword).as(String.class);
             var tempPrivateKeyFile = runContext
                 .workingDir().createTempFile(
                     formatPrivateKeyToPEM(
                         Base64.getEncoder().encodeToString(
                             RSAKeyPairUtils.deserializePrivateKey(
-                                runContext.render(this.privateKey).as(String.class).orElseThrow(),
-                                runContext.render(this.privateKeyPassword).as(String.class)
+                                rPrivateKey,
+                                rPrivateKeyPassword
                             ).getEncoded()
                         )
                     ).getBytes()
@@ -199,7 +204,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
             .withEnv(envVarsWithDefaultAuthentication)
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
-            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
+            .withOutputFiles(rOutputFiles.isEmpty() ? null : rOutputFiles)
             .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
             .withCommands(
                 Property.ofValue(
@@ -207,7 +212,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
                         Stream.of(
                             "snow connection add --connection-name=default-connection --default --no-interactive"
                         ),
-                        renderedCommands.stream()
+                        rCommands.stream()
                     ).toList()
                 )
             )

@@ -107,6 +107,7 @@ public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
 
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
+        var rFetchSize = runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
+        return rFetchSize;
     }
 }

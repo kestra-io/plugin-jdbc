@@ -124,31 +124,38 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
         if (this.getWarehouse() != null) {
-            properties.put("warehouse", runContext.render(this.getWarehouse()).as(String.class).orElseThrow());
+            var rWarehouse = runContext.render(this.getWarehouse()).as(String.class).orElseThrow();
+            properties.put("warehouse", rWarehouse);
         }
 
         if (this.getDatabase() != null) {
-            properties.put("db", runContext.render(this.getDatabase()).as(String.class).orElseThrow());
+            var rDatabase = runContext.render(this.getDatabase()).as(String.class).orElseThrow();
+            properties.put("db", rDatabase);
         }
 
         if (this.getSchema() != null) {
-            properties.put("schema", runContext.render(this.getSchema()).as(String.class).orElseThrow());
+            var rSchema = runContext.render(this.getSchema()).as(String.class).orElseThrow();
+            properties.put("schema", rSchema);
         }
 
         if (this.getRole() != null) {
-            properties.put("role", runContext.render(this.getRole()).as(String.class).orElseThrow());
+            var rRole = runContext.render(this.getRole()).as(String.class).orElseThrow();
+            properties.put("role", rRole);
         }
 
         if (this.getPrivateKey() != null) {
+            var rPrivateKey = runContext.render(this.getPrivateKey()).as(String.class).orElseThrow();
+            var rPrivateKeyPassword = runContext.render(this.getPrivateKeyPassword()).as(String.class);
             var unencryptedPrivateKey = RSAKeyPairUtils.deserializePrivateKey(
-                runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
-                runContext.render(this.getPrivateKeyPassword()).as(String.class)
+                rPrivateKey,
+                rPrivateKeyPassword
             );
             properties.put("privateKey", unencryptedPrivateKey);
         }
 
         if (this.getQueryTag() != null) {
-            properties.put("query_tag", runContext.render(this.getQueryTag()).as(String.class).orElseThrow());
+            var rQueryTag = runContext.render(this.getQueryTag()).as(String.class).orElseThrow();
+            properties.put("query_tag", rQueryTag);
         }
     }
 

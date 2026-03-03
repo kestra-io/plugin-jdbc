@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 
@@ -94,18 +95,17 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
             Connection conn = this.connection(runContext);
             BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
         ) {
-            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
-            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rStageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            var rFileName = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rDecompress = runContext.render(this.compress).as(Boolean.class).orElseThrow();
 
-            logger.info("Starting download from stage '{}' with name '{}'", stageName, filename);
+            logger.info("Starting download from stage '{}' with name '{}'", rStageName, rFileName);
 
-            InputStream inputStream = conn
-                .unwrap(SnowflakeConnection.class)
-                .downloadStream(
-                    stageName,
-                    filename,
-                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
-                );
+            var snowflakeConnection = conn.unwrap(SnowflakeConnection.class);
+            var downloadConfig = DownloadStreamConfig.builder()
+                .setDecompress(rDecompress)
+                .build();
+            InputStream inputStream = snowflakeConnection.downloadStream(rStageName, rFileName, downloadConfig);
 
             IOUtils.copyLarge(inputStream, outputStream);
 
