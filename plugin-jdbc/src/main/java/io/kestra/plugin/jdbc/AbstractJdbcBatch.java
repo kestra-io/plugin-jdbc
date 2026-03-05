@@ -137,13 +137,14 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                         addBatch(ps, parameterMetaData, row, cellConverter, connection, runContext);
                     }
                     int[] updatedRows = ps.executeBatch();
-                    if (connection.getMetaData().supportsTransactions()) {
-                        connection.commit();
-                    }
                     queryCount.incrementAndGet();
                     return Arrays.stream(updatedRows).sum();
                 }))
                 .reduce(Integer::sum).block();
+
+            if (connection.getMetaData().supportsTransactions()) {
+                connection.commit();
+            }
 
             runContext.metric(Counter.of("records", count.get()));
             runContext.metric(Counter.of("updated", updated == null ? 0 : updated));
