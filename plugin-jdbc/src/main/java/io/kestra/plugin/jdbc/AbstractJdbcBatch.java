@@ -88,8 +88,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             """
     )
     private Property<String> table;
-
-
+    
     @Schema(
         title = "Maximum number of retries for transient failures.",
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
@@ -397,10 +396,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     @Builder
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
-        @Schema(title = "The rows count.")
+        @Schema(title = "Total rows read")
         private final Long rowCount;
 
-        @Schema(title = "The updated rows count.")
+        @Schema(title = "Rows inserted or updated")
         private final Integer updatedCount;
     }
 
