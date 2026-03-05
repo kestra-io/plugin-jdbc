@@ -30,9 +30,6 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest
 public class BatchTest extends AbstractRdbmsTest {
-    @Inject
-    private ApplicationContext applicationContext;
-
     @Test
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -329,7 +326,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
             .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.LOCAL))
-            .localBufferMaxBytes(Property.ofValue(1L)) // force failure
+            .localBufferMaxBytes(Property.ofValue(1L))
             .build();
 
         org.junit.jupiter.api.Assertions.assertThrows(
@@ -366,6 +363,54 @@ public class BatchTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
             .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.LOCAL))
             .localBufferMaxBytes(Property.ofValue(1024L))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(3L));
+    }
+
+    @Test
+    void shouldRetryOnTransientFailure() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_test_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            int base = (int) (System.currentTimeMillis() % 100000);
+
+            for (int i = 0; i < 3; i++) {
+                FileSerde.write(output, Arrays.asList(base + i));
+            }
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        final boolean[] firstAttempt = {true};
+
+        Batch task = new Batch() {
+            @Override
+            public Connection connection(RunContext context) throws Exception {
+                if (firstAttempt[0]) {
+                    firstAttempt[0] = false;
+                    throw new SQLTransientException("Simulated transient failure");
+                }
+                return super.connection(context);
+            }
+        };
+
+        task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .maxRetries(Property.ofValue(2))
+            .retryBackoff(Property.ofValue(Duration.ofMillis(10)))
             .build();
 
         AbstractJdbcBatch.Output output = task.run(runContext);

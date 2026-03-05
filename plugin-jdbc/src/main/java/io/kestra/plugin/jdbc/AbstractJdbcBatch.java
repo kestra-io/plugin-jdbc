@@ -88,7 +88,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             """
     )
     private Property<String> table;
-    
+
     @Schema(
         title = "Maximum number of retries for transient failures.",
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
