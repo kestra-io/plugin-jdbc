@@ -177,19 +177,17 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private BatchConfig buildConfig(RunContext runContext) throws Exception {
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
-        List<String> rColumns = runContext.render(this.columns).asList(String.class);
-        List<String> columnsToUse =
-            rColumns.isEmpty() && this.table != null
-                ? fetchColumnsFromTable(
-                runContext,
-                runContext.render(this.table).as(String.class).orElseThrow()
-            )
-                : rColumns;
+        List<String> columnsToUse = runContext.render(this.columns).asList(String.class);
+        String rTable = runContext.render(this.table).as(String.class).orElse(null);
+
+        if (columnsToUse.isEmpty() && rTable != null) {
+            columnsToUse = fetchColumnsFromTable(runContext, runContext.render(this.table).as(String.class).orElseThrow());
+        }
 
         String rSql = runContext.render(this.sql).as(String.class).orElse(null);
 
         if (rSql == null && !columnsToUse.isEmpty()) {
-            rSql = constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse);
+            rSql = constructInsertStatement(runContext, rTable, columnsToUse);
         }
 
         return new BatchConfig(
