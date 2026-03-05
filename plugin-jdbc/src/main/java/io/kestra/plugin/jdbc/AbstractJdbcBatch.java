@@ -177,20 +177,24 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private BatchConfig buildConfig(RunContext runContext) throws Exception {
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
-        List<String> renderedColumns = runContext.render(this.columns).asList(String.class);
+        List<String> rColumns = runContext.render(this.columns).asList(String.class);
         List<String> columnsToUse =
-            renderedColumns.isEmpty() && this.table != null
+            rColumns.isEmpty() && this.table != null
                 ? fetchColumnsFromTable(
                 runContext,
                 runContext.render(this.table).as(String.class).orElseThrow()
             )
-                : renderedColumns;
+                : rColumns;
 
-        String sql = !columnsToUse.isEmpty() && this.sql == null ? constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse) : runContext.render(this.sql).as(String.class).orElse(null);
+        String rSql = runContext.render(this.sql).as(String.class).orElse(null);
+
+        if (rSql == null && !columnsToUse.isEmpty()) {
+            rSql = constructInsertStatement(runContext, runContext.render(this.table).as(String.class).orElse(null), columnsToUse);
+        }
 
         return new BatchConfig(
             from,
-            sql,
+            rSql,
             columnsToUse,
             runContext.render(this.chunk).as(Integer.class).orElse(1000),
             runContext.render(this.inputHandling).as(InputHandling.class).orElse(InputHandling.AUTO),
@@ -232,9 +236,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     }
 
     private boolean isRetryable(Throwable t) {
-        Throwable cause = t;
-
-        while (cause != null) {
+        for (Throwable cause = t; cause != null; cause = cause.getCause()) {
 
             if (cause instanceof SQLIntegrityConstraintViolationException || cause instanceof SQLSyntaxErrorException || cause instanceof SQLDataException || cause instanceof IllegalArgumentException) {
                 return false;
@@ -244,30 +246,28 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 return true;
             }
 
-            if (cause instanceof SQLException sqlEx) {
-                String state = sqlEx.getSQLState();
+            if (cause instanceof SQLException sql) {
+                String state = sql.getSQLState();
                 if (state != null && state.startsWith("08")) {
                     return true;
                 }
             }
-
-            cause = cause.getCause();
         }
 
         return false;
     }
 
-    private PreparedInput prepareInput(RunContext runContext, URI from, InputHandling renderedInputHandling, long renderedLocalBufferMaxBytes, Logger logger) throws Exception {
-        return switch (renderedInputHandling) {
+    private PreparedInput prepareInput(RunContext runContext, URI from, InputHandling rInputHandling, long rLocalBufferMaxBytes, Logger logger) throws Exception {
+        return switch (rInputHandling) {
             case STREAM -> PreparedInput.stream(() -> openRemoteReader(runContext, from));
             case LOCAL -> {
-                Path localPath = bufferInputToLocal(runContext, from, renderedLocalBufferMaxBytes, true)
+                Path localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, true)
                     .orElseThrow(() -> new IllegalStateException("Input buffering failed in LOCAL mode."));
                 logger.debug("Using LOCAL input handling for JDBC batch with local file {}", localPath);
                 yield PreparedInput.local(localPath, () -> openLocalReader(localPath));
             }
             case AUTO -> {
-                Optional<Path> localPath = bufferInputToLocal(runContext, from, renderedLocalBufferMaxBytes, false);
+                Optional<Path> localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, false);
                 if (localPath.isPresent()) {
                     logger.debug("AUTO input handling selected LOCAL mode for JDBC batch");
                     Path path = localPath.get();
@@ -280,7 +280,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         };
     }
 
-    private Optional<Path> bufferInputToLocal(RunContext runContext, URI from, long renderedLocalBufferMaxBytes, boolean failIfTooLarge) throws Exception {
+    private Optional<Path> bufferInputToLocal(RunContext runContext, URI from, long rLocalBufferMaxBytes, boolean failIfTooLarge) throws Exception {
         Path localPath = runContext.workingDir().createTempFile(".ion");
         long copiedBytes = 0L;
         byte[] bytes = new byte[FileSerde.BUFFER_SIZE];
@@ -292,10 +292,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             int read;
             while ((read = input.read(bytes)) != -1) {
                 copiedBytes += read;
-                if (copiedBytes > renderedLocalBufferMaxBytes) {
+                if (copiedBytes > rLocalBufferMaxBytes) {
                     if (failIfTooLarge) {
                         throw new IllegalArgumentException(
-                            "Input file exceeds `localBufferMaxBytes` (" + renderedLocalBufferMaxBytes + " bytes) while using LOCAL input handling."
+                            "Input file exceeds `localBufferMaxBytes` (" + rLocalBufferMaxBytes + " bytes) while using LOCAL input handling."
                         );
                     }
 
@@ -320,36 +320,11 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         return new BufferedReader(new InputStreamReader(Files.newInputStream(localPath)), FileSerde.BUFFER_SIZE);
     }
 
-    private void rollbackQuietly(Connection connection, boolean supportsTransactions, Logger logger) {
-        if (!supportsTransactions) {
-            return;
-        }
-
-        try {
-            connection.rollback();
-        } catch (SQLException rollbackException) {
-            logger.warn("Unable to rollback JDBC transaction after batch failure", rollbackException);
-        }
-    }
-
-    private void sleepBeforeRetry(Duration retryBackoff) throws InterruptedException {
-        if (!retryBackoff.isZero()) {
-            Thread.sleep(retryBackoff.toMillis());
-        }
-    }
-
-
     @SuppressWarnings("unchecked")
-    private void addBatch(
-        PreparedStatement ps,
-        ParameterType parameterMetaData,
-        Object o,
-        List<String> columnsToUse,
-        AbstractCellConverter cellConverter,
-        Connection connection
+    private void addBatch(PreparedStatement ps, ParameterType parameterMetaData, Object row, List<String> columnsToUse, AbstractCellConverter cellConverter, Connection connection
     ) throws Exception {
-        if (o instanceof Map) {
-            Map<String, Object> map = (Map<String, Object>) o;
+        if (row instanceof Map) {
+            Map<String, Object> map = (Map<String, Object>) row;
             int index = 0;
 
             if (!columnsToUse.isEmpty()) {
@@ -382,8 +357,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                     ps.setNull(index, sqlType != null ? sqlType : java.sql.Types.NULL);
                 }
             }
-        } else if (o instanceof Collection) {
-            ListIterator<Object> iter = ((List<Object>) o).listIterator();
+        } else if (row instanceof Collection) {
+            ListIterator<Object> iter = ((List<Object>) row).listIterator();
             while (iter.hasNext()) {
                 ps = cellConverter.addPreparedStatementValue(ps, parameterMetaData, iter.next(), iter.nextIndex(), connection);
             }
@@ -554,13 +529,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             }
         }
 
-        private void flush(
-            PreparedStatement ps,
-            ParameterType meta,
-            List<Object> rows,
-            Connection connection,
-            boolean supportsTx
-        ) throws Exception {
+        private void flush(PreparedStatement ps, ParameterType meta, List<Object> rows, Connection connection, boolean supportsTx) throws Exception {
             for (Object row : rows) {
                 addBatch(ps, meta, row, config.columns(), cellConverter, connection);
             }
@@ -569,11 +538,12 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             if (supportsTx) connection.commit();
             ps.clearBatch();
 
-            rowCount += rows.size();
+            int size = rows.size();
+            rows.clear();
+
+            rowCount += size;
             updatedCount += Arrays.stream(updated).sum();
             queryCount++;
-
-            rows.clear();
         }
 
         void cleanup() {
@@ -600,14 +570,5 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         }
     }
 
-    record BatchConfig(
-        URI from,
-        String sql,
-        List<String> columns,
-        int chunk,
-        InputHandling inputHandling,
-        long localBufferMaxBytes,
-        boolean resumeOnRetry
-    ) {}
-
+    record BatchConfig(URI from, String sql, List<String> columns, int chunk, InputHandling inputHandling, long localBufferMaxBytes, boolean resumeOnRetry) {}
 }
