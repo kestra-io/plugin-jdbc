@@ -297,7 +297,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                 "name", table
             );
             try {
-                runContext.logger().info("Creating asset for system \"{}\", database \"{}\", table \"{}\"", system, database, table);
                 runContext.assets().emit(
                     new AssetEmit(
                         List.of(),
@@ -310,8 +309,9 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                         )
                     )
                 );
+                runContext.logger().info("Creating asset for system \"{}\", database \"{}\", table \"{}\"", system, database, table);
             } catch (UnsupportedOperationException | NullPointerException ignored) {
-                // Assets are optional and may be unavailable in OSS/test runtimes.
+                // OSS edition or tests where EE assets are not available — silently skip.
             }
         }
     }
