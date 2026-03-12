@@ -1,5 +1,70 @@
 project.description = 'Manage data in DuckDB with Kestra\'s JDBC plugin.'
 
+// Keep duckdb_jdbc inline for Dependabot; update duckdbCommunityExtensionVersion in sync.
+def duckdbCommunityExtensionVersion = "v1.5.0"
+def bundledDuckDbExtensionsDir = layout.buildDirectory.dir("generated/duckdb-community-extensions")
+def bundledDuckDbExtensions = [
+    ion: ["linux_amd64", "linux_arm64"]
+]
+def bundledDuckDbExtensionsMetadataFile = bundledDuckDbExtensionsDir.map { it.file("duckdb-community-extensions.properties") }
+
+tasks.register("bundleDuckDbCommunityExtensions") {
+    outputs.dir(bundledDuckDbExtensionsDir)
+
+    doLast {
+        def metadataFile = bundledDuckDbExtensionsMetadataFile.get().asFile
+        metadataFile.parentFile.mkdirs()
+
+        def properties = new Properties()
+        properties.setProperty("duckdb.version", duckdbCommunityExtensionVersion)
+        properties.setProperty("bundled.extensions", bundledDuckDbExtensions.keySet().join(","))
+        bundledDuckDbExtensions.each { extensionName, platforms ->
+            properties.setProperty("bundled.extensions.${extensionName}", platforms.join(","))
+        }
+        metadataFile.withOutputStream { output ->
+            properties.store(output, "Generated DuckDB community extension metadata")
+        }
+
+        bundledDuckDbExtensions.each { extensionName, platforms ->
+            platforms.each { platform ->
+                def outputDir = bundledDuckDbExtensionsDir.get().file("duckdb-community-extensions/${duckdbCommunityExtensionVersion}/${platform}").asFile
+                def outputFile = new File(outputDir, "${extensionName}.duckdb_extension")
+
+                if (outputFile.exists()) {
+                    return
+                }
+
+                outputDir.mkdirs()
+
+                def gzUrl = new URL("https://community-extensions.duckdb.org/${duckdbCommunityExtensionVersion}/${platform}/${extensionName}.duckdb_extension.gz")
+                def gzFile = new File(outputDir, "${extensionName}.duckdb_extension.gz")
+
+                gzUrl.withInputStream { input ->
+                    gzFile.withOutputStream { output -> output << input }
+                }
+
+                new java.util.zip.GZIPInputStream(new FileInputStream(gzFile)).withCloseable { input ->
+                    outputFile.withOutputStream { output -> output << input }
+                }
+
+                gzFile.delete()
+            }
+        }
+    }
+}
+
+processResources {
+    dependsOn(tasks.named("bundleDuckDbCommunityExtensions"))
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir(bundledDuckDbExtensionsDir)
+        }
+    }
+}
+
 jar {
     manifest {
         attributes(
