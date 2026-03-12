@@ -110,6 +110,22 @@ class DuckDbTest {
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
     }
 
+    @Test
+    void queryContinuesWhenCommunityExtensionInstallFails() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .communityExtensions(Property.ofValue(List.of("missing_extension_for_test")))
+            .sql(Property.ofValue("SELECT 1 AS value"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("value"), is(1));
+    }
+
 
     @Test
     void selectFromExistingFileInParameter() throws Exception {

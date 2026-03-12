@@ -42,6 +42,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
+    protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
+    }
+
     public MultiQueryOutput run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
@@ -56,6 +59,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         try {
             this.runningConnection = this.connection(runContext);
+            this.beforeExecute(runContext, this.runningConnection);
             supportsTx = supportsTransactions(this.runningConnection);
             final boolean useTransactions = supportsTx && isTransactional;
 

@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -89,6 +90,25 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
         ),
         @Example(
             full = true,
+            title = "Read an Ion file directly with DuckDB. Kestra uses Ion as an intermediate storage format, and the bundled Ion extension lets DuckDB read it directly.",
+            code = """
+                id: read_ion_file
+                namespace: company.team
+
+                tasks:
+                  - id: read
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    inputFiles:
+                      sample.ion: |
+                        {a: 1, b: "x"}
+                    sql: |
+                      SELECT a, b
+                      FROM read_ion('sample.ion');
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            full = true,
             title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
             code = """
                 id: motherduck
@@ -140,6 +160,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     )
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
+
+    @Builder.Default
+    protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
     @Override
     @Schema(
@@ -239,7 +262,6 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
             );
         }
 
-        final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
         String sql = this.sql.toString();
 
         // we transform filename column to show relative paths if filename parameter is used
@@ -249,7 +271,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 sql.replaceAll(";\\s*$", "") + ")";
         }
 
-        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + sql);
+        this.sql = new Property<>(sql);
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 
@@ -309,5 +331,13 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
         return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
+    }
+
+    @Override
+    protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
+        String workingDirectory = this.additionalVars.containsKey("workingDir")
+            ? this.additionalVars.get("workingDir").toString()
+            : null;
+        DuckDbConnectionSetup.configureSession(runContext, connection, workingDirectory, this.communityExtensions);
     }
 }

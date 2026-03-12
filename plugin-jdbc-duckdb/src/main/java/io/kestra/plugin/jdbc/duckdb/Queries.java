@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -114,6 +115,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
+
+    @Builder.Default
+    protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
@@ -234,9 +238,6 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
-        final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
-        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + this.sql.toString());
-
         AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
 
         // upload output files
@@ -274,6 +275,14 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         )
         @PluginProperty
         private final URI databaseUri;
+    }
+
+    @Override
+    protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
+        String workingDirectory = this.additionalVars.containsKey("workingDir")
+            ? this.additionalVars.get("workingDir").toString()
+            : null;
+        DuckDbConnectionSetup.configureSession(runContext, connection, workingDirectory, this.communityExtensions);
     }
 
 }

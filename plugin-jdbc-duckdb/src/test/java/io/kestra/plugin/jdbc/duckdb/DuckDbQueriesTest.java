@@ -79,6 +79,46 @@ class DuckDbQueriesTest {
     }
 
     @Test
+    void queriesContinueWhenCommunityExtensionInstallFails() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .fetchType(Property.ofValue(FETCH))
+            .communityExtensions(Property.ofValue(List.of("missing_extension_for_test")))
+            .sql(Property.ofValue("""
+                SELECT 1 AS first_value;
+                SELECT 2 AS second_value;
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs(), hasSize(2));
+        assertThat(runOutput.getOutputs().getFirst().getRows().getFirst().get("first_value"), is(1));
+        assertThat(runOutput.getOutputs().getLast().getRows().getFirst().get("second_value"), is(2));
+    }
+
+    @Test
+    void writeAndReadIonWithCommunityExtension() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(new Property<>("""
+                COPY (SELECT 1 AS a, 'x' AS b) TO '{{workingDir}}/out.ion' (FORMAT ION);
+                SELECT a, b
+                FROM read_ion('out.ion', columns := {a: 'BIGINT', b: 'VARCHAR'});
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs(), hasSize(1));
+        assertThat(runOutput.getOutputs().getFirst().getRow().get("a"), is(1L));
+        assertThat(runOutput.getOutputs().getFirst().getRow().get("b"), is("x"));
+    }
+
+    @Test
     void multiQueriesFromExistingFileInUrl() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
