@@ -401,7 +401,7 @@ public class BatchTest extends AbstractRdbmsTest {
             }
         }
 
-        Batch task = Batch.builder()
+        Batch task = FailingBatch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
@@ -438,7 +438,7 @@ public class BatchTest extends AbstractRdbmsTest {
             }
         }
 
-        Batch task = Batch.builder()
+        Batch task = FailingBatch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
@@ -481,7 +481,7 @@ public class BatchTest extends AbstractRdbmsTest {
             }
         }
 
-        Batch task = Batch.builder()
+        Batch task = FailingBatch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
