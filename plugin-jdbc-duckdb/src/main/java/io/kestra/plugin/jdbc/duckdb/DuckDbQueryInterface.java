@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 public interface DuckDbQueryInterface extends JdbcConnectionInterface {
+    List<String> DEFAULT_COMMUNITY_EXTENSIONS = List.of("ion");
+
     @Schema(
         title = "Input files to be loaded from DuckDb.",
         description = "Describe a files map that will be written and usable by DuckDb. " +
@@ -39,6 +41,12 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
         description = "This property lets you define if you want to output the in-memory database as a file for further processing."
     )
     Property<Boolean> getOutputDbFile();
+
+    @Schema(
+        title = "DuckDB community extensions to install and load before running the SQL.",
+        description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
+    )
+    Property<List<String>> getCommunityExtensions();
 
     @Override
     default String getScheme() {

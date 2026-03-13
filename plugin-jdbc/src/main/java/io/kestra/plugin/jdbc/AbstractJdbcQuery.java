@@ -35,6 +35,9 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
+    protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
+    }
+
     @Override
     public AbstractJdbcBaseQuery.Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
@@ -45,6 +48,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
         try (Connection conn = this.connection(runContext)) {
             this.runningConnection = conn;
+            this.beforeExecute(runContext, conn);
 
             String rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
             FetchType fetchType = this.renderFetchType(runContext);
