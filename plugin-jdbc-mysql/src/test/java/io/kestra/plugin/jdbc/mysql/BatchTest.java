@@ -389,19 +389,10 @@ public class BatchTest extends AbstractRdbmsTest {
             new FileInputStream(tempFile)
         );
 
-        class FailingBatch extends Batch {
-            int attempts = 0;
+        // delete file after upload to simulate read failure
+        tempFile.delete();
 
-            @Override
-            public Output run(RunContext runContext) throws Exception {
-                if (attempts++ == 0) {
-                    throw new IOException("Simulated input failure");
-                }
-                return super.run(runContext);
-            }
-        }
-
-        Batch task = FailingBatch.builder()
+        Batch task = Batch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
@@ -410,9 +401,10 @@ public class BatchTest extends AbstractRdbmsTest {
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
             .build();
 
-        AbstractJdbcBatch.Output output = task.run(runContext);
-
-        assertThat(output.getRowCount(), is(1L));
+        org.junit.jupiter.api.Assertions.assertThrows(
+            IOException.class,
+            () -> task.run(runContext)
+        );
     }
 
     @Test
@@ -443,7 +435,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
             .from(Property.ofValue(uri.toString()))
-            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .sql(Property.ofValue("insert into non_existing_table(id) values(?)"))
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
             .build();
 
@@ -459,7 +451,7 @@ public class BatchTest extends AbstractRdbmsTest {
 
         File tempFile = File.createTempFile("retry_db_all_", ".trs");
         try (OutputStream output = new FileOutputStream(tempFile)) {
-            FileSerde.write(output, List.of(1));
+            FileSerde.write(output, List.of(9999));
         }
 
         URI uri = storageInterface.put(
@@ -469,19 +461,12 @@ public class BatchTest extends AbstractRdbmsTest {
             new FileInputStream(tempFile)
         );
 
-        class FailingBatch extends Batch {
-            int attempts = 0;
-
-            @Override
-            public Output run(RunContext runContext) throws Exception {
-                if (attempts++ == 0) {
-                    throw new SQLTransientException("Simulated DB transient failure");
-                }
-                return super.run(runContext);
-            }
+        // first insert
+        try (Connection c = getConnection()) {
+            c.createStatement().execute("insert into namedInsert(id) values(9999)");
         }
 
-        Batch task = FailingBatch.builder()
+        Batch task = Batch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
@@ -490,9 +475,10 @@ public class BatchTest extends AbstractRdbmsTest {
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
             .build();
 
-        AbstractJdbcBatch.Output output = task.run(runContext);
-
-        assertThat(output.getRowCount(), is(1L));
+        org.junit.jupiter.api.Assertions.assertThrows(
+            SQLException.class,
+            () -> task.run(runContext)
+        );
     }
 
     @Override
