@@ -132,6 +132,13 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     @Builder.Default
     private Property<Boolean> resumeOnRetry = Property.ofValue(true);
 
+    @Schema(
+        title = "Controls which failures are retried.",
+        description = "INPUT retries input handling failures, ALL retries all retryable failures."
+    )
+    @Builder.Default
+    private Property<RetryScope> retryScope = Property.ofValue(RetryScope.INPUT);
+
     // will be used when killing
     @Getter(AccessLevel.NONE)
     private transient volatile Statement runningStatement;
@@ -152,8 +159,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         try {
             logger.debug("Starting prepared statement: {}", config.sql());
 
+            var rRetryScope = runContext.render(retryScope).as(RetryScope.class).orElse(RetryScope.INPUT);
+
             RetryUtils.of(buildRetryPolicy(runContext), logger)
-                .runRetryIf(this::isRetryable, () -> {
+                .runRetryIf(t -> isRetryable(rRetryScope, t), () -> {
                     executor.execute();
                     return null;
                 });
@@ -236,21 +245,31 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         return columns;
     }
 
-    private boolean isRetryable(Throwable t) {
+    private boolean isRetryable(RetryScope retryScope, Throwable t) {
+        boolean allowInput = retryScope == RetryScope.INPUT || retryScope == RetryScope.ALL;
+        boolean allowDb = retryScope == RetryScope.ALL;
+
         for (Throwable cause = t; cause != null; cause = cause.getCause()) {
 
-            if (cause instanceof SQLIntegrityConstraintViolationException || cause instanceof SQLSyntaxErrorException || cause instanceof SQLDataException || cause instanceof IllegalArgumentException) {
+            if (cause instanceof SQLIntegrityConstraintViolationException
+                || cause instanceof SQLSyntaxErrorException
+                || cause instanceof SQLDataException
+                || cause instanceof IllegalArgumentException) {
                 return false;
             }
 
-            if (cause instanceof IOException || cause instanceof SQLRecoverableException || cause instanceof SQLTransientException) {
-                return true;
+            if (cause instanceof IOException) {
+                return allowInput;
             }
 
-            if (cause instanceof SQLException sql) {
-                String state = sql.getSQLState();
+            if (cause instanceof SQLRecoverableException || cause instanceof SQLTransientException) {
+                return allowDb;
+            }
+
+            if (cause instanceof SQLException sqlException) {
+                String state = sqlException.getSQLState();
                 if (state != null && state.startsWith("08")) {
-                    return true;
+                    return allowDb;
                 }
             }
         }
@@ -569,6 +588,12 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         long getQueryCount() {
             return queryCount;
         }
+    }
+
+    public enum RetryScope {
+        NONE,
+        INPUT,
+        ALL
     }
 
     record BatchConfig(URI from, String sql, List<String> columns, int chunk, InputHandling inputHandling, long localBufferMaxBytes, boolean resumeOnRetry) {}

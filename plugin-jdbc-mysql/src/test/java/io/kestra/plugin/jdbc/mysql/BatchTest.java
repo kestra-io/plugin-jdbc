@@ -373,6 +373,128 @@ public class BatchTest extends AbstractRdbmsTest {
         assertThat(output.getRowCount(), is(3L));
     }
 
+    @Test
+    void shouldRetryOnInputErrorWhenScopeInput() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_input_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, List.of(1));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        class FailingBatch extends Batch {
+            int attempts = 0;
+
+            @Override
+            public Output run(RunContext runContext) throws Exception {
+                if (attempts++ == 0) {
+                    throw new IOException("Simulated input failure");
+                }
+                return super.run(runContext);
+            }
+        }
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(1L));
+    }
+
+    @Test
+    void shouldNotRetryDbErrorWhenScopeInput() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_db_fail_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, List.of(1));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        class FailingBatch extends Batch {
+            @Override
+            public Output run(RunContext runContext) throws Exception {
+                throw new SQLTransientException("Simulated DB transient failure");
+            }
+        }
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
+            .build();
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            SQLTransientException.class,
+            () -> task.run(runContext)
+        );
+    }
+
+    @Test
+    void shouldRetryDbErrorWhenScopeAll() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_db_all_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, List.of(1));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        class FailingBatch extends Batch {
+            int attempts = 0;
+
+            @Override
+            public Output run(RunContext runContext) throws Exception {
+                if (attempts++ == 0) {
+                    throw new SQLTransientException("Simulated DB transient failure");
+                }
+                return super.run(runContext);
+            }
+        }
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(1L));
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:mysql://127.0.0.1:64790/kestra";
