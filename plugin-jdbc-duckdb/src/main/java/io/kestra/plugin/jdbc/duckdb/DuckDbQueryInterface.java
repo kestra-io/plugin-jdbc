@@ -46,7 +46,6 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
         title = "DuckDB community extensions to install and load before running the SQL.",
         description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
     )
-    @PluginProperty(group = "connection")
     Property<List<String>> getCommunityExtensions();
 
     @Override
