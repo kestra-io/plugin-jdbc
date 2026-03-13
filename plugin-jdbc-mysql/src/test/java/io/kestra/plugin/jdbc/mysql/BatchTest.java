@@ -11,6 +11,9 @@ import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import io.micronaut.context.ApplicationContext;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotNull;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +21,9 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLTransientException;
 import java.time.*;
 import java.util.Arrays;
 import java.util.List;
@@ -28,9 +33,6 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest
 public class BatchTest extends AbstractRdbmsTest {
-    @Inject
-    private ApplicationContext applicationContext;
-
     @Test
     void insert() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -265,6 +267,110 @@ public class BatchTest extends AbstractRdbmsTest {
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getRowCount(), is(5L));
+    }
+
+    @Test
+    void shouldWorkWithChunks() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("chunk_test_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            int base = (int) (System.currentTimeMillis() % 100000);
+
+            for (int i = 0; i < 5; i++) {
+                FileSerde.write(output, Arrays.asList(base + i));
+            }
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("namedInsert"))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .chunk(Property.ofValue(2))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(5L));
+    }
+
+    @Test
+    void localFailsIfFileTooLarge() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("local_fail_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            for (int i = 0; i < 100; i++) {
+                FileSerde.write(output, Arrays.asList(i));
+            }
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.LOCAL))
+            .localBufferMaxBytes(Property.ofValue(1L))
+            .build();
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> task.run(runContext)
+        );
+    }
+
+    @Test
+    void shouldHandleLocalInputHandling() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("local_input_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            int base = (int) (System.currentTimeMillis() % 100000);
+
+            for (int i = 0; i < 3; i++) {
+                FileSerde.write(output, Arrays.asList(base + i));
+            }
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.LOCAL))
+            .localBufferMaxBytes(Property.ofValue(1024L))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(3L));
     }
 
     @Override
