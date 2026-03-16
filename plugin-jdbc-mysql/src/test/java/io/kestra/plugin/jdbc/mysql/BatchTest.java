@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLTransientException;
 import java.time.*;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -278,7 +280,7 @@ public class BatchTest extends AbstractRdbmsTest {
             int base = (int) (System.currentTimeMillis() % 100000);
 
             for (int i = 0; i < 5; i++) {
-                FileSerde.write(output, Arrays.asList(base + i));
+                FileSerde.write(output, List.of(base + i));
             }
         }
 
@@ -311,7 +313,7 @@ public class BatchTest extends AbstractRdbmsTest {
         File tempFile = File.createTempFile("local_fail_", ".trs");
         try (OutputStream output = new FileOutputStream(tempFile)) {
             for (int i = 0; i < 100; i++) {
-                FileSerde.write(output, Arrays.asList(i));
+                FileSerde.write(output, List.of(i));
             }
         }
 
@@ -332,9 +334,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .localBufferMaxBytes(Property.ofValue(1L))
             .build();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> task.run(runContext)
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext)
         );
     }
 
@@ -347,7 +347,7 @@ public class BatchTest extends AbstractRdbmsTest {
             int base = (int) (System.currentTimeMillis() % 100000);
 
             for (int i = 0; i < 3; i++) {
-                FileSerde.write(output, Arrays.asList(base + i));
+                FileSerde.write(output, List.of(base + i));
             }
         }
 
@@ -371,6 +371,85 @@ public class BatchTest extends AbstractRdbmsTest {
         AbstractJdbcBatch.Output output = task.run(runContext);
 
         assertThat(output.getRowCount(), is(3L));
+    }
+
+    @Test
+    void shouldRetryOnInputErrorWhenScopeInput() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue("kestra://non-existent-file.ion"))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.STREAM))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
+            .build();
+
+        var exception = assertThrows(Exception.class, () -> task.run(runContext));
+        assertThat(exception.getCause() instanceof IOException, is(true));
+    }
+
+    @Test
+    void shouldNotRetryDbErrorWhenScopeInput() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_db_fail_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, List.of(1));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into non_existing_table(id) values(?)"))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
+            .build();
+
+        assertThrows(java.sql.BatchUpdateException.class, () -> task.run(runContext));
+    }
+
+    @Test
+    void shouldRetryDbErrorWhenScopeAll() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        File tempFile = File.createTempFile("retry_db_all_", ".trs");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, List.of(9999));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        // first insert
+        try (Connection c = getConnection()) {
+            c.createStatement().execute("insert into namedInsert(id) values(9999)");
+        }
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
+            .build();
+
+        assertThrows(SQLException.class, () -> task.run(runContext));
     }
 
     @Override
