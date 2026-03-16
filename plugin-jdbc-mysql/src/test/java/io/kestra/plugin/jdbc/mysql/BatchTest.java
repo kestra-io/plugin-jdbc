@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLSyntaxErrorException;
 import java.sql.SQLTransientException;
 import java.time.*;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 public class BatchTest extends AbstractRdbmsTest {
@@ -278,7 +280,7 @@ public class BatchTest extends AbstractRdbmsTest {
             int base = (int) (System.currentTimeMillis() % 100000);
 
             for (int i = 0; i < 5; i++) {
-                FileSerde.write(output, Arrays.asList(base + i));
+                FileSerde.write(output, List.of(base + i));
             }
         }
 
@@ -311,7 +313,7 @@ public class BatchTest extends AbstractRdbmsTest {
         File tempFile = File.createTempFile("local_fail_", ".trs");
         try (OutputStream output = new FileOutputStream(tempFile)) {
             for (int i = 0; i < 100; i++) {
-                FileSerde.write(output, Arrays.asList(i));
+                FileSerde.write(output, List.of(i));
             }
         }
 
@@ -332,9 +334,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .localBufferMaxBytes(Property.ofValue(1L))
             .build();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> task.run(runContext)
+        assertThrows(IllegalArgumentException.class, () -> task.run(runContext)
         );
     }
 
@@ -347,7 +347,7 @@ public class BatchTest extends AbstractRdbmsTest {
             int base = (int) (System.currentTimeMillis() % 100000);
 
             for (int i = 0; i < 3; i++) {
-                FileSerde.write(output, Arrays.asList(base + i));
+                FileSerde.write(output, List.of(base + i));
             }
         }
 
@@ -377,34 +377,18 @@ public class BatchTest extends AbstractRdbmsTest {
     void shouldRetryOnInputErrorWhenScopeInput() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        File tempFile = File.createTempFile("retry_input_", ".trs");
-        try (OutputStream output = new FileOutputStream(tempFile)) {
-            FileSerde.write(output, List.of(1));
-        }
-
-        URI uri = storageInterface.put(
-            TenantService.MAIN_TENANT,
-            null,
-            URI.create("/" + IdUtils.create() + ".ion"),
-            new FileInputStream(tempFile)
-        );
-
-        // delete file after upload to simulate read failure
-        tempFile.delete();
-
         Batch task = Batch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .from(Property.ofValue(uri.toString()))
+            .from(Property.ofValue("kestra://non-existent-file.ion"))
             .sql(Property.ofValue("insert into namedInsert(id) values(?)"))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.STREAM))
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
             .build();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-            IOException.class,
-            () -> task.run(runContext)
-        );
+        var exception = assertThrows(Exception.class, () -> task.run(runContext));
+        assertThat(exception.getCause() instanceof IOException, is(true));
     }
 
     @Test
@@ -423,14 +407,7 @@ public class BatchTest extends AbstractRdbmsTest {
             new FileInputStream(tempFile)
         );
 
-        class FailingBatch extends Batch {
-            @Override
-            public Output run(RunContext runContext) throws Exception {
-                throw new SQLTransientException("Simulated DB transient failure");
-            }
-        }
-
-        Batch task = FailingBatch.builder()
+        Batch task = Batch.builder()
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
@@ -439,10 +416,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.INPUT))
             .build();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-            SQLTransientException.class,
-            () -> task.run(runContext)
-        );
+        assertThrows(java.sql.BatchUpdateException.class, () -> task.run(runContext));
     }
 
     @Test
@@ -475,10 +449,7 @@ public class BatchTest extends AbstractRdbmsTest {
             .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
             .build();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-            SQLException.class,
-            () -> task.run(runContext)
-        );
+        assertThrows(SQLException.class, () -> task.run(runContext));
     }
 
     @Override
