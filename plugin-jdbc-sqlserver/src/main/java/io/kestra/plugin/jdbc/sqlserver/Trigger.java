@@ -3,15 +3,13 @@ package io.kestra.plugin.jdbc.sqlserver;
 import com.microsoft.sqlserver.jdbc.SQLServerDriver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
@@ -59,6 +57,19 @@ import java.sql.SQLException;
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements SqlServerConnectionInterface {
+    @Builder.Default
+    @PluginProperty(group = "connection")
+    protected Property<EncryptMode> encrypt = Property.ofValue(EncryptMode.FALSE);
+    @Builder.Default
+    @PluginProperty(group = "connection")
+    protected Property<Boolean> trustServerCertificate = Property.ofValue(false);
+    @PluginProperty(group = "connection")
+    protected Property<String> hostNameInCertificate;
+    @PluginProperty(group = "connection")
+    protected Property<String> trustStore;
+    @PluginProperty(group = "connection")
+    protected Property<String> trustStorePassword;
+
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         var query = Query.builder()
@@ -76,6 +87,11 @@ public class Trigger extends AbstractJdbcTrigger implements SqlServerConnectionI
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())
+            .encrypt(this.getEncrypt())
+            .trustServerCertificate(this.getTrustServerCertificate())
+            .hostNameInCertificate(this.getHostNameInCertificate())
+            .trustStore(this.getTrustStore())
+            .trustStorePassword(this.getTrustStorePassword())
             .build();
         return query.run(runContext);
     }
