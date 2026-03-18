@@ -11,7 +11,11 @@ public interface SqlServerConnectionInterface extends JdbcConnectionInterface {
         description = """
             Controls JDBC encryption between the client and SQL Server.
             Defaults to FALSE to preserve backward compatibility with mssql-jdbc 12.x behavior.
-            Set to TRUE or STRICT for encrypted connections."""
+            Set to TRUE or STRICT for encrypted connections.
+            Note: if your SQL Server has "Force Encryption" enabled server-side, the server will \
+            require TLS regardless of this setting. In that case, ensure your server supports TLS 1.2+ \
+            and its certificate is properly configured, otherwise you may get "unexpected_message" errors \
+            during the TLS handshake."""
     )
     @PluginProperty(group = "connection")
     Property<EncryptMode> getEncrypt();
