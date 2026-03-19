@@ -224,7 +224,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
                 additionalVars
             );
             this.databaseFile = Path.of(workingDirectory + "/" + dbName);
-            this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
+            this.url = Property.ofValue(DEFAULT_URL + this.databaseFile.toAbsolutePath());
         }
 
         var rOutputFiles = this.outputFiles == null

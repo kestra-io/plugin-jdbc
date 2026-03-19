@@ -104,7 +104,7 @@ class DuckDbQueriesTest {
 
         Queries task = Queries.builder()
             .fetchType(Property.ofValue(FETCH_ONE))
-            .sql(new Property<>("""
+            .sql(Property.ofExpression("""
                 COPY (SELECT 1 AS a, 'x' AS b) TO '{{workingDir}}/out.ion' (FORMAT ION);
                 SELECT a, b
                 FROM read_ion('out.ion', columns := {a: 'BIGINT', b: 'VARCHAR'});
@@ -177,7 +177,7 @@ class DuckDbQueriesTest {
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(Property.ofValue(List.of("out")))
             .fetchType(Property.ofValue(FETCH_ONE))
-            .sql(new Property<>("""
+            .sql(Property.ofExpression("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
                 COPY (SELECT id, name FROM new_tbl) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');
                 SELECT COUNT(id) as count FROM new_tbl;
@@ -186,7 +186,7 @@ class DuckDbQueriesTest {
             );
 
         if (url != null) {
-            builder.url(new Property<>(url));
+            builder.url(Property.ofValue(url));
         }
 
         Queries.Output runOutput = builder
@@ -229,7 +229,7 @@ class DuckDbQueriesTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .fetchType(Property.ofValue(FETCH))
-            .sql(new Property<>("""
+            .sql(Property.ofExpression("""
                 CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('{{workingDir}}/in.csv', header=True);
                 SELECT * FROM new_tbl;
                 """)
@@ -248,7 +248,7 @@ class DuckDbQueriesTest {
         var updateTableAndFetchData = Queries.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .fetchType(Property.ofValue(FETCH))
-            .sql(new Property<>(
+            .sql(Property.ofValue(
                 "UPDATE new_tbl SET name = 'TestUser' WHERE name = '" + expectedName + "'; \n" +
                 "SELECT * FROM new_tbl;")
             )

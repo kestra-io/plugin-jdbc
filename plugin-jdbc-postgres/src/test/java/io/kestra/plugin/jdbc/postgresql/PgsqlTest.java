@@ -469,8 +469,8 @@ public class PgsqlTest extends AbstractRdbmsTest {
 
     public static Stream<Arguments> incorrectUrl() {
         return Stream.of(
-            Arguments.of(new Property<>("")), // Empty URL
-            Arguments.of(new Property<>("jdbc:mysql://127.0.0.1:64790/kestra")) // Incorrect scheme
+            Arguments.of(Property.ofValue("")), // Empty URL
+            Arguments.of(Property.ofValue("jdbc:mysql://127.0.0.1:64790/kestra")) // Incorrect scheme
         );
     }
 
