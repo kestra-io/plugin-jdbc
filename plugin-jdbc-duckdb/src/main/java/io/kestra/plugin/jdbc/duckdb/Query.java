@@ -247,7 +247,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 additionalVars
             );
             this.databaseFile = Path.of(workingDirectory + "/" + dbName);
-            this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
+            this.url = Property.ofValue(DEFAULT_URL + this.databaseFile.toAbsolutePath());
         }
 
         // outputFiles
@@ -271,7 +271,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 sql.replaceAll(";\\s*$", "") + ")";
         }
 
-        this.sql = new Property<>(sql);
+        this.sql = Property.ofValue(sql);
 
         AbstractJdbcQuery.Output run = super.run(runContext);
 

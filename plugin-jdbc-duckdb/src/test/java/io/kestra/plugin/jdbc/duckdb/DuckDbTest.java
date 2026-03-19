@@ -273,7 +273,7 @@ class DuckDbTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(Property.ofValue(List.of("out")))
-            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
+            .sql(Property.ofValue("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
             .outputDbFile(Property.ofValue(true))
             .build()
             .run(runContext);
@@ -283,7 +283,7 @@ class DuckDbTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .databaseUri(Property.ofValue(createTable.getDatabaseUri().toString()))
             .fetchType(Property.ofValue(FETCH))
-            .sql(new Property<>("SELECT * FROM new_tbl;"))
+            .sql(Property.ofValue("SELECT * FROM new_tbl;"))
             .build()
             .run(runContext);
 
@@ -303,7 +303,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>(sql))
+            .sql(Property.ofValue(sql))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -320,7 +320,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
+            .sql(Property.ofValue("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -344,7 +344,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("""
+            .sql(Property.ofValue("""
                 SELECT array_value(1, 2, 3);
                 """))
             .fetchType(Property.ofValue(FETCH))
@@ -371,8 +371,8 @@ class DuckDbTest {
 
     public static Stream<Arguments> incorrectUrl() {
         return Stream.of(
-            Arguments.of(new Property<>("")), //Empty URL
-            Arguments.of(new Property<>("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
+            Arguments.of(Property.ofValue("")), //Empty URL
+            Arguments.of(Property.ofValue("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
         );
     }
 
@@ -393,7 +393,7 @@ class DuckDbTest {
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("data.json", jsonFileUri.toString()))
-            .sql(new Property<>("SELECT a AS a_struct, a::JSON AS a_json FROM read_json('data.json')"))
+            .sql(Property.ofValue("SELECT a AS a_struct, a::JSON AS a_json FROM read_json('data.json')"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -438,7 +438,7 @@ class DuckDbTest {
         // Test with a simple STRUCT
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT {'key1': 1, 'key2': 'value'} AS struct_col"))
+            .sql(Property.ofValue("SELECT {'key1': 1, 'key2': 'value'} AS struct_col"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -461,7 +461,7 @@ class DuckDbTest {
         // Test with a JSON type
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT '{\"key\": \"value\", \"number\": 42}'::JSON AS json_col"))
+            .sql(Property.ofValue("SELECT '{\"key\": \"value\", \"number\": 42}'::JSON AS json_col"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);

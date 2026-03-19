@@ -66,7 +66,7 @@ public class LoadTest {
             .password(Property.ofValue("mysql_passwd"))
             .inputFile(put.toString())
             .fetchType(Property.ofValue(NONE))
-            .sql(new Property<>("LOAD DATA LOCAL INFILE '{{ inputFile }}' \n" +
+            .sql(Property.ofExpression("LOAD DATA LOCAL INFILE '{{ inputFile }}' \n" +
                 "INTO TABLE discounts \n" +
                 "FIELDS TERMINATED BY ',' \n" +
                 "ENCLOSED BY '\"'\n" +
