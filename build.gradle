@@ -1,5 +1,5 @@
 plugins {
-    id 'io.kestra.gradle.spotless-conventions' version '1.0.2'
+    id 'io.kestra.gradle.spotless-conventions' version '1.0.4'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
