@@ -187,16 +187,21 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     }
 
     private BatchConfig buildConfig(RunContext runContext) throws Exception {
+        Logger logger = runContext.logger();
         URI from = new URI(runContext.render(this.from).as(String.class).orElseThrow());
 
         List<String> columnsToUse = runContext.render(this.columns).asList(String.class);
         String rTable = runContext.render(this.table).as(String.class).orElse(null);
-
-        if (columnsToUse.isEmpty() && rTable != null) {
-            columnsToUse = fetchColumnsFromTable(runContext, runContext.render(this.table).as(String.class).orElseThrow());
-        }
-
         String rSql = runContext.render(this.sql).as(String.class).orElse(null);
+
+        // skip column discovery when sql is already provided, otherwise fetched column
+        // names may not match source data keys and silently bind NULL.
+        if (columnsToUse.isEmpty() && rTable != null && rSql == null) {
+            columnsToUse = fetchColumnsFromTable(runContext, rTable);
+            logger.debug("fetched {} column(s) from {}", columnsToUse.size(), rTable);
+        } else if (rTable != null && rSql != null) {
+            logger.info("table '{}' is ignored when sql is provided", rTable);
+        }
 
         if (rSql == null && !columnsToUse.isEmpty()) {
             rSql = constructInsertStatement(runContext, rTable, columnsToUse);
