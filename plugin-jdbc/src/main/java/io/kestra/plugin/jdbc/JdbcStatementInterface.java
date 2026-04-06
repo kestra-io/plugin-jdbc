@@ -13,7 +13,7 @@ public interface JdbcStatementInterface extends JdbcConnectionInterface {
     @Schema(
         title = "The time zone id to use for date/time manipulation. Default value is the worker's default time zone id."
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     Property<String> getTimeZoneId();
 
     default ZoneId zoneId(RunContext runContext) throws IllegalVariableEvaluationException {

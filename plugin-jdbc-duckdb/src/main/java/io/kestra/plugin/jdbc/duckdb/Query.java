@@ -149,16 +149,21 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
     @Builder.Default
+    @PluginProperty(group = "connection")
     private Property<String> url = Property.ofValue(DEFAULT_URL);
 
+    @PluginProperty(group = "source")
     protected Object inputFiles;
+    @PluginProperty(group = "destination")
     protected Property<List<String>> outputFiles;
+    @PluginProperty(group = "connection")
     protected Property<String> databaseUri;
 
     @Schema(
         title = "Whether to store or not the database file in the internal storage"
     )
     @Builder.Default
+    @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Builder.Default

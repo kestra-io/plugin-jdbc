@@ -55,7 +55,7 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface {
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<String> sqliteFile;
 
     @Builder.Default

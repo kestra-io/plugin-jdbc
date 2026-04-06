@@ -58,14 +58,14 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements SqlServerConnectionInterface {
     @Builder.Default
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<EncryptMode> encrypt = Property.ofValue(EncryptMode.FALSE);
     @Builder.Default
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> trustServerCertificate = Property.ofValue(false);
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<String> hostNameInCertificate;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<String> trustStore;
     @PluginProperty(group = "connection")
     protected Property<String> trustStorePassword;

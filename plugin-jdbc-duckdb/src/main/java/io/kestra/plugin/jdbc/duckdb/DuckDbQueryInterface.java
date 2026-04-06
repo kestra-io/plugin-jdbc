@@ -15,7 +15,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
         description = "Describe a files map that will be written and usable by DuckDb. " +
             "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` "
     )
-    @PluginProperty(
+    @PluginProperty(group = "source", 
         additionalProperties = String.class,
         dynamic = true
     )
@@ -28,24 +28,28 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
             " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
     )
+    @PluginProperty(group = "destination")
     Property<List<String>> getOutputFiles();
 
     @Schema(
         title = "Database URI",
         description = "Kestra's URI to an existing Duck DB database file"
     )
+    @PluginProperty(group = "advanced")
     Property<String> getDatabaseUri();
 
     @Schema(
         title = "Output the database file.",
         description = "This property lets you define if you want to output the in-memory database as a file for further processing."
     )
+    @PluginProperty(group = "advanced")
     Property<Boolean> getOutputDbFile();
 
     @Schema(
         title = "DuckDB community extensions to install and load before running the SQL.",
         description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
     )
+    @PluginProperty(group = "advanced")
     Property<List<String>> getCommunityExtensions();
 
     @Override

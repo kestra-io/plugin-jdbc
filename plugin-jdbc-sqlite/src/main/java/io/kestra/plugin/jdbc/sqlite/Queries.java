@@ -114,7 +114,7 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
     )
     private Property<String> url = Property.ofValue("jdbc:sqlite:");
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "source")
     @Schema(
         title = "SQLite database file (optional)",
         description = """
@@ -135,6 +135,7 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
         defaultValue = "false"
     )
     @Builder.Default
+    @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Getter(AccessLevel.NONE)

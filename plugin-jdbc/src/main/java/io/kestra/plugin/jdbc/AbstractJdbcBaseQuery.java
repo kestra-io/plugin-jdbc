@@ -46,7 +46,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @PluginProperty(group = "connection")
     private Property<String> password;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
     @Schema(
@@ -56,7 +56,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Query tasks accept a single statement; Queries tasks can execute multiple statements separated by semicolons"""
     )
     @NotNull
-    @PluginProperty(language = MonacoLanguages.SQL)
+    @PluginProperty(language = MonacoLanguages.SQL, group = "main")
     protected Property<String> sql;
 
     @Schema(
@@ -65,7 +65,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Optional SQL executed in the same transaction after the main statement.
             Useful for marking rows as processed to avoid duplicates; only a single statement is allowed. Commit covers both sql and afterSQL"""
     )
-    @PluginProperty(language = MonacoLanguages.SQL)
+    @PluginProperty(language = MonacoLanguages.SQL, group = "advanced")
     protected Property<String> afterSQL;
 
     /**
@@ -95,6 +95,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "main")
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Schema(
@@ -102,12 +103,14 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         description = "Controls JDBC fetch size for STORE mode. Default: 10,000 rows; use Integer.MIN_VALUE for MySQL streaming. Ignored for FETCH and FETCH_ONE"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<Integer> fetchSize = Property.ofValue(10000);
 
     @Schema(
         title = "Named parameter bindings for SQL query",
         description = "Map of parameter names to values. Use :name placeholders rendered then bound as prepared-statement parameters; supports nulls and typed values"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
 
     @Builder.Default

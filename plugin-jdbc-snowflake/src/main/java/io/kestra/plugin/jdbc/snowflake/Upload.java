@@ -55,21 +55,23 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     @PluginProperty(group = "connection")
     private Property<String> database;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> warehouse;
 
     @PluginProperty(group = "connection")
     private Property<String> schema;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> role;
 
+    @PluginProperty(group = "advanced")
     private Property<String> queryTag;
 
     @Schema(
         title = "Path to the file to load to Snowflake stage."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> from;
 
     @Schema(
@@ -82,18 +84,21 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
             """
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> stageName;
 
     @Schema(
         title = "The prefix under which the file will be uploaded to Snowflake stage."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> prefix;
 
     @Schema(
         title = "Destination file name to use."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> fileName;
 
     @Schema(
@@ -101,6 +106,7 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> compress = Property.ofValue(true);
 
     @Override
