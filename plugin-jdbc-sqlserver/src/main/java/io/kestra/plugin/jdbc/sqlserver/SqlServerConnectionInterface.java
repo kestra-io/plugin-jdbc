@@ -17,7 +17,7 @@ public interface SqlServerConnectionInterface extends JdbcConnectionInterface {
             and its certificate is properly configured, otherwise you may get "unexpected_message" errors \
             during the TLS handshake."""
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     Property<EncryptMode> getEncrypt();
 
     @Schema(
@@ -26,7 +26,7 @@ public interface SqlServerConnectionInterface extends JdbcConnectionInterface {
             When set to true, the driver does not validate the SQL Server TLS/SSL certificate.
             Useful for development or self-signed certificates."""
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     Property<Boolean> getTrustServerCertificate();
 
     @Schema(
@@ -35,7 +35,7 @@ public interface SqlServerConnectionInterface extends JdbcConnectionInterface {
             Specifies the host name to be used when validating the SQL Server TLS/SSL certificate.
             If not set, the driver uses the server name from the connection URL."""
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     Property<String> getHostNameInCertificate();
 
     @Schema(
@@ -44,7 +44,7 @@ public interface SqlServerConnectionInterface extends JdbcConnectionInterface {
             Specifies the path (including file name) to the certificate trust store file.
             Used when encrypt is TRUE or STRICT to validate the server certificate."""
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     Property<String> getTrustStore();
 
     @Schema(

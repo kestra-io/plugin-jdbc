@@ -38,14 +38,14 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @PluginProperty(group = "connection")
     private Property<String> password;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
     @NotNull
-    @PluginProperty(language = MonacoLanguages.SQL)
+    @PluginProperty(language = MonacoLanguages.SQL, group = "main")
     private Property<String> sql;
 
-    @PluginProperty(language = MonacoLanguages.SQL)
+    @PluginProperty(language = MonacoLanguages.SQL, group = "advanced")
     private Property<String> afterSQL;
 
     /**

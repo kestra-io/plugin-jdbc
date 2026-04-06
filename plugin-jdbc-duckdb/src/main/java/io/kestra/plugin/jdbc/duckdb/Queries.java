@@ -107,13 +107,17 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
+    @PluginProperty(group = "source")
     protected Object inputFiles;
 
+    @PluginProperty(group = "destination")
     protected Property<List<String>> outputFiles;
 
+    @PluginProperty(group = "connection")
     protected Property<String> databaseUri;
 
     @Builder.Default
+    @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
     @Builder.Default
@@ -123,6 +127,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
     private transient Path databaseFile;
 
     @Builder.Default
+    @PluginProperty(group = "connection")
     private Property<String> url = Property.ofValue(DEFAULT_URL);
 
     @Override

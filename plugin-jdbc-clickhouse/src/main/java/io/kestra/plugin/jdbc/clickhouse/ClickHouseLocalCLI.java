@@ -59,39 +59,44 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 	@Schema(
 		title = "The commands to run before main list of commands."
 	)
+	@PluginProperty(group = "execution")
 	protected Property<List<String>> beforeCommands;
 
 	@Schema(
 		title = "The commands to run."
 	)
     @NotNull
+	@PluginProperty(group = "main")
 	protected Property<List<String>> commands;
 
 	@Schema(
 		title = "Additional environment variables for the current process."
 	)
-	@PluginProperty(dynamic = true)
+	@PluginProperty(dynamic = true, group = "execution")
 	protected Map<String, String> env;
 
 	@Schema(
         title = "The task runner to use."
 	)
 	@Valid
-	@PluginProperty
+	@PluginProperty(group = "execution")
 	@Builder.Default
 	private TaskRunner<?> taskRunner = Docker.instance();
 
 	@Schema(
 		title = "The Clickhouse container image."
 	)
-	@PluginProperty(dynamic =true)
+	@PluginProperty(dynamic =true, group = "execution")
 	@Builder.Default
 	private String containerImage = DEFAULT_IMAGE;
 
+	@PluginProperty(group = "source")
 	private NamespaceFiles namespaceFiles;
 
+	@PluginProperty(group = "source")
 	private Object inputFiles;
 
+	@PluginProperty(group = "destination")
 	private Property<List<String>> outputFiles;
 
 	@Override

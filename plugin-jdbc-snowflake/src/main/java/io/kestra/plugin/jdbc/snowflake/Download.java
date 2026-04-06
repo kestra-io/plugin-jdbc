@@ -55,15 +55,16 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @PluginProperty(group = "connection")
     private Property<String> database;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> warehouse;
 
     @PluginProperty(group = "connection")
     private Property<String> schema;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> role;
 
+    @PluginProperty(group = "advanced")
     private Property<String> queryTag;
 
     @Schema(
@@ -71,12 +72,14 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
         description = "~ or table name or stage name."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> stageName;
 
     @Schema(
         title = "File name on Snowflake stage that should be downloaded."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> fileName;
 
     @Schema(
@@ -84,6 +87,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> compress = Property.ofValue(true);
 
     @Override

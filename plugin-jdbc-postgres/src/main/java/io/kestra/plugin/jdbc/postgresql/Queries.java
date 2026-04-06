@@ -89,13 +89,13 @@ import java.util.Properties;
 )
 public class Queries extends AbstractJdbcQueries implements PostgresConnectionInterface {
     @Builder.Default
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<Boolean> ssl = Property.ofValue(false);
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<SslMode> sslMode;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<String> sslRootCert;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     protected Property<String> sslCert;
     @PluginProperty(group = "connection")
     protected Property<String> sslKey;

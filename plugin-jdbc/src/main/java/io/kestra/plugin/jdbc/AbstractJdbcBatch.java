@@ -45,7 +45,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     @PluginProperty(group = "connection")
     private Property<String> password;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
     @NotNull
@@ -53,7 +53,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         title = "Input file from internal storage",
         description = "URI of the source file (kestra://) containing rows to insert"
     )
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(internalStorageURI = true, group = "main")
     private Property<String> from;
 
     @Schema(
@@ -63,7 +63,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             Example: INSERT INTO <table_name> VALUES (?, ?, ?) for three columns; use column list if inserting a subset
             """
     )
-    @PluginProperty(language = MonacoLanguages.SQL)
+    @PluginProperty(language = MonacoLanguages.SQL, group = "processing")
     private Property<String> sql;
 
     @Schema(
@@ -72,12 +72,14 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     )
     @Builder.Default
     @NotNull
+    @PluginProperty(group = "main")
     private Property<Integer> chunk = Property.ofValue(1000);
 
     @Schema(
         title = "Columns bound to placeholders",
         description = "Ordered column names matching ? placeholders; if omitted, placeholder count must match all columns in the input row"
     )
+    @PluginProperty(group = "processing")
     private Property<List<String>> columns;
 
     @Schema(
@@ -87,6 +89,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             If `sql` is also omitted, an INSERT statement is generated automatically using the discovered columns
             """
     )
+    @PluginProperty(group = "advanced")
     private Property<String> table;
 
     @Schema(
@@ -94,6 +97,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     private Property<Integer> maxRetries = Property.ofValue(3);
 
     @Schema(
@@ -101,6 +105,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         description = "Uses ISO-8601 duration format, for example `PT1S`."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Duration> retryBackoff = Property.ofValue(Duration.ofSeconds(1));
 
     @Schema(
@@ -113,6 +118,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             """
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<InputHandling> inputHandling = Property.ofValue(InputHandling.AUTO);
 
     @Schema(
@@ -124,12 +130,14 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             """
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Long> localBufferMaxBytes = Property.ofValue(100L * 1024L * 1024L);
 
     @Schema(
         title = "Resume from the last successfully committed chunk on retry."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> resumeOnRetry = Property.ofValue(true);
 
     @Schema(
@@ -137,6 +145,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         description = "INPUT retries input handling failures, ALL retries all retryable failures."
     )
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<RetryScope> retryScope = Property.ofValue(RetryScope.INPUT);
 
     // will be used when killing

@@ -97,19 +97,20 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
         title = "The commands to run. Please refer to SnowflakeCLI documentation https://docs.snowflake.com/en/developer-guide/snowflake-cli/command-reference/overview"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
     @Schema(
         title = "The account to use for authentication."
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "main")
     @NotNull
     protected Property<String> account;
 
     @Schema(
         title = "The username to use for authentication."
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "main")
     @NotNull
     protected Property<String> username;
 
@@ -135,28 +136,31 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     @Schema(
         title = "Additional environment variables for the current process."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "execution")
     protected Map<String, String> env;
 
     @Schema(
         title = "The task runner to use."
     )
     @Valid
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     private TaskRunner<?> taskRunner = Docker.instance();
 
     @Schema(
         title = "The snowflake container image."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "execution")
     @Builder.Default
     private String containerImage = DEFAULT_IMAGE;
 
+    @PluginProperty(group = "source")
     private NamespaceFiles namespaceFiles;
 
+    @PluginProperty(group = "source")
     private Object inputFiles;
 
+    @PluginProperty(group = "destination")
     private Property<List<String>> outputFiles;
 
     @Override

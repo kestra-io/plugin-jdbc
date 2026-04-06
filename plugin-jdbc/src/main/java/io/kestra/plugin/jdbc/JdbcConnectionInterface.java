@@ -23,7 +23,7 @@ public interface JdbcConnectionInterface {
         title = "The JDBC URL to connect to the database"
     )
     @NotNull
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "main")
     Property<String> getUrl();
 
     @Schema(
