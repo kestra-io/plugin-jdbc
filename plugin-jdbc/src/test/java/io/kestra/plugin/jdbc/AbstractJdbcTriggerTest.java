@@ -1,17 +1,11 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.queues.QueueFactoryInterface;
 import io.kestra.core.queues.QueueInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
-import io.kestra.core.runners.FlowListeners;
-import io.kestra.core.runners.Worker;
-import io.kestra.scheduler.AbstractScheduler;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.jdbc.runner.JdbcScheduler;
-import io.kestra.core.utils.IdUtils;
-import io.kestra.worker.DefaultWorker;
-import io.micronaut.context.ApplicationContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.h2.tools.RunScript;
@@ -34,13 +28,8 @@ import java.util.concurrent.TimeUnit;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@KestraTest(startRunner = true, startScheduler = true)
 public abstract class AbstractJdbcTriggerTest {
-    @Inject
-    protected ApplicationContext applicationContext;
-
-    @Inject
-    protected FlowListeners flowListenersService;
-
     @Inject
     @Named(QueueFactoryInterface.EXECUTION_NAMED)
     protected QueueInterface<Execution> executionQueue;
@@ -49,32 +38,18 @@ public abstract class AbstractJdbcTriggerTest {
     protected LocalFlowRepositoryLoader repositoryLoader;
 
     protected Execution triggerFlow(ClassLoader classLoader, String flowRepository, String flow) throws Exception {
-        // mock flow listeners
         CountDownLatch queueCount = new CountDownLatch(1);
+        Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
+            assertThat(execution.getLeft().getFlowId(), is(flow));
+            queueCount.countDown();
+        });
 
-        // scheduler
-        try (
-            AbstractScheduler scheduler = new JdbcScheduler(
-                this.applicationContext,
-                this.flowListenersService
-            );
-            DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
-        ) {
-            // wait for execution
-            Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
-                assertThat(execution.getLeft().getFlowId(), is(flow));
-                queueCount.countDown();
-            });
+        repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
 
-            worker.run();
-            scheduler.run();
-            repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
+        boolean await = queueCount.await(1, TimeUnit.MINUTES);
+        assertThat(await, is(true));
 
-            boolean await = queueCount.await(1, TimeUnit.MINUTES);
-            assertThat(await, is(true));
-
-            return receive.blockLast();
-        }
+        return receive.blockLast();
     }
 
     protected abstract String getUrl();
