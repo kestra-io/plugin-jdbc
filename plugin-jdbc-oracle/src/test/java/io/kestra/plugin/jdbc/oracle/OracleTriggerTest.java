@@ -1,5 +1,8 @@
 package io.kestra.plugin.jdbc.oracle;
 
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.h2.tools.RunScript;
@@ -20,7 +23,7 @@ class OracleTriggerTest extends AbstractJdbcTriggerTest {
 
     @Test
     void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","oracle-listen");
+        var execution = triggerFlow();
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(1));
@@ -51,4 +54,18 @@ class OracleTriggerTest extends AbstractJdbcTriggerTest {
 
         executeSqlScript("scripts/oracle.sql");
     }
+
+    @Override
+    protected AbstractJdbcTrigger buildTrigger() {
+        return Trigger.builder()
+            .id(OracleTriggerTest.class.getSimpleName())
+            .type(Trigger.class.getName())
+            .sql(Property.ofValue("SELECT * FROM oracle_types"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+    }
+
 }
