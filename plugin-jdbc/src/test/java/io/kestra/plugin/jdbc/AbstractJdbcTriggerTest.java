@@ -2,55 +2,39 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.executions.Execution;
-import io.kestra.core.queues.QueueFactoryInterface;
-import io.kestra.core.queues.QueueInterface;
-import io.kestra.core.repositories.LocalFlowRepositoryLoader;
+import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.utils.TestsUtils;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
-import reactor.core.publisher.Flux;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest(startRunner = true, startScheduler = true)
+@KestraTest
 public abstract class AbstractJdbcTriggerTest {
     @Inject
-    @Named(QueueFactoryInterface.EXECUTION_NAMED)
-    protected QueueInterface<Execution> executionQueue;
+    protected RunContextFactory runContextFactory;
 
-    @Inject
-    protected LocalFlowRepositoryLoader repositoryLoader;
+    protected Execution triggerFlow() throws Exception {
+        var trigger = buildTrigger();
+        var context = TestsUtils.mockTrigger(runContextFactory, trigger);
+        Optional<Execution> execution = trigger.evaluate(context.getKey(), context.getValue());
 
-    protected Execution triggerFlow(ClassLoader classLoader, String flowRepository, String flow) throws Exception {
-        CountDownLatch queueCount = new CountDownLatch(1);
-        Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
-            assertThat(execution.getLeft().getFlowId(), is(flow));
-            queueCount.countDown();
-        });
-
-        repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
-
-        boolean await = queueCount.await(1, TimeUnit.MINUTES);
-        assertThat(await, is(true));
-
-        return receive.blockLast();
+        assertThat(execution.isPresent(), is(true));
+        return execution.get();
     }
+
+    protected abstract AbstractJdbcTrigger buildTrigger();
 
     protected abstract String getUrl();
 

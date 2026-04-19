@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc.sybase;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,7 @@ class SybaseTriggerTest extends AbstractJdbcTriggerTest {
 
     @Test
     void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","sybase-listen");
+        var execution = triggerFlow();
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(1));
@@ -44,5 +45,10 @@ class SybaseTriggerTest extends AbstractJdbcTriggerTest {
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
         executeSqlScript("scripts/sybase.sql");
+    }
+
+    @Override
+    protected AbstractJdbcTrigger buildTrigger() {
+        throw new UnsupportedOperationException("Test is disabled");
     }
 }
