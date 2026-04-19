@@ -7,8 +7,9 @@
 
 ## Why
 
-- This plugin integrates Kestra with JDBC.
-- It adds workflow components that reflect the code in this repository.
+- What user problem does this solve? Teams need a reliable way to operate JDBC from orchestrated workflows instead of relying on manual console work, ad hoc scripts, or disconnected schedulers.
+- Why would a team adopt this plugin in a workflow? It keeps JDBC steps in the same Kestra flow as upstream preparation, approvals, retries, notifications, and downstream systems.
+- What operational/business outcome does it enable? It reduces manual handoffs and fragmented tooling while improving reliability, traceability, and delivery speed for processes that depend on JDBC.
 
 ## How
 
