@@ -1,7 +1,7 @@
-
-worker:
-  controllers:
-    type: STATIC
-    static:
-      endpoints:
-        - host: localhost
+kestra:
+  worker:
+    controllers:
+      type: STATIC
+      static:
+        endpoints:
+          - host: localhost
