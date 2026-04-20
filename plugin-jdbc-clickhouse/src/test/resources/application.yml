@@ -9,3 +9,10 @@ kestra:
     type: local
     local:
       base-path: /tmp/unittest
+
+worker:
+  controllers:
+    type: STATIC
+    static:
+      endpoints:
+        - host: localhost
