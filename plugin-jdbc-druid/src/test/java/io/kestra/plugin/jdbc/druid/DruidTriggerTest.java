@@ -1,5 +1,8 @@
 package io.kestra.plugin.jdbc.druid;
 
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.kestra.core.junit.annotations.KestraTest;
 import org.junit.jupiter.api.BeforeAll;
@@ -24,7 +27,7 @@ class DruidTriggerTest extends AbstractJdbcTriggerTest {
 
     @Test
     void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","druid-listen");
+        var execution = triggerFlow();
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(1));
@@ -39,4 +42,18 @@ class DruidTriggerTest extends AbstractJdbcTriggerTest {
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
         // nothing here, already done in @BeforeAll.
     }
+
+    @Override
+    protected AbstractJdbcTrigger buildTrigger() {
+        return Trigger.builder()
+            .id(DruidTriggerTest.class.getSimpleName())
+            .type(Trigger.class.getName())
+            .sql(Property.ofValue("select \'string\' AS t_string, CAST(2147483647 AS INT) as t_integer, CAST(12345.124 AS FLOAT) as t_float, CAST(12345.124 AS DOUBLE) as t_double from products limit 1"))
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+    }
+
 }
