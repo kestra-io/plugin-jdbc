@@ -19,7 +19,7 @@ tasks.withType(JavaCompile) {
     options.compilerArgs.add("-parameters")
 }
 
-final targetJavaVersion = JavaVersion.VERSION_21
+final targetJavaVersion = JavaVersion.VERSION_25
 
 group "io.kestra.plugin"
 
