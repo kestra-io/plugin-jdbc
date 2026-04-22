@@ -27,7 +27,7 @@ public abstract class AbstractCopy extends Task implements PostgresConnectionInt
     private Property<String> url;
     @PluginProperty(group = "connection")
     private Property<String> username;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> password;
     @Builder.Default
     @PluginProperty(group = "connection")
