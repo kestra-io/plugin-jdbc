@@ -61,10 +61,10 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKey;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKeyPassword;
 
     @PluginProperty(group = "connection")
