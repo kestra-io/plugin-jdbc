@@ -154,8 +154,6 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
     @PluginProperty(group = "source")
     protected Object inputFiles;
-    @PluginProperty(group = "destination")
-    protected Property<List<String>> outputFiles;
     @PluginProperty(group = "connection")
     protected Property<String> databaseUri;
 
