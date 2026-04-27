@@ -235,14 +235,14 @@ public class Query extends AbstractJdbcQuery implements SqliteQueryInterface {
         }
 
         // outputFiles: create temp files before SQL runs so paths are available as Pebble vars
-        var renderedOutputFiles = this.outputFiles == null
+        var rOutputFiles = this.outputFiles == null
             ? List.<String>of()
             : runContext.render(this.outputFiles).asList(String.class);
         Map<String, String> outputFilesMap = null;
-        if (!renderedOutputFiles.isEmpty()) {
+        if (!rOutputFiles.isEmpty()) {
             outputFilesMap = PluginUtilsService.createOutputFiles(
                 this.workingDirectory,
-                renderedOutputFiles,
+                rOutputFiles,
                 additionalVars
             );
         }
