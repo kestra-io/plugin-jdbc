@@ -485,4 +485,19 @@ class DuckDbTest {
             assertThat(jsonMap.get("number"), is(42));
         }
     }
+
+    @Test
+    void queryWithPebbleInputRendering() throws Exception {
+        var runContext = runContextFactory.of(ImmutableMap.of("filterId", 1));
+
+        var task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofExpression("SELECT * FROM (VALUES (1, 'Alice'), (2, 'Bob')) AS t(id, name) WHERE id = {{ filterId }};"))
+            .build();
+
+        var runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("name"), is("Alice"));
+    }
 }
