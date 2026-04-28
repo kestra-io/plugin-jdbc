@@ -113,6 +113,19 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
 
+    @Schema(
+        title = "Output file names to capture after SQL execution.",
+        description = """
+            Creates named temporary files in the task working directory before the SQL runs, \
+            making their absolute paths available as `{{ outputFiles.name }}` Pebble variables in the SQL template. \
+            Only supported by embedded, in-process drivers (DuckDB, SQLite) where the database \
+            engine writes to the same filesystem as the Kestra worker. \
+            Remote database drivers (Postgres, MySQL, etc.) do not support this — they execute \
+            SQL on a separate server that cannot write to the Kestra worker filesystem."""
+    )
+    @PluginProperty(group = "destination")
+    protected Property<List<String>> outputFiles;
+
     @Builder.Default
     @Getter(AccessLevel.NONE)
     protected transient Map<String, Object> additionalVars = new HashMap<>();

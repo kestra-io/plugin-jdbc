@@ -12,17 +12,22 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+
+import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.sqlite.JDBC;
 
+import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -229,6 +234,19 @@ public class Query extends AbstractJdbcQuery implements SqliteQueryInterface {
             this.databaseFile = null;
         }
 
+        // outputFiles: create temp files before SQL runs so paths are available as Pebble vars
+        var rOutputFiles = this.outputFiles == null
+            ? List.<String>of()
+            : runContext.render(this.outputFiles).asList(String.class);
+        Map<String, String> outputFilesMap = null;
+        if (!rOutputFiles.isEmpty()) {
+            outputFilesMap = PluginUtilsService.createOutputFiles(
+                this.workingDirectory,
+                rOutputFiles,
+                additionalVars
+            );
+        }
+
         AbstractJdbcBaseQuery.Output queryOutput = super.run(runContext);
 
         URI dbUri = null;
@@ -240,8 +258,15 @@ public class Query extends AbstractJdbcQuery implements SqliteQueryInterface {
             );
         }
 
+        Map<String, URI> uploaded = new HashMap<>();
+        if (outputFilesMap != null) {
+            outputFilesMap.forEach(throwBiConsumer((k, v) ->
+                uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
+        }
+
         return Output.builder()
             .databaseUri(dbUri)
+            .outputFiles(uploaded.isEmpty() ? null : uploaded)
             .row(queryOutput.getRow())
             .rows(queryOutput.getRows())
             .size(queryOutput.getSize())
@@ -252,6 +277,10 @@ public class Query extends AbstractJdbcQuery implements SqliteQueryInterface {
     @SuperBuilder
     @Getter
     public static class Output extends AbstractJdbcQuery.Output {
+        @Schema(title = "The output files' URI in Kestra's internal storage.")
+        @PluginProperty(additionalProperties = URI.class)
+        private final Map<String, URI> outputFiles;
+
         @Schema(title = "The database output URI in Kestra's internal storage.")
         @PluginProperty
         private final URI databaseUri;
