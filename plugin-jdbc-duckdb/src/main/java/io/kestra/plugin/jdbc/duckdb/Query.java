@@ -267,7 +267,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
             );
         }
 
-        String sql = this.sql.toString();
+        String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
         // we transform filename column to show relative paths if filename parameter is used
         if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
