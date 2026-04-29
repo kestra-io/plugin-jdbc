@@ -109,10 +109,10 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             String sql = this.query(runContext, runContext.render(this.sql).as(String.class).orElse(null), "TO STDOUT");
             logger.debug("Starting query: {}", sql);
 
-            PipedInputStream pipedIn = new PipedInputStream(65536);
-            PipedOutputStream pipedOut = new PipedOutputStream(pipedIn);
+            try (PipedInputStream pipedIn = new PipedInputStream(65536);
+                 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                PipedOutputStream pipedOut = new PipedOutputStream(pipedIn);
 
-            try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
                 Future<Long> copyFuture = executor.submit(() -> {
                     try {
                         return copyManager.copyOut(sql, pipedOut);
@@ -125,6 +125,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
                 try {
                     uri = runContext.storage().putFile(pipedIn, "copy-out");
                 } catch (IOException storageEx) {
+                    pipedIn.close();
                     try {
                         copyFuture.get();
                         throw storageEx;
