@@ -142,6 +142,14 @@ public abstract class AbstractCopy extends Task implements PostgresConnectionInt
     @PluginProperty(group = "processing")
     protected Property<String> encoding;
 
+    @Schema(
+        title = "The timeout value in seconds used for socket read operations.",
+        description = "If reading from the server takes longer than this value, the connection is closed. " +
+            "A value of zero means the timeout is disabled. Default is zero (disabled)."
+    )
+    @PluginProperty(group = "connection")
+    protected Property<Integer> socketTimeout;
+
     public enum Format {
         TEXT,
         CSV,
@@ -152,6 +160,10 @@ public abstract class AbstractCopy extends Task implements PostgresConnectionInt
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = PostgresConnectionInterface.super.connectionProperties(runContext);
         PostgresService.handleSsl(properties, runContext, this);
+
+        if (this.socketTimeout != null) {
+            properties.put("socketTimeout", String.valueOf(runContext.render(this.socketTimeout).as(Integer.class).orElseThrow()));
+        }
 
         return properties;
     }
