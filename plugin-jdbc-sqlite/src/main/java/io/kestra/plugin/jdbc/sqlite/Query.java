@@ -103,7 +103,7 @@ import java.util.Properties;
                     fetchType: FETCH
 
                   - id: iterate_and_insert
-                    type: io.kestra.plugin.core.flow.ForEach
+                    type: io.kestra.plugin.core.flow.Loop
                     values: "{{ outputs.select.rows }}"
                     tasks:
                       - id: insert_row
@@ -112,7 +112,7 @@ import java.util.Properties;
                         sqliteFile: "{{ outputs.select.databaseUri }}"
                         sql: |
                           INSERT INTO pl_store_distribute (year_month, store_code, update_date)
-                          VALUES ('{{ taskrun.value.play_time }}', {{ taskrun.value.concert_id }}, '{{ taskrun.value.timestamp_type }}');
+                          VALUES ('{{ item.value.play_time }}', {{ item.value.concert_id }}, '{{ item.value.timestamp_type }}');
                         fetchType: NONE
                 """
         ),
