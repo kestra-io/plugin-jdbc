@@ -39,7 +39,7 @@ import java.sql.SQLException;
                     tasks:
                       - id: return
                         type: io.kestra.plugin.core.debug.Return
-                        format: "{{ json(item.value) }}"
+                        format: "{{ fromJson(item.value) }}"
 
                 triggers:
                   - id: watch
