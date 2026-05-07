@@ -14,7 +14,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest
+@KestraTest(startRunner = true, startScheduler = true)
 @Disabled("Lauching Sybase via our docker-compose crash the CI")
 class SybaseTriggerTest extends AbstractJdbcTriggerTest {
 
