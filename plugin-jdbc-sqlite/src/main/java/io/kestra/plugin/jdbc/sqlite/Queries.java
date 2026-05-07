@@ -179,6 +179,9 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
     @Override
     public Output run(RunContext runContext) throws Exception {
         this.workingDirectory = runContext.workingDir().path();
+        // Required by PluginUtilsService.createOutputFiles, which builds output file paths
+        // from additionalVars.get("workingDir") rather than the Path parameter directly.
+        additionalVars.put("workingDir", this.workingDirectory.toAbsolutePath().toString());
 
         Optional<String> rSqliteFile = runContext.render(this.sqliteFile).as(String.class);
         boolean rOutputDbFile = runContext.render(this.outputDbFile).as(Boolean.class).orElse(false);
