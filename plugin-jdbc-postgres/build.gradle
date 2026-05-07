@@ -18,6 +18,6 @@ dependencies {
     api 'org.bouncycastle:bcprov-jdk18on'
     api 'org.bouncycastle:bcpkix-jdk18on'
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

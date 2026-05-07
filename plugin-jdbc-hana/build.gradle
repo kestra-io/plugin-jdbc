@@ -20,7 +20,7 @@ dependencies {
     implementation project(':plugin-jdbc')
 
     //test configuration to use plugin-jdbc test classes
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 
     //missing dependencies 
