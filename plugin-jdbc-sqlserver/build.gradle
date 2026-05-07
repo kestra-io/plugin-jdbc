@@ -29,6 +29,6 @@ dependencies {
         exclude group: 'com.fasterxml.jackson.datatype', module: 'jackson-datatype-guava'
     }
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
