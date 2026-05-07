@@ -16,6 +16,6 @@ dependencies {
     implementation("com.dremio.distribution:dremio-jdbc-driver:3.1.1-201901281837140761-30c9d74")
     implementation project(':plugin-jdbc')
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

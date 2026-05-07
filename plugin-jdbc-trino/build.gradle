@@ -16,6 +16,6 @@ dependencies {
     implementation("io.trino:trino-jdbc:480")
     implementation project(':plugin-jdbc')
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
