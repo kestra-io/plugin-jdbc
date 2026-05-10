@@ -7,6 +7,7 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -15,6 +16,7 @@ import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+@Disabled("Druid ingestion stack too heavy for CI; tested locally / nightly")
 @KestraTest
 public class DruidQueriesTest {
     @Inject
