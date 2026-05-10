@@ -7,9 +7,16 @@ kestra:
     type: local
     local:
       base-path: /tmp/unittest
+  controller:
+    port: ${random.port}
   worker:
     controllers:
       type: STATIC
       static:
         endpoints:
           - host: localhost
+            port: ${kestra.controller.port}
+
+grpc:
+  server:
+    enabled: false
