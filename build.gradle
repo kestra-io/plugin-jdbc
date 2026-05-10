@@ -295,3 +295,17 @@ idea {
         downloadSources = true
     }
 }
+
+/**********************************************************************************************************************\
+ * Druid runs last to avoid memory contention with parallel module test JVMs
+ **********************************************************************************************************************/
+gradle.projectsEvaluated {
+    def druidTest = project(':plugin-jdbc-druid').tasks.findByName('test')
+    if (druidTest != null) {
+        subprojects
+            .findAll { it.path != ':plugin-jdbc-druid' }
+            .collect { it.tasks.findByName('test') }
+            .findAll { it != null }
+            .each { druidTest.mustRunAfter(it) }
+    }
+}
