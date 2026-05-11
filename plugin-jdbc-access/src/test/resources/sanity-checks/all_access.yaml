@@ -32,7 +32,7 @@ tasks:
     fetchType: STORE
     sql: |
       SELECT * FROM test ORDER BY field1;
-      SELECT * FROM test ORDER BY field1;
+      SELECT field2 FROM test ORDER BY field2 DESC;
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.access.Query

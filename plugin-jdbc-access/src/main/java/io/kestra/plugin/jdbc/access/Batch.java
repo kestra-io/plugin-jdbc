@@ -3,7 +3,9 @@ package io.kestra.plugin.jdbc.access;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
@@ -12,6 +14,10 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import net.ucanaccess.jdbc.UcanaccessDriver;
 
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -39,6 +45,7 @@ import java.util.Properties;
                   - id: query
                     type: io.kestra.plugin.jdbc.access.Query
                     url: jdbc:ucanaccess:///myfile.accdb
+                    outputDbFile: true
                     sql: |
                       SELECT product_id, product_name, price
                       FROM products
@@ -48,7 +55,7 @@ import java.util.Properties;
                   - id: insert
                     type: io.kestra.plugin.jdbc.access.Batch
                     from: "{{ outputs.query.uri }}"
-                    url: jdbc:ucanaccess:///myfile.accdb
+                    accessFile: "{{ outputs.query.databaseUri }}"
                     sql: INSERT INTO products_copy VALUES (?, ?, ?)
                 """
         )
@@ -76,6 +83,21 @@ import java.util.Properties;
 )
 public class Batch extends AbstractJdbcBatch implements AccessQueryInterface {
 
+    @PluginProperty(group = "source")
+    @Schema(
+        title = "Access database file (optional)",
+        description = """
+            Optional URI to an existing Access database file stored in Kestra internal storage.
+
+            When provided, the file is downloaded into the task working directory and used
+            as the Access database for the batch insert.
+            """
+    )
+    protected Property<String> accessFile;
+
+    @Getter(AccessLevel.NONE)
+    protected transient Path databaseFile;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new AccessCellConverter(zoneId);
@@ -84,7 +106,29 @@ public class Batch extends AbstractJdbcBatch implements AccessQueryInterface {
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         var props = super.connectionProperties(runContext);
+
+        if (this.databaseFile != null) {
+            props.put("jdbc.url", "jdbc:ucanaccess://" + this.databaseFile.toAbsolutePath());
+        }
+
         return AccessQueryUtils.buildAccessProperties(props, runContext);
+    }
+
+    @Override
+    public Output run(RunContext runContext) throws Exception {
+        var rAccessFile = runContext.render(this.accessFile).as(String.class);
+
+        if (rAccessFile.isPresent()) {
+            Path workingDir = runContext.workingDir().path();
+            this.databaseFile = workingDir.resolve("database.accdb");
+            try (var input = runContext.storage().getFile(URI.create(rAccessFile.get()))) {
+                Files.copy(input, this.databaseFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } else {
+            this.databaseFile = null;
+        }
+
+        return super.run(runContext);
     }
 
     @Override

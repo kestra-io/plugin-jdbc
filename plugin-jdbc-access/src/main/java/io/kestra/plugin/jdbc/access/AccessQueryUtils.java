@@ -33,7 +33,9 @@ public class AccessQueryUtils {
         if (resolved.toFile().exists()) {
             properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath);
         } else {
-            // Auto-create the Access file when it does not exist yet
+            // Auto-create the Access file when it does not exist yet.
+            // newDatabaseVersion is a UCanAccess connection parameter documented at:
+            // https://github.com/spannm/ucanaccess/wiki/connection-parameters
             properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + ";newDatabaseVersion=V2010");
         }
 
