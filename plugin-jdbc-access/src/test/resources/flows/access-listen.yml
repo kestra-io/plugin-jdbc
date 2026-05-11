@@ -1,0 +1,15 @@
+id: access-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.access.Trigger
+    sql: SELECT * FROM access_types
+    url: "jdbc:ucanaccess:///tmp/test_access_trigger.accdb"
+    fetchType: FETCH
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"
