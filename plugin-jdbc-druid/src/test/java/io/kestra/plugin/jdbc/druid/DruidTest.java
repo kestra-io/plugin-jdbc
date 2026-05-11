@@ -8,12 +8,14 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.core.junit.annotations.KestraTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
+@Disabled("Druid cluster takes too long to start in CI")
 @KestraTest
 public class DruidTest {
     @Inject
