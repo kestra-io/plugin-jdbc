@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
@@ -184,7 +185,8 @@ public class Queries extends AbstractJdbcQueries implements AccessQueryInterface
                     .getFileName()
                     .toString();
             } else {
-                fileName = Path.of(dbPath).getFileName().toString();
+                String ext = dbPath.toLowerCase().endsWith(".mdb") ? ".mdb" : ".accdb";
+                fileName = UUID.randomUUID() + ext;
             }
 
             this.databaseFile = workingDirectory.resolve(fileName).normalize();
