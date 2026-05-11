@@ -296,17 +296,3 @@ idea {
     }
 }
 
-/**********************************************************************************************************************\
- * Druid runs first while its containers are still fresh from setup-unit.sh;
- * other modules' tests follow once druid's test JVM has freed its resources.
- **********************************************************************************************************************/
-gradle.projectsEvaluated {
-    def druidTest = project(':plugin-jdbc-druid').tasks.findByName('test')
-    if (druidTest != null) {
-        subprojects
-            .findAll { it.path != ':plugin-jdbc-druid' }
-            .collect { it.tasks.findByName('test') }
-            .findAll { it != null }
-            .each { it.mustRunAfter(druidTest) }
-    }
-}
