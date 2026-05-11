@@ -21,6 +21,7 @@ import java.nio.file.StandardCopyOption;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.UUID;
 import java.util.Properties;
 
 @SuperBuilder
@@ -134,7 +135,7 @@ public class Batch extends AbstractJdbcBatch implements AccessQueryInterface {
 
         if (rAccessFile.isPresent()) {
             Path workingDir = runContext.workingDir().path();
-            this.databaseFile = workingDir.resolve("database.accdb");
+            this.databaseFile = workingDir.resolve(UUID.randomUUID() + ".accdb");
             try (var input = runContext.storage().getFile(URI.create(rAccessFile.get()))) {
                 Files.copy(input, this.databaseFile, StandardCopyOption.REPLACE_EXISTING);
             }

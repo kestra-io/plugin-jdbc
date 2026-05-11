@@ -30,13 +30,19 @@ public class AccessQueryUtils {
 
         var absolutePath = resolved.toAbsolutePath().toString();
 
+        // memory=false uses a file-backed HSQLDB mirror instead of the default in-memory
+        // catalog. Each task already receives a unique absolute path (UUID-based filename)
+        // so the HSQLDB files land in isolated per-task working directories. This prevents
+        // UCanAccess's in-memory DBReferenceSingleton from mixing catalogs across concurrent
+        // task executions that share the same JVM.
+        String params = ";memory=false";
         if (resolved.toFile().exists()) {
-            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath);
+            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + params);
         } else {
             // Auto-create the Access file when it does not exist yet.
             // newDatabaseVersion is a UCanAccess connection parameter documented at:
             // https://github.com/spannm/ucanaccess/wiki/connection-parameters
-            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + ";newDatabaseVersion=" + newDatabaseVersion.name());
+            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + params + ";newDatabaseVersion=" + newDatabaseVersion.name());
         }
 
         return properties;

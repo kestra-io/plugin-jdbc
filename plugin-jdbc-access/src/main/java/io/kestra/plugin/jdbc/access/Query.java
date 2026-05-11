@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.Properties;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
@@ -190,7 +191,12 @@ public class Query extends AbstractJdbcQuery implements AccessQueryInterface {
                     .getFileName()
                     .toString();
             } else {
-                fileName = Path.of(dbPath).getFileName().toString();
+                // Use a UUID-based name so every task execution gets a unique absolute path.
+                // This prevents DBReferenceSingleton from returning a stale HSQLDB DBReference
+                // when two concurrent tasks happen to resolve the same user-supplied filename
+                // (e.g. "myfile.accdb") to the same working directory.
+                String ext = dbPath.toLowerCase().endsWith(".mdb") ? ".mdb" : ".accdb";
+                fileName = UUID.randomUUID() + ext;
             }
 
             this.databaseFile = workingDirectory.resolve(fileName).normalize();
