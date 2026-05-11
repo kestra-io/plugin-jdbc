@@ -102,7 +102,7 @@ public class Batch extends AbstractJdbcBatch implements AccessQueryInterface {
         description = """
             Specifies the Microsoft Access file format used when UCanAccess creates a new database.
             Only applies when the target database file does not already exist.
-            See https://github.com/spannm/ucanaccess/wiki/connection-parameters for details.
+            See https://spannm.github.io/ucanaccess/20-getting-started.html for details.
             """,
         defaultValue = "V2003"
     )
