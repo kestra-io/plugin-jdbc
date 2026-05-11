@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.access
+name: "access"
+title: "Microsoft Access"
+description: "Tasks that connect to Microsoft Access databases via UCanAccess JDBC to run queries and loads."
+body: "Provide the UCanAccess JDBC URL pointing to an .mdb or .accdb file and SQL statements (query, batch, trigger) to read or write data; configure fetch type and output options to return rows or files from workflows."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"

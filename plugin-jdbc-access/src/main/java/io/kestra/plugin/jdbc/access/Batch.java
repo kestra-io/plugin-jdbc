@@ -1,0 +1,96 @@
+package io.kestra.plugin.jdbc.access;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBatch;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import net.ucanaccess.jdbc.UcanaccessDriver;
+
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.time.ZoneId;
+import java.util.Properties;
+
+@SuperBuilder
+@ToString
+@EqualsAndHashCode
+@Getter
+@NoArgsConstructor
+@Schema(
+    title = "Bulk insert rows into a Microsoft Access database using prepared statements",
+    description = "Reads ION-formatted data from Kestra internal storage and performs high-performance batch inserts into a Microsoft Access database via the UCanAccess JDBC driver. Data is processed in chunks (default 1,000 rows) to optimize memory and performance."
+)
+@Plugin(
+    examples = {
+        @Example(
+            title = "Fetch rows from a query and bulk insert them into an Access table.",
+            full = true,
+            code = """
+                id: access_batch
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.access.Query
+                    url: jdbc:ucanaccess:///myfile.accdb
+                    sql: |
+                      SELECT product_id, product_name, price
+                      FROM products
+                      LIMIT 1500
+                    fetchType: STORE
+
+                  - id: insert
+                    type: io.kestra.plugin.jdbc.access.Batch
+                    from: "{{ outputs.query.uri }}"
+                    url: jdbc:ucanaccess:///myfile.accdb
+                    sql: INSERT INTO products_copy VALUES (?, ?, ?)
+                """
+        )
+    },
+    metrics = {
+        @Metric(
+            name = "records",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records processed."
+        ),
+        @Metric(
+            name = "updated",
+            type = Counter.TYPE,
+            unit = "records",
+            description = "The number of records updated."
+        ),
+        @Metric(
+            name = "query",
+            type = Counter.TYPE,
+            unit = "queries",
+            description = "The number of batch queries executed."
+        )
+    }
+)
+public class Batch extends AbstractJdbcBatch implements AccessQueryInterface {
+
+    @Override
+    protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
+        return new AccessCellConverter(zoneId);
+    }
+
+    @Override
+    public Properties connectionProperties(RunContext runContext) throws Exception {
+        var props = super.connectionProperties(runContext);
+        return AccessQueryUtils.buildAccessProperties(props, runContext);
+    }
+
+    @Override
+    public void registerDriver() throws SQLException {
+        if (DriverManager.drivers().noneMatch(UcanaccessDriver.class::isInstance)) {
+            DriverManager.registerDriver(new UcanaccessDriver());
+        }
+    }
+}
