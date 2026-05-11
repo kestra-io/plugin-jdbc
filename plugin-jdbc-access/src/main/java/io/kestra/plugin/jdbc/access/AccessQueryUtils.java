@@ -8,9 +8,9 @@ import java.util.Properties;
 public class AccessQueryUtils {
     /**
      * Resolves the Access database path against the working directory and rewrites the JDBC URL.
-     * When the file does not yet exist, appends newDatabaseVersion=V2010 so UCanAccess creates it.
+     * When the file does not yet exist, appends newDatabaseVersion so UCanAccess creates it.
      */
-    protected static Properties buildAccessProperties(Properties properties, RunContext runContext) {
+    protected static Properties buildAccessProperties(Properties properties, RunContext runContext, AccessVersion newDatabaseVersion) {
         var url = (String) properties.get("jdbc.url");
 
         if (url == null || !url.startsWith("jdbc:ucanaccess://")) {
@@ -36,7 +36,7 @@ public class AccessQueryUtils {
             // Auto-create the Access file when it does not exist yet.
             // newDatabaseVersion is a UCanAccess connection parameter documented at:
             // https://github.com/spannm/ucanaccess/wiki/connection-parameters
-            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + ";newDatabaseVersion=V2010");
+            properties.put("jdbc.url", "jdbc:ucanaccess://" + absolutePath + ";newDatabaseVersion=" + newDatabaseVersion.name());
         }
 
         return properties;

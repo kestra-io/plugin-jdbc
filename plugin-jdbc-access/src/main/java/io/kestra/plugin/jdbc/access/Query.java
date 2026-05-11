@@ -130,6 +130,19 @@ public class Query extends AbstractJdbcQuery implements AccessQueryInterface {
     @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
+    @Builder.Default
+    @PluginProperty(group = "source")
+    @Schema(
+        title = "Access database version to use when creating a new database file",
+        description = """
+            Specifies the Microsoft Access file format used when UCanAccess creates a new database.
+            Only applies when the target database file does not already exist.
+            See https://github.com/spannm/ucanaccess/wiki/connection-parameters for details.
+            """,
+        defaultValue = "V2003"
+    )
+    private Property<AccessVersion> newDatabaseVersion = Property.ofValue(AccessVersion.V2003);
+
     @Getter(AccessLevel.NONE)
     protected transient Path workingDirectory;
 
@@ -139,12 +152,13 @@ public class Query extends AbstractJdbcQuery implements AccessQueryInterface {
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
         var props = super.connectionProperties(runContext);
+        var version = runContext.render(this.newDatabaseVersion).as(AccessVersion.class).orElse(AccessVersion.V2003);
 
         if (this.databaseFile != null) {
             props.put("jdbc.url", "jdbc:ucanaccess://" + this.databaseFile.toAbsolutePath());
         }
 
-        return AccessQueryUtils.buildAccessProperties(props, runContext);
+        return AccessQueryUtils.buildAccessProperties(props, runContext, version);
     }
 
     private static String extractDbPath(String jdbcUrl) {
