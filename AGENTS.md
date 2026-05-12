@@ -15,9 +15,10 @@
 
 ### Architecture
 
-This is a **multi-module** plugin with 22 submodules:
+This is a **multi-module** plugin with 23 submodules:
 
 - `plugin-jdbc`
+- `plugin-jdbc-access`
 - `plugin-jdbc-actianvector`
 - `plugin-jdbc-arrow-flight`
 - `plugin-jdbc-as400`
@@ -69,6 +70,12 @@ Infrastructure dependencies (Docker Compose services):
 
 ### Key Plugin Classes
 
+**plugin-jdbc-access:**
+
+- `io.kestra.plugin.jdbc.access.Batch`
+- `io.kestra.plugin.jdbc.access.Queries`
+- `io.kestra.plugin.jdbc.access.Query`
+- `io.kestra.plugin.jdbc.access.Trigger`
 **plugin-jdbc-actianvector:**
 
 - `io.kestra.plugin.jdbc.actianvector.Batch`

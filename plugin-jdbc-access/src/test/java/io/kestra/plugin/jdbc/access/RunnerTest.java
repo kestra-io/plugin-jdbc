@@ -1,4 +1,4 @@
-package io.kestra.plugin.jdbc.clickhouse;
+package io.kestra.plugin.jdbc.access;
 
 import io.kestra.core.junit.annotations.ExecuteFlow;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -14,9 +14,9 @@ import static org.hamcrest.Matchers.is;
 class RunnerTest {
 
     @Test
-    @ExecuteFlow(value = "sanity-checks/all_clickhouse.yaml", timeout = "PT600S")
-    void all_clickhouse(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(11));
+    @ExecuteFlow("sanity-checks/all_access.yaml")
+    void all_access(Execution execution) {
+        assertThat(execution.getTaskRunList(), hasSize(7));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

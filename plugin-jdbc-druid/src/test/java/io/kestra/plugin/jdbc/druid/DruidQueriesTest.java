@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.druid;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import org.junit.jupiter.api.Disabled;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
@@ -16,7 +17,7 @@ import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@Disabled("Druid MSQ ingestion stack too heavy / flaky on CI; covered locally + nightly")
+@Disabled("Druid cluster takes too long to start in CI")
 @KestraTest
 public class DruidQueriesTest {
     @Inject

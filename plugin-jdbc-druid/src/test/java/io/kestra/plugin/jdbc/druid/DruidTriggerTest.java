@@ -15,7 +15,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Disabled("Druid MSQ ingestion stack too heavy / flaky on CI; covered locally + nightly")
+@Disabled("Druid cluster takes too long to start in CI")
 @KestraTest(startRunner = true, startScheduler = true)
 class DruidTriggerTest extends AbstractJdbcTriggerTest {
 

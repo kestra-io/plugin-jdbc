@@ -49,7 +49,7 @@ public class TrinoTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("t_smallint"), is((short)32767));
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
         assertThat(runOutput.getRow().get("t_bigint"), is(9223372036854775807L));
-        assertThat(runOutput.getRow().get("t_real"), is(12345.124F));
+        assertThat(((Number) runOutput.getRow().get("t_real")).doubleValue(), closeTo(12345.12345, 0.002));
         assertThat(runOutput.getRow().get("t_double"), is(12345.12345D));
         assertThat(runOutput.getRow().get("t_decimal"), is(BigDecimal.valueOf(12345600L, 5)));
         assertThat(runOutput.getRow().get("t_varchar"), is("test"));

@@ -15,7 +15,7 @@ import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@Disabled("Druid MSQ ingestion stack too heavy / flaky on CI; covered locally + nightly")
+@Disabled("Druid cluster takes too long to start in CI")
 @KestraTest
 public class DruidTest {
     @Inject
