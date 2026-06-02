@@ -1,0 +1,59 @@
+id: all_access
+namespace: sanitychecks.plugin-jdbc
+
+tasks:
+  - id: create_table
+    type: io.kestra.plugin.jdbc.access.Query
+    fetchType: NONE
+    sql: |
+      CREATE TABLE test (
+        field1 INTEGER,
+        field2 INTEGER
+      )
+
+  - id: insert_data
+    type: io.kestra.plugin.jdbc.access.Queries
+    accessFile: '{{ outputs.create_table.databaseUri }}'
+    fetchType: NONE
+    sql: |
+      INSERT INTO test (field1, field2) VALUES (1, 2);
+      INSERT INTO test (field1, field2) VALUES (3, 4);
+      INSERT INTO test (field1, field2) VALUES (4, 5);
+
+  - id: query
+    type: io.kestra.plugin.jdbc.access.Query
+    accessFile: '{{ outputs.insert_data.databaseUri }}'
+    fetchType: FETCH
+    sql: SELECT * FROM test ORDER BY field1
+
+  - id: queries
+    type: io.kestra.plugin.jdbc.access.Queries
+    accessFile: '{{ outputs.insert_data.databaseUri }}'
+    fetchType: STORE
+    sql: |
+      SELECT * FROM test ORDER BY field1;
+      SELECT field2 FROM test ORDER BY field2 DESC;
+
+  - id: select_and_store
+    type: io.kestra.plugin.jdbc.access.Query
+    accessFile: '{{ outputs.insert_data.databaseUri }}'
+    fetchType: STORE
+    sql: SELECT * FROM test ORDER BY field1
+
+  - id: assert
+    type: io.kestra.plugin.core.execution.Assert
+    conditions:
+      - "{{ outputs.query.rows[0].field1 == 1 }}"
+      - "{{ outputs.query.rows[1].field2 == 4 }}"
+      - "{{ outputs.queries.outputs[0].size == 3 }}"
+      - "{{ outputs.queries.outputs[1].size == 3 }}"
+
+finally:
+  - id: purge
+    type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
+
+pluginDefaults:
+  - type: io.kestra.plugin.jdbc.access
+    values:
+      url: "jdbc:ucanaccess:///myfile.accdb"
+      outputDbFile: true

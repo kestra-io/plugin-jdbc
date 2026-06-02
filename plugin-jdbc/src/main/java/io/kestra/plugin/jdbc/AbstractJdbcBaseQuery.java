@@ -4,9 +4,12 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.assets.Custom;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.queues.QueueException;
+import io.kestra.core.runners.AssetEmit;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.Rethrow;
@@ -25,6 +28,8 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.kestra.core.models.enums.MonacoLanguages;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -41,7 +46,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @PluginProperty(group = "connection")
     private Property<String> password;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
     @Schema(
@@ -51,6 +56,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Query tasks accept a single statement; Queries tasks can execute multiple statements separated by semicolons"""
     )
     @NotNull
+    @PluginProperty(language = MonacoLanguages.SQL, group = "main")
     protected Property<String> sql;
 
     @Schema(
@@ -59,6 +65,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             Optional SQL executed in the same transaction after the main statement.
             Useful for marking rows as processed to avoid duplicates; only a single statement is allowed. Commit covers both sql and afterSQL"""
     )
+    @PluginProperty(language = MonacoLanguages.SQL, group = "advanced")
     protected Property<String> afterSQL;
 
     /**
@@ -88,6 +95,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "main")
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
 
     @Schema(
@@ -95,13 +103,28 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         description = "Controls JDBC fetch size for STORE mode. Default: 10,000 rows; use Integer.MIN_VALUE for MySQL streaming. Ignored for FETCH and FETCH_ONE"
     )
     @Builder.Default
+    @PluginProperty(group = "execution")
     protected Property<Integer> fetchSize = Property.ofValue(10000);
 
     @Schema(
         title = "Named parameter bindings for SQL query",
         description = "Map of parameter names to values. Use :name placeholders rendered then bound as prepared-statement parameters; supports nulls and typed values"
     )
+    @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
+
+    @Schema(
+        title = "Output file names to capture after SQL execution.",
+        description = """
+            Creates named temporary files in the task working directory before the SQL runs, \
+            making their absolute paths available as `{{ outputFiles.name }}` Pebble variables in the SQL template. \
+            Only supported by embedded, in-process drivers (DuckDB, SQLite) where the database \
+            engine writes to the same filesystem as the Kestra worker. \
+            Remote database drivers (Postgres, MySQL, etc.) do not support this — they execute \
+            SQL on a separate server that cannot write to the Kestra worker filesystem."""
+    )
+    @PluginProperty(group = "destination")
+    protected Property<List<String>> outputFiles;
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
@@ -278,6 +301,165 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
+
+    protected void upsertAsset(RunContext runContext, Connection conn, String query) throws SQLException, QueueException, IllegalVariableEvaluationException {
+        var table = extractTableNameFromCreateTable(query);
+        if (table != null) {
+            var system = conn.getMetaData().getDatabaseProductName();
+            var database = getDatabaseName(conn);
+            Map<String, Object> metadata = Map.of(
+                "system", system,
+                "database", database,
+                "name", table
+            );
+            try {
+                runContext.assets().emit(
+                    new AssetEmit(
+                        List.of(),
+                        List.of(
+                            Custom.builder()
+                                .id(database + "." + table)
+                                .type("io.kestra.plugin.ee.assets.Table")
+                                .metadata(metadata)
+                                .build()
+                        )
+                    )
+                );
+                runContext.logger().info("Creating asset for system \"{}\", database \"{}\", table \"{}\"", system, database, table);
+            } catch (UnsupportedOperationException | NullPointerException ignored) {
+                // OSS edition or tests where EE assets are not available — silently skip.
+            }
+        }
+    }
+
+    /**
+     * Get the database name by executing a database-specific query.
+     * Different databases have different ways to query the current database name.
+     */
+    private String getDatabaseName(Connection conn) {
+        try {
+            String productName = conn.getMetaData().getDatabaseProductName().toLowerCase();
+            String query = switch (productName) {
+                case String p when p.contains("postgresql") || p.contains("postgres") -> "SELECT current_database()";
+                case String p when p.contains("mysql") || p.contains("mariadb") -> "SELECT DATABASE()";
+                case String p when p.contains("oracle") -> "SELECT SYS_CONTEXT('USERENV', 'DB_NAME') FROM DUAL";
+                case String p when p.contains("sql server") || p.contains("sqlserver") -> "SELECT DB_NAME()";
+                case String p when p.contains("db2") -> "SELECT CURRENT SERVER FROM SYSIBM.SYSDUMMY1";
+                case String p when p.contains("h2") -> "SELECT DATABASE()";
+                case String p when p.contains("sqlite") -> "PRAGMA database_list";
+                case String p when p.contains("duckdb") -> "SELECT current_database()";
+                case String p when p.contains("snowflake") -> "SELECT CURRENT_DATABASE()";
+                case String p when p.contains("redshift") -> "SELECT CURRENT_DATABASE()";
+                case String p when p.contains("clickhouse") -> "SELECT currentDatabase()";
+                case String p when p.contains("trino") || p.contains("presto") -> "SELECT current_catalog";
+                case String p when p.contains("vertica") -> "SELECT CURRENT_DATABASE()";
+                case String p when p.contains("sybase") -> "SELECT DB_NAME()";
+                case String p when p.contains("hana") -> "SELECT CURRENT_SCHEMA FROM DUMMY";
+                case String p when p.contains("apache pinot") || p.contains("pinot") ->
+                    null; // Pinot doesn't have a database concept
+                case String p when p.contains("apache druid") || p.contains("druid") ->
+                    null; // Druid doesn't have a database concept
+                case String p when p.contains("apache arrow") || p.contains("arrow") ->
+                    null; // Arrow Flight doesn't have a database concept
+                default -> null;
+            };
+
+            if (query == null) {
+                // Fallback: try to get from catalog or schema
+                String catalog = conn.getCatalog();
+                if (catalog != null && !catalog.isEmpty()) {
+                    return catalog;
+                }
+                String schema = conn.getSchema();
+                if (schema != null && !schema.isEmpty()) {
+                    return schema;
+                }
+                return "unknown";
+            }
+
+            // Special handling for SQLite which returns a result set with multiple rows
+            if (productName.contains("sqlite")) {
+                try (Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(query)) {
+                    if (rs.next()) {
+                        // SQLite PRAGMA database_list returns: seq, name, file
+                        // We want the "main" database
+                        return rs.getString("name");
+                    }
+                }
+                return "unknown";
+            }
+
+            // Execute the query to get the database name
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(query)) {
+                if (rs.next()) {
+                    String dbName = rs.getString(1);
+                    return dbName != null ? dbName : "unknown";
+                }
+            }
+            return "unknown";
+        } catch (SQLException e) {
+            // If query fails, fallback to catalog or schema
+            try {
+                String catalog = conn.getCatalog();
+                if (catalog != null && !catalog.isEmpty()) {
+                    return catalog;
+                }
+                String schema = conn.getSchema();
+                if (schema != null && !schema.isEmpty()) {
+                    return schema;
+                }
+            } catch (SQLException ex) {
+                // Ignore
+            }
+            return "unknown";
+        }
+    }
+
+    /**
+     * Extract the table name from a CREATE TABLE statement.
+     * Returns null if the SQL is not a CREATE TABLE statement.
+     * The CREATE TABLE syntax is similar across most SQL databases:
+     * CREATE [TEMPORARY|TEMP] TABLE [IF NOT EXISTS] [schema.]table_name ...
+     */
+    private String extractTableNameFromCreateTable(String sql) {
+        if (sql == null || sql.isEmpty()) {
+            return null;
+        }
+
+        // Normalize the SQL: remove extra whitespace and convert to single spaces
+        String normalizedSql = sql.trim().replaceAll("\\s+", " ");
+
+        // Check if it's a CREATE TABLE statement (case-insensitive)
+        if (!normalizedSql.toUpperCase().startsWith("CREATE ")) {
+            return null;
+        }
+
+        // Pattern to match CREATE TABLE statements
+        // Handles: CREATE TABLE, CREATE TEMP TABLE, CREATE TEMPORARY TABLE, CREATE TABLE IF NOT EXISTS
+        String pattern = "(?i)^CREATE\\s+(TEMP|TEMPORARY\\s+)?TABLE\\s+(IF\\s+NOT\\s+EXISTS\\s+)?([\\w.`\"\\[\\]]+)";
+        Pattern p = Pattern.compile(pattern);
+        Matcher m = p.matcher(normalizedSql);
+
+        if (m.find()) {
+            String tableName = m.group(3);
+            // Clean up the table name: remove quotes, brackets, and schema prefixes if needed
+            tableName = tableName
+                .replaceAll("[`\"\\[\\]]", "") // Remove quotes and brackets
+                .trim();
+
+            // If there's a schema prefix (e.g., schema.table), take only the table name
+            if (tableName.contains(".")) {
+                String[] parts = tableName.split("\\.");
+                tableName = parts[parts.length - 1]; // Get the last part (table name)
+            }
+
+            return tableName.isEmpty() ? null : tableName;
+        }
+
+        return null;
+    }
 
     @SuperBuilder
     @Getter

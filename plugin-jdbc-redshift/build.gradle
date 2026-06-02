@@ -13,9 +13,9 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.2.4'
+    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.2.5'
     implementation project(':plugin-jdbc')
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

@@ -94,7 +94,7 @@ public class Query extends AbstractJdbcQuery implements MySqlConnectionInterface
         title = "Input file for LOAD DATA LOCAL INFILE operations",
         description = "URI to a file in Kestra's internal storage (kestra://). Used with MySQL's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables"
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "source")
     protected String inputFile;
 
     @Getter(AccessLevel.NONE)

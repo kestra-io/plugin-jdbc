@@ -5,20 +5,20 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
+import java.util.Properties;
 
 @SuperBuilder
 @ToString
@@ -59,6 +59,25 @@ import java.time.ZoneId;
     }
 )
 public class Queries extends AbstractJdbcQueries implements SqlServerConnectionInterface {
+    @Builder.Default
+    @PluginProperty(group = "connection")
+    protected Property<EncryptMode> encrypt = Property.ofValue(EncryptMode.FALSE);
+    @Builder.Default
+    @PluginProperty(group = "connection")
+    protected Property<Boolean> trustServerCertificate = Property.ofValue(false);
+    @PluginProperty(group = "connection")
+    protected Property<String> hostNameInCertificate;
+    @PluginProperty(group = "connection")
+    protected Property<String> trustStore;
+    @PluginProperty(group = "connection")
+    protected Property<String> trustStorePassword;
+
+    @Override
+    public Properties connectionProperties(RunContext runContext) throws Exception {
+        var properties = super.connectionProperties(runContext);
+        SqlServerService.handleSsl(properties, runContext, this);
+        return properties;
+    }
 
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {

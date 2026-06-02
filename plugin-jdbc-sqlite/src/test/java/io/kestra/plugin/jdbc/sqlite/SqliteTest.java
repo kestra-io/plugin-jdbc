@@ -24,6 +24,7 @@ import java.time.LocalTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import static io.kestra.core.models.tasks.common.FetchType.*;
@@ -62,13 +63,38 @@ public class SqliteTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("int_column"), is(42));
 
         assertThat(runOutput.getRow().get("date_column"), is(LocalDate.parse("2023-10-30")));
-        assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T23:02:27.150Z")));
+        assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
         assertThat(runOutput.getRow().get("time_column"), is(LocalTime.parse("14:30:00")));
-        assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T14:30:00.0Z")));
+        assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
         assertThat(runOutput.getRow().get("year_column"), is(2023));
 
         assertThat(runOutput.getRow().get("json_column"), is("{\"key\": \"value\"}"));
         assertThat(runOutput.getRow().get("blob_column"), is(Hex.decodeHex("0102030405060708".toCharArray())));
+    }
+
+    @Test
+    void selectMustUseConfiguredTimezoneEvenIfJvmTimezoneIsUtc() throws Exception {
+        var previousDefaultTimeZone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
+        try {
+            var runContext = runContextFactory.of(ImmutableMap.of());
+
+            var task = Query.builder()
+                .url(Property.ofValue(getUrl()))
+                .username(Property.ofValue(getUsername()))
+                .password(Property.ofValue(getPassword()))
+                .fetchType(Property.ofValue(FETCH_ONE))
+                .timeZoneId(Property.ofValue("Europe/Paris"))
+                .sql(Property.ofValue("select * from lite_types"))
+                .build();
+
+            var runOutput = task.run(runContext);
+            assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
+            assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
+        } finally {
+            TimeZone.setDefault(previousDefaultTimeZone);
+        }
     }
 
     @Test

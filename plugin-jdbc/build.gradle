@@ -11,3 +11,16 @@ jar {
         )
     }
 }
+
+configurations {
+    testOutput
+}
+
+task testJar(type: Jar) {
+    archiveClassifier = 'tests'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testOutput testJar
+}

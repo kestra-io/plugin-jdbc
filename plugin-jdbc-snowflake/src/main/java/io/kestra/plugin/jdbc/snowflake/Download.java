@@ -10,7 +10,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import net.snowflake.client.jdbc.SnowflakeConnection;
+import net.snowflake.client.api.connection.DownloadStreamConfig;
+import net.snowflake.client.api.connection.SnowflakeConnection;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 
@@ -54,15 +55,16 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @PluginProperty(group = "connection")
     private Property<String> database;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> warehouse;
 
     @PluginProperty(group = "connection")
     private Property<String> schema;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> role;
 
+    @PluginProperty(group = "advanced")
     private Property<String> queryTag;
 
     @Schema(
@@ -70,12 +72,14 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
         description = "~ or table name or stage name."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> stageName;
 
     @Schema(
         title = "File name on Snowflake stage that should be downloaded."
     )
     @NotNull
+    @PluginProperty(group = "main")
     private Property<String> fileName;
 
     @Schema(
@@ -83,6 +87,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     )
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "advanced")
     private Property<Boolean> compress = Property.ofValue(true);
 
     @Override
@@ -94,18 +99,17 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
             Connection conn = this.connection(runContext);
             BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(tempFile))
         ) {
-            String stageName = runContext.render(this.stageName).as(String.class).orElseThrow();
-            String filename = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rStageName = runContext.render(this.stageName).as(String.class).orElseThrow();
+            var rFileName = runContext.render(this.fileName).as(String.class).orElseThrow();
+            var rDecompress = runContext.render(this.compress).as(Boolean.class).orElseThrow();
 
-            logger.info("Starting download from stage '{}' with name '{}'", stageName, filename);
+            logger.info("Starting download from stage '{}' with name '{}'", rStageName, rFileName);
 
-            InputStream inputStream = conn
-                .unwrap(SnowflakeConnection.class)
-                .downloadStream(
-                    stageName,
-                    filename,
-                    runContext.render(this.compress).as(Boolean.class).orElseThrow()
-                );
+            var snowflakeConnection = conn.unwrap(SnowflakeConnection.class);
+            var downloadConfig = DownloadStreamConfig.builder()
+                .setDecompress(rDecompress)
+                .build();
+            InputStream inputStream = snowflakeConnection.downloadStream(rStageName, rFileName, downloadConfig);
 
             IOUtils.copyLarge(inputStream, outputStream);
 

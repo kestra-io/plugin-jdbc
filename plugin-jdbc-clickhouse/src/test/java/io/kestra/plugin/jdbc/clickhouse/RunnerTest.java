@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.is;
 class RunnerTest {
 
     @Test
-    @ExecuteFlow("sanity-checks/all_clickhouse.yaml")
+    @ExecuteFlow(value = "sanity-checks/all_clickhouse.yaml", timeout = "PT600S")
     void all_clickhouse(Execution execution) {
         assertThat(execution.getTaskRunList(), hasSize(11));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));

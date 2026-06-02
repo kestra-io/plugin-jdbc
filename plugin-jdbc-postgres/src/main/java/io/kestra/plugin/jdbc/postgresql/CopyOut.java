@@ -14,11 +14,18 @@ import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.enums.MonacoLanguages;
 
 @SuperBuilder
 @ToString
@@ -88,34 +95,61 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied.",
         description = "For INSERT, UPDATE and DELETE queries a RETURNING clause must be provided, and the target relation must not have a conditional rule, nor an ALSO rule, nor an INSTEAD rule that expands to multiple statements."
     )
+    @PluginProperty(language = MonacoLanguages.SQL, group = "main")
     protected Property<String> sql;
 
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
-        Path path = runContext.workingDir().createTempFile();
 
-        try (
-            Connection connection = this.connection(runContext);
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(path.toFile()));
-        ) {
+        try (Connection connection = this.connection(runContext)) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
             CopyManager copyManager = new CopyManager(pgConnection);
 
             String sql = this.query(runContext, runContext.render(this.sql).as(String.class).orElse(null), "TO STDOUT");
-
             logger.debug("Starting query: {}", sql);
 
-            long rowsAffected = copyManager.copyOut(sql, bufferedWriter);
-            runContext.metric(Counter.of("rows", rowsAffected));
+            try (PipedInputStream pipedIn = new PipedInputStream(65536);
+                 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                PipedOutputStream pipedOut = new PipedOutputStream(pipedIn);
 
-            bufferedWriter.flush();
+                Future<Long> copyFuture = executor.submit(() -> {
+                    try {
+                        return copyManager.copyOut(sql, pipedOut);
+                    } finally {
+                        pipedOut.close();
+                    }
+                });
 
-            return Output
-                .builder()
-                .uri(runContext.storage().putFile(path.toFile()))
-                .rowCount(rowsAffected)
-                .build();
+                URI uri;
+                try {
+                    uri = runContext.storage().putFile(pipedIn, "copy-out");
+                } catch (IOException storageEx) {
+                    pipedIn.close();
+                    try {
+                        copyFuture.get();
+                        throw storageEx;
+                    } catch (ExecutionException jdbcEx) {
+                        Throwable cause = jdbcEx.getCause();
+                        throw cause instanceof Exception ex ? ex : jdbcEx;
+                    }
+                }
+
+                long rowsAffected;
+                try {
+                    rowsAffected = copyFuture.get();
+                } catch (ExecutionException e) {
+                    Throwable cause = e.getCause();
+                    throw cause instanceof Exception ex ? ex : new RuntimeException(cause);
+                }
+
+                runContext.metric(Counter.of("rows", rowsAffected));
+                return Output
+                    .builder()
+                    .uri(uri)
+                    .rowCount(rowsAffected)
+                    .build();
+            }
         }
     }
 

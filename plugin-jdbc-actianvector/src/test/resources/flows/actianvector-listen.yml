@@ -1,0 +1,18 @@
+# not used as we cannot run it locally
+id: actianvector-listen
+namespace: io.kestra.tests
+
+triggers:
+  - id: watch
+    type: io.kestra.plugin.jdbc.actianvector.Trigger
+    sql: SELECT * FROM vectorwise_types
+    url: ???
+    username: ???
+    password: ???
+    fetchType: FETCH
+    interval: PT10S
+
+tasks:
+  - id: end
+    type: io.kestra.plugin.core.debug.Return
+    format: "{{task.id}} > {{taskrun.startDate}}"

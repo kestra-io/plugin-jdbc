@@ -110,6 +110,22 @@ class DuckDbTest {
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
     }
 
+    @Test
+    void queryContinuesWhenCommunityExtensionInstallFails() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .communityExtensions(Property.ofValue(List.of("missing_extension_for_test")))
+            .sql(Property.ofValue("SELECT 1 AS value"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("value"), is(1));
+    }
+
 
     @Test
     void selectFromExistingFileInParameter() throws Exception {
@@ -257,7 +273,7 @@ class DuckDbTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("in.csv", source.toString()))
             .outputFiles(Property.ofValue(List.of("out")))
-            .sql(new Property<>("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
+            .sql(Property.ofValue("CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);"))
             .outputDbFile(Property.ofValue(true))
             .build()
             .run(runContext);
@@ -267,7 +283,7 @@ class DuckDbTest {
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .databaseUri(Property.ofValue(createTable.getDatabaseUri().toString()))
             .fetchType(Property.ofValue(FETCH))
-            .sql(new Property<>("SELECT * FROM new_tbl;"))
+            .sql(Property.ofValue("SELECT * FROM new_tbl;"))
             .build()
             .run(runContext);
 
@@ -287,7 +303,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>(sql))
+            .sql(Property.ofValue(sql))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -304,7 +320,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
+            .sql(Property.ofValue("SELECT array_value(array_value(1, 2), array_value(3, 4)) as result;"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -328,7 +344,7 @@ class DuckDbTest {
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("""
+            .sql(Property.ofValue("""
                 SELECT array_value(1, 2, 3);
                 """))
             .fetchType(Property.ofValue(FETCH))
@@ -355,8 +371,8 @@ class DuckDbTest {
 
     public static Stream<Arguments> incorrectUrl() {
         return Stream.of(
-            Arguments.of(new Property<>("")), //Empty URL
-            Arguments.of(new Property<>("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
+            Arguments.of(Property.ofValue("")), //Empty URL
+            Arguments.of(Property.ofValue("jdbc:postgresql://127.0.0.1:64790/kestra")) // Incorrect scheme
         );
     }
 
@@ -377,7 +393,7 @@ class DuckDbTest {
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .inputFiles(Map.of("data.json", jsonFileUri.toString()))
-            .sql(new Property<>("SELECT a AS a_struct, a::JSON AS a_json FROM read_json('data.json')"))
+            .sql(Property.ofValue("SELECT a AS a_struct, a::JSON AS a_json FROM read_json('data.json')"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -422,7 +438,7 @@ class DuckDbTest {
         // Test with a simple STRUCT
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT {'key1': 1, 'key2': 'value'} AS struct_col"))
+            .sql(Property.ofValue("SELECT {'key1': 1, 'key2': 'value'} AS struct_col"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -445,7 +461,7 @@ class DuckDbTest {
         // Test with a JSON type
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
-            .sql(new Property<>("SELECT '{\"key\": \"value\", \"number\": 42}'::JSON AS json_col"))
+            .sql(Property.ofValue("SELECT '{\"key\": \"value\", \"number\": 42}'::JSON AS json_col"))
             .fetchType(Property.ofValue(FETCH))
             .build()
             .run(runContext);
@@ -468,5 +484,20 @@ class DuckDbTest {
             assertThat(jsonMap.get("key"), is("value"));
             assertThat(jsonMap.get("number"), is(42));
         }
+    }
+
+    @Test
+    void queryWithPebbleInputRendering() throws Exception {
+        var runContext = runContextFactory.of(ImmutableMap.of("filterId", 1));
+
+        var task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofExpression("SELECT * FROM (VALUES (1, 'Alice'), (2, 'Bob')) AS t(id, name) WHERE id = {{ filterId }};"))
+            .build();
+
+        var runOutput = task.run(runContext);
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("name"), is("Alice"));
     }
 }

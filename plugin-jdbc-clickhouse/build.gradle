@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation('com.clickhouse:clickhouse-jdbc:0.9.5') {
+    implementation('com.clickhouse:clickhouse-jdbc:0.9.8') {
         exclude group: 'org.apache.httpcomponents.core5'
         exclude group: 'org.apache.httpcomponents.client5'
     }
@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.apache.httpcomponents.core5:httpcore5'
     implementation 'org.apache.httpcomponents.core5:httpcore5-h2'
     implementation 'org.apache.httpcomponents.client5:httpclient5'
-    implementation 'at.yawk.lz4:lz4-java:1.10.3'
+    implementation 'at.yawk.lz4:lz4-java:1.11.0'
 
     implementation project(':plugin-jdbc')
 
@@ -29,6 +29,6 @@ dependencies {
 
     testImplementation group: "io.kestra", name: "script", version: kestraVersion
 
-    testImplementation project(':plugin-jdbc').sourceSets.test.output
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }

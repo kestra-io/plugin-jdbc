@@ -37,11 +37,16 @@
 
 # Kestra JDBC Plugin
 
-> Plugin to interact with SQL Databases via JDBC
+## Why
 
+- What user problem does this solve? Teams need a reliable way to operate JDBC from orchestrated workflows instead of relying on manual console work, ad hoc scripts, or disconnected schedulers.
+- Why would a team adopt this plugin in a workflow? It keeps JDBC steps in the same Kestra flow as upstream preparation, approvals, retries, notifications, and downstream systems.
+- What operational/business outcome does it enable? It reduces manual handoffs and fragmented tooling while improving reliability, traceability, and delivery speed for processes that depend on JDBC.
 
-![Kestra orchestrator](https://kestra.io/video.gif)
+## What
 
+- Provides plugin components under `io.kestra.plugin`.
+- Keeps the implementation focused on the integration scope exposed by this repository.
 
 ## Documentation
 * Full documentation can be found under [kestra.io/docs](https://kestra.io/docs)
@@ -57,7 +62,7 @@
   * [for Snowflake](https://kestra.io/plugins/plugin-jdbc-snowflake/)
   * [for SQL Server](https://kestra.io/plugins/plugin-jdbc-sqlserver/)
   * [for Trino](https://kestra.io/plugins/plugin-jdbc-trino/)
-  * [for Vectorwise](https://kestra.io/plugins/plugin-jdbc-vectorwise/)
+  * [for Actian Vector](https://kestra.io/plugins/plugin-jdbc-actianvector/)
   * [for Vertica](https://kestra.io/plugins/plugin-jdbc-vertica/)
   * ...and more!
 

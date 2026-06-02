@@ -13,6 +13,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
         title = "The SQL query to run"
     )
+    @PluginProperty(group = "processing")
     Property<String> getSql();
 
     @Schema(
@@ -49,6 +50,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
             "ignores the value and is free to make its own best guess as to what the fetch size should be. Ignored if " +
             "`autoCommit` is false."
     )
+    @PluginProperty(group = "execution")
     Property<Integer> getFetchSize();
 
     @Schema(
@@ -59,11 +61,13 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
                     + "NONE - do nothing."
     )
     @NotNull
+    @PluginProperty(group = "main")
     Property<FetchType> getFetchType();
 
     @Schema(
         title = "Parameters",
         description = "A map of parameters to bind to the SQL queries. The keys should match the parameter placeholders in the SQL string, e.g., :parameterName."
     )
+    @PluginProperty(group = "advanced")
     Property<Map<String, Object>> getParameters();
 }

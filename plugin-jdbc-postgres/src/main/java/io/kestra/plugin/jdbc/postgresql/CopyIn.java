@@ -105,7 +105,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @Schema(
         title = "Source file URI."
     )
-    @PluginProperty(internalStorageURI = true)
+    @PluginProperty(internalStorageURI = true, group = "main")
     private Property<String> from;
 
     @Override

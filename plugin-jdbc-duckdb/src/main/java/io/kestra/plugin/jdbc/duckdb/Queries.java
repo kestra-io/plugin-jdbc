@@ -23,6 +23,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
@@ -106,19 +107,24 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface {
     private static final String DEFAULT_URL = "jdbc:duckdb:";
 
+    @PluginProperty(group = "source")
     protected Object inputFiles;
 
-    protected Property<List<String>> outputFiles;
-
+    @PluginProperty(group = "connection")
     protected Property<String> databaseUri;
 
     @Builder.Default
+    @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
+
+    @Builder.Default
+    protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
 
     @Builder.Default
+    @PluginProperty(group = "connection")
     private Property<String> url = Property.ofValue(DEFAULT_URL);
 
     @Override
@@ -220,10 +226,12 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
                 additionalVars
             );
             this.databaseFile = Path.of(workingDirectory + "/" + dbName);
-            this.url = new Property<>(DEFAULT_URL + this.databaseFile.toAbsolutePath());
+            this.url = Property.ofValue(DEFAULT_URL + this.databaseFile.toAbsolutePath());
         }
 
-        var rOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        var rOutputFiles = this.outputFiles == null
+            ? List.<String>of()
+            : runContext.render(this.outputFiles).asList(String.class);
         if (!rOutputFiles.isEmpty()) {
             outputFiles = PluginUtilsService.createOutputFiles(
                 workingDirectory,
@@ -231,9 +239,6 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
                 additionalVars
             );
         }
-
-        final var configureFileSearchPathQuery = "SET file_search_path='" + workingDirectory + "';";
-        this.sql = new Property<>(configureFileSearchPathQuery + "\n" + this.sql.toString());
 
         AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
 
@@ -272,6 +277,14 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         )
         @PluginProperty
         private final URI databaseUri;
+    }
+
+    @Override
+    protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
+        String workingDirectory = this.additionalVars.containsKey("workingDir")
+            ? this.additionalVars.get("workingDir").toString()
+            : null;
+        DuckDbConnectionSetup.configureSession(runContext, connection, workingDirectory, this.communityExtensions);
     }
 
 }

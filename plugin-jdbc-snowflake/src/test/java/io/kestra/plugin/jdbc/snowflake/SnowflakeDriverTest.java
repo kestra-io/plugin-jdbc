@@ -9,6 +9,6 @@ import java.sql.Driver;
 public class SnowflakeDriverTest extends AbstractJdbcDriverTest {
     @Override
     protected Class<? extends Driver> getDriverClass() {
-        return net.snowflake.client.jdbc.SnowflakeDriver.class;
+        return net.snowflake.client.api.driver.SnowflakeDriver.class;
     }
 }

@@ -41,8 +41,8 @@ tasks:
     type: io.kestra.plugin.jdbc.sybase.Queries
     fetchType: STORE
     sql: |
-      SELECT TOP 3 name, type FROM sysobjects ORDER BY name
-      SELECT TOP 1 name, type FROM sysobjects ORDER BY name
+      SELECT TOP 3 name, type FROM sysobjects ORDER BY name;
+      SELECT TOP 1 name, type FROM sysobjects ORDER BY name;
 
   - id: assert
     type: io.kestra.plugin.core.execution.Assert

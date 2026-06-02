@@ -97,19 +97,20 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
         title = "The commands to run. Please refer to SnowflakeCLI documentation https://docs.snowflake.com/en/developer-guide/snowflake-cli/command-reference/overview"
     )
     @NotNull
+    @PluginProperty(group = "main")
     protected Property<List<String>> commands;
 
     @Schema(
         title = "The account to use for authentication."
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "main")
     @NotNull
     protected Property<String> account;
 
     @Schema(
         title = "The username to use for authentication."
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "main")
     @NotNull
     protected Property<String> username;
 
@@ -135,53 +136,61 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     @Schema(
         title = "Additional environment variables for the current process."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "execution")
     protected Map<String, String> env;
 
     @Schema(
         title = "The task runner to use."
     )
     @Valid
-    @PluginProperty
+    @PluginProperty(group = "execution")
     @Builder.Default
     private TaskRunner<?> taskRunner = Docker.instance();
 
     @Schema(
         title = "The snowflake container image."
     )
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "execution")
     @Builder.Default
     private String containerImage = DEFAULT_IMAGE;
 
+    @PluginProperty(group = "source")
     private NamespaceFiles namespaceFiles;
 
+    @PluginProperty(group = "source")
     private Object inputFiles;
 
+    @PluginProperty(group = "destination")
     private Property<List<String>> outputFiles;
 
     @Override
     public ScriptOutput run(RunContext runContext) throws Exception {
-        var renderedOutputFiles = runContext.render(this.outputFiles).asList(String.class);
-        var renderedCommands = runContext.render(this.commands).asList(String.class);
+        var rOutputFiles = runContext.render(this.outputFiles).asList(String.class);
+        var rCommands = runContext.render(this.commands).asList(String.class);
+        var rAccount = runContext.render(this.account).as(String.class).orElseThrow();
+        var rUsername = runContext.render(this.username).as(String.class).orElseThrow();
         var envVarsWithDefaultAuthentication = Optional.ofNullable(env).orElse(new HashMap<>());
         envVarsWithDefaultAuthentication.putAll(Map.of(
-            "SNOWFLAKE_ACCOUNT", runContext.render(this.account).as(String.class).orElseThrow(),
-            "SNOWFLAKE_USER", runContext.render(this.username).as(String.class).orElseThrow()
+            "SNOWFLAKE_ACCOUNT", rAccount,
+            "SNOWFLAKE_USER", rUsername
 
         ));
         if (this.password != null) {
+            var rPassword = runContext.render(this.password).as(String.class).orElseThrow();
             envVarsWithDefaultAuthentication.putAll(Map.of(
-                "SNOWFLAKE_PASSWORD", runContext.render(this.password).as(String.class).orElseThrow()
+                "SNOWFLAKE_PASSWORD", rPassword
             ));
         }
         if (this.privateKey != null) {
+            var rPrivateKey = runContext.render(this.privateKey).as(String.class).orElseThrow();
+            var rPrivateKeyPassword = runContext.render(this.privateKeyPassword).as(String.class);
             var tempPrivateKeyFile = runContext
                 .workingDir().createTempFile(
                     formatPrivateKeyToPEM(
                         Base64.getEncoder().encodeToString(
                             RSAKeyPairUtils.deserializePrivateKey(
-                                runContext.render(this.privateKey).as(String.class).orElseThrow(),
-                                runContext.render(this.privateKeyPassword).as(String.class)
+                                rPrivateKey,
+                                rPrivateKeyPassword
                             ).getEncoded()
                         )
                     ).getBytes()
@@ -199,7 +208,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
             .withEnv(envVarsWithDefaultAuthentication)
             .withNamespaceFiles(namespaceFiles)
             .withInputFiles(inputFiles)
-            .withOutputFiles(renderedOutputFiles.isEmpty() ? null : renderedOutputFiles)
+            .withOutputFiles(rOutputFiles.isEmpty() ? null : rOutputFiles)
             .withInterpreter(Property.ofValue(List.of("/bin/sh", "-c")))
             .withCommands(
                 Property.ofValue(
@@ -207,7 +216,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
                         Stream.of(
                             "snow connection add --connection-name=default-connection --default --no-interactive"
                         ),
-                        renderedCommands.stream()
+                        rCommands.stream()
                     ).toList()
                 )
             )

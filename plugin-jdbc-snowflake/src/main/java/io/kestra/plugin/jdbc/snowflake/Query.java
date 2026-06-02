@@ -71,24 +71,25 @@ import java.util.Properties;
 )
 public class Query extends AbstractJdbcQuery implements SnowflakeInterface {
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKey;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKeyPassword;
 
     @PluginProperty(group = "connection")
     private Property<String> database;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> warehouse;
 
     @PluginProperty(group = "connection")
     private Property<String> schema;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     private Property<String> role;
 
+    @PluginProperty(group = "advanced")
     private Property<String> queryTag;
 
     @Override
@@ -115,6 +116,7 @@ public class Query extends AbstractJdbcQuery implements SnowflakeInterface {
 
     @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
+        var rFetchSize = runContext.render(this.fetchSize).as(Integer.class).orElse(10000);
+        return rFetchSize;
     }
 }

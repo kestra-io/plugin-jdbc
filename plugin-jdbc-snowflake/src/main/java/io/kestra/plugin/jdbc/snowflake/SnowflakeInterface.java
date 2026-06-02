@@ -12,7 +12,7 @@ import java.util.Properties;
 
 public interface SnowflakeInterface extends JdbcConnectionInterface {
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     @Schema(
         title = "Specifies the virtual warehouse to use once connected.",
         description = "The specified warehouse should be an existing warehouse for which the specified default role has privileges.\n" +
@@ -26,14 +26,14 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
             "If you need to use a different database after connecting, execute the `USE DATABASE` command.")
     Property<String> getDatabase();
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     @Schema(
         title = "Specifies the default schema to use for the specified database once connected.",
         description = "The specified schema should be an existing schema for which the specified default role has privileges.\n" +
             "If you need to use a different schema after connecting, execute the `USE SCHEMA` command.")
     Property<String> getSchema();
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "advanced")
     @Schema(
         title = "Specifies the default access control role to use in the Snowflake session initiated by the driver.",
         description = "The specified role should be an existing role that has already been assigned to the specified user " +
@@ -103,7 +103,7 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
         title = "Specifies the private key password for key pair authentication and key rotation.")
     Property<String> getPrivateKeyPassword();
 
-    @PluginProperty(dynamic = true)
+    @PluginProperty(dynamic = true, group = "advanced")
     @Schema(
         title = "Query tag for Snowflake session tracking",
         description = "Optional string to tag queries executed within the session for monitoring and cost allocation"
@@ -124,31 +124,38 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
         if (this.getWarehouse() != null) {
-            properties.put("warehouse", runContext.render(this.getWarehouse()).as(String.class).orElseThrow());
+            var rWarehouse = runContext.render(this.getWarehouse()).as(String.class).orElseThrow();
+            properties.put("warehouse", rWarehouse);
         }
 
         if (this.getDatabase() != null) {
-            properties.put("db", runContext.render(this.getDatabase()).as(String.class).orElseThrow());
+            var rDatabase = runContext.render(this.getDatabase()).as(String.class).orElseThrow();
+            properties.put("db", rDatabase);
         }
 
         if (this.getSchema() != null) {
-            properties.put("schema", runContext.render(this.getSchema()).as(String.class).orElseThrow());
+            var rSchema = runContext.render(this.getSchema()).as(String.class).orElseThrow();
+            properties.put("schema", rSchema);
         }
 
         if (this.getRole() != null) {
-            properties.put("role", runContext.render(this.getRole()).as(String.class).orElseThrow());
+            var rRole = runContext.render(this.getRole()).as(String.class).orElseThrow();
+            properties.put("role", rRole);
         }
 
         if (this.getPrivateKey() != null) {
+            var rPrivateKey = runContext.render(this.getPrivateKey()).as(String.class).orElseThrow();
+            var rPrivateKeyPassword = runContext.render(this.getPrivateKeyPassword()).as(String.class);
             var unencryptedPrivateKey = RSAKeyPairUtils.deserializePrivateKey(
-                runContext.render(this.getPrivateKey()).as(String.class).orElseThrow(),
-                runContext.render(this.getPrivateKeyPassword()).as(String.class)
+                rPrivateKey,
+                rPrivateKeyPassword
             );
             properties.put("privateKey", unencryptedPrivateKey);
         }
 
         if (this.getQueryTag() != null) {
-            properties.put("query_tag", runContext.render(this.getQueryTag()).as(String.class).orElseThrow());
+            var rQueryTag = runContext.render(this.getQueryTag()).as(String.class).orElseThrow();
+            properties.put("query_tag", rQueryTag);
         }
     }
 

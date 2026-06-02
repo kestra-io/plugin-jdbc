@@ -98,22 +98,24 @@ final class DruidTestHelper {
             "resultFormat", "array"
         ));
 
-        HttpResponse<String> resp = HTTP.send(
-            HttpRequest.newBuilder(URI.create(ROUTER + "/druid/v2/sql/statements"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build(),
-            HttpResponse.BodyHandlers.ofString()
-        );
+        // The Overlord may still be initializing after router/coordinator status checks pass,
+        // so retry the submission on 5xx until it is accepted.
+        Await.until(() -> {
+            try {
+                HttpResponse<String> resp = HTTP.send(
+                    HttpRequest.newBuilder(URI.create(ROUTER + "/druid/v2/sql/statements"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(payload))
+                        .build(),
+                    HttpResponse.BodyHandlers.ofString()
+                );
+                return resp.statusCode() == 200;
+            } catch (Exception e) {
+                return false;
+            }
+        }, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
-        if (resp.statusCode() != 200) {
-            throw new IOException("Ingestion request failed: " + resp.statusCode() + " - " + resp.body());
-        }
-
-        JsonNode json = MAPPER.readTree(resp.body());
-        String queryId = json.path("queryId").asText(null);
-
-        // we waiit for successful ingestion task
+        // wait for successful ingestion task
         Await.until(DruidTestHelper::hasSuccessfulIngestionTask, Duration.ofSeconds(3), Duration.ofMinutes(5));
     }
 

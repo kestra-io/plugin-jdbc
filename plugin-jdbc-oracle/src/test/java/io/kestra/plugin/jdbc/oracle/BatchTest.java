@@ -314,6 +314,47 @@ public class BatchTest extends AbstractRdbmsTest {
             succeededWithoutOra17041, is(true));
     }
 
+    @Test
+    public void sqlWithUppercaseTableShouldBindPositionally() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        // source key "src_id" does not match any column in the target table.
+        // when sql is provided, column discovery must be skipped so the value
+        // binds positionally, not silently as NULL.
+        File tempFile = File.createTempFile(this.getClass().getSimpleName().toLowerCase() + "_", ".ion");
+        try (OutputStream output = new FileOutputStream(tempFile)) {
+            FileSerde.write(output, ImmutableMap.of("src_id", 99));
+        }
+
+        URI uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new FileInputStream(tempFile)
+        );
+
+        Batch task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .table(Property.ofValue("NAMEDINSERT"))
+            .sql(Property.ofValue("INSERT INTO NAMEDINSERT (t_id) VALUES (?)"))
+            .build();
+
+        AbstractJdbcBatch.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRowCount(), is(1L));
+
+        try (
+            var conn = getConnection();
+            var stmt = conn.prepareStatement("SELECT t_id FROM namedInsert WHERE t_id = 99");
+            var rs = stmt.executeQuery()
+        ) {
+            assertThat("Row with t_id=99 must exist (not NULL)", rs.next(), is(true));
+            assertThat(rs.getInt("t_id"), is(99));
+        }
+    }
+
     @Override
     protected String getUrl() {
         return "jdbc:oracle:thin:@localhost:49161:XE";
