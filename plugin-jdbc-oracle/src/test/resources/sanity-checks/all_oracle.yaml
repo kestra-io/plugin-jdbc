@@ -32,7 +32,7 @@ tasks:
     retry:
       type: constant
       interval: PT10S
-      maxAttempt: 120
+      maxAttempts: 120
 
   - id: create_table
     type: io.kestra.plugin.jdbc.oracle.Query

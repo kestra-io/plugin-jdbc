@@ -27,7 +27,7 @@ tasks:
     retry:
       type: constant
       interval: PT5S
-      maxAttempt: 60
+      maxAttempts: 60
 
   - id: create_table
     type: io.kestra.plugin.jdbc.clickhouse.Queries
