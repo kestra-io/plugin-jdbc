@@ -18,9 +18,9 @@ import org.slf4j.Logger;
 
 import io.kestra.core.models.enums.MonacoLanguages;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -293,23 +293,23 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     private PreparedInput prepareInput(RunContext runContext, URI from, InputHandling rInputHandling, long rLocalBufferMaxBytes, Logger logger) throws Exception {
         return switch (rInputHandling) {
-            case STREAM -> PreparedInput.stream(() -> openRemoteReader(runContext, from));
+            case STREAM -> PreparedInput.stream(() -> openRemoteStream(runContext, from));
             case LOCAL -> {
                 Path localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, true)
                     .orElseThrow(() -> new IllegalStateException("Input buffering failed in LOCAL mode."));
                 logger.debug("Using LOCAL input handling for JDBC batch with local file {}", localPath);
-                yield PreparedInput.local(localPath, () -> openLocalReader(localPath));
+                yield PreparedInput.local(localPath, () -> openLocalStream(localPath));
             }
             case AUTO -> {
                 Optional<Path> localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, false);
                 if (localPath.isPresent()) {
                     logger.debug("AUTO input handling selected LOCAL mode for JDBC batch");
                     Path path = localPath.get();
-                    yield PreparedInput.local(path, () -> openLocalReader(path));
+                    yield PreparedInput.local(path, () -> openLocalStream(path));
                 }
 
                 logger.debug("AUTO input handling selected STREAM mode for JDBC batch");
-                yield PreparedInput.stream(() -> openRemoteReader(runContext, from));
+                yield PreparedInput.stream(() -> openRemoteStream(runContext, from));
             }
         };
     }
@@ -346,12 +346,12 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         return Optional.of(localPath);
     }
 
-    private BufferedReader openRemoteReader(RunContext runContext, URI from) throws IOException {
-        return new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE);
+    private InputStream openRemoteStream(RunContext runContext, URI from) throws IOException {
+        return new BufferedInputStream(runContext.storage().getFile(from), FileSerde.BUFFER_SIZE);
     }
 
-    private BufferedReader openLocalReader(Path localPath) throws IOException {
-        return new BufferedReader(new InputStreamReader(Files.newInputStream(localPath)), FileSerde.BUFFER_SIZE);
+    private InputStream openLocalStream(Path localPath) throws IOException {
+        return new BufferedInputStream(Files.newInputStream(localPath), FileSerde.BUFFER_SIZE);
     }
 
     @SuppressWarnings("unchecked")
@@ -436,13 +436,13 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         private final Integer updatedCount;
     }
 
-    private record PreparedInput(InputHandling effectiveHandling, ReaderSupplier readerSupplier, Path localPath) {
-        private static PreparedInput stream(ReaderSupplier readerSupplier) {
-            return new PreparedInput(InputHandling.STREAM, readerSupplier, null);
+    private record PreparedInput(InputHandling effectiveHandling, StreamSupplier streamSupplier, Path localPath) {
+        private static PreparedInput stream(StreamSupplier streamSupplier) {
+            return new PreparedInput(InputHandling.STREAM, streamSupplier, null);
         }
 
-        private static PreparedInput local(Path localPath, ReaderSupplier readerSupplier) {
-            return new PreparedInput(InputHandling.LOCAL, readerSupplier, localPath);
+        private static PreparedInput local(Path localPath, StreamSupplier streamSupplier) {
+            return new PreparedInput(InputHandling.LOCAL, streamSupplier, localPath);
         }
 
         private boolean isLocal() {
@@ -457,8 +457,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     }
 
     @FunctionalInterface
-    private interface ReaderSupplier {
-        BufferedReader open() throws Exception;
+    private interface StreamSupplier {
+        InputStream open() throws Exception;
     }
 
     public static class ParameterType {
@@ -528,7 +528,6 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                     logger
                 );
             }
-
             executeAttempt(resumeOffset);
         }
 
@@ -536,7 +535,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             try (
                 Connection connection = connection(runContext);
                 PreparedStatement ps = connection.prepareStatement(config.sql());
-                BufferedReader reader = preparedInput.readerSupplier().open()
+                InputStream inputStream = preparedInput.streamSupplier().open()
             ) {
                 runningConnection = connection;
                 runningStatement = ps;
@@ -548,7 +547,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 List<Object> buffer = new ArrayList<>(config.chunk());
                 long skip = resumeOffset;
 
-                for (Object row : FileSerde.readAll(reader).toIterable()) {
+                for (Object row : FileSerde.readAll(inputStream).toIterable()) {
                     if (skip-- > 0) continue;
 
                     buffer.add(row);

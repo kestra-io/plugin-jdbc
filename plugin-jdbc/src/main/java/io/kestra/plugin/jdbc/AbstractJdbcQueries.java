@@ -12,9 +12,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -183,8 +183,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
                 case STORE -> {
                     File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                    try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                        size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
                     }
                     output
                         .uri(runContext.storage().putFile(tempFile))
@@ -231,8 +231,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     }
                     case STORE -> {
                         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                        try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                            size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
                         }
                         output
                             .uri(runContext.storage().putFile(tempFile))
