@@ -6,6 +6,7 @@ import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.FlowInputOutput;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
@@ -18,9 +19,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -199,13 +199,10 @@ public class PgsqlTest extends AbstractRdbmsTest {
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getUri(), notNullValue());
 
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(this.storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getUri())));
-        int lines = 0;
-        while (bufferedReader.readLine() != null) {
-            lines++;
+        try (var inputStream = new BufferedInputStream(this.storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getUri()))) {
+            long lines = FileSerde.readAll(inputStream).count().block();
+            assertThat(lines, is(2L));
         }
-        bufferedReader.close();
-        assertThat(lines, is(2));
     }
 
     @Test

@@ -1,7 +1,6 @@
 package io.kestra.plugin.jdbc;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.assets.Custom;
@@ -11,15 +10,16 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.AssetEmit;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.sql.*;
 import java.time.ZoneId;
@@ -155,8 +155,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Getter(AccessLevel.NONE)
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
-    private static final ObjectMapper MAPPER = JacksonMapper.ofIon();
-
     private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
         "redshift",
         "snowflake",
@@ -192,15 +190,11 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return fetch(stmt, rs, Rethrow.throwConsumer(maps::add), cellConverter, connection);
     }
 
-    protected long fetchToFile(Statement stmt, ResultSet rs, BufferedWriter writer, AbstractCellConverter cellConverter, Connection connection) throws SQLException, IOException {
+    protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection) throws SQLException, IOException {
         return fetch(
             stmt,
             rs,
-            Rethrow.throwConsumer(map -> {
-                final String s = MAPPER.writeValueAsString(map);
-                writer.write(s);
-                writer.write("\n");
-            }),
+            Rethrow.throwConsumer(map -> FileSerde.write(output, map)),
             cellConverter,
             connection
         );
