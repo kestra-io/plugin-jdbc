@@ -157,7 +157,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         if (rs.next()) {
-            return mapResultSetToMap(rs, cellConverter, connection);
+            var labels = columnLabels(rs);
+            return mapResultSetToMap(rs, labels, cellConverter, connection);
         }
         return null;
     }
@@ -185,8 +186,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         long count = 0;
 
         do {
+            // Labels are invariant within a single ResultSet; recompute only when a new result set starts.
+            var labels = columnLabels(rs);
             while (rs.next()) {
-                Map<String, Object> map = mapResultSetToMap(rs, cellConverter, connection);
+                Map<String, Object> map = mapResultSetToMap(rs, labels, cellConverter, connection);
                 c.accept(map);
                 count++;
             }
@@ -196,15 +199,27 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return count;
     }
 
+    // Keep the original signature so any external caller compiled against the old API still works.
     protected Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
-        int columnsCount = rs.getMetaData().getColumnCount();
-        Map<String, Object> map = new LinkedHashMap<>();
+        return mapResultSetToMap(rs, columnLabels(rs), cellConverter, connection);
+    }
 
-        for (int i = 1; i <= columnsCount; i++) {
-            map.put(rs.getMetaData().getColumnLabel(i), convertCell(i, rs, cellConverter, connection));
+    Map<String, Object> mapResultSetToMap(ResultSet rs, String[] labels, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
+        var map = new LinkedHashMap<String, Object>(labels.length * 2);
+        for (int i = 1; i <= labels.length; i++) {
+            map.put(labels[i - 1], convertCell(i, rs, cellConverter, connection));
         }
-
         return map;
+    }
+
+    String[] columnLabels(ResultSet rs) throws SQLException {
+        var meta = rs.getMetaData();
+        int count = meta.getColumnCount();
+        var labels = new String[count];
+        for (int i = 1; i <= count; i++) {
+            labels[i - 1] = meta.getColumnLabel(i);
+        }
+        return labels;
     }
 
     private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {

@@ -287,9 +287,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Override
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         long count = 0L;
+        var labels = columnLabels(rs);
 
         while (rs.next()) {
-            Map<String, Object> map = super.mapResultSetToMap(rs, cellConverter, connection);
+            Map<String, Object> map = super.mapResultSetToMap(rs, labels, cellConverter, connection);
             c.accept(map);
             count++;
         }
