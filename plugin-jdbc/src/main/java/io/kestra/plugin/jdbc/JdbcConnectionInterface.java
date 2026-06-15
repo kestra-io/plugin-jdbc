@@ -92,6 +92,35 @@ public interface JdbcConnectionInterface {
         return props;
     }
 
+    /**
+     * Whether this driver participates in connection pooling.
+     * Embedded drivers (DuckDB, SQLite, MS Access) override this to return false.
+     */
+    default boolean usesConnectionPool() {
+        return true;
+    }
+
+    /**
+     * Maximum number of connections in the pool for this driver instance.
+     */
+    default int connectionPoolSize() {
+        return 10;
+    }
+
+    @Schema(
+        title = "Reuse database connections via a connection pool",
+        description = """
+            When true (default), connections are pooled and reused across executions, keyed by URL and \
+            credentials, which removes the connect and TLS-handshake cost on every run. \
+            Set to false if your SQL relies on session state persisting on the connection \
+            (for example SET search_path, session-scoped temp tables or variables), since pooled \
+            connections are reused across executions. Embedded drivers (DuckDB, SQLite, MS Access) never pool."""
+    )
+    @PluginProperty(group = "advanced")
+    default Property<Boolean> getConnectionPooling() {
+        return Property.ofValue(true);
+    }
+
     default Connection connection(RunContext runContext) throws Exception {
         registerDriver();
 
@@ -99,7 +128,12 @@ public interface JdbcConnectionInterface {
         String jdbcUrl = props.getProperty("jdbc.url");
         props.remove("jdbc.url");
 
-        return DriverManager.getConnection(jdbcUrl, props);
+        boolean pool = usesConnectionPool()
+            && runContext.render(getConnectionPooling()).as(Boolean.class).orElse(true);
+        if (!pool) {
+            return DriverManager.getConnection(jdbcUrl, props);
+        }
+        return JdbcConnectionPool.connection(jdbcUrl, props, connectionPoolSize());
     }
 
     private Properties createConnectionProperties(RunContext runContext) throws IllegalVariableEvaluationException {

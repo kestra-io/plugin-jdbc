@@ -56,4 +56,10 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     default String getScheme() {
         return "jdbc:duckdb";
     }
+
+    // DuckDB uses per-execution in-memory or file-scoped connections; pooling is not safe here.
+    @Override
+    default boolean usesConnectionPool() {
+        return false;
+    }
 }
