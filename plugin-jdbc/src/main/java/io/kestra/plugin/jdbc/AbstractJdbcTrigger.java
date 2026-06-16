@@ -42,6 +42,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
     @Schema(
         title = "Reuse database connections via a connection pool",
         description = """

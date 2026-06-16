@@ -49,6 +49,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
     @Schema(
         title = "Reuse database connections via a connection pool",
         description = """
@@ -238,10 +239,9 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     String[] columnLabels(ResultSet rs) throws SQLException {
         var meta = rs.getMetaData();
-        int count = meta.getColumnCount();
-        var labels = new String[count];
-        for (int i = 1; i <= count; i++) {
-            labels[i - 1] = meta.getColumnLabel(i);
+        var labels = new String[meta.getColumnCount()];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = meta.getColumnLabel(i + 1); // JDBC columns are 1-based
         }
         return labels;
     }
