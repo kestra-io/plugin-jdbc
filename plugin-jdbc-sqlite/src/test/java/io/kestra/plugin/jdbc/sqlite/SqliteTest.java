@@ -63,7 +63,7 @@ public class SqliteTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("int_column"), is(42));
 
         assertThat(runOutput.getRow().get("date_column"), is(LocalDate.parse("2023-10-30")));
-        assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
+        assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T21:59:57.150150Z")));
         assertThat(runOutput.getRow().get("time_column"), is(LocalTime.parse("14:30:00")));
         assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
         assertThat(runOutput.getRow().get("year_column"), is(2023));
@@ -90,11 +90,39 @@ public class SqliteTest extends AbstractRdbmsTest {
                 .build();
 
             var runOutput = task.run(runContext);
-            assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
+            assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T21:59:57.150150Z")));
             assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
         } finally {
             TimeZone.setDefault(previousDefaultTimeZone);
         }
+    }
+
+    @Test
+    void selectIso8601DatetimeFormats() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("UTC"))
+            .sql(Property.ofValue("SELECT * FROM lite_types WHERE id > 1 ORDER BY id"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getRows(), notNullValue());
+        assertThat(runOutput.getRows().size(), is(2));
+
+        // Row 1: exact value from the bug report — T separator with milliseconds
+        var row1 = runOutput.getRows().get(0);
+        assertThat(row1.get("datetime_column"),  is(Instant.parse("2012-12-26T12:06:28.727Z")));
+        assertThat(row1.get("timestamp_column"), is(Instant.parse("2012-12-26T12:06:28.727Z")));
+
+        // Row 2: T separator without milliseconds — also failed before the fix
+        var row2 = runOutput.getRows().get(1);
+        assertThat(row2.get("datetime_column"),  is(Instant.parse("2012-12-26T12:06:28Z")));
+        assertThat(row2.get("timestamp_column"), is(Instant.parse("2012-12-26T12:06:28Z")));
     }
 
     @Test
