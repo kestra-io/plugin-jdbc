@@ -49,6 +49,31 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
+    @Schema(
+        title = "Reuse database connections via a connection pool",
+        description = """
+            When true (default), connections are pooled and reused across executions, keyed by URL and \
+            credentials, removing the connect and TLS-handshake cost on each run. Set to false if your SQL \
+            relies on session state persisting on the connection (for example SET search_path, session-scoped \
+            temp tables or variables), since pooled connections are reused. Embedded drivers (DuckDB, SQLite, \
+            MS Access) never pool regardless of this setting."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> connectionPooling = Property.ofValue(true);
+
+    @Schema(
+        title = "Maximum number of pooled connections",
+        description = """
+            Maximum connections held in the pool for a given URL and credentials. Default 10. \
+            Increase for flows that run many concurrent queries against the same database to avoid \
+            waiting for an available connection. Ignored when connectionPooling is false or for embedded drivers."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Integer> connectionPoolSize = Property.ofValue(10);
+
     @Schema(
         title = "SQL statement(s) to execute",
         description = """
@@ -157,7 +182,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         if (rs.next()) {
-            return mapResultSetToMap(rs, cellConverter, connection);
+            var labels = columnLabels(rs);
+            return mapResultSetToMap(rs, labels, cellConverter, connection);
         }
         return null;
     }
@@ -185,8 +211,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         long count = 0;
 
         do {
+            // Labels are invariant within a single ResultSet; recompute only when a new result set starts.
+            var labels = columnLabels(rs);
             while (rs.next()) {
-                Map<String, Object> map = mapResultSetToMap(rs, cellConverter, connection);
+                Map<String, Object> map = mapResultSetToMap(rs, labels, cellConverter, connection);
                 c.accept(map);
                 count++;
             }
@@ -196,15 +224,26 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return count;
     }
 
+    // Keep the original signature so any external caller compiled against the old API still works.
     protected Map<String, Object> mapResultSetToMap(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
-        int columnsCount = rs.getMetaData().getColumnCount();
-        Map<String, Object> map = new LinkedHashMap<>();
+        return mapResultSetToMap(rs, columnLabels(rs), cellConverter, connection);
+    }
 
-        for (int i = 1; i <= columnsCount; i++) {
-            map.put(rs.getMetaData().getColumnLabel(i), convertCell(i, rs, cellConverter, connection));
+    Map<String, Object> mapResultSetToMap(ResultSet rs, String[] labels, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
+        var map = new LinkedHashMap<String, Object>(labels.length * 2);
+        for (int i = 1; i <= labels.length; i++) {
+            map.put(labels[i - 1], convertCell(i, rs, cellConverter, connection));
         }
-
         return map;
+    }
+
+    String[] columnLabels(ResultSet rs) throws SQLException {
+        var meta = rs.getMetaData();
+        var labels = new String[meta.getColumnCount()];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = meta.getColumnLabel(i + 1); // JDBC columns are 1-based
+        }
+        return labels;
     }
 
     private Object convertCell(int columnIndex, ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {

@@ -48,6 +48,31 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
 
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
+    @Schema(
+        title = "Reuse database connections via a connection pool",
+        description = """
+            When true (default), connections are pooled and reused across executions, keyed by URL and \
+            credentials, removing the connect and TLS-handshake cost on each run. Set to false if your SQL \
+            relies on session state persisting on the connection (for example SET search_path, session-scoped \
+            temp tables or variables), since pooled connections are reused. Embedded drivers (DuckDB, SQLite, \
+            MS Access) never pool regardless of this setting."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> connectionPooling = Property.ofValue(true);
+
+    @Schema(
+        title = "Maximum number of pooled connections",
+        description = """
+            Maximum connections held in the pool for a given URL and credentials. Default 10. \
+            Increase for flows that run many concurrent queries against the same database to avoid \
+            waiting for an available connection. Ignored when connectionPooling is false or for embedded drivers."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Integer> connectionPoolSize = Property.ofValue(10);
+
     @NotNull
     @Schema(
         title = "Input file from internal storage",
