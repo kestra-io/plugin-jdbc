@@ -132,11 +132,11 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         } else if(this.store) {
             return FetchType.STORE;
         }
-        var resolved = runContext.render(fetchType).as(FetchType.class).orElseThrow();
-        if (resolved == FetchType.NONE) {
+        var rFetchType = runContext.render(fetchType).as(FetchType.class).orElseThrow();
+        if (rFetchType == FetchType.NONE) {
             throw new IllegalArgumentException("fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.");
         }
-        return resolved;
+        return rFetchType;
     }
 
     protected abstract AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception;
