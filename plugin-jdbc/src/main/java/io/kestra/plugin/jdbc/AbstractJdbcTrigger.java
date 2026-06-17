@@ -72,11 +72,12 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
+    @PluginProperty(group = "main")
     @Schema(
         title = "The way you want to fetch the data.",
         description = """
             Triggers default to `FETCH`, which loads all rows into memory and exposes them as `{{ trigger.rows }}`. \
-            A trigger fires only when the query returns at least one row, so `NONE` would never fire and must not be used here. \
+            A trigger fires only when the query returns at least one row; setting `NONE` would cause the trigger to never fire. \
             Use `FETCH_ONE` to expose a single row as `{{ trigger.row }}`, or `STORE` to write the rows to internal storage and expose the file URI as `{{ trigger.uri }}`."""
     )
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
@@ -118,7 +119,11 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         } else if(this.store) {
             return FetchType.STORE;
         }
-        return runContext.render(fetchType).as(FetchType.class).orElseThrow();
+        var resolved = runContext.render(fetchType).as(FetchType.class).orElseThrow();
+        if (resolved == FetchType.NONE) {
+            throw new IllegalArgumentException("fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.");
+        }
+        return resolved;
     }
 
     protected abstract AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception;

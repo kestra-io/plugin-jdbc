@@ -3,6 +3,8 @@ package io.kestra.plugin.jdbc.postgresql;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
@@ -12,8 +14,10 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 @KestraTest
+@Execution(ExecutionMode.SAME_THREAD)
 class PgsqlTriggerDefaultFetchTypeTest extends AbstractJdbcTriggerTest {
 
     @Test
@@ -21,6 +25,7 @@ class PgsqlTriggerDefaultFetchTypeTest extends AbstractJdbcTriggerTest {
         var execution = triggerFlow(this.getClass().getClassLoader(), "flows", "pgsql-listen-default-fetchtype");
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
+        assertThat(rows, notNullValue());
         assertThat(rows.size(), greaterThanOrEqualTo(1));
     }
 
