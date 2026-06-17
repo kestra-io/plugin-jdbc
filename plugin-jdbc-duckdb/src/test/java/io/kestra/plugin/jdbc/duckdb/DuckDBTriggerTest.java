@@ -13,7 +13,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest
+@KestraTest(startRunner = true, startScheduler = true)
 class DuckDBTriggerTest extends AbstractJdbcTriggerTest {
     @Test
     void run() throws Exception {

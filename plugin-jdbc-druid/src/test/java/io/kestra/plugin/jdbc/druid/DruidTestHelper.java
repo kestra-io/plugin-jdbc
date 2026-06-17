@@ -13,6 +13,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class DruidTestHelper {
     private static final ObjectMapper MAPPER = JacksonMapper.ofJson();
@@ -22,15 +23,23 @@ final class DruidTestHelper {
     private static final String INDEXER = "http://localhost:8888/druid/indexer/v1";
     private static final String BROKER = "http://localhost:11082";
 
+    // Guarded so each test JVM runs the heavy ingestion+wait cycle only once,
+    // not once per test class @BeforeAll.
+    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
+
     private DruidTestHelper() {}
 
-    static void initServer() throws IOException, InterruptedException, TimeoutException {
+    static synchronized void initServer() throws IOException, InterruptedException, TimeoutException {
+        if (INITIALIZED.get()) {
+            return;
+        }
         waitForRouter();
         waitForCoordinator();
         waitForBroker();
         cleanupRunningTasks();
         runInlineIngestion();
         waitForDatasource("products");
+        INITIALIZED.set(true);
     }
 
     private static void waitForRouter() throws TimeoutException {
