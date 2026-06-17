@@ -8,6 +8,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -71,7 +72,14 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
-    protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
+    @Schema(
+        title = "The way you want to fetch the data.",
+        description = """
+            Triggers default to `FETCH`, which loads all rows into memory and exposes them as `{{ trigger.rows }}`. \
+            A trigger fires only when the query returns at least one row, so `NONE` would never fire and must not be used here. \
+            Use `FETCH_ONE` to expose a single row as `{{ trigger.row }}`, or `STORE` to write the rows to internal storage and expose the file URI as `{{ trigger.uri }}`."""
+    )
+    protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
 
     @Builder.Default
     protected Property<Integer> fetchSize = Property.ofValue(10000);
