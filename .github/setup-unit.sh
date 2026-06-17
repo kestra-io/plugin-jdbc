@@ -50,12 +50,6 @@ docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver pos
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 sleep 3
 
-docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
-INSTALL SONAME 'auth_ed25519';
-CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
-GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
-"""
-
 wait_for() {
   local name="$1"
   local cmd="$2"
@@ -95,6 +89,13 @@ wait_for_tcp() {
 
 wait_for "postgres-multi-query" "docker compose -f docker-compose-ci.yml exec -T postgres-multi-query pg_isready -U postgres -d kestra" 600
 wait_for "mysql" "docker compose -f docker-compose-ci.yml exec -T mysql mysqladmin ping -h127.0.0.1 -uroot -pmysql_passwd" 600
+wait_for "mariadb" "docker compose -f docker-compose-ci.yml exec -T mariadb mariadb-admin ping -h127.0.0.1 -uroot -pmariadb_passwd" 600
+
+docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
+INSTALL SONAME 'auth_ed25519';
+CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
+GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
+"""
 wait_for "clickhouse" "curl -sf http://127.0.0.1:28123/ping | grep -q Ok" 600
 wait_for "druid_coordinator" "curl -sf http://127.0.0.1:11081/status/health | grep -q true" 600 5
 wait_for "druid_broker"      "curl -sf http://127.0.0.1:11082/status/health | grep -q true" 600 5
