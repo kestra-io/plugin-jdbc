@@ -8,7 +8,10 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.PebbleUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -81,6 +84,16 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
             Use `FETCH_ONE` to expose a single row as `{{ trigger.row }}`, or `STORE` to write the rows to internal storage and expose the file URI as `{{ trigger.uri }}`."""
     )
     protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
+
+    @AssertTrue(message = "fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.")
+    @JsonIgnore
+    boolean isFetchTypeValid() {
+        if (fetchType == null) return true;
+        var expr = fetchType.toString();
+        // Skip validation for dynamic Pebble expressions — those can only be checked at render time
+        if (PebbleUtil.containsOpeningBlockDelimiter(expr)) return true;
+        return !FetchType.NONE.name().equalsIgnoreCase(expr);
+    }
 
     @Builder.Default
     protected Property<Integer> fetchSize = Property.ofValue(10000);
