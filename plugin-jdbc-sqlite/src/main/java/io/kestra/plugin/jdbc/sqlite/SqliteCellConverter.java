@@ -49,11 +49,6 @@ public class SqliteCellConverter extends AbstractCellConverter {
 
         return switch (columnTypeName.toLowerCase()) {
             case "date" -> LocalDate.parse(resultSet.getString(columnIndex));
-            // case "datetime", "timestamp" -> {
-            //     var calendar = Calendar.getInstance(TimeZone.getTimeZone(zoneId));
-            //     var timestamp = resultSet.getTimestamp(columnIndex, calendar);
-            //     yield timestamp != null ? timestamp.toInstant() : null;
-            // }
             case "datetime", "timestamp" -> {
                 if (data instanceof String text) {
                 yield parseTextToInstant(text);
