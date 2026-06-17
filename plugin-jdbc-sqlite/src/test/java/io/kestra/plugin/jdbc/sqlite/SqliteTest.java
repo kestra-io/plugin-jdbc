@@ -63,7 +63,6 @@ public class SqliteTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("int_column"), is(42));
 
         assertThat(runOutput.getRow().get("date_column"), is(LocalDate.parse("2023-10-30")));
-        // assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
         assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T21:59:57.150150Z")));
         assertThat(runOutput.getRow().get("time_column"), is(LocalTime.parse("14:30:00")));
         assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
@@ -91,7 +90,6 @@ public class SqliteTest extends AbstractRdbmsTest {
                 .build();
 
             var runOutput = task.run(runContext);
-            // assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T22:02:27.150Z")));
             assertThat(runOutput.getRow().get("datetime_column"), is(Instant.parse("2023-10-30T21:59:57.150150Z")));
             assertThat(runOutput.getRow().get("timestamp_column"), is(Instant.parse("2023-10-30T13:30:00.0Z")));
         } finally {
