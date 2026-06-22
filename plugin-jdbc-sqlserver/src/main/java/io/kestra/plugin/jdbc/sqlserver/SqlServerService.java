@@ -45,19 +45,12 @@ public abstract class SqlServerService {
         }
     }
 
-    /**
-     * Returns true if the mssql JDBC URL already contains the given parameter name
-     * (matched case-insensitively in the ";name=" segment form).
-     * When the URL specifies the parameter, the driver will use it directly and injecting
-     * the same key into Properties would overwrite it (mssql-jdbc 13.x gives Properties precedence).
-     */
     private static boolean urlContainsParam(String jdbcUrl, String paramName) {
         if (jdbcUrl == null) {
             return false;
         }
         var lowerUrl = jdbcUrl.toLowerCase(Locale.ROOT);
         var lowerParam = paramName.toLowerCase(Locale.ROOT);
-        // mssql connection-string params appear as ;name= or ;name; (boolean shorthand)
         return lowerUrl.contains(";" + lowerParam + "=") || lowerUrl.contains(";" + lowerParam + ";");
     }
 }

@@ -34,16 +34,11 @@ final class JdbcConnectionPool {
         POOLS.clear();
     }
 
-    /** Returns the number of active pools. Package-private for testing only. */
     static int poolCount() {
         return POOLS.size();
     }
 
     private static String poolKey(String jdbcUrl, Properties props) {
-        // Driver properties (ssl, applicationName, etc.) are included in the key: two pools with
-        // the same URL but different encrypt/trustServerCertificate settings must remain separate.
-        // mssql-jdbc 13.x gives Properties precedence over URL params, so a stale pool built with
-        // different properties would silently apply the wrong driver configuration.
         var sorted = new TreeMap<String, String>();
         for (var name : props.stringPropertyNames()) {
             sorted.put(name, props.getProperty(name));
@@ -64,8 +59,6 @@ final class JdbcConnectionPool {
         config.setIdleTimeout(60_000);
         config.setMaxLifetime(1_800_000);
 
-        // Pool name is derived from the full pool key hash so that distinct pools with the same
-        // URL but different driver properties get unique names (required by HikariCP).
         var poolName = "kestra-jdbc-" + Integer.toUnsignedString(poolKey(jdbcUrl, props).hashCode(), 16);
         config.setPoolName(poolName);
 
