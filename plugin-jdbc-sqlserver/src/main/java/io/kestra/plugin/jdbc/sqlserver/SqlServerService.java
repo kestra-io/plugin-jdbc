@@ -1,35 +1,38 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 
 import java.util.Locale;
 import java.util.Properties;
-import java.util.function.Function;
 
 public abstract class SqlServerService {
     public static void handleSsl(Properties properties, RunContext runContext, SqlServerConnectionInterface conn) throws Exception {
         var jdbcUrl = properties.getProperty("jdbc.url");
 
-        putUnlessInUrl(properties, jdbcUrl, "encrypt",
-            render(runContext, conn.getEncrypt(), SqlServerConnectionInterface.EncryptMode.class, e -> e.name().toLowerCase(Locale.ROOT)));
-        putUnlessInUrl(properties, jdbcUrl, "trustServerCertificate",
-            render(runContext, conn.getTrustServerCertificate(), Boolean.class, Object::toString));
-        putUnlessInUrl(properties, jdbcUrl, "hostNameInCertificate",
-            render(runContext, conn.getHostNameInCertificate(), String.class, Function.identity()));
-        putUnlessInUrl(properties, jdbcUrl, "trustStore",
-            render(runContext, conn.getTrustStore(), String.class, Function.identity()));
-        putUnlessInUrl(properties, jdbcUrl, "trustStorePassword",
-            render(runContext, conn.getTrustStorePassword(), String.class, Function.identity()));
-    }
-
-    private static <T> String render(RunContext runContext, Property<T> property, Class<T> type, Function<T, String> format) throws IllegalVariableEvaluationException {
-        if (property == null) {
-            return null;
+        if (conn.getEncrypt() != null) {
+            var encrypt = runContext.render(conn.getEncrypt()).as(SqlServerConnectionInterface.EncryptMode.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "encrypt", encrypt == null ? null : encrypt.name().toLowerCase(Locale.ROOT));
         }
-        var value = runContext.render(property).as(type).orElse(null);
-        return value == null ? null : format.apply(value);
+
+        if (conn.getTrustServerCertificate() != null) {
+            var trustServerCertificate = runContext.render(conn.getTrustServerCertificate()).as(Boolean.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustServerCertificate", trustServerCertificate == null ? null : trustServerCertificate.toString());
+        }
+
+        if (conn.getHostNameInCertificate() != null) {
+            var hostNameInCertificate = runContext.render(conn.getHostNameInCertificate()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "hostNameInCertificate", hostNameInCertificate);
+        }
+
+        if (conn.getTrustStore() != null) {
+            var trustStore = runContext.render(conn.getTrustStore()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustStore", trustStore);
+        }
+
+        if (conn.getTrustStorePassword() != null) {
+            var trustStorePassword = runContext.render(conn.getTrustStorePassword()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustStorePassword", trustStorePassword);
+        }
     }
 
     private static void putUnlessInUrl(Properties properties, String jdbcUrl, String name, String value) {
