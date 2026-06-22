@@ -1,5 +1,21 @@
 set -euo pipefail
 
+# Retry a command a few times. Docker Hub manifest HEAD requests fail intermittently
+# on runners (registry blips / anonymous pull rate limits), so a transient pull error
+# should not kill the whole job.
+retry() {
+  local attempt=1 max=3
+  until "$@"; do
+    if [ "$attempt" -ge "$max" ]; then
+      echo "Command failed after ${max} attempts: $*"
+      return 1
+    fi
+    echo "Attempt ${attempt} failed, retrying in 15s: $*"
+    attempt=$((attempt + 1))
+    sleep 15
+  done
+}
+
 echo "🧹 docker compose down -v (clean volumes)..."
 docker compose -f docker-compose-ci.yml down -v || true
 
@@ -47,8 +63,8 @@ local   all all trust
 EOF
 
 # Druid tests are @Disabled (cluster is slow to start), so its services stay behind the "druid" compose profile and are not started here.
-docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres mysql clickhouse oracle pinot
-docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
+retry docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres mysql clickhouse oracle pinot
+retry docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 sleep 3
 
 wait_for() {
