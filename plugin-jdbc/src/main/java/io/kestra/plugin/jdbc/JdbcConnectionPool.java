@@ -6,14 +6,14 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
-import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Shared JDBC connection pools keyed by (jdbcUrl, all driver properties).
- * All driver properties are included in the key so that pools with different
- * SSL or connection settings are never shared across distinct configurations.
+ * Shared JDBC connection pools keyed by (jdbcUrl, all connection properties).
+ * All properties are included in the key so that connections with different settings
+ * (credentials, SSL, ...) never share a pool.
  * Pools are created on first use and released on JVM shutdown or via closeAll().
  */
 final class JdbcConnectionPool {
@@ -35,11 +35,13 @@ final class JdbcConnectionPool {
     }
 
     static String poolKey(String jdbcUrl, Properties props) {
-        var sorted = new TreeMap<String, String>();
-        for (var name : props.stringPropertyNames()) {
-            sorted.put(name, props.getProperty(name));
+        // Concatenate the URL and every property with a separator (NUL) unlikely to appear in any
+        // component, so connections with different settings (credentials, SSL, ...) never share a pool.
+        var key = new StringBuilder(jdbcUrl);
+        for (var name : new TreeSet<>(props.stringPropertyNames())) {
+            key.append('\u0000').append(name).append('\u0000').append(props.getProperty(name));
         }
-        return jdbcUrl + "|" + sorted;
+        return key.toString();
     }
 
     private static HikariDataSource buildDataSource(String jdbcUrl, Properties props, int maxPoolSize) {
@@ -55,8 +57,12 @@ final class JdbcConnectionPool {
         config.setIdleTimeout(60_000);
         config.setMaxLifetime(1_800_000);
 
-        var poolName = "kestra-jdbc-" + Integer.toUnsignedString(poolKey(jdbcUrl, props).hashCode(), 16);
-        config.setPoolName(poolName);
+        // Short name for JMX / thread naming; derived from the URL without credentials.
+        var shortKey = jdbcUrl.replaceAll("[^a-zA-Z0-9:._-]", "_");
+        if (shortKey.length() > 40) {
+            shortKey = shortKey.substring(0, 40);
+        }
+        config.setPoolName("kestra-jdbc-" + shortKey);
 
         // Pass any remaining driver-specific properties (ssl, applicationName, etc.).
         for (var entry : props.entrySet()) {
