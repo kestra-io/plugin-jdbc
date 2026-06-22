@@ -98,11 +98,6 @@ CREATE USER 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 GRANT SELECT ON kestra.* TO 'ed25519'@'%' IDENTIFIED VIA ed25519 USING PASSWORD('secret');
 """
 wait_for "clickhouse" "curl -sf http://127.0.0.1:28123/ping | grep -q Ok" 600
-wait_for "druid_coordinator" "curl -sf http://127.0.0.1:11081/status/health | grep -q true" 600 5
-wait_for "druid_broker"      "curl -sf http://127.0.0.1:11082/status/health | grep -q true" 600 5
-wait_for "druid_historical"  "curl -sf http://127.0.0.1:11083/status/health | grep -q true" 600 5
-wait_for "druid_middlemanager" "curl -sf http://127.0.0.1:11091/status/health | grep -q true" 600 5
-wait_for "druid_router"      "curl -sf http://127.0.0.1:8888/status/health | grep -q true" 600 5
 wait_for "oracle" "docker compose -f docker-compose-ci.yml exec -T oracle bash -lc 'export ORACLE_HOME=/u01/app/oracle/product/11.2.0/xe; export PATH=\$ORACLE_HOME/bin:\$PATH; export ORACLE_SID=XE; echo \"select 1 from dual;\" | sqlplus -s system/oracle >/dev/null'" 900 5
 wait_for_tcp "pinot" 127.0.0.1 49000 420
 
