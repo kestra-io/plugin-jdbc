@@ -1,47 +1,42 @@
 package io.kestra.plugin.jdbc.sqlserver;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 
 import java.util.Locale;
 import java.util.Properties;
+import java.util.function.Function;
 
 public abstract class SqlServerService {
     public static void handleSsl(Properties properties, RunContext runContext, SqlServerConnectionInterface conn) throws Exception {
         var jdbcUrl = properties.getProperty("jdbc.url");
 
-        if (conn.getEncrypt() != null) {
-            var rEncrypt = runContext.render(conn.getEncrypt()).as(SqlServerConnectionInterface.EncryptMode.class).orElse(null);
-            if (rEncrypt != null && !urlContainsParam(jdbcUrl, "encrypt")) {
-                properties.put("encrypt", rEncrypt.name().toLowerCase(Locale.ROOT));
-            }
-        }
+        putUnlessInUrl(properties, jdbcUrl, "encrypt",
+            render(runContext, conn.getEncrypt(), SqlServerConnectionInterface.EncryptMode.class, e -> e.name().toLowerCase(Locale.ROOT)));
+        putUnlessInUrl(properties, jdbcUrl, "trustServerCertificate",
+            render(runContext, conn.getTrustServerCertificate(), Boolean.class, Object::toString));
+        putUnlessInUrl(properties, jdbcUrl, "hostNameInCertificate",
+            render(runContext, conn.getHostNameInCertificate(), String.class, Function.identity()));
+        putUnlessInUrl(properties, jdbcUrl, "trustStore",
+            render(runContext, conn.getTrustStore(), String.class, Function.identity()));
+        putUnlessInUrl(properties, jdbcUrl, "trustStorePassword",
+            render(runContext, conn.getTrustStorePassword(), String.class, Function.identity()));
+    }
 
-        if (conn.getTrustServerCertificate() != null) {
-            var rTrustServerCertificate = runContext.render(conn.getTrustServerCertificate()).as(Boolean.class).orElse(null);
-            if (rTrustServerCertificate != null && !urlContainsParam(jdbcUrl, "trustServerCertificate")) {
-                properties.put("trustServerCertificate", rTrustServerCertificate.toString());
-            }
+    private static <T> String render(RunContext runContext, Property<T> property, Class<T> type, Function<T, String> format) throws IllegalVariableEvaluationException {
+        if (property == null) {
+            return null;
         }
+        var value = runContext.render(property).as(type).orElse(null);
+        return value == null ? null : format.apply(value);
+    }
 
-        if (conn.getHostNameInCertificate() != null) {
-            var rHostNameInCertificate = runContext.render(conn.getHostNameInCertificate()).as(String.class).orElse(null);
-            if (rHostNameInCertificate != null && !urlContainsParam(jdbcUrl, "hostNameInCertificate")) {
-                properties.put("hostNameInCertificate", rHostNameInCertificate);
-            }
-        }
-
-        if (conn.getTrustStore() != null) {
-            var rTrustStore = runContext.render(conn.getTrustStore()).as(String.class).orElse(null);
-            if (rTrustStore != null && !urlContainsParam(jdbcUrl, "trustStore")) {
-                properties.put("trustStore", rTrustStore);
-            }
-        }
-
-        if (conn.getTrustStorePassword() != null) {
-            var rTrustStorePassword = runContext.render(conn.getTrustStorePassword()).as(String.class).orElse(null);
-            if (rTrustStorePassword != null && !urlContainsParam(jdbcUrl, "trustStorePassword")) {
-                properties.put("trustStorePassword", rTrustStorePassword);
-            }
+    private static void putUnlessInUrl(Properties properties, String jdbcUrl, String name, String value) {
+        // mssql-jdbc gives the Properties object precedence over URL params, so a value already
+        // present in the URL must not be overwritten here.
+        if (value != null && !urlContainsParam(jdbcUrl, name)) {
+            properties.put(name, value);
         }
     }
 

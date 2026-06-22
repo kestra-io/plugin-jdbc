@@ -34,11 +34,7 @@ final class JdbcConnectionPool {
         POOLS.clear();
     }
 
-    static int poolCount() {
-        return POOLS.size();
-    }
-
-    private static String poolKey(String jdbcUrl, Properties props) {
+    static String poolKey(String jdbcUrl, Properties props) {
         var sorted = new TreeMap<String, String>();
         for (var name : props.stringPropertyNames()) {
             sorted.put(name, props.getProperty(name));
