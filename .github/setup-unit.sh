@@ -46,7 +46,7 @@ hostssl all all ::/0      md5
 local   all all trust
 EOF
 
-# Druid tests are @Disabled (cluster is slow to start), so its services stay behind the "druid" compose profile and are not started here.
+# Druid tests are @Disabled (cluster is slow to start), and its services are commented out in docker-compose-ci.yml, so they are not started here.
 docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres mysql clickhouse oracle pinot
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 sleep 3
