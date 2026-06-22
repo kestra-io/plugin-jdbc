@@ -128,6 +128,7 @@ services:
   druid_postgres:
     image: postgres:16
     container_name: druid_postgres
+    profiles: ["druid"]
     environment:
       POSTGRES_USER: druid
       POSTGRES_PASSWORD: FoolishPassword
@@ -139,6 +140,7 @@ services:
   druid_zookeeper:
     container_name: druid_zookeeper
     image: zookeeper:3.5.10
+    profiles: ["druid"]
     ports:
       - "2181:2181"
     environment:
@@ -147,6 +149,7 @@ services:
   druid_coordinator:
     image: apache/druid:29.0.0
     container_name: druid_coordinator
+    profiles: ["druid"]
     volumes:
       - druid_shared:/opt/shared
       - coordinator_var:/opt/druid/var
@@ -163,6 +166,7 @@ services:
   druid_broker:
     image: apache/druid:29.0.0
     container_name: druid_broker
+    profiles: ["druid"]
     volumes:
       - broker_var:/opt/druid/var
     depends_on:
@@ -179,6 +183,7 @@ services:
   druid_historical:
     image: apache/druid:29.0.0
     container_name: druid_historical
+    profiles: ["druid"]
     volumes:
       - druid_shared:/opt/shared
       - historical_var:/opt/druid/var
@@ -196,6 +201,7 @@ services:
   druid_middlemanager:
     image: apache/druid:29.0.0
     container_name: druid_middlemanager
+    profiles: ["druid"]
     volumes:
       - druid_shared:/opt/shared
       - middle_var:/opt/druid/var
@@ -214,6 +220,7 @@ services:
   druid_router:
     image: apache/druid:29.0.0
     container_name: druid_router
+    profiles: ["druid"]
     volumes:
       - router_var:/opt/druid/var
     depends_on:
