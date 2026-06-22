@@ -1,7 +1,7 @@
 project.description = 'Abstract JDBC plugin for Kestra'
 
 dependencies {
-    api "com.zaxxer:HikariCP:6.2.1"
+    api "com.zaxxer:HikariCP:7.1.0"
 }
 
 jar {
