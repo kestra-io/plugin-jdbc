@@ -10,28 +10,28 @@ public abstract class SqlServerService {
         var jdbcUrl = properties.getProperty("jdbc.url");
 
         if (conn.getEncrypt() != null) {
-            var encrypt = runContext.render(conn.getEncrypt()).as(SqlServerConnectionInterface.EncryptMode.class).orElse(null);
-            putUnlessInUrl(properties, jdbcUrl, "encrypt", encrypt == null ? null : encrypt.name().toLowerCase(Locale.ROOT));
+            var rEncrypt = runContext.render(conn.getEncrypt()).as(SqlServerConnectionInterface.EncryptMode.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "encrypt", rEncrypt == null ? null : rEncrypt.name().toLowerCase(Locale.ROOT));
         }
 
         if (conn.getTrustServerCertificate() != null) {
-            var trustServerCertificate = runContext.render(conn.getTrustServerCertificate()).as(Boolean.class).orElse(null);
-            putUnlessInUrl(properties, jdbcUrl, "trustServerCertificate", trustServerCertificate == null ? null : trustServerCertificate.toString());
+            var rTrustServerCertificate = runContext.render(conn.getTrustServerCertificate()).as(Boolean.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustServerCertificate", rTrustServerCertificate == null ? null : rTrustServerCertificate.toString());
         }
 
         if (conn.getHostNameInCertificate() != null) {
-            var hostNameInCertificate = runContext.render(conn.getHostNameInCertificate()).as(String.class).orElse(null);
-            putUnlessInUrl(properties, jdbcUrl, "hostNameInCertificate", hostNameInCertificate);
+            var rHostNameInCertificate = runContext.render(conn.getHostNameInCertificate()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "hostNameInCertificate", rHostNameInCertificate);
         }
 
         if (conn.getTrustStore() != null) {
-            var trustStore = runContext.render(conn.getTrustStore()).as(String.class).orElse(null);
-            putUnlessInUrl(properties, jdbcUrl, "trustStore", trustStore);
+            var rTrustStore = runContext.render(conn.getTrustStore()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustStore", rTrustStore);
         }
 
         if (conn.getTrustStorePassword() != null) {
-            var trustStorePassword = runContext.render(conn.getTrustStorePassword()).as(String.class).orElse(null);
-            putUnlessInUrl(properties, jdbcUrl, "trustStorePassword", trustStorePassword);
+            var rTrustStorePassword = runContext.render(conn.getTrustStorePassword()).as(String.class).orElse(null);
+            putUnlessInUrl(properties, jdbcUrl, "trustStorePassword", rTrustStorePassword);
         }
     }
 
