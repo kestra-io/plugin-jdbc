@@ -82,7 +82,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.duckdb:duckdb_jdbc:1.5.3.0")
+    implementation("org.duckdb:duckdb_jdbc:1.5.4.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
