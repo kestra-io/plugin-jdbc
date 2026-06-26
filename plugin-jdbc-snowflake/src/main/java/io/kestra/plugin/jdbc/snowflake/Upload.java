@@ -25,7 +25,7 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Upload data from an internal storage file to a Snowflake stage.",
+    title = "Upload data from an internal storage file to a Snowflake stage",
     description = "Make sure that the `stageName` follows the naming convention of `@databaseName.schemaName.%stageOrTableName`. For usage examples, check the Blueprints tagged with `Snowflake`."
 )
 @Plugin(
@@ -68,14 +68,14 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     private Property<String> queryTag;
 
     @Schema(
-        title = "Path to the file to load to Snowflake stage."
+        title = "Path to the file to load to Snowflake stage"
     )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> from;
 
     @Schema(
-        title = "Snowflake stage name.",
+        title = "Snowflake stage name",
         description = """
             This can either be a stage name or a table name.
 
@@ -88,21 +88,21 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     private Property<String> stageName;
 
     @Schema(
-        title = "The prefix under which the file will be uploaded to Snowflake stage."
+        title = "The prefix under which the file will be uploaded to Snowflake stage"
     )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> prefix;
 
     @Schema(
-        title = "Destination file name to use."
+        title = "Destination file name to use"
     )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> fileName;
 
     @Schema(
-        title = "Whether to compress the file or not before uploading it to the Snowflake stage."
+        title = "Whether to compress the file or not before uploading it to the Snowflake stage"
     )
     @NotNull
     @Builder.Default
@@ -143,7 +143,7 @@ public class Upload extends AbstractSnowflakeConnection implements RunnableTask<
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URI of the staged file."
+            title = "The URI of the staged file"
         )
         private final URI uri;
     }

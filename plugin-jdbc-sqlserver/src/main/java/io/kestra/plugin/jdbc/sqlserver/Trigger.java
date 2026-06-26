@@ -67,7 +67,7 @@ public class Trigger extends AbstractJdbcTrigger implements SqlServerConnectionI
     protected Property<String> hostNameInCertificate;
     @PluginProperty(group = "advanced")
     protected Property<String> trustStore;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> trustStorePassword;
 
     @Override

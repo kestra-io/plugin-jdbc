@@ -139,7 +139,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     protected Property<Map<String, Object>> parameters;
 
     @Schema(
-        title = "Output file names to capture after SQL execution.",
+        title = "Output file names to capture after SQL execution",
         description = """
             Creates named temporary files in the task working directory before the SQL runs, \
             making their absolute paths available as `{{ outputFiles.name }}` Pebble variables in the SQL template. \

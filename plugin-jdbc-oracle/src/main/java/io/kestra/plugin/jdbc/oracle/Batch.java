@@ -41,7 +41,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.oracle.Query
                     url: jdbc:oracle:thin:@dev:49161:XE
                     username: oracle
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -53,7 +53,7 @@ import java.time.ZoneId;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:oracle:thin:@prod:49161:XE
                     username: oracle
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: |
                       insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
@@ -70,7 +70,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.oracle.Query
                     url: jdbc:oracle:thin:@dev:49161:XE
                     username: oracle
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -82,7 +82,7 @@ import java.time.ZoneId;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:oracle:thin:@prod:49161:XE
                     username: oracle
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     table: XREF
                 """
         )

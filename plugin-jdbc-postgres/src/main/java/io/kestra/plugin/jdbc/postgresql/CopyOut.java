@@ -33,7 +33,8 @@ import io.kestra.core.models.enums.MonacoLanguages;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Copy tabular data from a PostgreSQL table to a file."
+    title = "Copy tabular data from a PostgreSQL table to a file",
+    description = "Exports tabular data from a PostgreSQL table or query to a file using the COPY command."
 )
 @Plugin(
     examples = {
@@ -48,8 +49,8 @@ import io.kestra.core.models.enums.MonacoLanguages;
                   - id: copy_out
                     type: io.kestra.plugin.jdbc.postgresql.CopyOut
                     url: jdbc:postgresql://sample_postgres:5432/world
-                    username: "{{ secret("POSTGRES_USERNAME") }}"
-                    password: "{{ secret("POSTGRES_PASSWORD") }}"
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     format: CSV
                     sql: SELECT 1 AS int, 't'::bool AS bool UNION SELECT 2 AS int, 'f'::bool AS bool
                     header: true
@@ -67,8 +68,8 @@ import io.kestra.core.models.enums.MonacoLanguages;
                   - id: export
                     type: io.kestra.plugin.jdbc.postgresql.CopyOut
                     url: jdbc:postgresql://sample_postgres:5432/world
-                    username: "{{ secret("POSTGRES_USERNAME") }}"
-                    password: "{{ secret("POSTGRES_PASSWORD") }}"
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
                     format: CSV
                     header: true
                     sql: SELECT * FROM country LIMIT 10
@@ -92,7 +93,7 @@ import io.kestra.core.models.enums.MonacoLanguages;
 public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output>, PostgresConnectionInterface {
 
     @Schema(
-        title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied.",
+        title = "A SELECT, VALUES, INSERT, UPDATE or DELETE command whose results are to be copied",
         description = "For INSERT, UPDATE and DELETE queries a RETURNING clause must be provided, and the target relation must not have a conditional rule, nor an ALSO rule, nor an INSTEAD rule that expands to multiple statements."
     )
     @PluginProperty(language = MonacoLanguages.SQL, group = "main")
@@ -157,12 +158,12 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URI of the result file on Kestra's internal storage."
+            title = "The URI of the result file on Kestra's internal storage"
         )
         private final URI uri;
 
         @Schema(
-            title = "The rows count from this `COPY`."
+            title = "The rows count from this `COPY`"
         )
         private final Long rowCount;
     }

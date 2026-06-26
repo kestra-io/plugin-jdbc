@@ -55,9 +55,11 @@ import java.sql.SQLException;
 )
 public class Trigger extends AbstractJdbcTrigger implements AccessQueryInterface {
 
+    @Schema(title = "Path to the Microsoft Access database file")
     @PluginProperty(group = "source")
     protected Property<String> accessFile;
 
+    @Schema(title = "Whether to output the database file as a task output")
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 

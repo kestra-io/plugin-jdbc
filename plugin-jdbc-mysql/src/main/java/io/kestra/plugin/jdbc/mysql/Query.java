@@ -47,7 +47,7 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.mysql.Query
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     sql: select * from mysql_types
                     fetchType: FETCH_ONE
                 """
@@ -68,7 +68,7 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.mysql.Query
                     url: jdbc:mysql://127.0.0.1:3306/products?allowLoadLocalInfile=true
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     inputFile: "{{ outputs.http_download.uri }}"
                     sql: |
                       LOAD DATA LOCAL INFILE '{{ inputFile }}'

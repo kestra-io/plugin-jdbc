@@ -43,7 +43,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.dremio.Query
                     url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
                     username: dremio_token
-                    password: samplePersonalAccessToken
+                    password: "{{ secret('SAMPLEPERSONALACCESSTOKEN') }}"
                     sql: SELECT * FROM source.database.table
                     fetchType: FETCH_ONE
                 """

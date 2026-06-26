@@ -31,7 +31,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @Getter
 @NoArgsConstructor
 @Schema(
-	title = "Run clickhouse-local CLI commands."
+	title = "Run clickhouse-local CLI commands",
+    description = "Runs clickhouse-local CLI commands in a container and captures their output."
 )
 @Plugin(
 	examples = {
@@ -57,26 +58,26 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 	public static final String DEFAULT_IMAGE = "clickhouse/clickhouse-server:latest";
 
 	@Schema(
-		title = "The commands to run before main list of commands."
+		title = "The commands to run before main list of commands"
 	)
 	@PluginProperty(group = "execution")
 	protected Property<List<String>> beforeCommands;
 
 	@Schema(
-		title = "The commands to run."
+		title = "The commands to run"
 	)
     @NotNull
 	@PluginProperty(group = "main")
 	protected Property<List<String>> commands;
 
 	@Schema(
-		title = "Additional environment variables for the current process."
+		title = "Additional environment variables for the current process"
 	)
 	@PluginProperty(dynamic = true, group = "execution")
 	protected Map<String, String> env;
 
 	@Schema(
-        title = "The task runner to use."
+        title = "The task runner to use"
 	)
 	@Valid
 	@PluginProperty(group = "execution")
@@ -84,7 +85,7 @@ public class ClickHouseLocalCLI extends Task implements RunnableTask<ScriptOutpu
 	private TaskRunner<?> taskRunner = Docker.instance();
 
 	@Schema(
-		title = "The Clickhouse container image."
+		title = "The Clickhouse container image"
 	)
 	@PluginProperty(dynamic =true, group = "execution")
 	@Builder.Default

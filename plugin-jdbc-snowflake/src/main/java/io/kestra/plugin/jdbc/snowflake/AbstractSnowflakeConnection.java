@@ -26,13 +26,13 @@ public abstract class AbstractSnowflakeConnection extends Task implements Snowfl
     @PluginProperty(group = "connection")
     private Property<String> username;
     
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> password;
     
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKey;
     
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKeyPassword;
 
     @Override

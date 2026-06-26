@@ -103,7 +103,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @Builder.Default
     @PluginProperty(group = "main")
     @Schema(
-        title = "The way you want to fetch the data.",
+        title = "The way you want to fetch the data",
         description = """
             Triggers default to `FETCH`, which loads all rows into memory and exposes them as `{{ trigger.rows }}`. \
             A trigger fires only when the query returns at least one row; setting `NONE` would cause the trigger to never fire. \

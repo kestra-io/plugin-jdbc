@@ -28,7 +28,8 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Download data from a Snowflake stage to Kestra's internal storage."
+    title = "Download data from a Snowflake stage to Kestra's internal storage",
+    description = "Downloads a file from a Snowflake stage into Kestra's internal storage."
 )
 @Plugin(
     examples = {
@@ -68,7 +69,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     private Property<String> queryTag;
 
     @Schema(
-        title = "Snowflake stage name.",
+        title = "Snowflake stage name",
         description = "~ or table name or stage name."
     )
     @NotNull
@@ -76,14 +77,14 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     private Property<String> stageName;
 
     @Schema(
-        title = "File name on Snowflake stage that should be downloaded."
+        title = "File name on Snowflake stage that should be downloaded"
     )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> fileName;
 
     @Schema(
-        title = "Whether to compress data before uploading stream."
+        title = "Whether to compress data before uploading stream"
     )
     @NotNull
     @Builder.Default
@@ -126,7 +127,7 @@ public class Download extends AbstractSnowflakeConnection implements RunnableTas
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The URI of the file on Kestra's internal storage."
+            title = "The URI of the file on Kestra's internal storage"
         )
         private final URI uri;
     }
