@@ -57,6 +57,13 @@ subprojects {
 
     apply plugin: "java-library"
     apply plugin: "idea"
+    apply plugin: "io.kestra.gradle.plugin-doc-lint"
+
+    // lintPluginDocs reads the resolved classpath, which for the driver submodules includes the
+    // core shadowJar. Declare that ordering so Gradle does not flag an implicit task dependency.
+    if (project.path != ':plugin-jdbc') {
+        tasks.named('lintPluginDocs').configure { dependsOn(':plugin-jdbc:shadowJar') }
+    }
 
     configurations {
         jdbcDriver
