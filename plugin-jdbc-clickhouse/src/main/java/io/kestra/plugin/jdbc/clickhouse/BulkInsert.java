@@ -24,7 +24,8 @@ import java.time.ZoneId;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Bulk insert rows into ClickHouse with JDBC batch"
+    title = "Bulk insert rows into ClickHouse with JDBC batch",
+    description = "Inserts many rows into ClickHouse efficiently using a JDBC batch read from an internal storage file."
 )
 @Plugin(
     examples = {

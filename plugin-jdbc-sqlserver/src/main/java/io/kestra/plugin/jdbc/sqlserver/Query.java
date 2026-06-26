@@ -76,7 +76,7 @@ public class Query extends AbstractJdbcQuery implements SqlServerConnectionInter
     protected Property<String> hostNameInCertificate;
     @PluginProperty(group = "connection")
     protected Property<String> trustStore;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> trustStorePassword;
 
     @Override

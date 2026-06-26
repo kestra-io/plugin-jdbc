@@ -63,10 +63,10 @@ import java.util.Properties;
 )
 public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKey;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     private Property<String> privateKeyPassword;
 
     @PluginProperty(group = "connection")

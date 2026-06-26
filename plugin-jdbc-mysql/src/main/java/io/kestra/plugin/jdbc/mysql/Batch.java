@@ -42,7 +42,7 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.mysql.Query
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -54,7 +54,7 @@ import java.util.Properties;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     sql: |
                       insert into xref values( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
                 """
@@ -71,7 +71,7 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.mysql.Query
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -83,7 +83,7 @@ import java.util.Properties;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     table: xref
                 """
         )

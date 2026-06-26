@@ -118,7 +118,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<String> table;
 
     @Schema(
-        title = "Maximum number of retries for transient failures.",
+        title = "Maximum number of retries for transient failures",
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
     )
     @Builder.Default
@@ -126,7 +126,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Integer> maxRetries = Property.ofValue(3);
 
     @Schema(
-        title = "Delay between retry attempts.",
+        title = "Delay between retry attempts",
         description = "Uses ISO-8601 duration format, for example `PT1S`."
     )
     @Builder.Default
@@ -134,7 +134,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Duration> retryBackoff = Property.ofValue(Duration.ofSeconds(1));
 
     @Schema(
-        title = "Input handling strategy.",
+        title = "Input handling strategy",
         description = """
             Controls how input is read during processing and retries.
             `AUTO` buffers small files locally (<= `localBufferMaxBytes`) and streams large files.
@@ -147,7 +147,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<InputHandling> inputHandling = Property.ofValue(InputHandling.AUTO);
 
     @Schema(
-        title = "Maximum number of bytes buffered locally.",
+        title = "Maximum number of bytes buffered locally",
         description = """
             Used by `AUTO` and `LOCAL` input handling.
             In `AUTO`, files larger than this threshold are streamed.
@@ -159,14 +159,14 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Long> localBufferMaxBytes = Property.ofValue(100L * 1024L * 1024L);
 
     @Schema(
-        title = "Resume from the last successfully committed chunk on retry."
+        title = "Resume from the last successfully committed chunk on retry"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
     private Property<Boolean> resumeOnRetry = Property.ofValue(true);
 
     @Schema(
-        title = "Controls which failures are retried.",
+        title = "Controls which failures are retried",
         description = "INPUT retries input handling failures, ALL retries all retryable failures."
     )
     @Builder.Default

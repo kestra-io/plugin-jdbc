@@ -33,7 +33,7 @@ public interface JdbcConnectionInterface {
     Property<String> getUsername();
 
     @Schema(
-        title = "The database user's password."
+        title = "The database user's password"
     )
     @PluginProperty(group = "connection")
     Property<String> getPassword();

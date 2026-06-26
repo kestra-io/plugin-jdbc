@@ -27,7 +27,7 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Load a file into a PostgreSQL table.",
+    title = "Load a file into a PostgreSQL table",
     description = "Copies in CSV, Text, or Binary data into PostgreSQL table."
 )
 @Plugin(
@@ -103,7 +103,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
 
     @NotNull
     @Schema(
-        title = "Source file URI."
+        title = "Source file URI"
     )
     @PluginProperty(internalStorageURI = true, group = "main")
     private Property<String> from;
@@ -138,7 +138,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The rows count from this `COPY`."
+            title = "The rows count from this `COPY`"
         )
         private final Long rowCount;
     }

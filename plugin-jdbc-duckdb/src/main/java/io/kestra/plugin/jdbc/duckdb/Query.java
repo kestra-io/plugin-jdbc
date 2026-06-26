@@ -169,7 +169,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
     @Override
     @Schema(
-        title = "The JDBC URL to connect to the database.",
+        title = "The JDBC URL to connect to the database",
         description = "The default value, `jdbc:duckdb:`, will use a local in-memory database. \nSet this property when connecting to a persisted database instance, for example `jdbc:duckdb:md:my_database?motherduck_token=<my_token>` to connect to [MotherDuck](https://motherduck.com/).",
         defaultValue = DEFAULT_URL
     )
@@ -306,13 +306,13 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Getter
     public static class Output extends AbstractJdbcQuery.Output {
         @Schema(
-            title = "The output files' URI in Kestra's internal storage."
+            title = "The output files' URI in Kestra's internal storage"
         )
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;
 
         @Schema(
-            title = "The database output URI in Kestra's internal storage."
+            title = "The database output URI in Kestra's internal storage"
         )
         @PluginProperty
         private final URI databaseUri;

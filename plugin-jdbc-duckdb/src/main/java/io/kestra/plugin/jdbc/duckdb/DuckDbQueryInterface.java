@@ -11,7 +11,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     List<String> DEFAULT_COMMUNITY_EXTENSIONS = List.of("ion");
 
     @Schema(
-        title = "Input files to be loaded from DuckDb.",
+        title = "Input files to be loaded from DuckDb",
         description = "Describe a files map that will be written and usable by DuckDb. " +
             "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` "
     )
@@ -22,7 +22,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     Object getInputFiles();
 
     @Schema(
-        title = "Output file list that will be uploaded to internal storage.",
+        title = "Output file list that will be uploaded to internal storage",
         description = "List of keys that will generate temporary files.\n" +
             "On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
@@ -39,14 +39,14 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     Property<String> getDatabaseUri();
 
     @Schema(
-        title = "Output the database file.",
+        title = "Output the database file",
         description = "This property lets you define if you want to output the in-memory database as a file for further processing."
     )
     @PluginProperty(group = "advanced")
     Property<Boolean> getOutputDbFile();
 
     @Schema(
-        title = "DuckDB community extensions to install and load before running the SQL.",
+        title = "DuckDB community extensions to install and load before running the SQL",
         description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
     )
     @PluginProperty(group = "advanced")

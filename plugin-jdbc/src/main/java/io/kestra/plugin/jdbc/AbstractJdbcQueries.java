@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -323,6 +324,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @SuperBuilder
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "The list of per-query outputs")
         List<Output> outputs;
     }
 }

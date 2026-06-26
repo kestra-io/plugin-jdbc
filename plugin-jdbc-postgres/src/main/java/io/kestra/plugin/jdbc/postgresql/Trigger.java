@@ -48,7 +48,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:postgresql://127.0.0.1:56982/
                     username: pg_user
-                    password: pg_password
+                    password: "{{ secret('PG_PASSWORD') }}"
                     sql: "SELECT id, status FROM my_table WHERE status = 'NEW'"
                     afterSQL: "UPDATE my_table SET status = 'PROCESSED' WHERE status = 'NEW'"
                     fetchType: FETCH
@@ -68,7 +68,7 @@ public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionIn
     protected Property<String> sslCert;
     @PluginProperty(group = "connection")
     protected Property<String> sslKey;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> sslKeyPassword;
 
     @Override

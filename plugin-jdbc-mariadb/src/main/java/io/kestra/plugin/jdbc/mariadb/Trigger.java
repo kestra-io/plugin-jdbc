@@ -48,7 +48,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:mariadb://127.0.0.1:3306/
                     username: mariadb_user
-                    password: mariadb_password
+                    password: "{{ secret('MARIADB_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """
