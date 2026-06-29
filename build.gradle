@@ -1,5 +1,5 @@
 plugins {
-    id 'io.kestra.gradle.repository-conventions' version '1.2.3'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.5'
     id "io.kestra.gradle.plugin-doc-lint" version "1.2.4" apply(false)
     id 'io.kestra.gradle.spotless-conventions' version '1.2.4'
     id 'java-library'
