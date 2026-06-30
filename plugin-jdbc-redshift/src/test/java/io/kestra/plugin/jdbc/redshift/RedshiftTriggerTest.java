@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.redshift;
 
+import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
@@ -29,7 +30,7 @@ class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
     protected String password;
     @Test
     void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","redshift-listen");
+        var execution = triggerFlow();
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(1));
@@ -53,5 +54,10 @@ class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
         executeSqlScript("scripts/redshift.sql");
+    }
+
+    @Override
+    protected AbstractJdbcTrigger buildTrigger() {
+        throw new UnsupportedOperationException("Test is disabled");
     }
 }
