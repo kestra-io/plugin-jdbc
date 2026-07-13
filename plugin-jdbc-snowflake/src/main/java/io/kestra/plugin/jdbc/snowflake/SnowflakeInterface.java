@@ -14,28 +14,28 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     @PluginProperty(group = "advanced")
     @Schema(
-        title = "Specifies the virtual warehouse to use once connected.",
+        title = "Specifies the virtual warehouse to use once connected",
         description = "The specified warehouse should be an existing warehouse for which the specified default role has privileges.\n" +
             "If you need to use a different warehouse after connecting, execute the `USE WAREHOUSE` command to set a different warehouse for the session.")
     Property<String> getWarehouse();
 
     @PluginProperty(group = "connection")
     @Schema(
-        title = "Specifies the default database to use once connected.",
+        title = "Specifies the default database to use once connected",
         description = "The specified database should be an existing database for which the specified default role has privileges.\n" +
             "If you need to use a different database after connecting, execute the `USE DATABASE` command.")
     Property<String> getDatabase();
 
     @PluginProperty(group = "advanced")
     @Schema(
-        title = "Specifies the default schema to use for the specified database once connected.",
+        title = "Specifies the default schema to use for the specified database once connected",
         description = "The specified schema should be an existing schema for which the specified default role has privileges.\n" +
             "If you need to use a different schema after connecting, execute the `USE SCHEMA` command.")
     Property<String> getSchema();
 
     @PluginProperty(group = "advanced")
     @Schema(
-        title = "Specifies the default access control role to use in the Snowflake session initiated by the driver.",
+        title = "Specifies the default access control role to use in the Snowflake session initiated by the driver",
         description = "The specified role should be an existing role that has already been assigned to the specified user " +
             "for the driver. If the specified role has not already been assigned to the user, the role is not used when " +
             "the session is initiated by the driver.\n" +
@@ -44,7 +44,7 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     @PluginProperty(group = "connection")
     @Schema(
-        title = "Private key used for Snowflake key-pair authentication.",
+        title = "Private key used for Snowflake key-pair authentication",
         description = """
         Kestra supports multiple private key formats for Snowflake key-pair authentication.
 
@@ -100,7 +100,7 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
 
     @PluginProperty(group = "connection")
     @Schema(
-        title = "Specifies the private key password for key pair authentication and key rotation.")
+        title = "Specifies the private key password for key pair authentication and key rotation")
     Property<String> getPrivateKeyPassword();
 
     @PluginProperty(dynamic = true, group = "advanced")

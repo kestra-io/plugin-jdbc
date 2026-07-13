@@ -18,9 +18,9 @@ import org.slf4j.Logger;
 
 import io.kestra.core.models.enums.MonacoLanguages;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +47,31 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
+
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
+    @Schema(
+        title = "Reuse database connections via a connection pool",
+        description = """
+            When true (default), connections are pooled and reused across executions, keyed by URL and \
+            credentials, removing the connect and TLS-handshake cost on each run. Set to false if your SQL \
+            relies on session state persisting on the connection (for example SET search_path, session-scoped \
+            temp tables or variables), since pooled connections are reused. Embedded drivers (DuckDB, SQLite, \
+            MS Access) never pool regardless of this setting."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> connectionPooling = Property.ofValue(true);
+
+    @Schema(
+        title = "Maximum number of pooled connections",
+        description = """
+            Maximum connections held in the pool for a given URL and credentials. Default 10. \
+            Increase for flows that run many concurrent queries against the same database to avoid \
+            waiting for an available connection. Ignored when connectionPooling is false or for embedded drivers."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Integer> connectionPoolSize = Property.ofValue(10);
 
     @NotNull
     @Schema(
@@ -93,7 +118,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<String> table;
 
     @Schema(
-        title = "Maximum number of retries for transient failures.",
+        title = "Maximum number of retries for transient failures",
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
     )
     @Builder.Default
@@ -101,7 +126,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Integer> maxRetries = Property.ofValue(3);
 
     @Schema(
-        title = "Delay between retry attempts.",
+        title = "Delay between retry attempts",
         description = "Uses ISO-8601 duration format, for example `PT1S`."
     )
     @Builder.Default
@@ -109,7 +134,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Duration> retryBackoff = Property.ofValue(Duration.ofSeconds(1));
 
     @Schema(
-        title = "Input handling strategy.",
+        title = "Input handling strategy",
         description = """
             Controls how input is read during processing and retries.
             `AUTO` buffers small files locally (<= `localBufferMaxBytes`) and streams large files.
@@ -122,7 +147,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<InputHandling> inputHandling = Property.ofValue(InputHandling.AUTO);
 
     @Schema(
-        title = "Maximum number of bytes buffered locally.",
+        title = "Maximum number of bytes buffered locally",
         description = """
             Used by `AUTO` and `LOCAL` input handling.
             In `AUTO`, files larger than this threshold are streamed.
@@ -134,14 +159,14 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<Long> localBufferMaxBytes = Property.ofValue(100L * 1024L * 1024L);
 
     @Schema(
-        title = "Resume from the last successfully committed chunk on retry."
+        title = "Resume from the last successfully committed chunk on retry"
     )
     @Builder.Default
     @PluginProperty(group = "advanced")
     private Property<Boolean> resumeOnRetry = Property.ofValue(true);
 
     @Schema(
-        title = "Controls which failures are retried.",
+        title = "Controls which failures are retried",
         description = "INPUT retries input handling failures, ALL retries all retryable failures."
     )
     @Builder.Default
@@ -293,23 +318,23 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     private PreparedInput prepareInput(RunContext runContext, URI from, InputHandling rInputHandling, long rLocalBufferMaxBytes, Logger logger) throws Exception {
         return switch (rInputHandling) {
-            case STREAM -> PreparedInput.stream(() -> openRemoteReader(runContext, from));
+            case STREAM -> PreparedInput.stream(() -> openRemoteStream(runContext, from));
             case LOCAL -> {
                 Path localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, true)
                     .orElseThrow(() -> new IllegalStateException("Input buffering failed in LOCAL mode."));
                 logger.debug("Using LOCAL input handling for JDBC batch with local file {}", localPath);
-                yield PreparedInput.local(localPath, () -> openLocalReader(localPath));
+                yield PreparedInput.local(localPath, () -> openLocalStream(localPath));
             }
             case AUTO -> {
                 Optional<Path> localPath = bufferInputToLocal(runContext, from, rLocalBufferMaxBytes, false);
                 if (localPath.isPresent()) {
                     logger.debug("AUTO input handling selected LOCAL mode for JDBC batch");
                     Path path = localPath.get();
-                    yield PreparedInput.local(path, () -> openLocalReader(path));
+                    yield PreparedInput.local(path, () -> openLocalStream(path));
                 }
 
                 logger.debug("AUTO input handling selected STREAM mode for JDBC batch");
-                yield PreparedInput.stream(() -> openRemoteReader(runContext, from));
+                yield PreparedInput.stream(() -> openRemoteStream(runContext, from));
             }
         };
     }
@@ -346,12 +371,12 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         return Optional.of(localPath);
     }
 
-    private BufferedReader openRemoteReader(RunContext runContext, URI from) throws IOException {
-        return new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)), FileSerde.BUFFER_SIZE);
+    private InputStream openRemoteStream(RunContext runContext, URI from) throws IOException {
+        return new BufferedInputStream(runContext.storage().getFile(from), FileSerde.BUFFER_SIZE);
     }
 
-    private BufferedReader openLocalReader(Path localPath) throws IOException {
-        return new BufferedReader(new InputStreamReader(Files.newInputStream(localPath)), FileSerde.BUFFER_SIZE);
+    private InputStream openLocalStream(Path localPath) throws IOException {
+        return new BufferedInputStream(Files.newInputStream(localPath), FileSerde.BUFFER_SIZE);
     }
 
     @SuppressWarnings("unchecked")
@@ -436,13 +461,13 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         private final Integer updatedCount;
     }
 
-    private record PreparedInput(InputHandling effectiveHandling, ReaderSupplier readerSupplier, Path localPath) {
-        private static PreparedInput stream(ReaderSupplier readerSupplier) {
-            return new PreparedInput(InputHandling.STREAM, readerSupplier, null);
+    private record PreparedInput(InputHandling effectiveHandling, StreamSupplier streamSupplier, Path localPath) {
+        private static PreparedInput stream(StreamSupplier streamSupplier) {
+            return new PreparedInput(InputHandling.STREAM, streamSupplier, null);
         }
 
-        private static PreparedInput local(Path localPath, ReaderSupplier readerSupplier) {
-            return new PreparedInput(InputHandling.LOCAL, readerSupplier, localPath);
+        private static PreparedInput local(Path localPath, StreamSupplier streamSupplier) {
+            return new PreparedInput(InputHandling.LOCAL, streamSupplier, localPath);
         }
 
         private boolean isLocal() {
@@ -457,8 +482,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     }
 
     @FunctionalInterface
-    private interface ReaderSupplier {
-        BufferedReader open() throws Exception;
+    private interface StreamSupplier {
+        InputStream open() throws Exception;
     }
 
     public static class ParameterType {
@@ -528,7 +553,6 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                     logger
                 );
             }
-
             executeAttempt(resumeOffset);
         }
 
@@ -536,7 +560,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             try (
                 Connection connection = connection(runContext);
                 PreparedStatement ps = connection.prepareStatement(config.sql());
-                BufferedReader reader = preparedInput.readerSupplier().open()
+                InputStream inputStream = preparedInput.streamSupplier().open()
             ) {
                 runningConnection = connection;
                 runningStatement = ps;
@@ -548,7 +572,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 List<Object> buffer = new ArrayList<>(config.chunk());
                 long skip = resumeOffset;
 
-                for (Object row : FileSerde.readAll(reader).toIterable()) {
+                for (Object row : FileSerde.readAll(inputStream).toIterable()) {
                     if (skip-- > 0) continue;
 
                     buffer.add(row);

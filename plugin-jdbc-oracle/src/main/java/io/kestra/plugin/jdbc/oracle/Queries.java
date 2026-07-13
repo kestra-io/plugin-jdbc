@@ -43,7 +43,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.oracle.Queries
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: SELECT * FROM employee; SELECT * FROM laptop;
                     fetchType: FETCH
                 """

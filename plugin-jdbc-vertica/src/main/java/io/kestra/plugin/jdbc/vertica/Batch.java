@@ -69,7 +69,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.vertica.Query
                     url: jdbc:vertica://dev:56982/db
                     username: vertica_user
-                    password: vertica_passwd
+                    password: "{{ secret('VERTICA_PASSWD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -81,7 +81,7 @@ import java.time.ZoneId;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:vertica://prod:56982/db
                     username: vertica_user
-                    password: vertica_passwd
+                    password: "{{ secret('VERTICA_PASSWD') }}"
                     table: xref
             """
         )

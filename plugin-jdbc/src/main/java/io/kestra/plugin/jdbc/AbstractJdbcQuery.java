@@ -10,9 +10,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -102,8 +102,8 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                             }
                             case STORE -> {
                                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                                try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                                    size = fetchToFile(stmt, rs, fileWriter, cellConverter, conn);
+                                try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                                    size = fetchToFile(stmt, rs, fileOutput, cellConverter, conn);
                                 }
                                 output
                                     .uri(runContext.storage().putFile(tempFile))

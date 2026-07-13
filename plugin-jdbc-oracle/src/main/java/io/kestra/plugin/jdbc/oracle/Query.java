@@ -43,7 +43,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.oracle.Query
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: SELECT * FROM source
                     fetchType: FETCH
 
@@ -51,7 +51,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.oracle.Queries
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: "{% for row in outputs.select.rows %} INSERT INTO destination (year_month, store_code, update_date) values ({{ row.year_month }}, {{ row.store_code }}, TO_DATE('{{ row.date }}', 'MONTH DD, YYYY') ); {% endfor %}"
                 """
         )

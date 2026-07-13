@@ -11,13 +11,13 @@ import java.sql.SQLException;
 public interface SqliteQueryInterface extends JdbcConnectionInterface {
     @PluginProperty(group = "advanced")
     @Schema(
-        title = "Add sqlite file.",
+        title = "Add sqlite file",
         description = "The file must be from Kestra's internal storage"
     )
     Property<String> getSqliteFile();
 
     @Schema(
-        title = "Output the database file.",
+        title = "Output the database file",
         description = "This property lets you define if you want to output the provided `sqliteFile` database file for further processing."
     )
     @PluginProperty(group = "advanced")
@@ -31,5 +31,11 @@ public interface SqliteQueryInterface extends JdbcConnectionInterface {
     @Override
     default String getScheme() {
         return "jdbc:sqlite";
+    }
+
+    // SQLite databases are file-scoped; pooling across tasks on the same file causes locking issues.
+    @Override
+    default boolean usesConnectionPool() {
+        return false;
     }
 }

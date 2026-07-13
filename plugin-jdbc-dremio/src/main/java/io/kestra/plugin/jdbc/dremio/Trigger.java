@@ -50,7 +50,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:dremio:direct=sql.dremio.cloud:443;ssl=true;PROJECT_ID=sampleProjectId;
                     username: dremio_token
-                    password: samplePersonalAccessToken
+                    password: "{{ secret('SAMPLEPERSONALACCESSTOKEN') }}"
                     sql: "SELECT * FROM source.database.my_table"
                     fetchType: FETCH
                 """

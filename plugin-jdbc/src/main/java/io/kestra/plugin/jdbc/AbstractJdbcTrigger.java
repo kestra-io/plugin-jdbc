@@ -8,6 +8,10 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.PebbleUtil;
+import io.swagger.v3.oas.annotations.media.Schema;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -19,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.kestra.core.models.enums.MonacoLanguages;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @SuperBuilder
 @ToString
@@ -40,6 +45,31 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @PluginProperty(group = "advanced")
     private Property<String> timeZoneId;
+
+    // Off-switch for the rare flow whose SQL keeps state on the connection (e.g. SET search_path) that must not leak to the next pooled run.
+    @Schema(
+        title = "Reuse database connections via a connection pool",
+        description = """
+            When true (default), connections are pooled and reused across executions, keyed by URL and \
+            credentials, removing the connect and TLS-handshake cost on each run. Set to false if your SQL \
+            relies on session state persisting on the connection (for example SET search_path, session-scoped \
+            temp tables or variables), since pooled connections are reused. Embedded drivers (DuckDB, SQLite, \
+            MS Access) never pool regardless of this setting."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> connectionPooling = Property.ofValue(true);
+
+    @Schema(
+        title = "Maximum number of pooled connections",
+        description = """
+            Maximum connections held in the pool for a given URL and credentials. Default 10. \
+            Increase for flows that run many concurrent queries against the same database to avoid \
+            waiting for an available connection. Ignored when connectionPooling is false or for embedded drivers."""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Integer> connectionPoolSize = Property.ofValue(10);
 
     @NotNull
     @PluginProperty(language = MonacoLanguages.SQL, group = "main")
@@ -71,7 +101,25 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @NotNull
     @Builder.Default
-    protected Property<FetchType> fetchType = Property.ofValue(FetchType.NONE);
+    @PluginProperty(group = "main")
+    @Schema(
+        title = "The way you want to fetch the data",
+        description = """
+            Triggers default to `FETCH`, which loads all rows into memory and exposes them as `{{ trigger.rows }}`. \
+            A trigger fires only when the query returns at least one row; setting `NONE` would cause the trigger to never fire. \
+            Use `FETCH_ONE` to expose a single row as `{{ trigger.row }}`, or `STORE` to write the rows to internal storage and expose the file URI as `{{ trigger.uri }}`."""
+    )
+    protected Property<FetchType> fetchType = Property.ofValue(FetchType.FETCH);
+
+    @AssertTrue(message = "fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.")
+    @JsonIgnore
+    boolean isFetchTypeValid() {
+        if (fetchType == null) return true;
+        var expr = fetchType.toString();
+        // Skip validation for dynamic Pebble expressions — those can only be checked at render time
+        if (PebbleUtil.containsOpeningBlockDelimiter(expr)) return true;
+        return !FetchType.NONE.name().equalsIgnoreCase(expr);
+    }
 
     @Builder.Default
     protected Property<Integer> fetchSize = Property.ofValue(10000);
@@ -110,7 +158,11 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         } else if(this.store) {
             return FetchType.STORE;
         }
-        return runContext.render(fetchType).as(FetchType.class).orElseThrow();
+        var rFetchType = runContext.render(fetchType).as(FetchType.class).orElseThrow();
+        if (rFetchType == FetchType.NONE) {
+            throw new IllegalArgumentException("fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.");
+        }
+        return rFetchType;
     }
 
     protected abstract AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception;

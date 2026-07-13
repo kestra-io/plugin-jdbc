@@ -13,34 +13,34 @@ public interface PostgresConnectionInterface extends JdbcConnectionInterface {
     Property<Boolean> getSsl();
 
     @Schema(
-        title = "The SSL mode."
+        title = "The SSL mode"
     )
     @PluginProperty(group = "connection")
     Property<SslMode> getSslMode();
 
     @Schema(
-        title = "The SSL root cert.",
+        title = "The SSL root cert",
         description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(group = "connection")
     Property<String> getSslRootCert();
 
     @Schema(
-        title = "The SSL cert.",
+        title = "The SSL cert",
         description = "Must be a PEM encoded certificate"
     )
     @PluginProperty(group = "connection")
     Property<String> getSslCert();
 
     @Schema(
-        title = "The SSL key.",
+        title = "The SSL key",
         description = "Must be a PEM encoded key"
     )
     @PluginProperty(group = "connection")
     Property<String> getSslKey();
 
     @Schema(
-        title = "The SSL key password."
+        title = "The SSL key password"
     )
     @PluginProperty(group = "connection")
     Property<String> getSslKeyPassword();

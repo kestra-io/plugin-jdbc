@@ -25,7 +25,8 @@ import java.util.stream.Stream;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Run Snowflake CLI commands."
+    title = "Run Snowflake CLI commands",
+    description = "Runs Snowflake CLI (snow) commands in a container and captures their output."
 )
 @Plugin(
     examples = {
@@ -101,46 +102,46 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     protected Property<List<String>> commands;
 
     @Schema(
-        title = "The account to use for authentication."
+        title = "The account to use for authentication"
     )
     @PluginProperty(group = "main")
     @NotNull
     protected Property<String> account;
 
     @Schema(
-        title = "The username to use for authentication."
+        title = "The username to use for authentication"
     )
     @PluginProperty(group = "main")
     @NotNull
     protected Property<String> username;
 
     @Schema(
-        title = "The password to use for authentication."
+        title = "The password to use for authentication"
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> password;
 
     @Schema(
         title = "The private key file for key pair authentication and key rotation for authentication/",
         description = "It needs to be an un-encoded private key in plaintext like: 'MIIEvwIBADA...EwKx0TSWT9A=='"
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> privateKey;
 
     @Schema(
-        title = "Specifies the private key password for key pair authentication and key rotation."
+        title = "Specifies the private key password for key pair authentication and key rotation"
     )
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> privateKeyPassword;
 
     @Schema(
-        title = "Additional environment variables for the current process."
+        title = "Additional environment variables for the current process"
     )
     @PluginProperty(dynamic = true, group = "execution")
     protected Map<String, String> env;
 
     @Schema(
-        title = "The task runner to use."
+        title = "The task runner to use"
     )
     @Valid
     @PluginProperty(group = "execution")
@@ -148,7 +149,7 @@ public class SnowflakeCLI extends Task implements RunnableTask<ScriptOutput>, Na
     private TaskRunner<?> taskRunner = Docker.instance();
 
     @Schema(
-        title = "The snowflake container image."
+        title = "The snowflake container image"
     )
     @PluginProperty(dynamic = true, group = "execution")
     @Builder.Default

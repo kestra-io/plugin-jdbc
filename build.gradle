@@ -1,15 +1,17 @@
 plugins {
-    id 'io.kestra.gradle.spotless-conventions' version '1.1.0'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.5'
+    id "io.kestra.gradle.plugin-doc-lint" version "1.2.5" apply(false)
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.5'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
-    id "com.gradleup.shadow" version "9.4.1" apply(false)
+    id "com.gradleup.shadow" version "9.4.3" apply(false)
     id 'signing'
     id "com.github.ben-manes.versions" version "0.54.0"
     id 'net.researchgate.release' version '3.1.0'
-    id "com.vanniktech.maven.publish" version "0.36.0"
-    id "io.kestra.gradle.inject-bom-versions" version "1.1.0"
+    id "com.vanniktech.maven.publish" version "0.37.0"
+    id "io.kestra.gradle.inject-bom-versions" version "1.2.5"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -55,6 +57,13 @@ subprojects {
 
     apply plugin: "java-library"
     apply plugin: "idea"
+    apply plugin: "io.kestra.gradle.plugin-doc-lint"
+
+    // lintPluginDocs reads the resolved classpath, which for the driver submodules includes the
+    // core shadowJar. Declare that ordering so Gradle does not flag an implicit task dependency.
+    if (project.path != ':plugin-jdbc') {
+        tasks.named('lintPluginDocs').configure { dependsOn(':plugin-jdbc:shadowJar') }
+    }
 
     configurations {
         jdbcDriver
@@ -82,7 +91,7 @@ subprojects {
         //Logs
         constraints {
             // Forced dependencies
-            api("org.slf4j:slf4j-api:2.0.17")
+            api("org.slf4j:slf4j-api:2.0.18")
         }
     }
 }
@@ -146,7 +155,7 @@ subprojects {
         testImplementation group: 'com.h2database', name: 'h2'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.22.0'
 
-        testImplementation "io.kestra.plugin:plugin-docker:1.3.1" // for sanity checks
+        testImplementation "io.kestra.plugin:plugin-docker:1.5.2" // for sanity checks
     }
 }
 

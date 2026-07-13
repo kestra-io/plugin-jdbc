@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -12,9 +13,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.slf4j.Logger;
 
-import java.io.BufferedWriter;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
@@ -183,8 +184,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 }
                 case STORE -> {
                     File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                        size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                    try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                        size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
                     }
                     output
                         .uri(runContext.storage().putFile(tempFile))
@@ -231,8 +232,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     }
                     case STORE -> {
                         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        try (BufferedWriter fileWriter = new BufferedWriter(new FileWriter(tempFile), FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileWriter, cellConverter, connection);
+                        try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                            size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
                         }
                         output
                             .uri(runContext.storage().putFile(tempFile))
@@ -287,9 +288,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Override
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> c, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         long count = 0L;
+        var labels = columnLabels(rs);
 
         while (rs.next()) {
-            Map<String, Object> map = super.mapResultSetToMap(rs, cellConverter, connection);
+            Map<String, Object> map = super.mapResultSetToMap(rs, labels, cellConverter, connection);
             c.accept(map);
             count++;
         }
@@ -322,6 +324,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @SuperBuilder
     @Getter
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
+        @Schema(title = "The list of per-query outputs")
         List<Output> outputs;
     }
 }

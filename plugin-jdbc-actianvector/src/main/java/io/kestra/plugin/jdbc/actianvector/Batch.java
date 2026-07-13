@@ -70,7 +70,7 @@ import java.time.ZoneId;
                     type: io.kestra.plugin.jdbc.actianvector.Query
                     url: jdbc:vectorwise://dev:port/base
                     username: admin
-                    password: admin_passwd
+                    password: "{{ secret('ADMIN_PASSWD') }}"
                     sql: |
                       SELECT *
                       FROM xref
@@ -82,7 +82,7 @@ import java.time.ZoneId;
                     from: "{{ outputs.query.uri }}"
                     url: jdbc:vectorwise://prod:port/base
                     username: admin
-                    password: admin_passwd
+                    password: "{{ secret('ADMIN_PASSWD') }}"
                     table: xref
             """
         )

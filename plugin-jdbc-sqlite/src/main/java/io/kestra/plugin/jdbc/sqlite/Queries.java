@@ -113,7 +113,7 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
     @Builder.Default
     @PluginProperty(group = "connection")
     @Schema(
-        title = "The JDBC URL to connect to the database.",
+        title = "The JDBC URL to connect to the database",
         description = "Example: `jdbc:sqlite:mydb.sqlite`",
         defaultValue = "jdbc:sqlite:"
     )
@@ -264,11 +264,11 @@ public class Queries extends AbstractJdbcQueries implements SqliteQueryInterface
     @SuperBuilder
     @Getter
     public static class Output extends AbstractJdbcQueries.MultiQueryOutput {
-        @Schema(title = "The output files' URI in Kestra's internal storage.")
+        @Schema(title = "The output files' URI in Kestra's internal storage")
         @PluginProperty(additionalProperties = URI.class)
         private final Map<String, URI> outputFiles;
 
-        @Schema(title = "The database output URI in Kestra's internal storage.")
+        @Schema(title = "The database output URI in Kestra's internal storage")
         @PluginProperty
         private final URI databaseUri;
     }

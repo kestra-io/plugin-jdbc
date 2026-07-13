@@ -48,7 +48,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:mysql://127.0.0.1:3306/
                     username: mysql_user
-                    password: mysql_password
+                    password: "{{ secret('MYSQL_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

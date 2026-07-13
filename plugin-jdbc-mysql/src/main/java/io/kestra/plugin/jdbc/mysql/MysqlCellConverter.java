@@ -26,9 +26,9 @@ public class MysqlCellConverter extends AbstractCellConverter {
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
         return switch (columnTypeName.toLowerCase()) {
-            case "time" -> ((ResultSetImpl) rs).getLocalTime(columnIndex);
+            case "time" -> rs.unwrap(ResultSetImpl.class).getLocalTime(columnIndex);
             case "datetime" -> rs.getTimestamp(columnIndex).toLocalDateTime();
-            case "timestamp" -> ((ResultSetImpl) rs).getLocalDateTime(columnIndex).toInstant(ZoneOffset.UTC);
+            case "timestamp" -> rs.unwrap(ResultSetImpl.class).getLocalDateTime(columnIndex).toInstant(ZoneOffset.UTC);
             default -> super.convert(columnIndex, rs);
         };
     }

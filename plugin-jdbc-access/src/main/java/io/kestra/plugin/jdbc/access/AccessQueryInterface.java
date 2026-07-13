@@ -18,4 +18,10 @@ public interface AccessQueryInterface extends JdbcConnectionInterface {
     default String getScheme() {
         return "jdbc:ucanaccess";
     }
+
+    // MS Access is a file-based, in-process database (UCanAccess); pooling causes file-lock conflicts.
+    @Override
+    default boolean usesConnectionPool() {
+        return false;
+    }
 }

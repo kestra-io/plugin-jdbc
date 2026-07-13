@@ -99,7 +99,7 @@ public class Queries extends AbstractJdbcQueries implements PostgresConnectionIn
     protected Property<String> sslCert;
     @PluginProperty(group = "connection")
     protected Property<String> sslKey;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> sslKeyPassword;
 
     @Override

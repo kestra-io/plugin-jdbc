@@ -22,7 +22,7 @@ class SqliteTriggerTest extends AbstractJdbcTriggerTest {
         var execution = triggerFlow(this.getClass().getClassLoader(), "flows","sqlite-listen");
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
-        assertThat(rows.size(), is(1));
+        assertThat(rows.size(), is(3));
     }
 
     @Override

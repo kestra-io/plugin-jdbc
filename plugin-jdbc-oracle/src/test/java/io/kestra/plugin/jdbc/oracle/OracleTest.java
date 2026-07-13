@@ -13,7 +13,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullSource;
 
+import io.kestra.core.serializers.FileSerde;
+import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
@@ -166,8 +169,8 @@ public class OracleTest extends AbstractRdbmsTest {
         data.put("id", 100);
         data.put("ts", zonedDateTime);
 
-        try (var writer = new java.io.BufferedWriter(new java.io.FileWriter(tempFile))) {
-            writer.write(io.kestra.core.serializers.JacksonMapper.ofIon().writeValueAsString(data));
+        try (var output = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+            FileSerde.write(output, data);
         }
 
         Batch batchTask = Batch.builder()

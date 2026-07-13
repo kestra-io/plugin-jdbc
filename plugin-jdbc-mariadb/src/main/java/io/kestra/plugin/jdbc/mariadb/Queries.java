@@ -55,7 +55,7 @@ import java.util.Properties;
                     fetchType: FETCH
                     url: jdbc:mariadb://mariadb:3306/kestra
                     username: root
-                    password: mariadb_passwd
+                    password: "{{ secret('MARIADB_PASSWD') }}"
                     sql: |
                       SELECT firstName, lastName FROM employee;
                       SELECT brand FROM laptop;

@@ -70,7 +70,7 @@ import java.util.Properties;
                     type: io.kestra.plugin.jdbc.sqlserver.Query
                     url: jdbc:sqlserver://dev:41433;trustServerCertificate=true
                     username: sql_server_user
-                    password: sql_server_passwd
+                    password: "{{ secret('SQL_SERVER_PASSWD') }}"
                     sql: |
                       SELECT TOP (1500) *
                       FROM xref;
@@ -118,7 +118,7 @@ public class Batch extends AbstractJdbcBatch implements SqlServerConnectionInter
     protected Property<String> hostNameInCertificate;
     @PluginProperty(group = "connection")
     protected Property<String> trustStore;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> trustStorePassword;
 
     @Override

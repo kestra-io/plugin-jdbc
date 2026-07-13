@@ -48,3 +48,29 @@ INSERT INTO lite_types (
     X'0102030405060708',
     NULL
 );
+
+INSERT INTO lite_types (
+    boolean_column, text_column, float_column, double_column, int_column,
+    date_column, datetime_column, time_column, timestamp_column,
+    year_column, json_column, blob_column, d
+) VALUES (
+    0, 'ISO8601 T-sep millis', 0.0, 0.0, 0,
+    '2012-12-26',
+    '2012-12-26T12:06:28.727',
+    '00:00:00',
+    '2012-12-26T12:06:28.727',
+    2012, 'null', X'00', NULL
+);
+
+INSERT INTO lite_types (
+    boolean_column, text_column, float_column, double_column, int_column,
+    date_column, datetime_column, time_column, timestamp_column,
+    year_column, json_column, blob_column, d
+) VALUES (
+    0, 'ISO8601 T-sep no millis', 0.0, 0.0, 0,
+    '2012-12-26',
+    '2012-12-26T12:06:28',
+    '00:00:00',
+    '2012-12-26T12:06:28',
+    2012, 'null', X'00', NULL
+);

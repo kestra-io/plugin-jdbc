@@ -69,7 +69,7 @@ public class Queries extends AbstractJdbcQueries implements SqlServerConnectionI
     protected Property<String> hostNameInCertificate;
     @PluginProperty(group = "connection")
     protected Property<String> trustStore;
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
     protected Property<String> trustStorePassword;
 
     @Override

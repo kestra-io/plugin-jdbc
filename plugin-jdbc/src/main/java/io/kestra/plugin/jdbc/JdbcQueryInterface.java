@@ -17,7 +17,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     Property<String> getSql();
 
     @Schema(
-        title = "DEPRECATED, please use `fetchType: FETCH` instead." + "\n" +
+        title = "DEPRECATED, please use `fetchType: FETCH` instead" + "\n" +
             "Whether to fetch the data from the query result to the task output." +
             " This parameter is evaluated after `fetchOne` and `store`."
     )
@@ -25,7 +25,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isFetch();
 
     @Schema(
-        title = "DEPRECATED, please use `fetchType: STORE` instead." + "\n" +
+        title = "DEPRECATED, please use `fetchType: STORE` instead" + "\n" +
             "Whether to fetch data row(s) from the query result to a file in internal storage." +
             " File will be saved as Amazon Ion (text format)." +
             " \n" +
@@ -36,7 +36,7 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isStore();
 
     @Schema(
-        title = "DEPRECATED, please use `fetchType: FETCH_ONE` instead." + "\n" +
+        title = "DEPRECATED, please use `fetchType: FETCH_ONE` instead" + "\n" +
             "Whether to fetch only one data row from the query result to the task output." +
             " This parameter is evaluated before `store` and `fetch`."
     )

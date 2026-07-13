@@ -121,4 +121,49 @@ class SqlServerSslPropertiesTest {
         assertThat(props.getProperty("trustStore"), is(nullValue()));
         assertThat(props.getProperty("trustStorePassword"), is(nullValue()));
     }
+
+    @Test
+    void urlTrustServerCertificateNotOverriddenByDefault() throws Exception {
+        var runContext = runContextFactory.of(Map.of());
+
+        var task = Query.builder()
+            .url(Property.ofValue("jdbc:sqlserver://localhost:1433;trustServerCertificate=true"))
+            .sql(Property.ofValue("SELECT 1"))
+            .build();
+
+        var props = task.connectionProperties(runContext);
+
+        assertThat(props.getProperty("trustServerCertificate"), is(nullValue()));
+    }
+
+    @Test
+    void urlEncryptNotOverriddenByDefault() throws Exception {
+        var runContext = runContextFactory.of(Map.of());
+
+        var task = Query.builder()
+            .url(Property.ofValue("jdbc:sqlserver://localhost:1433;encrypt=true"))
+            .sql(Property.ofValue("SELECT 1"))
+            .build();
+
+        var props = task.connectionProperties(runContext);
+
+        assertThat(props.getProperty("encrypt"), is(nullValue()));
+    }
+
+    @Test
+    void noUrlParamStillGetsDefault() throws Exception {
+        var runContext = runContextFactory.of(Map.of());
+
+        var task = Query.builder()
+            .url(Property.ofValue(DUMMY_URL))
+            .sql(Property.ofValue("SELECT 1"))
+            .build();
+
+        var props = task.connectionProperties(runContext);
+
+        assertThat(props.getProperty("encrypt"), is("false"));
+        assertThat("trustServerCertificate default must be applied when URL has no such param",
+            props.getProperty("trustServerCertificate"), is("false"));
+    }
+
 }

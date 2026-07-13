@@ -50,7 +50,7 @@ import java.sql.SQLException;
                     interval: "PT5M"
                     url: jdbc:oracle:thin:@localhost:49161:XE
                     username: oracle_user
-                    password: oracle_password
+                    password: "{{ secret('ORACLE_PASSWORD') }}"
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """

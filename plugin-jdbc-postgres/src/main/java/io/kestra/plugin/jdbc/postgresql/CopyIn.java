@@ -16,8 +16,8 @@ import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.slf4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.sql.Connection;
 
@@ -27,7 +27,7 @@ import java.sql.Connection;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Load a file into a PostgreSQL table.",
+    title = "Load a file into a PostgreSQL table",
     description = "Copies in CSV, Text, or Binary data into PostgreSQL table."
 )
 @Plugin(
@@ -103,7 +103,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
 
     @NotNull
     @Schema(
-        title = "Source file URI."
+        title = "Source file URI"
     )
     @PluginProperty(internalStorageURI = true, group = "main")
     private Property<String> from;
@@ -115,7 +115,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
 
         try (
             Connection connection = this.connection(runContext);
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(runContext.storage().getFile(from)));
+            InputStream inputStream = new BufferedInputStream(runContext.storage().getFile(from));
         ) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
             CopyManager copyManager = new CopyManager(pgConnection);
@@ -124,7 +124,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
 
             logger.debug("Starting query: {}", sql);
 
-            long rowsAffected = copyManager.copyIn(sql, bufferedReader);
+            long rowsAffected = copyManager.copyIn(sql, inputStream);
             runContext.metric(Counter.of("rows", rowsAffected));
 
             return Output
@@ -138,7 +138,7 @@ public class CopyIn extends AbstractCopy implements RunnableTask<CopyIn.Output>,
     @Getter
     public static class Output implements io.kestra.core.models.tasks.Output {
         @Schema(
-            title = "The rows count from this `COPY`."
+            title = "The rows count from this `COPY`"
         )
         private final Long rowCount;
     }

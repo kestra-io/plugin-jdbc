@@ -59,7 +59,7 @@ import java.util.Properties;
                     fetchType: FETCH
                     url: jdbc:mysql://mysql:3306/kestra
                     username: root
-                    password: mysql_passwd
+                    password: "{{ secret('MYSQL_PASSWD') }}"
                     sql: |
                       SELECT firstName, lastName FROM employee;
                       SELECT brand FROM laptop;
