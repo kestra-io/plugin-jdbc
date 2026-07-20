@@ -88,6 +88,7 @@ public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
     public Properties connectionProperties(RunContext runContext) throws Exception {
         Properties properties = super.connectionProperties(runContext);
 
+        properties.put("MULTI_STATEMENT_COUNT", "0");
         this.renderProperties(runContext, properties);
 
         return properties;

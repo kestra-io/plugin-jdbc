@@ -218,6 +218,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             ResultSet rs = stmt.getResultSet();
             int updateCount = stmt.getUpdateCount();
 
+            // 1. CRITICAL: True JDBC check for end of all results
+            if ((rs == null || rs.isClosed()) && updateCount == -1) {
+                break;
+            }
             // When SQL is not a SELECT statement skip output creation
             if (rs != null) {
                 Output.OutputBuilder<?, ?> output = Output.builder();
