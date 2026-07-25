@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @Disabled("Druid cluster takes too long to start in CI")
-@KestraTest
+@KestraTest(startRunner = true, startScheduler = true)
 class DruidTriggerTest extends AbstractJdbcTriggerTest {
 
     @BeforeAll

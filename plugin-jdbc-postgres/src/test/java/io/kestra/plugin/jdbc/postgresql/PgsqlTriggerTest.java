@@ -14,7 +14,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest
+@KestraTest(startRunner = true, startScheduler = true)
 @Disabled("Disable for now as refactory may be done to split SSL test")
 class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
 
