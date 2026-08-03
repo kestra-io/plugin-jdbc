@@ -67,6 +67,21 @@ tasks:
     fetchType: STORE
     sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1 LIMIT 2
 
+  - id: chdb
+    type: io.kestra.plugin.jdbc.clickhouse.ChDB
+    query: |
+      SELECT number AS n
+      FROM system.numbers
+      LIMIT 2
+
+  - id: chdb_csv
+    type: io.kestra.plugin.jdbc.clickhouse.ChDB
+    query: |
+      SELECT number AS n
+      FROM system.numbers
+      LIMIT 2
+    outputFormat: CSVWithNames
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
@@ -75,6 +90,9 @@ tasks:
       - '{{ outputs.queries["outputs"]["0"]["size"] == 3 }}'
       - '{{ outputs.queries["outputs"]["1"]["size"] == 1 }}'
       - "{{ outputs.select_and_store.size == 2 }}"
+      - "{{ outputs.chdb.size == 2 }}"
+      - "{{ outputs.chdb.format == 'Ion' }}"
+      - "{{ outputs.chdb_csv.format == 'CSVWithNames' }}"
 
 finally:
   - id: dockerStop
