@@ -1,17 +1,17 @@
 plugins {
-    id 'io.kestra.gradle.repository-conventions' version '1.2.5'
-    id "io.kestra.gradle.plugin-doc-lint" version "1.2.5" apply(false)
-    id 'io.kestra.gradle.spotless-conventions' version '1.2.5'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.6'
+    id "io.kestra.gradle.plugin-doc-lint" version "1.2.6" apply(false)
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.6'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
-    id "com.gradleup.shadow" version "9.4.3" apply(false)
+    id "com.gradleup.shadow" version "9.6.1" apply(false)
     id 'signing'
     id "com.github.ben-manes.versions" version "0.54.0"
     id 'net.researchgate.release' version '3.1.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
-    id "io.kestra.gradle.inject-bom-versions" version "1.2.5"
+    id "io.kestra.gradle.inject-bom-versions" version "1.2.6"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -40,7 +40,7 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.capabilitiesResolution
             .withCapability("org.lz4:lz4-java") {
-                select("at.yawk.lz4:lz4-java:1.11.0")
+                select("at.yawk.lz4:lz4-java:1.11.1")
                 because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
             }
     }
