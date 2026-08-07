@@ -90,7 +90,7 @@ tasks:
       - '{{ outputs.queries["outputs"]["0"]["size"] == 3 }}'
       - '{{ outputs.queries["outputs"]["1"]["size"] == 1 }}'
       - "{{ outputs.select_and_store.size == 2 }}"
-      - "{{ outputs.chdb.size == 2 }}"
+      - "{{ outputs.chdb.rowCount == 2 }}"
       - "{{ outputs.chdb.format == 'Ion' }}"
       - "{{ outputs.chdb_csv.format == 'CSVWithNames' }}"
 
