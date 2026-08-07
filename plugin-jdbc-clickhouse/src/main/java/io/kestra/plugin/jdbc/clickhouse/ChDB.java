@@ -201,13 +201,33 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
         if (renderedQuery.isBlank()) {
             throw new IllegalArgumentException("Property 'query' must not be blank");
         }
+        // FORMAT as a clause (not format() / formatDateTime()), and INTO OUTFILE, conflict with
+        // the task-controlled --format and shell redirection.
+        if (renderedQuery.matches("(?is).*\\bFORMAT\\s+[A-Za-z0-9]+.*")) {
+            throw new IllegalArgumentException("Query must not include a FORMAT clause; use 'outputFormat' instead");
+        }
+        if (renderedQuery.matches("(?is).*\\bINTO\\s+OUTFILE\\b.*")) {
+            throw new IllegalArgumentException("Query must not include INTO OUTFILE; output files are managed by this task");
+        }
 
         String userFormat = this.outputFormat == null
             ? null
             : runContext.render(this.outputFormat).as(String.class).orElse(null);
 
+        if (userFormat != null) {
+            userFormat = userFormat.strip();
+            if (userFormat.isEmpty()) {
+                userFormat = null;
+            } else {
+                ChDBOutputFormats.requireSafeFormat(userFormat);
+            }
+        }
+
         boolean storeAsIon = ChDBOutputFormats.shouldStoreAsIon(userFormat);
-        String clickHouseFormat = ChDBOutputFormats.effectiveClickHouseFormat(userFormat);
+        // Defensive validation: `clickHouseFormat` is interpolated into a shell command.
+        String clickHouseFormat = ChDBOutputFormats.requireSafeFormat(
+            ChDBOutputFormats.effectiveClickHouseFormat(userFormat)
+        );
 
         // Intermediate file written by clickhouse-local inside the working directory.
         // Ion path uses JSONEachRow then converts; file formats keep their dedicated extension.
@@ -248,12 +268,12 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
         }
 
         URI rawUri = outputFiles.get(rawFileName);
-        Long size = null;
+        Long rowCount = null;
         URI resultUri;
 
         if (storeAsIon) {
             Path ionPath = runContext.workingDir().createTempFile(ChDBOutputFormats.DEFAULT_ION_EXTENSION);
-            size = convertJsonEachRowToIon(runContext, rawUri, ionPath);
+            rowCount = convertJsonEachRowToIon(runContext, rawUri, ionPath);
             resultUri = runContext.storage().putFile(ionPath.toFile());
         } else {
             // Already uploaded with the correct extension via outputFiles.
@@ -262,7 +282,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
         return Output.builder()
             .uri(resultUri)
-            .size(size)
+            .rowCount(rowCount)
             .format(storeAsIon ? "Ion" : clickHouseFormat)
             .build();
     }
@@ -314,7 +334,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
             title = "Number of rows written",
             description = "Populated when the result is stored as Ion (default / Pretty* formats). Null for raw file formats."
         )
-        private final Long size;
+        private final Long rowCount;
 
         @Schema(
             title = "Effective storage format label",

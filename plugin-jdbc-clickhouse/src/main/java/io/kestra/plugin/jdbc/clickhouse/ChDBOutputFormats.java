@@ -1,7 +1,6 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
 import java.util.Locale;
-import java.util.Optional;
 
 /**
  * Maps ClickHouse/chDB {@code outputFormat} values to Kestra storage file extensions
@@ -113,10 +112,14 @@ final class ChDBOutputFormats {
         return "result" + fileExtension(outputFormat);
     }
 
-    static Optional<String> normalizeFormat(String outputFormat) {
-        if (outputFormat == null || outputFormat.isBlank()) {
-            return Optional.empty();
+    /**
+     * ClickHouse format names are alphanumeric. Reject anything else so values
+     * interpolated into {@code /bin/sh -c} cannot break out of the intended command.
+     */
+    static String requireSafeFormat(String format) {
+        if (format == null || !format.matches("[A-Za-z0-9]+")) {
+            throw new IllegalArgumentException("Invalid outputFormat: '" + format + "'");
         }
-        return Optional.of(outputFormat.trim());
+        return format;
     }
 }

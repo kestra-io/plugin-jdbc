@@ -7,7 +7,9 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ChDBOutputFormatsTest {
 
@@ -67,5 +69,39 @@ class ChDBOutputFormatsTest {
     void trimsUserFormatBeforeUse() {
         assertThat(ChDBOutputFormats.effectiveClickHouseFormat("  CSVWithNames  "), is("CSVWithNames"));
         assertThat(ChDBOutputFormats.fileExtension("  CSVWithNames  "), is(".csv"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "CSVWithNames",
+        "JSONEachRow",
+        "PrettyCompact",
+        "Parquet"
+    })
+    void acceptsAlphanumericFormats(String format) {
+        assertThat(ChDBOutputFormats.requireSafeFormat(format), is(format));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "CSV; rm -rf /",
+        "CSV&&id",
+        "CSV`id`",
+        "CSV$(id)",
+        "CSV WithNames",
+        "CSV_WithNames",
+        ""
+    })
+    void rejectsUnsafeFormats(String format) {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> ChDBOutputFormats.requireSafeFormat(format)
+        );
+        assertThat(exception.getMessage(), containsString("Invalid outputFormat"));
+    }
+
+    @Test
+    void rejectsNullFormat() {
+        assertThrows(IllegalArgumentException.class, () -> ChDBOutputFormats.requireSafeFormat(null));
     }
 }
