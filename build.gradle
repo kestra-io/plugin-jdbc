@@ -181,6 +181,14 @@ subprojects {
 
     test {
         jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
+
+        // allure-junit5 writes results as a side effect of the test JVM, invisible to Gradle's
+        // dependency tracking. If Gradle build caching is ever enabled, a cache hit on :test
+        // would restore build/test-results/ but skip the JVM entirely, silently producing no
+        // allure-results for that run unless the directory is declared as a task output.
+        def allureResultsDir = layout.buildDirectory.dir("allure-results")
+        systemProperty 'allure.results.directory', allureResultsDir.get().asFile.absolutePath
+        outputs.dir(allureResultsDir)
     }
 }
 
