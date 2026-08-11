@@ -168,20 +168,7 @@ subprojects {
         testImplementation "io.qameta.allure:allure-junit5"
     }
 
-    configurations {
-        agent {
-            canBeResolved = true
-            canBeConsumed = true
-        }
-    }
-
-    dependencies {
-        agent "org.aspectj:aspectjweaver:1.9.25.1"
-    }
-
     test {
-        jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
-
         // allure-junit5 writes results as a side effect of the test JVM, invisible to Gradle's
         // dependency tracking. If Gradle build caching is ever enabled, a cache hit on :test
         // would restore build/test-results/ but skip the JVM entirely, silently producing no
