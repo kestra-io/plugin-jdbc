@@ -8,7 +8,7 @@ plugins {
     id "com.adarshr.test-logger" version "4.0.0" apply(false)
     id "com.gradleup.shadow" version "9.6.1" apply(false)
     id 'signing'
-    id "com.github.ben-manes.versions" version "0.54.0"
+    id "com.github.ben-manes.versions" version "0.60.0"
     id 'net.researchgate.release' version '3.1.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
     id "io.kestra.gradle.inject-bom-versions" version "1.2.6"
@@ -168,19 +168,14 @@ subprojects {
         testImplementation "io.qameta.allure:allure-junit5"
     }
 
-    configurations {
-        agent {
-            canBeResolved = true
-            canBeConsumed = true
-        }
-    }
-
-    dependencies {
-        agent "org.aspectj:aspectjweaver:1.9.25.1"
-    }
-
     test {
-        jvmArgs = [ "-javaagent:${configurations.agent.singleFile}" ]
+        // allure-junit5 writes results as a side effect of the test JVM, invisible to Gradle's
+        // dependency tracking. If Gradle build caching is ever enabled, a cache hit on :test
+        // would restore build/test-results/ but skip the JVM entirely, silently producing no
+        // allure-results for that run unless the directory is declared as a task output.
+        def allureResultsDir = layout.buildDirectory.dir("allure-results")
+        systemProperty 'allure.results.directory', allureResultsDir.get().asFile.absolutePath
+        outputs.dir(allureResultsDir)
     }
 }
 
