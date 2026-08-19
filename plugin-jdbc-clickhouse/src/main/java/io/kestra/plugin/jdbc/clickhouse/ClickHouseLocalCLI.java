@@ -32,7 +32,13 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 @NoArgsConstructor
 @Schema(
 	title = "Run clickhouse-local CLI commands",
-    description = "Runs clickhouse-local CLI commands in a container and captures their output."
+    description = """
+        Runs clickhouse-local CLI commands in a container and captures their output.
+
+        Prefer `io.kestra.plugin.jdbc.clickhouse.ChDB` when you have a single SQL query and want \
+        Kestra-managed Ion or file-format output. Use this task for arbitrary clickhouse-local \
+        commands, extra CLI flags, or multi-step scripts.
+        """
 )
 @Plugin(
 	examples = {

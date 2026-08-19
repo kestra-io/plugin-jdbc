@@ -149,6 +149,90 @@ class ChDBTest {
         assertThat(output.getRowCount(), is(1L));
     }
 
+    @Test
+    void ionStores64BitIntegersAsNumbers() throws Exception {
+        assumeDocker();
+
+        ChDB task = ChDB.builder()
+            .id(IdUtils.create())
+            .type(ChDB.class.getName())
+            .query(Property.ofValue("SELECT toInt64(42) AS i64, toUInt64(1) AS u64, toInt32(7) AS i32"))
+            .build();
+
+        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
+
+        ChDB.Output output = task.run(runContext);
+
+        assertThat(output.getFormat(), is("Ion"));
+        assertThat(output.getRowCount(), is(1L));
+
+        Map<String, Object> row = readIon(runContext, output).getFirst();
+        assertThat(row.get("i64"), instanceOf(Number.class));
+        assertThat(row.get("u64"), instanceOf(Number.class));
+        assertThat(row.get("i32"), instanceOf(Number.class));
+        assertThat(((Number) row.get("i64")).longValue(), is(42L));
+        assertThat(((Number) row.get("u64")).longValue(), is(1L));
+        assertThat(((Number) row.get("i32")).intValue(), is(7));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SELECT 1; SELECT 2",
+        "SELECT 1; SELECT 2;",
+        "SELECT 1;\nSELECT 2"
+    })
+    void rejectsMultipleStatements(String query) {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> ChDB.normalizeAndValidateQuery(query)
+        );
+        assertThat(exception.getMessage(), containsString("single SQL statement"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SELECT 'a;b' AS x",
+        "SELECT \";\" AS x",
+        "SELECT 1 -- comment; still one statement",
+        "SELECT 1 /* ; */ AS one",
+        "SELECT 1;",
+        "SELECT 1;;;"
+    })
+    void allowsSemicolonInsideLiteralsCommentsAndTrailing(String query) {
+        assertThat(ChDB.normalizeAndValidateQuery(query).isBlank(), is(false));
+    }
+
+    @Test
+    void ionCommandUnquotes64BitIntegers() {
+        assertThat(
+            ChDB.clickhouseLocalShellCommand("JSONEachRow", "result.jsonl", true),
+            containsString("--output_format_json_quote_64bit_integers=0")
+        );
+        assertThat(
+            ChDB.clickhouseLocalShellCommand("CSVWithNames", "result.csv", false),
+            not(containsString("output_format_json_quote_64bit_integers"))
+        );
+    }
+
+    @Test
+    void formatGuardAlsoRejectsFormatInLiterals() {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> ChDB.normalizeAndValidateQuery("SELECT 'FORMAT JSON' AS note")
+        );
+        assertThat(exception.getMessage(), containsString("FORMAT"));
+    }
+
+    @Test
+    void rejectsBlankQuery() {
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> ChDB.normalizeAndValidateQuery("   ;;;  ")
+        );
+        assertThat(exception.getMessage(), containsString("must not be blank"));
+    }
+
     private ChDB.Output runQuery(String query) throws Exception {
         ChDB task = ChDB.builder()
             .id(IdUtils.create())
