@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -35,10 +36,10 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Embedded ClickHouse (chDB / clickhouse-local) query task for lightweight transforms.
+ * Embedded ClickHouse query task for lightweight transforms.
  *
- * <p>Mirrors the chDB Python API surface: {@code query} + {@code outputFormat}, while
- * integrating with Kestra internal storage (Ion by default, dedicated extensions for file formats).
+ * <p>Exposes the chDB-style API ({@code query} + {@code outputFormat}) and runs the query with
+ * the {@code clickhouse-local} binary — not the libchdb native library.
  */
 @SuperBuilder
 @ToString
@@ -48,10 +49,17 @@ import java.util.Optional;
 @Schema(
     title = "Query data with embedded ClickHouse (chDB)",
     description = """
-        Runs a SQL query with an embedded ClickHouse engine (clickhouse-local / chDB) for lightweight \
-        data transformations — no external ClickHouse server required.
+        Runs a single SQL query with `clickhouse-local` for lightweight data transformations — \
+        no ClickHouse server required.
 
-        Main properties match the chDB API: `query` and optional `outputFormat`.
+        This is the high-level chDB-style API (`query` + optional `outputFormat`). The engine is \
+        the `clickhouse-local` binary shipped in the official ClickHouse image, not the libchdb \
+        native library.
+
+        When to use which ClickHouse task:
+        - `ChDB` — one SQL transform and Kestra-managed storage (Ion by default, or a file format).
+        - `ClickHouseLocalCLI` — arbitrary `clickhouse-local` CLI commands, extra flags, or scripts.
+        - `Query` / `Queries` — a running ClickHouse server over JDBC.
 
         Result storage:
         - When `outputFormat` is omitted (default tabular output) or a Pretty* format (e.g. `PrettyCompact`), \
@@ -146,7 +154,12 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
     @Schema(
         title = "The SQL query to execute",
-        description = "Single ClickHouse SQL statement. Do not append a FORMAT clause — use `outputFormat` instead."
+        description = """
+            A single ClickHouse SQL statement. A trailing semicolon is ignored.
+
+            Do not append a `FORMAT` clause or `INTO OUTFILE` — use `outputFormat` instead.
+            Multiple `;`-separated statements are rejected; use `ClickHouseLocalCLI` for scripts.
+            """
     )
     @NotNull
     @PluginProperty(group = "main")
@@ -159,6 +172,13 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
             - Omitted or Pretty* formats (e.g. `PrettyCompact`) → store as Amazon Ion (`.ion`)
             - File formats (e.g. `CSVWithNames`, `Parquet`, `JSONEachRow`) → store with a dedicated extension
+
+            Ion path (JSONEachRow → Ion) type notes:
+            - ClickHouse defaults `output_format_json_quote_64bit_integers=1`, which would store \
+            Int64/UInt64 as JSON strings. This task sets that setting to `0` so 64-bit integers \
+            are JSON numbers and stay closer to the JDBC `Query` task.
+            - `Date`, `DateTime`, `UUID`, and some other ClickHouse types still serialize as JSON \
+            strings, so they may not match JDBC `Query` cell types exactly.
             """
     )
     @PluginProperty(group = "main")
@@ -168,7 +188,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
         title = "Additional environment variables for the process / container"
     )
     @PluginProperty(dynamic = true, group = "execution")
-    protected Map<String, String> env;
+    private Map<String, String> env;
 
     @Schema(
         title = "The task runner to use"
@@ -194,53 +214,40 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String renderedQuery = runContext.render(this.query).as(String.class).orElseThrow().strip();
-        // Strip trailing semicolons; FORMAT / INTO OUTFILE are controlled by this task.
-        renderedQuery = renderedQuery.replaceAll(";\\s*$", "");
+        String rQuery = normalizeAndValidateQuery(
+            runContext.render(this.query).as(String.class).orElseThrow()
+        );
 
-        if (renderedQuery.isBlank()) {
-            throw new IllegalArgumentException("Property 'query' must not be blank");
-        }
-        // FORMAT as a clause (not format() / formatDateTime()), and INTO OUTFILE, conflict with
-        // the task-controlled --format and shell redirection.
-        if (renderedQuery.matches("(?is).*\\bFORMAT\\s+[A-Za-z0-9]+.*")) {
-            throw new IllegalArgumentException("Query must not include a FORMAT clause; use 'outputFormat' instead");
-        }
-        if (renderedQuery.matches("(?is).*\\bINTO\\s+OUTFILE\\b.*")) {
-            throw new IllegalArgumentException("Query must not include INTO OUTFILE; output files are managed by this task");
-        }
-
-        String userFormat = this.outputFormat == null
+        String rOutputFormat = this.outputFormat == null
             ? null
             : runContext.render(this.outputFormat).as(String.class).orElse(null);
 
-        if (userFormat != null) {
-            userFormat = userFormat.strip();
-            if (userFormat.isEmpty()) {
-                userFormat = null;
+        if (rOutputFormat != null) {
+            rOutputFormat = rOutputFormat.strip();
+            if (rOutputFormat.isEmpty()) {
+                rOutputFormat = null;
             } else {
-                ChDBOutputFormats.requireSafeFormat(userFormat);
+                ChDBOutputFormats.requireSafeFormat(rOutputFormat);
             }
         }
 
-        boolean storeAsIon = ChDBOutputFormats.shouldStoreAsIon(userFormat);
+        boolean storeAsIon = ChDBOutputFormats.shouldStoreAsIon(rOutputFormat);
         // Defensive validation: `clickHouseFormat` is interpolated into a shell command.
         String clickHouseFormat = ChDBOutputFormats.requireSafeFormat(
-            ChDBOutputFormats.effectiveClickHouseFormat(userFormat)
+            ChDBOutputFormats.effectiveClickHouseFormat(rOutputFormat)
         );
 
         // Intermediate file written by clickhouse-local inside the working directory.
         // Ion path uses JSONEachRow then converts; file formats keep their dedicated extension.
-        String rawFileName = storeAsIon ? "result.jsonl" : ChDBOutputFormats.outputFileName(userFormat);
+        String rawFileName = storeAsIon ? "result.jsonl" : ChDBOutputFormats.outputFileName(rOutputFormat);
 
         Path workingDir = runContext.workingDir().path();
         Path queryFile = workingDir.resolve("query.sql");
-        Files.writeString(queryFile, renderedQuery, StandardCharsets.UTF_8);
+        Files.writeString(queryFile, rQuery, StandardCharsets.UTF_8);
 
         // Prefer shell redirection over INTO OUTFILE so we do not depend on allow_file_output settings.
         // --format=VALUE avoids shell word-splitting for multi-word format names.
-        String shellCommand = "clickhouse-local --queries-file=query.sql --format=" + clickHouseFormat
-            + " > " + rawFileName;
+        String shellCommand = clickhouseLocalShellCommand(clickHouseFormat, rawFileName, storeAsIon);
 
         ScriptOutput scriptOutput = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
@@ -299,7 +306,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
         try (
             InputStream inputStream = runContext.storage().getFile(jsonEachRowUri);
             BufferedReader reader = new BufferedReader(
-                new java.io.InputStreamReader(inputStream, StandardCharsets.UTF_8),
+                new InputStreamReader(inputStream, StandardCharsets.UTF_8),
                 FileSerde.BUFFER_SIZE
             );
             BufferedOutputStream output = new BufferedOutputStream(
@@ -319,6 +326,133 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
         }
 
         return rows;
+    }
+
+    /**
+     * Strip a trailing semicolon and reject blank, multi-statement, FORMAT, or INTO OUTFILE queries.
+     */
+    static String normalizeAndValidateQuery(String query) {
+        String normalized = query.strip().replaceAll("(?:;\\s*)+$", "");
+
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("Property 'query' must not be blank");
+        }
+        if (hasAdditionalStatement(normalized)) {
+            throw new IllegalArgumentException(
+                "Query must be a single SQL statement; multiple statements are not supported. Use ClickHouseLocalCLI for scripts."
+            );
+        }
+        // Heuristic: FORMAT as a clause (not format() / formatDateTime()) conflicts with the
+        // task-controlled --format. This also rejects the word in a string literal or alias,
+        // e.g. SELECT 'FORMAT JSON' AS note.
+        if (normalized.matches("(?is).*\\bFORMAT\\s+[A-Za-z0-9]+.*")) {
+            throw new IllegalArgumentException("Query must not include a FORMAT clause; use 'outputFormat' instead");
+        }
+        // Same heuristic as FORMAT: INTO OUTFILE in a literal or alias is also rejected.
+        if (normalized.matches("(?is).*\\bINTO\\s+OUTFILE\\b.*")) {
+            throw new IllegalArgumentException("Query must not include INTO OUTFILE; output files are managed by this task");
+        }
+
+        return normalized;
+    }
+
+    /**
+     * True when {@code sql} still contains a statement-separating semicolon after trailing
+     * semicolons were stripped. Semicolons inside quotes or comments are ignored. This is a
+     * heuristic, not a full ClickHouse parser.
+     */
+    static boolean hasAdditionalStatement(String sql) {
+        boolean inSingle = false;
+        boolean inDouble = false;
+        boolean inBacktick = false;
+        boolean inLineComment = false;
+        boolean inBlockComment = false;
+
+        for (int i = 0; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            char next = i + 1 < sql.length() ? sql.charAt(i + 1) : '\0';
+
+            if (inLineComment) {
+                if (c == '\n') {
+                    inLineComment = false;
+                }
+                continue;
+            }
+            if (inBlockComment) {
+                if (c == '*' && next == '/') {
+                    inBlockComment = false;
+                    i++;
+                }
+                continue;
+            }
+            if (inSingle) {
+                if (c == '\'') {
+                    if (next == '\'') {
+                        i++;
+                    } else {
+                        inSingle = false;
+                    }
+                }
+                continue;
+            }
+            if (inDouble) {
+                if (c == '"') {
+                    if (next == '"') {
+                        i++;
+                    } else {
+                        inDouble = false;
+                    }
+                }
+                continue;
+            }
+            if (inBacktick) {
+                if (c == '`') {
+                    inBacktick = false;
+                }
+                continue;
+            }
+
+            if (c == '-' && next == '-') {
+                inLineComment = true;
+                i++;
+                continue;
+            }
+            if (c == '/' && next == '*') {
+                inBlockComment = true;
+                i++;
+                continue;
+            }
+            if (c == '\'') {
+                inSingle = true;
+                continue;
+            }
+            if (c == '"') {
+                inDouble = true;
+                continue;
+            }
+            if (c == '`') {
+                inBacktick = true;
+                continue;
+            }
+            if (c == ';') {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Build the clickhouse-local shell command. Ion storage uses JSONEachRow plus JSON type
+     * settings so 64-bit integers are numbers rather than quoted strings.
+     */
+    static String clickhouseLocalShellCommand(String clickHouseFormat, String rawFileName, boolean storeAsIon) {
+        StringBuilder command = new StringBuilder("clickhouse-local --queries-file=query.sql --format=")
+            .append(clickHouseFormat);
+        if (storeAsIon) {
+            command.append(" --output_format_json_quote_64bit_integers=0");
+        }
+        command.append(" > ").append(rawFileName);
+        return command.toString();
     }
 
     @Builder
