@@ -153,7 +153,7 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.22.0'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.22.1'
 
         testImplementation "io.kestra.plugin:plugin-docker:1.6.0" // for sanity checks
     }
