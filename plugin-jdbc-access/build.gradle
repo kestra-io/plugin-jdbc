@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    jdbcDriver 'io.github.spannm:ucanaccess:5.1.6'
+    jdbcDriver 'io.github.spannm:ucanaccess:5.1.7'
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
