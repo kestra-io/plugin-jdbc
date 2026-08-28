@@ -95,6 +95,7 @@ Infrastructure dependencies (Docker Compose services):
 **plugin-jdbc-clickhouse:**
 
 - `io.kestra.plugin.jdbc.clickhouse.BulkInsert`
+- `io.kestra.plugin.jdbc.clickhouse.ChDB`
 - `io.kestra.plugin.jdbc.clickhouse.ClickHouseLocalCLI`
 - `io.kestra.plugin.jdbc.clickhouse.Queries`
 - `io.kestra.plugin.jdbc.clickhouse.Query`
