@@ -65,6 +65,21 @@ import java.time.ZoneId;
                     sql: SELECT * FROM departments
                     fetchType: FETCH
                 """
+        ),
+        @Example(
+            title = "Send a SQL query to an Apache DataFusion server exposed via Arrow Flight SQL and fetch rows as output.",
+            full = true,
+            code = """
+                id: arrow_flight_sql_datafusion_query
+                namespace: company.team
+
+                tasks:
+                  - id: query
+                    type: io.kestra.plugin.jdbc.arrowflight.Query
+                    url: jdbc:arrow-flight-sql://localhost:50051/?useEncryption=false
+                    sql: SELECT * FROM departments
+                    fetchType: FETCH
+                """
         )
     },
     metrics = {
