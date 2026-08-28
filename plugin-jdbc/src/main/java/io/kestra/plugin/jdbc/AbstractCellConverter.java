@@ -12,6 +12,7 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
 
@@ -236,36 +237,54 @@ public abstract class AbstractCellConverter {
         throw addPreparedStatementException(parameterType, index, value, null);
     }
 
+    /**
+     * Accepted string date/time formats, tried in order. Each is attempted against the whole
+     * input independently - unlike a single builder with chained {@code appendOptional(...)}
+     * sections, where an earlier section consuming the date/time part leaves a later section
+     * (e.g. the fractional-seconds one) unable to match the remaining input.
+     */
+    private static final List<DateTimeFormatter> TIMESTAMP_FORMATTERS = List.of(
+        // Standard ISO formats (T separator)
+        DateTimeFormatter.ISO_ZONED_DATE_TIME,
+        DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+        DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+        // JDBC / java.sql.Timestamp.toString() format (space separator), with an optional
+        // fractional-seconds part of 1 to 9 digits ("2019-10-30 12:00:00[.123456789]")
+        new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd HH:mm:ss")
+            .optionalStart()
+            .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+            .optionalEnd()
+            .toFormatter(),
+        // fallback to just Date
+        DateTimeFormatter.ISO_LOCAL_DATE
+    );
+
     protected Timestamp parseStringToTimestamp(String value) {
-        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
-            // for Standard ISO formats (T separator)
-            .appendOptional(DateTimeFormatter.ISO_ZONED_DATE_TIME)
-            .appendOptional(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+        for (DateTimeFormatter formatter : TIMESTAMP_FORMATTERS) {
+            TemporalAccessor temporal;
+            try {
+                temporal = formatter.parseBest(
+                    value,
+                    ZonedDateTime::from,
+                    LocalDateTime::from,
+                    LocalDate::from
+                );
+            } catch (DateTimeParseException ignored) {
+                continue;
+            }
 
-            // JDBC format (Space separator): "yyyy-MM-dd HH:mm:ss"
-            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
-            .appendOptional(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.S")) // With milliseconds
+            return switch (temporal) {
+                case ZonedDateTime zdt -> Timestamp.from(zdt.toInstant());
+                case LocalDateTime ldt -> Timestamp.valueOf(ldt);
+                case LocalDate ld      -> Timestamp.valueOf(ld.atStartOfDay());
+                default                -> throw new IllegalArgumentException(
+                    "Unsupported date format: " + value + " (parsed as: " + temporal.getClass().getSimpleName() + ")"
+                );
+            };
+        }
 
-            // fallback to just Date
-            .appendOptional(DateTimeFormatter.ISO_LOCAL_DATE)
-            .toFormatter();
-
-        TemporalAccessor temporal = formatter.parseBest(
-            value,
-            ZonedDateTime::from,
-            LocalDateTime::from,
-            LocalDate::from
-        );
-
-        return switch (temporal) {
-            case ZonedDateTime zdt -> Timestamp.from(zdt.toInstant());
-            case LocalDateTime ldt -> Timestamp.valueOf(ldt);
-            case LocalDate ld      -> Timestamp.valueOf(ld.atStartOfDay());
-            default                -> throw new IllegalArgumentException(
-                "Unsupported date format: " + value + " (parsed as: " + temporal.getClass().getSimpleName() + ")"
-            );
-        };
+        throw new IllegalArgumentException("Unsupported date format: " + value);
     }
 
 

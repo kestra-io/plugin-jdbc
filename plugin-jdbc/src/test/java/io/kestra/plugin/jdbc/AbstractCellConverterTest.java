@@ -95,6 +95,23 @@ class AbstractCellConverterTest {
     }
 
     @Test
+    void testStringValueToTimestamp_JdbcFormatWithFractionalSeconds() throws Exception {
+        // java.sql.Timestamp.toString() emits "yyyy-MM-dd HH:mm:ss.f[fffffffff]" (1 to 9 digits)
+        verifyTimestampConversion(
+            "2019-10-30 12:00:00.1",
+            Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 100_000_000))
+        );
+        verifyTimestampConversion(
+            "2019-10-30 12:00:00.123",
+            Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 123_000_000))
+        );
+        verifyTimestampConversion(
+            "2019-10-30 12:00:00.123456789",
+            Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 123_456_789))
+        );
+    }
+
+    @Test
     void testStringValueToTime_JdbcFormat() throws Exception {
         verifyTimeConversion(
             "2019-10-30 12:00:00",
