@@ -214,11 +214,12 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String rQuery = normalizeAndValidateQuery(
-            runContext.render(this.query).as(String.class).orElseThrow()
+        var rQuery = normalizeAndValidateQuery(
+            runContext.render(this.query).as(String.class)
+                .orElseThrow(() -> new IllegalArgumentException("Property 'query' must be set"))
         );
 
-        String rOutputFormat = this.outputFormat == null
+        var rOutputFormat = this.outputFormat == null
             ? null
             : runContext.render(this.outputFormat).as(String.class).orElse(null);
 
@@ -231,25 +232,25 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
             }
         }
 
-        boolean storeAsIon = ChDBOutputFormats.shouldStoreAsIon(rOutputFormat);
+        var storeAsIon = ChDBOutputFormats.shouldStoreAsIon(rOutputFormat);
         // Defensive validation: `clickHouseFormat` is interpolated into a shell command.
-        String clickHouseFormat = ChDBOutputFormats.requireSafeFormat(
+        var clickHouseFormat = ChDBOutputFormats.requireSafeFormat(
             ChDBOutputFormats.effectiveClickHouseFormat(rOutputFormat)
         );
 
         // Intermediate file written by clickhouse-local inside the working directory.
         // Ion path uses JSONEachRow then converts; file formats keep their dedicated extension.
-        String rawFileName = storeAsIon ? "result.jsonl" : ChDBOutputFormats.outputFileName(rOutputFormat);
+        var rawFileName = storeAsIon ? "result.jsonl" : ChDBOutputFormats.outputFileName(rOutputFormat);
 
-        Path workingDir = runContext.workingDir().path();
-        Path queryFile = workingDir.resolve("query.sql");
+        var workingDir = runContext.workingDir().path();
+        var queryFile = workingDir.resolve("query.sql");
         Files.writeString(queryFile, rQuery, StandardCharsets.UTF_8);
 
         // Prefer shell redirection over INTO OUTFILE so we do not depend on allow_file_output settings.
         // --format=VALUE avoids shell word-splitting for multi-word format names.
-        String shellCommand = clickhouseLocalShellCommand(clickHouseFormat, rawFileName, storeAsIon);
+        var shellCommand = clickhouseLocalShellCommand(clickHouseFormat, rawFileName, storeAsIon);
 
-        ScriptOutput scriptOutput = new CommandsWrapper(runContext)
+        var scriptOutput = new CommandsWrapper(runContext)
             .withWarningOnStdErr(true)
             .withTaskRunner(this.taskRunner)
             .withContainerImage(this.containerImage)
@@ -267,19 +268,19 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
             );
         }
 
-        Map<String, URI> outputFiles = scriptOutput.getOutputFiles();
+        var outputFiles = scriptOutput.getOutputFiles();
         if (outputFiles == null || !outputFiles.containsKey(rawFileName)) {
             throw new IllegalStateException(
                 "clickhouse-local did not produce expected output file '" + rawFileName + "'"
             );
         }
 
-        URI rawUri = outputFiles.get(rawFileName);
+        var rawUri = outputFiles.get(rawFileName);
         Long rowCount = null;
         URI resultUri;
 
         if (storeAsIon) {
-            Path ionPath = runContext.workingDir().createTempFile(ChDBOutputFormats.DEFAULT_ION_EXTENSION);
+            var ionPath = runContext.workingDir().createTempFile(ChDBOutputFormats.DEFAULT_ION_EXTENSION);
             rowCount = convertJsonEachRowToIon(runContext, rawUri, ionPath);
             resultUri = runContext.storage().putFile(ionPath.toFile());
         } else {
@@ -300,16 +301,16 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
      * @return number of rows written
      */
     private static long convertJsonEachRowToIon(RunContext runContext, URI jsonEachRowUri, Path ionPath) throws Exception {
-        long rows = 0L;
-        File ionFile = ionPath.toFile();
+        var rows = 0L;
+        var ionFile = ionPath.toFile();
 
         try (
-            InputStream inputStream = runContext.storage().getFile(jsonEachRowUri);
-            BufferedReader reader = new BufferedReader(
+            var inputStream = runContext.storage().getFile(jsonEachRowUri);
+            var reader = new BufferedReader(
                 new InputStreamReader(inputStream, StandardCharsets.UTF_8),
                 FileSerde.BUFFER_SIZE
             );
-            BufferedOutputStream output = new BufferedOutputStream(
+            var output = new BufferedOutputStream(
                 new FileOutputStream(ionFile),
                 FileSerde.BUFFER_SIZE
             )
@@ -319,7 +320,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
                 if (line.isBlank()) {
                     continue;
                 }
-                Map<String, Object> row = JSON_MAPPER.readValue(line, MAP_TYPE);
+                var row = JSON_MAPPER.readValue(line, MAP_TYPE);
                 FileSerde.write(output, row);
                 rows++;
             }
@@ -332,7 +333,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
      * Strip a trailing semicolon and reject blank, multi-statement, FORMAT, or INTO OUTFILE queries.
      */
     static String normalizeAndValidateQuery(String query) {
-        String normalized = query.strip().replaceAll("(?:;\\s*)+$", "");
+        var normalized = query.strip().replaceAll("(?:;\\s*)+$", "");
 
         if (normalized.isBlank()) {
             throw new IllegalArgumentException("Property 'query' must not be blank");
@@ -358,8 +359,9 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
 
     /**
      * True when {@code sql} still contains a statement-separating semicolon after trailing
-     * semicolons were stripped. Semicolons inside quotes or comments are ignored. This is a
-     * heuristic, not a full ClickHouse parser.
+     * semicolons were stripped. Semicolons inside quotes or comments are ignored. Quotes support
+     * both doubled ({@code ''}) and backslash ({@code \'}) escaping, as ClickHouse allows either
+     * by default. This is a heuristic, not a full ClickHouse parser.
      */
     static boolean hasAdditionalStatement(String sql) {
         boolean inSingle = false;
@@ -386,7 +388,9 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
                 continue;
             }
             if (inSingle) {
-                if (c == '\'') {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '\'') {
                     if (next == '\'') {
                         i++;
                     } else {
@@ -396,7 +400,9 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
                 continue;
             }
             if (inDouble) {
-                if (c == '"') {
+                if (c == '\\') {
+                    i++;
+                } else if (c == '"') {
                     if (next == '"') {
                         i++;
                     } else {
@@ -446,7 +452,7 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
      * settings so 64-bit integers are numbers rather than quoted strings.
      */
     static String clickhouseLocalShellCommand(String clickHouseFormat, String rawFileName, boolean storeAsIon) {
-        StringBuilder command = new StringBuilder("clickhouse-local --queries-file=query.sql --format=")
+        var command = new StringBuilder("clickhouse-local --queries-file=query.sql --format=")
             .append(clickHouseFormat);
         if (storeAsIon) {
             command.append(" --output_format_json_quote_64bit_integers=0");

@@ -35,22 +35,22 @@ class ChDBTest {
     void defaultFormatStoresIon() throws Exception {
         assumeDocker();
 
-        ChDB task = ChDB.builder()
+        var task = ChDB.builder()
             .id(IdUtils.create())
             .type(ChDB.class.getName())
             .query(Property.ofValue("SELECT number AS n FROM system.numbers LIMIT 3"))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
         runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
 
-        ChDB.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getUri(), is(notNullValue()));
         assertThat(output.getFormat(), is("Ion"));
         assertThat(output.getRowCount(), is(3L));
 
-        List<Map<String, Object>> rows = readIon(runContext, output);
+        var rows = readIon(runContext, output);
         assertThat(rows, hasSize(3));
         assertThat(((Number) rows.getFirst().get("n")).intValue(), is(0));
     }
@@ -59,22 +59,22 @@ class ChDBTest {
     void prettyCompactStoresIon() throws Exception {
         assumeDocker();
 
-        ChDB task = ChDB.builder()
+        var task = ChDB.builder()
             .id(IdUtils.create())
             .type(ChDB.class.getName())
             .query(Property.ofValue("SELECT 1 AS one, 'clickhouse' AS engine"))
             .outputFormat(Property.ofValue("PrettyCompact"))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
         runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
 
-        ChDB.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getFormat(), is("Ion"));
         assertThat(output.getRowCount(), is(1L));
 
-        List<Map<String, Object>> rows = readIon(runContext, output);
+        var rows = readIon(runContext, output);
         assertThat(rows, hasSize(1));
         assertThat(((Number) rows.getFirst().get("one")).intValue(), is(1));
         assertThat(rows.getFirst().get("engine"), is("clickhouse"));
@@ -84,17 +84,17 @@ class ChDBTest {
     void csvWithNamesStoresCsvFile() throws Exception {
         assumeDocker();
 
-        ChDB task = ChDB.builder()
+        var task = ChDB.builder()
             .id(IdUtils.create())
             .type(ChDB.class.getName())
             .query(Property.ofValue("SELECT number AS n, number * 2 AS doubled FROM system.numbers LIMIT 2"))
             .outputFormat(Property.ofValue("CSVWithNames"))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
         runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
 
-        ChDB.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getFormat(), is("CSVWithNames"));
         assertThat(output.getRowCount(), is(nullValue()));
@@ -118,7 +118,7 @@ class ChDBTest {
         "SELECT 1\nFORMAT JSONEachRow"
     })
     void rejectsFormatClause(String query) throws Exception {
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
             IllegalArgumentException.class,
             () -> runQuery(query)
         );
@@ -132,7 +132,7 @@ class ChDBTest {
         "SELECT 1\nINTO   OUTFILE 'x'"
     })
     void rejectsIntoOutfile(String query) throws Exception {
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
             IllegalArgumentException.class,
             () -> runQuery(query)
         );
@@ -143,7 +143,7 @@ class ChDBTest {
     void allowsFormatFunctionWithoutFormatClause() throws Exception {
         assumeDocker();
 
-        ChDB.Output output = runQuery("SELECT format('n={}', 1) AS label");
+        var output = runQuery("SELECT format('n={}', 1) AS label");
 
         assertThat(output.getFormat(), is("Ion"));
         assertThat(output.getRowCount(), is(1L));
@@ -153,21 +153,21 @@ class ChDBTest {
     void ionStores64BitIntegersAsNumbers() throws Exception {
         assumeDocker();
 
-        ChDB task = ChDB.builder()
+        var task = ChDB.builder()
             .id(IdUtils.create())
             .type(ChDB.class.getName())
             .query(Property.ofValue("SELECT toInt64(42) AS i64, toUInt64(1) AS u64, toInt32(7) AS i32"))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
         runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
 
-        ChDB.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getFormat(), is("Ion"));
         assertThat(output.getRowCount(), is(1L));
 
-        Map<String, Object> row = readIon(runContext, output).getFirst();
+        var row = readIon(runContext, output).getFirst();
         assertThat(row.get("i64"), instanceOf(Number.class));
         assertThat(row.get("u64"), instanceOf(Number.class));
         assertThat(row.get("i32"), instanceOf(Number.class));
@@ -180,10 +180,11 @@ class ChDBTest {
     @ValueSource(strings = {
         "SELECT 1; SELECT 2",
         "SELECT 1; SELECT 2;",
-        "SELECT 1;\nSELECT 2"
+        "SELECT 1;\nSELECT 2",
+        "SELECT 'Kestra\\'s ChDB' AS name; DROP TABLE foo"
     })
     void rejectsMultipleStatements(String query) {
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
             IllegalArgumentException.class,
             () -> ChDB.normalizeAndValidateQuery(query)
         );
@@ -197,7 +198,8 @@ class ChDBTest {
         "SELECT 1 -- comment; still one statement",
         "SELECT 1 /* ; */ AS one",
         "SELECT 1;",
-        "SELECT 1;;;"
+        "SELECT 1;;;",
+        "SELECT 'Kestra\\'s ChDB' AS name"
     })
     void allowsSemicolonInsideLiteralsCommentsAndTrailing(String query) {
         assertThat(ChDB.normalizeAndValidateQuery(query).isBlank(), is(false));
@@ -217,7 +219,7 @@ class ChDBTest {
 
     @Test
     void formatGuardAlsoRejectsFormatInLiterals() {
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
             IllegalArgumentException.class,
             () -> ChDB.normalizeAndValidateQuery("SELECT 'FORMAT JSON' AS note")
         );
@@ -226,7 +228,7 @@ class ChDBTest {
 
     @Test
     void rejectsBlankQuery() {
-        IllegalArgumentException exception = assertThrows(
+        var exception = assertThrows(
             IllegalArgumentException.class,
             () -> ChDB.normalizeAndValidateQuery("   ;;;  ")
         );
@@ -234,20 +236,20 @@ class ChDBTest {
     }
 
     private ChDB.Output runQuery(String query) throws Exception {
-        ChDB task = ChDB.builder()
+        var task = ChDB.builder()
             .id(IdUtils.create())
             .type(ChDB.class.getName())
             .query(Property.ofValue(query))
             .build();
 
-        RunContext runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
+        var runContext = TestsUtils.mockRunContext(runContextFactory, task, Map.of());
         runContextFactory.initializer().forExecutor((DefaultRunContext) runContext);
         return task.run(runContext);
     }
 
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> readIon(RunContext runContext, ChDB.Output output) throws Exception {
-        List<Map<String, Object>> rows = new ArrayList<>();
+        var rows = new ArrayList<Map<String, Object>>();
         try (
             var in = runContext.storage().getFile(output.getUri());
             var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8), FileSerde.BUFFER_SIZE)
@@ -263,11 +265,11 @@ class ChDBTest {
 
     private static boolean isDockerAvailable() {
         try {
-            Process process = new ProcessBuilder("docker", "info")
+            var process = new ProcessBuilder("docker", "info")
                 .redirectOutput(ProcessBuilder.Redirect.DISCARD)
                 .redirectError(ProcessBuilder.Redirect.DISCARD)
                 .start();
-            boolean finished = process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
+            var finished = process.waitFor(15, java.util.concurrent.TimeUnit.SECONDS);
             return finished && process.exitValue() == 0;
         } catch (Exception e) {
             return false;

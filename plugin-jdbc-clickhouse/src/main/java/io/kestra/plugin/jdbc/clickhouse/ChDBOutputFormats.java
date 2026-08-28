@@ -49,7 +49,7 @@ final class ChDBOutputFormats {
             return DEFAULT_ION_EXTENSION;
         }
 
-        String format = outputFormat.trim().toLowerCase(Locale.ROOT);
+        var format = outputFormat.trim().toLowerCase(Locale.ROOT);
 
         if (format.contains("parquet")) {
             return ".parquet";
@@ -104,7 +104,7 @@ final class ChDBOutputFormats {
         }
 
         // Fall back to a sanitized format name so the artifact remains identifiable.
-        String sanitized = format.replaceAll("[^a-z0-9]+", "_");
+        var sanitized = format.replaceAll("[^a-z0-9]+", "_");
         return "." + (sanitized.isBlank() ? "out" : sanitized);
     }
 
