@@ -50,7 +50,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         // on failure, the rollback attempt below runs against a still-open connection. With try-with-resources,
         // the resource is closed as the try block exits, which happens BEFORE the catch clause runs, causing
         // strict drivers (e.g. DuckDB) to fail the rollback with "Connection was closed" and mask the real error.
-        Connection conn = this.connection(runContext);
+        var conn = this.connection(runContext);
         try {
             this.runningConnection = conn;
             this.beforeExecute(runContext, conn);
@@ -141,16 +141,6 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         } finally {
             this.runningConnection = null;
             closeConnection(runContext, conn);
-        }
-    }
-
-    private static void closeConnection(final RunContext runContext, final Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
         }
     }
 
