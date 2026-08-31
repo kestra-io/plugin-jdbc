@@ -1,17 +1,16 @@
 plugins {
-    id 'io.kestra.gradle.repository-conventions' version '1.2.6'
-    id "io.kestra.gradle.plugin-doc-lint" version "1.2.6" apply(false)
-    id 'io.kestra.gradle.spotless-conventions' version '1.2.6'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.9'
+    id "io.kestra.gradle.plugin-doc-lint" version "1.2.9" apply(false)
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.9'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
-    id "com.adarshr.test-logger" version "4.0.0" apply(false)
     id "com.gradleup.shadow" version "9.6.1" apply(false)
     id 'signing'
     id "com.github.ben-manes.versions" version "0.61.0"
     id 'net.researchgate.release' version '3.1.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
-    id "io.kestra.gradle.inject-bom-versions" version "1.2.6"
+    id "io.kestra.gradle.inject-bom-versions" version "1.2.9"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -100,7 +99,6 @@ subprojects {
  * Test
  **********************************************************************************************************************/
 subprojects {
-    apply plugin: "com.adarshr.test-logger"
 
     test {
         useJUnitPlatform()
@@ -108,15 +106,6 @@ subprojects {
         // configure en_US default locale for tests
         systemProperty 'user.language', 'en'
         systemProperty 'user.country', 'US'
-    }
-
-    testlogger {
-        theme "mocha-parallel"
-        showExceptions true
-        showFullStackTraces true
-        showStandardStreams true
-        showPassedStandardStreams false
-        showSkippedStandardStreams true
     }
 
     dependencies {
@@ -212,7 +201,6 @@ tasks.named('check') {
  * Publish
  **********************************************************************************************************************/
 subprojects { Project subproject ->
-    apply plugin: "com.adarshr.test-logger"
     apply plugin: "com.gradleup.shadow"
     apply plugin: "signing"
 
