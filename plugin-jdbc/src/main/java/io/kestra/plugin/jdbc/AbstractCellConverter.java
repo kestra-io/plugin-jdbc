@@ -238,53 +238,92 @@ public abstract class AbstractCellConverter {
     }
 
     /**
-     * Accepted string date/time formats, tried in order. Each is attempted against the whole
-     * input independently - unlike a single builder with chained {@code appendOptional(...)}
-     * sections, where an earlier section consuming the date/time part leaves a later section
-     * (e.g. the fractional-seconds one) unable to match the remaining input.
+     * JDBC / {@link java.sql.Timestamp#toString()} format (space separator), with an optional
+     * fractional-seconds part of 1 to 9 digits ("2019-10-30 12:00:00[.123456789]").
+     */
+    private static final DateTimeFormatter JDBC_TIMESTAMP_FORMATTER = new DateTimeFormatterBuilder()
+        .appendPattern("yyyy-MM-dd HH:mm:ss")
+        .optionalStart()
+        .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
+        .optionalEnd()
+        .toFormatter();
+
+    /**
+     * Accepted string date/time formats, each attempted against the whole input independently -
+     * unlike a single builder with chained {@code appendOptional(...)} sections, where an earlier
+     * section consuming the date/time part leaves a later section (e.g. the fractional-seconds one)
+     * unable to match the remaining input.
+     *
+     * <p>This is the fallback list; {@link #parseStringToTimestamp(String)} first uses a cheap
+     * separator check to jump straight to the matching formatter, so a well-formed value never pays
+     * the stack-trace-fill cost of a failed parse attempt on the batch-insert hot path.
      */
     private static final List<DateTimeFormatter> TIMESTAMP_FORMATTERS = List.of(
+        // JDBC / Timestamp.toString() format (space separator), the common case on the batch path
+        JDBC_TIMESTAMP_FORMATTER,
         // Standard ISO formats (T separator)
         DateTimeFormatter.ISO_ZONED_DATE_TIME,
         DateTimeFormatter.ISO_OFFSET_DATE_TIME,
         DateTimeFormatter.ISO_LOCAL_DATE_TIME,
-        // JDBC / java.sql.Timestamp.toString() format (space separator), with an optional
-        // fractional-seconds part of 1 to 9 digits ("2019-10-30 12:00:00[.123456789]")
-        new DateTimeFormatterBuilder()
-            .appendPattern("yyyy-MM-dd HH:mm:ss")
-            .optionalStart()
-            .appendFraction(ChronoField.NANO_OF_SECOND, 1, 9, true)
-            .optionalEnd()
-            .toFormatter(),
         // fallback to just Date
         DateTimeFormatter.ISO_LOCAL_DATE
     );
 
     protected Timestamp parseStringToTimestamp(String value) {
-        for (DateTimeFormatter formatter : TIMESTAMP_FORMATTERS) {
-            TemporalAccessor temporal;
-            try {
-                temporal = formatter.parseBest(
-                    value,
-                    ZonedDateTime::from,
-                    LocalDateTime::from,
-                    LocalDate::from
-                );
-            } catch (DateTimeParseException ignored) {
-                continue;
-            }
+        TemporalAccessor temporal = parseTemporal(value);
 
-            return switch (temporal) {
-                case ZonedDateTime zdt -> Timestamp.from(zdt.toInstant());
-                case LocalDateTime ldt -> Timestamp.valueOf(ldt);
-                case LocalDate ld      -> Timestamp.valueOf(ld.atStartOfDay());
-                default                -> throw new IllegalArgumentException(
-                    "Unsupported date format: " + value + " (parsed as: " + temporal.getClass().getSimpleName() + ")"
-                );
-            };
+        return switch (temporal) {
+            case ZonedDateTime zdt -> Timestamp.from(zdt.toInstant());
+            case LocalDateTime ldt -> Timestamp.valueOf(ldt);
+            case LocalDate ld      -> Timestamp.valueOf(ld.atStartOfDay());
+            default                -> throw new IllegalArgumentException(
+                "Unsupported date format: " + value + " (parsed as: " + temporal.getClass().getSimpleName() + ")"
+            );
+        };
+    }
+
+    private static TemporalAccessor parseTemporal(String value) {
+        // Fast path: pick the formatter whose date/time separator matches the input so a
+        // well-formed value is parsed without any failed-attempt exceptions.
+        DateTimeFormatter preferred = preferredTimestampFormatter(value);
+        if (preferred != null) {
+            TemporalAccessor temporal = tryParseTemporal(preferred, value);
+            if (temporal != null) {
+                return temporal;
+            }
+        }
+
+        // Fall back to trying every candidate (offset/zoned ISO, or an unusual shape).
+        for (DateTimeFormatter formatter : TIMESTAMP_FORMATTERS) {
+            TemporalAccessor temporal = tryParseTemporal(formatter, value);
+            if (temporal != null) {
+                return temporal;
+            }
         }
 
         throw new IllegalArgumentException("Unsupported date format: " + value);
+    }
+
+    private static DateTimeFormatter preferredTimestampFormatter(String value) {
+        if (value.length() == 10) {
+            return DateTimeFormatter.ISO_LOCAL_DATE;
+        }
+        if (value.length() > 10) {
+            return switch (value.charAt(10)) {
+                case ' '      -> JDBC_TIMESTAMP_FORMATTER;
+                case 'T', 't' -> DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+                default       -> null;
+            };
+        }
+        return null;
+    }
+
+    private static TemporalAccessor tryParseTemporal(DateTimeFormatter formatter, String value) {
+        try {
+            return formatter.parseBest(value, ZonedDateTime::from, LocalDateTime::from, LocalDate::from);
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 
 

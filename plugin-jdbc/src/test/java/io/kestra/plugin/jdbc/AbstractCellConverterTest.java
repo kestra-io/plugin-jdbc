@@ -15,6 +15,9 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -102,6 +105,10 @@ class AbstractCellConverterTest {
             Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 100_000_000))
         );
         verifyTimestampConversion(
+            "2019-10-30 12:00:00.12",
+            Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 120_000_000))
+        );
+        verifyTimestampConversion(
             "2019-10-30 12:00:00.123",
             Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 123_000_000))
         );
@@ -109,6 +116,36 @@ class AbstractCellConverterTest {
             "2019-10-30 12:00:00.123456789",
             Timestamp.valueOf(LocalDateTime.of(2019, 10, 30, 12, 0, 0, 123_456_789))
         );
+    }
+
+    @Test
+    void testStringValueToTimestamp_UnparseableSurfacesActionableError() {
+        // No candidate format matches: a >9-digit fraction overflows the JDBC formatter, and the
+        // value has neither an ISO 'T' nor a bare-date shape. The failure must surface as the
+        // wrapped, actionable message from addPreparedStatementException rather than a raw
+        // DateTimeParseException.
+        AbstractCellConverter converter = createConverter();
+        PreparedStatement ps = Mockito.mock(PreparedStatement.class);
+        AbstractJdbcBatch.ParameterType parameterType = Mockito.mock(AbstractJdbcBatch.ParameterType.class);
+
+        int columnIndex = 1;
+        Mockito.when(parameterType.getClass(columnIndex)).thenReturn((Class) java.sql.Timestamp.class);
+        Mockito.when(parameterType.getTypeName(columnIndex)).thenReturn("TIMESTAMP");
+
+        String badValue = "2019-10-30 12:00:00.1234567890";
+
+        Exception exception = assertThrows(
+            Exception.class,
+            () -> converter.addPreparedStatementValue(ps, parameterType, badValue, columnIndex, null)
+        );
+
+        assertTrue(exception.getMessage().contains("Unable to transform data"));
+        assertTrue(exception.getMessage().contains(badValue));
+
+        Throwable cause = exception.getCause();
+        assertNotNull(cause);
+        assertInstanceOf(IllegalArgumentException.class, cause);
+        assertTrue(cause.getMessage().contains("Unsupported date format"));
     }
 
     @Test
