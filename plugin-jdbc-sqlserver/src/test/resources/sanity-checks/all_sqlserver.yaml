@@ -27,6 +27,9 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.sqlserver.Queries
+    username: "sa"
+    password: "{{ vars.sqlserver_sa_password }}"
+    url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
     fetchType: NONE
     sql: |
       IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'sanitychecks')
@@ -44,6 +47,9 @@ tasks:
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.sqlserver.Queries
+    username: "sa"
+    password: "{{ vars.sqlserver_sa_password }}"
+    url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
     fetchType: NONE
     sql: |
       INSERT INTO sanitychecks.test(field1, field2) VALUES (1, 2);
@@ -52,11 +58,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.sqlserver.Query
+    username: "sa"
+    password: "{{ vars.sqlserver_sa_password }}"
+    url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
     fetchType: FETCH
     sql: SELECT * FROM sanitychecks.test ORDER BY field1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.sqlserver.Queries
+    username: "sa"
+    password: "{{ vars.sqlserver_sa_password }}"
+    url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
     fetchType: STORE
     sql: |
       SELECT * FROM sanitychecks.test ORDER BY field1;
@@ -64,6 +76,9 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.sqlserver.Query
+    username: "sa"
+    password: "{{ vars.sqlserver_sa_password }}"
+    url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
     fetchType: STORE
     sql: SELECT * FROM sanitychecks.test ORDER BY field1 OFFSET 0 ROWS FETCH NEXT 2 ROWS ONLY;
 
@@ -84,10 +99,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.sqlserver
-    values:
-      username: "sa"
-      password: "{{ vars.sqlserver_sa_password }}"
-      url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"

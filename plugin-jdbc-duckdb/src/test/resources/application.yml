@@ -1,6 +1,4 @@
 kestra:
-  encryption:
-    secret-key: test
   repository:
     type: memory
   queue:
@@ -9,3 +7,18 @@ kestra:
     type: local
     local:
       base-path: /tmp/unittest
+  controller:
+    # keep out of the ephemeral port range (32768-60999): an outbound socket could steal
+    # a random.port between config resolution and the controller bind
+    port: ${random.int[20000,32000]}
+  worker:
+    controllers:
+      type: STATIC
+      static:
+        endpoints:
+          - host: localhost
+            port: ${kestra.controller.port}
+
+grpc:
+  server:
+    enabled: false

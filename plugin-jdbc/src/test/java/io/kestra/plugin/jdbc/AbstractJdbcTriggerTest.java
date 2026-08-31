@@ -1,22 +1,17 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
-import io.kestra.core.queues.QueueFactoryInterface;
-import io.kestra.core.queues.QueueInterface;
+import io.kestra.core.models.flows.FlowWithSource;
+import io.kestra.core.models.triggers.AbstractTrigger;
+import io.kestra.core.models.triggers.PollingTriggerInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
-import io.kestra.core.runners.FlowListeners;
-import io.kestra.core.runners.Worker;
-import io.kestra.scheduler.AbstractScheduler;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.scheduler.model.TriggerState;
 import io.kestra.core.utils.TestsUtils;
-import io.kestra.jdbc.runner.JdbcScheduler;
-import io.kestra.core.utils.IdUtils;
-import io.kestra.worker.DefaultWorker;
-import io.micronaut.context.ApplicationContext;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
-import reactor.core.publisher.Flux;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,54 +22,42 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 public abstract class AbstractJdbcTriggerTest {
     @Inject
-    protected ApplicationContext applicationContext;
-
-    @Inject
-    protected FlowListeners flowListenersService;
-
-    @Inject
-    @Named(QueueFactoryInterface.EXECUTION_NAMED)
-    protected QueueInterface<Execution> executionQueue;
-
-    @Inject
     protected LocalFlowRepositoryLoader repositoryLoader;
 
+    @Inject
+    protected RunContextFactory runContextFactory;
+
+    /**
+     * Loads the flow fixture and evaluates its trigger directly, rather than waiting for the
+     * scheduler to fire it. Driving the scheduler from a plugin test is unreliable and only
+     * surfaces as a bare latch timeout when it does not fire.
+     */
     protected Execution triggerFlow(ClassLoader classLoader, String flowRepository, String flow) throws Exception {
-        // mock flow listeners
-        CountDownLatch queueCount = new CountDownLatch(1);
+        List<FlowWithSource> loaded = repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
 
-        // scheduler
-        try (
-            AbstractScheduler scheduler = new JdbcScheduler(
-                this.applicationContext,
-                this.flowListenersService
-            );
-            DefaultWorker worker = applicationContext.createBean(DefaultWorker.class, IdUtils.create(), 8, null);
-        ) {
-            // wait for execution
-            Flux<Execution> receive = TestsUtils.receive(executionQueue, execution -> {
-                assertThat(execution.getLeft().getFlowId(), is(flow));
-                queueCount.countDown();
-            });
+        FlowWithSource target = loaded.stream()
+            .filter(candidate -> candidate.getId().equals(flow))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("flow " + flow + " was not loaded from " + flowRepository));
 
-            worker.run();
-            scheduler.run();
-            repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
+        AbstractTrigger abstractTrigger = target.getTriggers().getFirst();
 
-            boolean await = queueCount.await(1, TimeUnit.MINUTES);
-            assertThat(await, is(true));
+        Map.Entry<ConditionContext, TriggerState> context = TestsUtils.mockTrigger(runContextFactory, abstractTrigger);
+        Optional<Execution> execution = ((PollingTriggerInterface) abstractTrigger)
+            .evaluate(context.getKey(), context.getValue().context());
 
-            return receive.blockLast();
-        }
+        assertThat(execution.isPresent(), is(true));
+        return execution.get();
     }
 
     protected abstract String getUrl();

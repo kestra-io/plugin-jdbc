@@ -26,6 +26,9 @@ tasks:
 
   - id: wait_for_db2
     type: io.kestra.plugin.jdbc.db2.Query
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: NONE
     sql: "VALUES 1"
     retry:
@@ -35,6 +38,9 @@ tasks:
 
   - id: create_schema_and_table
     type: io.kestra.plugin.jdbc.db2.Queries
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: NONE
     sql: |
       CREATE SCHEMA SANITYCHECKS;
@@ -45,6 +51,9 @@ tasks:
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.db2.Queries
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: NONE
     sql: |
       INSERT INTO SANITYCHECKS.TEST(FIELD1, FIELD2) VALUES (1, 2);
@@ -53,11 +62,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.db2.Query
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: FETCH
     sql: SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.db2.Queries
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: STORE
     sql: |
       SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1;
@@ -65,6 +80,9 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.db2.Query
+    username: "{{ vars.db2_instance }}"
+    password: "{{ vars.db2_password }}"
+    url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"
     fetchType: STORE
     sql: SELECT * FROM SANITYCHECKS.TEST ORDER BY FIELD1 FETCH FIRST 2 ROWS ONLY;
 
@@ -85,10 +103,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.db2
-    values:
-      username: "{{ vars.db2_instance }}"
-      password: "{{ vars.db2_password }}"
-      url: "jdbc:db2://localhost:{{ outputs.port.value }}/{{ vars.db2_db }}"

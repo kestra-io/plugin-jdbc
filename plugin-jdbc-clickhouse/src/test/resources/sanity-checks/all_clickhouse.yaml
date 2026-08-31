@@ -22,6 +22,9 @@ tasks:
 
   - id: wait_for_clickhouse
     type: io.kestra.plugin.jdbc.clickhouse.Query
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: NONE
     sql: SELECT 1
     retry:
@@ -31,6 +34,9 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.clickhouse.Queries
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: NONE
     sql: |
       CREATE DATABASE IF NOT EXISTS {{ vars.clickhouse_db }};
@@ -43,6 +49,9 @@ tasks:
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.clickhouse.Query
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: NONE
     sql: |
       INSERT INTO {{ vars.clickhouse_db }}.test (field1, field2) VALUES
@@ -52,11 +61,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.clickhouse.Query
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: FETCH
     sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1
 
   - id: queries
     type: io.kestra.plugin.jdbc.clickhouse.Queries
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: STORE
     sql: |
       SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1;
@@ -64,6 +79,9 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.clickhouse.Query
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
     fetchType: STORE
     sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1 LIMIT 2
 
@@ -102,10 +120,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.clickhouse
-    values:
-      url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
-      username: "{{ vars.clickhouse_user }}"
-      password: "{{ vars.clickhouse_password }}"

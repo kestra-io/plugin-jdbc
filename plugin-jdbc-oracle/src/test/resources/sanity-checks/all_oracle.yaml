@@ -27,6 +27,9 @@ tasks:
 
   - id: wait_for_oracle
     type: io.kestra.plugin.jdbc.oracle.Query
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: NONE
     sql: SELECT 1 FROM dual
     retry:
@@ -36,6 +39,9 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.oracle.Query
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: NONE
     sql: |
       BEGIN
@@ -47,11 +53,17 @@ tasks:
 
   - id: cleanup
     type: io.kestra.plugin.jdbc.oracle.Query
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: NONE
     sql: TRUNCATE TABLE test
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.oracle.Queries
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: NONE
     sql: |
       INSERT INTO test(field1, field2) VALUES (1, 2);
@@ -60,11 +72,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.oracle.Query
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: FETCH
     sql: SELECT * FROM test ORDER BY field1
 
   - id: queries
     type: io.kestra.plugin.jdbc.oracle.Queries
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: STORE
     sql: |
       SELECT * FROM test ORDER BY field1;
@@ -72,6 +90,9 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.oracle.Query
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 FETCH FIRST 2 ROWS ONLY
 
@@ -92,10 +113,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.oracle
-    values:
-      username: "{{ vars.oracle_user }}"
-      password: "{{ vars.oracle_user_password }}"
-      url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"

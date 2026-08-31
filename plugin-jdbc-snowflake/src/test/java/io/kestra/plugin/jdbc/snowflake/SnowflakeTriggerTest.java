@@ -18,7 +18,7 @@ import java.util.Properties;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest
+@KestraTest(startRunner = true, startScheduler = true)
 @Disabled("no server for unit test")
 class SnowflakeTriggerTest extends AbstractJdbcTriggerTest {
     @Value("${snowflake.host}")
