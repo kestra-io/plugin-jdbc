@@ -1,17 +1,16 @@
 plugins {
-    id 'io.kestra.gradle.repository-conventions' version '1.2.5'
-    id "io.kestra.gradle.plugin-doc-lint" version "1.2.5" apply(false)
-    id 'io.kestra.gradle.spotless-conventions' version '1.2.5'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.9'
+    id "io.kestra.gradle.plugin-doc-lint" version "1.2.9" apply(false)
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.9'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
-    id "com.adarshr.test-logger" version "4.0.0" apply(false)
-    id "com.gradleup.shadow" version "9.4.3" apply(false)
+    id "com.gradleup.shadow" version "9.6.1" apply(false)
     id 'signing'
-    id "com.github.ben-manes.versions" version "0.54.0"
+    id "com.github.ben-manes.versions" version "0.61.0"
     id 'net.researchgate.release' version '3.1.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
-    id "io.kestra.gradle.inject-bom-versions" version "1.2.5"
+    id "io.kestra.gradle.inject-bom-versions" version "1.2.9"
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
@@ -40,7 +39,7 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.capabilitiesResolution
             .withCapability("org.lz4:lz4-java") {
-                select("at.yawk.lz4:lz4-java:1.11.0")
+                select("at.yawk.lz4:lz4-java:1.11.2")
                 because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
             }
     }
@@ -100,7 +99,6 @@ subprojects {
  * Test
  **********************************************************************************************************************/
 subprojects {
-    apply plugin: "com.adarshr.test-logger"
 
     test {
         useJUnitPlatform()
@@ -108,15 +106,6 @@ subprojects {
         // configure en_US default locale for tests
         systemProperty 'user.language', 'en'
         systemProperty 'user.country', 'US'
-    }
-
-    testlogger {
-        theme "mocha-parallel"
-        showExceptions true
-        showFullStackTraces true
-        showStandardStreams true
-        showPassedStandardStreams false
-        showSkippedStandardStreams true
     }
 
     dependencies {
@@ -153,12 +142,31 @@ subprojects {
         testImplementation "org.hamcrest:hamcrest-library"
 
         testImplementation group: 'com.h2database', name: 'h2'
-        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.22.0'
+        testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.22.1'
 
-        testImplementation "io.kestra.plugin:plugin-docker:1.5.2" // for sanity checks
+        testImplementation "io.kestra.plugin:plugin-docker:1.6.0" // for sanity checks
     }
 }
 
+/**********************************************************************************************************************\
+ * Allure Reports
+ **********************************************************************************************************************/
+subprojects {
+    dependencies {
+        testImplementation enforcedPlatform("io.kestra:platform:$kestraVersion")
+        testImplementation "io.qameta.allure:allure-junit5"
+    }
+
+    test {
+        // allure-junit5 writes results as a side effect of the test JVM, invisible to Gradle's
+        // dependency tracking. If Gradle build caching is ever enabled, a cache hit on :test
+        // would restore build/test-results/ but skip the JVM entirely, silently producing no
+        // allure-results for that run unless the directory is declared as a task output.
+        def allureResultsDir = layout.buildDirectory.dir("allure-results")
+        systemProperty 'allure.results.directory', allureResultsDir.get().asFile.absolutePath
+        outputs.dir(allureResultsDir)
+    }
+}
 
 /**********************************************************************************************************************\
  * Jacoco
@@ -193,7 +201,6 @@ tasks.named('check') {
  * Publish
  **********************************************************************************************************************/
 subprojects { Project subproject ->
-    apply plugin: "com.adarshr.test-logger"
     apply plugin: "com.gradleup.shadow"
     apply plugin: "signing"
 

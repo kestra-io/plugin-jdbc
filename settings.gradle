@@ -1,3 +1,7 @@
+plugins {
+    id 'io.kestra.gradle.logger' version '1.2.10'
+}
+
 rootProject.name = 'plugin-jdbcs'
 
 include 'plugin-jdbc'

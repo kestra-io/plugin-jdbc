@@ -1,8 +1,8 @@
 group: io.kestra.plugin.jdbc.clickhouse
 name: "clickhouse"
 title: "Clickhouse"
-description: "Tasks that connect to ClickHouse via JDBC to run queries and loads."
-body: "Provide the ClickHouse JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows."
+description: "Tasks that connect to ClickHouse via JDBC, run clickhouse-local CLI commands, or run embedded ChDB SQL transforms."
+body: "Provide the ClickHouse JDBC URL, credentials, and SQL statements (query, batch, load, trigger) to read or write data; configure fetch type, fetch size, and output options to return rows or files from workflows. Use ChDB for a single embedded SQL transform with managed Ion or file output (no server). Use ClickHouseLocalCLI for arbitrary clickhouse-local commands."
 videos: []
 createdBy: "Kestra Core Team"
 managedBy: "Kestra Core Team"
