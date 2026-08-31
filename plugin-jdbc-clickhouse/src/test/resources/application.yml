@@ -8,7 +8,9 @@ kestra:
     local:
       base-path: /tmp/unittest
   controller:
-    port: ${random.port}
+    # keep out of the ephemeral port range (32768-60999): an outbound socket could steal
+    # a random.port between config resolution and the controller bind
+    port: ${random.int[20000,32000]}
   worker:
     controllers:
       type: STATIC

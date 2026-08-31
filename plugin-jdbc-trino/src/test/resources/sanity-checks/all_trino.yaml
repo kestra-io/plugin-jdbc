@@ -18,6 +18,8 @@ tasks:
 
   - id: wait_for_trino
     type: io.kestra.plugin.jdbc.trino.Query
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: NONE
     sql: "SELECT 1"
     retry:
@@ -27,6 +29,8 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.trino.Query
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: NONE
     sql: |
       CREATE TABLE IF NOT EXISTS memory.default.test (
@@ -36,18 +40,24 @@ tasks:
 
   - id: insert_1
     type: io.kestra.plugin.jdbc.trino.Query
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: NONE
     sql: |
       INSERT INTO memory.default.test VALUES (1, 2)
 
   - id: insert_2
     type: io.kestra.plugin.jdbc.trino.Query
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: NONE
     sql: |
       INSERT INTO memory.default.test VALUES (3, 4)
 
   - id: query
     type: io.kestra.plugin.jdbc.trino.Query
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: FETCH
     sql: |
       SELECT * FROM memory.default.test ORDER BY field1
@@ -67,9 +77,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.trino
-    values:
-      username: "{{ vars.trino_user }}"
-      url: "jdbc:trino://localhost:{{ outputs.port.value }}"

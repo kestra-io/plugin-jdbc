@@ -4,6 +4,8 @@ namespace: sanitychecks.plugin-jdbc
 tasks:
   - id: create_table
     type: io.kestra.plugin.jdbc.sqlite.Query
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
     fetchType: NONE
     sql: |
       CREATE TABLE IF NOT EXISTS test(
@@ -13,6 +15,8 @@ tasks:
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.sqlite.Queries
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
     sqliteFile: '{{ outputs.create_table.databaseUri }}'
     fetchType: NONE
     sql: |
@@ -22,12 +26,16 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.sqlite.Query
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
     sqliteFile: '{{ outputs.insert_data.databaseUri }}'
     fetchType: FETCH
     sql: SELECT * FROM test ORDER BY field1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.sqlite.Queries
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
     sqliteFile: '{{ outputs.insert_data.databaseUri }}'
     fetchType: STORE
     sql: |
@@ -36,6 +44,8 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.sqlite.Query
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
     sqliteFile: '{{ outputs.insert_data.databaseUri }}'
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 LIMIT 2;
@@ -51,9 +61,3 @@ tasks:
 finally:
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.sqlite
-    values:
-      url: "jdbc:sqlite:myfile.db"
-      outputDbFile: true

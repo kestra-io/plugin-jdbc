@@ -28,6 +28,9 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.postgresql.Queries
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
     sql: |
       CREATE SCHEMA IF NOT EXISTS sanitychecks;
       CREATE TABLE IF NOT EXISTS sanitychecks.test(
@@ -46,6 +49,9 @@ tasks:
 
   - id: copyin
     type: io.kestra.plugin.jdbc.postgresql.CopyIn
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
     from: "{{ outputs.write.uri }}"
     table: sanitychecks.test
     header: true
@@ -53,11 +59,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.postgresql.Query
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
     fetchType: FETCH
     sql: SELECT * FROM sanitychecks.test ORDER BY field1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.postgresql.Queries
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
     fetchType: STORE
     sql: |
       SELECT * FROM sanitychecks.test ORDER BY field1;
@@ -65,6 +77,9 @@ tasks:
 
   - id: copyout
     type: io.kestra.plugin.jdbc.postgresql.CopyOut
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
     format: CSV
     sql: SELECT * FROM sanitychecks.test ORDER BY field1 LIMIT 2
     header: true
@@ -88,10 +103,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.postgresql
-    values:
-      username: "{{ vars.postgres_user }}"
-      password: "{{ vars.postgres_password }}"
-      url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"

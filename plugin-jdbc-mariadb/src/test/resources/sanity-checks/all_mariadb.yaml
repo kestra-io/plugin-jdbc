@@ -29,6 +29,9 @@ tasks:
 
   - id: create_table
     type: io.kestra.plugin.jdbc.mariadb.Query
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
     fetchType: NONE
     sql: |
       CREATE TABLE IF NOT EXISTS test(
@@ -38,6 +41,9 @@ tasks:
 
   - id: insert_data
     type: io.kestra.plugin.jdbc.mariadb.Queries
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
     fetchType: NONE
     sql: |
       INSERT INTO test(field1, field2) VALUES (1, 2);
@@ -46,11 +52,17 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.mariadb.Query
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
     fetchType: FETCH
     sql: SELECT * FROM test ORDER BY field1;
 
   - id: queries
     type: io.kestra.plugin.jdbc.mariadb.Queries
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
     fetchType: STORE
     sql: |
       SELECT * FROM test ORDER BY field1;
@@ -58,6 +70,9 @@ tasks:
 
   - id: select_and_store
     type: io.kestra.plugin.jdbc.mariadb.Query
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 LIMIT 2;
 
@@ -78,10 +93,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.mariadb
-    values:
-      username: "{{ vars.mariadb_user }}"
-      password: "{{ vars.mariadb_password }}"
-      url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"

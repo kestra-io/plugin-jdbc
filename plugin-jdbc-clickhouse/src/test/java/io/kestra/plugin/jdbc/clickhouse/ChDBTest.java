@@ -250,11 +250,9 @@ class ChDBTest {
     @SuppressWarnings("unchecked")
     private static List<Map<String, Object>> readIon(RunContext runContext, ChDB.Output output) throws Exception {
         var rows = new ArrayList<Map<String, Object>>();
-        try (
-            var in = runContext.storage().getFile(output.getUri());
-            var reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8), FileSerde.BUFFER_SIZE)
-        ) {
-            FileSerde.readAll(reader, Map.class).doOnNext(row -> rows.add((Map<String, Object>) row)).blockLast();
+        // ION is written as binary, so read the stream directly rather than through a text Reader
+        try (var in = runContext.storage().getFile(output.getUri())) {
+            FileSerde.readAll(in, Map.class).doOnNext(row -> rows.add((Map<String, Object>) row)).blockLast();
         }
         return rows;
     }

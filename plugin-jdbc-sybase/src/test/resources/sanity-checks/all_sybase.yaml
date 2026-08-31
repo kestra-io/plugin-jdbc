@@ -20,6 +20,9 @@ tasks:
 
   - id: wait_for_sybase
     type: io.kestra.plugin.jdbc.sybase.Query
+    username: "{{ vars.sybase_user }}"
+    password: "{{ vars.sybase_password }}"
+    url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
     fetchType: NONE
     sql: "SELECT 1"
     retry:
@@ -29,6 +32,9 @@ tasks:
 
   - id: query
     type: io.kestra.plugin.jdbc.sybase.Query
+    username: "{{ vars.sybase_user }}"
+    password: "{{ vars.sybase_password }}"
+    url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
     fetchType: FETCH
     sql: |
       SELECT TOP 3
@@ -39,6 +45,9 @@ tasks:
 
   - id: queries
     type: io.kestra.plugin.jdbc.sybase.Queries
+    username: "{{ vars.sybase_user }}"
+    password: "{{ vars.sybase_password }}"
+    url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
     fetchType: STORE
     sql: |
       SELECT TOP 3 name, type FROM sysobjects ORDER BY name;
@@ -59,10 +68,3 @@ finally:
 
   - id: purge
     type: io.kestra.plugin.core.storage.PurgeCurrentExecutionFiles
-
-pluginDefaults:
-  - type: io.kestra.plugin.jdbc.sybase
-    values:
-      username: "{{ vars.sybase_user }}"
-      password: "{{ vars.sybase_password }}"
-      url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
