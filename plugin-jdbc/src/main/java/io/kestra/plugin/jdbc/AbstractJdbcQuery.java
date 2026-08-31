@@ -46,7 +46,12 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         Savepoint savepoint = null;
         boolean supportsTx = false;
 
-        try (Connection conn = this.connection(runContext)) {
+        // Connection is closed explicitly in the finally block (instead of via try-with-resources) so that,
+        // on failure, the rollback attempt below runs against a still-open connection. With try-with-resources,
+        // the resource is closed as the try block exits, which happens BEFORE the catch clause runs, causing
+        // strict drivers (e.g. DuckDB) to fail the rollback with "Connection was closed" and mask the real error.
+        var conn = this.connection(runContext);
+        try {
             this.runningConnection = conn;
             this.beforeExecute(runContext, conn);
 
@@ -135,6 +140,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             throw e;
         } finally {
             this.runningConnection = null;
+            closeConnection(runContext, conn);
         }
     }
 
@@ -172,8 +178,11 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                     switch (afterStmt) {
                         case PreparedStatement preparedStatement -> {
                             // Null check for DuckDB which always use PreparedStatement
-                            if (this.getParameters() == null) preparedStatement.execute(rAfterSQL);
-                            preparedStatement.execute();
+                            if (this.getParameters() == null) {
+                                preparedStatement.execute(rAfterSQL);
+                            } else {
+                                preparedStatement.execute();
+                            }
                         }
                         case Statement statement -> statement.execute(rAfterSQL);
                     }

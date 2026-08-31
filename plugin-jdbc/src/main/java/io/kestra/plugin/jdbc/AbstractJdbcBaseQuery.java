@@ -333,6 +333,18 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         }
     }
 
+    // Best-effort close: used from a finally block, after any rollback attempt has already run,
+    // so a close failure here must not shadow the original exception being propagated.
+    protected static void closeConnection(final RunContext runContext, final Connection connection) {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
+        }
+    }
+
     protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
 
     protected void upsertAsset(RunContext runContext, Connection conn, String query) throws SQLException, QueueException, IllegalVariableEvaluationException {

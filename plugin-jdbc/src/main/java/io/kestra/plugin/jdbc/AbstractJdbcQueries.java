@@ -133,18 +133,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             }
             throw new RuntimeException(e);
         } finally {
-            safelyCloseConnection(runContext, this.runningConnection);
+            closeConnection(runContext, this.runningConnection);
             this.runningConnection = null;
-        }
-    }
-
-    private static void safelyCloseConnection(final RunContext runContext, final Connection connection) {
-        try {
-            if (connection != null) {
-                connection.close();
-            }
-        } catch (SQLException e) {
-            runContext.logger().warn("Issue when closing the connection : {}", e.getMessage());
         }
     }
 
