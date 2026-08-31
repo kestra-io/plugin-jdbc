@@ -1,8 +1,14 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.models.conditions.ConditionContext;
 import io.kestra.core.models.executions.Execution;
-import io.kestra.core.queues.DispatchQueueInterface;
+import io.kestra.core.models.flows.FlowWithSource;
+import io.kestra.core.models.triggers.AbstractTrigger;
+import io.kestra.core.models.triggers.PollingTriggerInterface;
 import io.kestra.core.repositories.LocalFlowRepositoryLoader;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.scheduler.model.TriggerState;
+import io.kestra.core.utils.TestsUtils;
 import jakarta.inject.Inject;
 import org.h2.tools.RunScript;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,41 +22,42 @@ import java.net.URL;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 
 public abstract class AbstractJdbcTriggerTest {
     @Inject
-    protected DispatchQueueInterface<Execution> executionQueue;
-
-    @Inject
     protected LocalFlowRepositoryLoader repositoryLoader;
 
+    @Inject
+    protected RunContextFactory runContextFactory;
+
+    /**
+     * Loads the flow fixture and evaluates its trigger directly, rather than waiting for the
+     * scheduler to fire it. Driving the scheduler from a plugin test is unreliable and only
+     * surfaces as a bare latch timeout when it does not fire.
+     */
     protected Execution triggerFlow(ClassLoader classLoader, String flowRepository, String flow) throws Exception {
-        CountDownLatch queueCount = new CountDownLatch(1);
-        AtomicReference<Execution> last = new AtomicReference<>();
+        List<FlowWithSource> loaded = repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
 
-        executionQueue.addListener(execution -> {
-            if (execution.getFlowId().equals(flow)) {
-                last.set(execution);
-                queueCount.countDown();
-            }
-        });
+        FlowWithSource target = loaded.stream()
+            .filter(candidate -> candidate.getId().equals(flow))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("flow " + flow + " was not loaded from " + flowRepository));
 
-        repositoryLoader.load(Objects.requireNonNull(classLoader.getResource(flowRepository)));
+        AbstractTrigger abstractTrigger = target.getTriggers().getFirst();
 
-        boolean await = queueCount.await(1, TimeUnit.MINUTES);
-        assertThat(await, is(true));
+        Map.Entry<ConditionContext, TriggerState> context = TestsUtils.mockTrigger(runContextFactory, abstractTrigger);
+        Optional<Execution> execution = ((PollingTriggerInterface) abstractTrigger)
+            .evaluate(context.getKey(), context.getValue().context());
 
-        Execution execution = last.get();
-        assertThat(execution, notNullValue());
-        return execution;
+        assertThat(execution.isPresent(), is(true));
+        return execution.get();
     }
 
     protected abstract String getUrl();
