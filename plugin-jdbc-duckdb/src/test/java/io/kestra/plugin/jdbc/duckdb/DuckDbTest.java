@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -126,6 +127,85 @@ class DuckDbTest {
         assertThat(runOutput.getRow().get("value"), is(1));
     }
 
+    @Test
+    void afterSQLDoesNotFailWithConnectionClosed() throws Exception {
+        // Reproduces https://github.com/kestra-io/plugin-jdbc/issues/988:
+        // Query with afterSQL and no `parameters` used to always fail with "Connection was closed"
+        // because DuckDB's createStatement() returns a PreparedStatement, and the afterSQL execution
+        // path was calling execute(sql) followed by an unconditional execute() on that same statement.
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT 42 AS answer"))
+            .afterSQL(Property.ofValue("SELECT 1"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("answer"), is(42));
+    }
+
+    @Test
+    void afterSQLExecutesInSameTransaction() throws Exception {
+        // afterSQL must actually take effect (in the same transaction as the main query),
+        // and the main query's result must reflect the state *before* afterSQL ran.
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query create = Query.builder()
+            .fetchType(Property.ofValue(NONE))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("CREATE TABLE duck_after_sql (text_column VARCHAR)"))
+            .build();
+        Query.Output createOutput = create.run(runContext);
+
+        Query insert = Query.builder()
+            .fetchType(Property.ofValue(NONE))
+            .databaseUri(Property.ofValue(createOutput.getDatabaseUri().toString()))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("INSERT INTO duck_after_sql VALUES ('pending')"))
+            .build();
+        Query.Output insertOutput = insert.run(runContext);
+
+        Query taskWithAfterSQL = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .databaseUri(Property.ofValue(insertOutput.getDatabaseUri().toString()))
+            .outputDbFile(Property.ofValue(true))
+            .sql(Property.ofValue("SELECT text_column FROM duck_after_sql WHERE text_column = 'pending'"))
+            .afterSQL(Property.ofValue("UPDATE duck_after_sql SET text_column = 'processed'"))
+            .build();
+
+        Query.Output runOutput = taskWithAfterSQL.run(runContext);
+        assertThat(runOutput.getRow().get("text_column"), is("pending"));
+
+        Query verify = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .databaseUri(Property.ofValue(runOutput.getDatabaseUri().toString()))
+            .sql(Property.ofValue("SELECT text_column FROM duck_after_sql"))
+            .build();
+
+        Query.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("text_column"), is("processed"));
+    }
+
+    @Test
+    void afterSQLFailurePropagatesActualErrorNotConnectionClosed() throws Exception {
+        // Reproduces https://github.com/kestra-io/plugin-jdbc/issues/988: when afterSQL itself fails,
+        // the real SQL error must propagate (and trigger a rollback), instead of being masked by a
+        // "Connection was closed" error caused by the afterSQL execution bug.
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query taskWithFailingAfterSQL = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT 42 AS answer"))
+            .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
+            .build();
+
+        SQLException exception = assertThrows(SQLException.class, () -> taskWithFailingAfterSQL.run(runContext));
+        assertThat(exception.getMessage(), not(containsString("Connection was closed")));
+        assertThat(exception.getMessage(), not(containsString("Query to execute was not specified")));
+    }
 
     @Test
     void selectFromExistingFileInParameter() throws Exception {
