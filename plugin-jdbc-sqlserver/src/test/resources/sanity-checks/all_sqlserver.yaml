@@ -21,9 +21,26 @@ tasks:
       MSSQL_SA_PASSWORD: "{{ vars.sqlserver_sa_password }}"
       MSSQL_PID: "Express"
 
-  - id: sleep
-    type: io.kestra.plugin.core.flow.Sleep
-    duration: PT20S
+  # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra#18909).
+  # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
+  # once the probe returned a row, and fails loudly if the container never becomes reachable.
+  - id: wait_for_sqlserver
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (outputs.sqlserver_ping ?? {}).row is defined }}"
+    failOnMaxReached: true
+    checkFrequency:
+      interval: PT10S
+      maxDuration: PT300S
+    tasks:
+      - id: sqlserver_ping
+        type: io.kestra.plugin.jdbc.sqlserver.Query
+        username: "sa"
+        password: "{{ vars.sqlserver_sa_password }}"
+        url: "jdbc:sqlserver://localhost:{{ outputs.port.value }};databaseName={{ vars.sqlserver_db }};encrypt=true;trustServerCertificate=true"
+        sql: SELECT 1
+        fetchType: FETCH_ONE
+        allowFailure: true
 
   - id: create_table
     type: io.kestra.plugin.jdbc.sqlserver.Queries
