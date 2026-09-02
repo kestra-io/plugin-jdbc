@@ -4,7 +4,7 @@ Run SQL queries, execute batch inserts, and trigger flows from query results acr
 
 ## Common properties
 
-Set `url`, `username`, and `password` directly on each task. Use [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults) to avoid repeating connection details across tasks in the same flow. Store credentials in [secrets](https://kestra.io/docs/concepts/secret).
+Set `url`, `username`, and `password` directly on each task. Store credentials in [secrets](https://kestra.io/docs/concepts/secret).
 
 ## Tasks
 
