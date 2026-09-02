@@ -26,7 +26,7 @@ tasks:
       - "oracle-test-data:/opt/oracle/oradata"
 
   # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
-  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra).
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra#18909).
   # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
   # once the probe returned a row, and fails loudly if the container never becomes reachable.
   - id: wait_for_oracle
