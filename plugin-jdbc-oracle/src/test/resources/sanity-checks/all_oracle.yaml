@@ -25,17 +25,26 @@ tasks:
     volumes:
       - "oracle-test-data:/opt/oracle/oradata"
 
+  # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra).
+  # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
+  # once the probe returned a row, and fails loudly if the container never becomes reachable.
   - id: wait_for_oracle
-    type: io.kestra.plugin.jdbc.oracle.Query
-    username: "{{ vars.oracle_user }}"
-    password: "{{ vars.oracle_user_password }}"
-    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
-    fetchType: NONE
-    sql: SELECT 1 FROM dual
-    retry:
-      type: constant
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (outputs.oracle_ping ?? {}).row is defined }}"
+    failOnMaxReached: true
+    checkFrequency:
       interval: PT10S
-      maxAttempts: 120
+      maxDuration: PT1200S
+    tasks:
+      - id: oracle_ping
+        type: io.kestra.plugin.jdbc.oracle.Query
+        username: "{{ vars.oracle_user }}"
+        password: "{{ vars.oracle_user_password }}"
+        url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
+        sql: SELECT 1 FROM dual
+        fetchType: FETCH_ONE
+        allowFailure: true
 
   - id: create_table
     type: io.kestra.plugin.jdbc.oracle.Query
