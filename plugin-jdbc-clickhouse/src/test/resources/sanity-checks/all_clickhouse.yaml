@@ -20,17 +20,26 @@ tasks:
     env:
       CLICKHOUSE_PASSWORD: "{{ vars.clickhouse_password }}"
 
+  # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra#18909).
+  # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
+  # once the probe returned a row, and fails loudly if the container never becomes reachable.
   - id: wait_for_clickhouse
-    type: io.kestra.plugin.jdbc.clickhouse.Query
-    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
-    username: "{{ vars.clickhouse_user }}"
-    password: "{{ vars.clickhouse_password }}"
-    fetchType: NONE
-    sql: SELECT 1
-    retry:
-      type: constant
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (outputs.clickhouse_ping ?? {}).row is defined }}"
+    failOnMaxReached: true
+    checkFrequency:
       interval: PT5S
-      maxAttempts: 60
+      maxDuration: PT300S
+    tasks:
+      - id: clickhouse_ping
+        type: io.kestra.plugin.jdbc.clickhouse.Query
+        url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+        username: "{{ vars.clickhouse_user }}"
+        password: "{{ vars.clickhouse_password }}"
+        sql: SELECT 1
+        fetchType: FETCH_ONE
+        allowFailure: true
 
   - id: create_table
     type: io.kestra.plugin.jdbc.clickhouse.Queries

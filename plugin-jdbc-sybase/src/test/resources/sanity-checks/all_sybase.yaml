@@ -18,17 +18,26 @@ tasks:
       - "{{ outputs.port.value }}:5000"
     wait: false
 
+  # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra#18909).
+  # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
+  # once the probe returned a row, and fails loudly if the container never becomes reachable.
   - id: wait_for_sybase
-    type: io.kestra.plugin.jdbc.sybase.Query
-    username: "{{ vars.sybase_user }}"
-    password: "{{ vars.sybase_password }}"
-    url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
-    fetchType: NONE
-    sql: "SELECT 1"
-    retry:
-      type: constant
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (outputs.sybase_ping ?? {}).row is defined }}"
+    failOnMaxReached: true
+    checkFrequency:
       interval: PT10S
-      maxAttempts: 90
+      maxDuration: PT900S
+    tasks:
+      - id: sybase_ping
+        type: io.kestra.plugin.jdbc.sybase.Query
+        username: "{{ vars.sybase_user }}"
+        password: "{{ vars.sybase_password }}"
+        url: "jdbc:sybase:Tds:localhost:{{ outputs.port.value }}/{{ vars.sybase_db }}"
+        sql: "SELECT 1"
+        fetchType: FETCH_ONE
+        allowFailure: true
 
   - id: query
     type: io.kestra.plugin.jdbc.sybase.Query
