@@ -117,6 +117,8 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                 tasks:
                   - id: query
                     type: io.kestra.plugin.jdbc.duckdb.Query
+                    url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
+                    timeZoneId: Europe/Berlin
                     sql: |
                       SELECT by, COUNT(*) as nr_comments
                       FROM sample_data.hn.hacker_news
@@ -127,12 +129,6 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
                   - id: csv
                     type: io.kestra.plugin.serdes.csv.IonToCsv
                     from: "{{ outputs.query.uri }}"
-
-                pluginDefaults:
-                  - type: io.kestra.plugin.jdbc.duckdb.Query
-                    values:
-                      url: jdbc:duckdb:md:my_db?motherduck_token={{ secret('MOTHERDUCK_TOKEN') }}
-                      timeZoneId: Europe/Berlin
                 """
         )
     },

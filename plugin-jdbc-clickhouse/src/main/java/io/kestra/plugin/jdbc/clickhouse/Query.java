@@ -59,9 +59,13 @@ import java.time.ZoneId;
                     - id: create_database
                       type: io.kestra.plugin.jdbc.clickhouse.Query
                       sql: CREATE DATABASE IF NOT EXISTS helloworld
+                      url: jdbc:clickhouse://host.docker.internal:8123/
+                      username: default
 
                     - id: create_table
                       type: io.kestra.plugin.jdbc.clickhouse.Query
+                      url: jdbc:clickhouse://host.docker.internal:8123/
+                      username: default
                       sql: |
                         CREATE TABLE IF NOT EXISTS helloworld.my_first_table
                         (
@@ -75,6 +79,8 @@ import java.time.ZoneId;
 
                     - id: insert_data
                       type: io.kestra.plugin.jdbc.clickhouse.Query
+                      url: jdbc:clickhouse://host.docker.internal:8123/
+                      username: default
                       sql: |
                         INSERT INTO helloworld.my_first_table (user_id, message, timestamp,
                         metric) VALUES
@@ -87,12 +93,8 @@ import java.time.ZoneId;
                       type: io.kestra.plugin.jdbc.clickhouse.Query
                       sql: SELECT user_id, message FROM helloworld.my_first_table
                       fetchType: STORE
-
-                  pluginDefaults:
-                    - type: io.kestra.plugin.jdbc.clickhouse.Query
-                      values:
-                        url: jdbc:clickhouse://host.docker.internal:8123/
-                        username: default
+                      url: jdbc:clickhouse://host.docker.internal:8123/
+                      username: default
                 """
         )
     },
