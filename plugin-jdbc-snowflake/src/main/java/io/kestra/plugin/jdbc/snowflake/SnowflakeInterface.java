@@ -8,9 +8,16 @@ import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 
 public interface SnowflakeInterface extends JdbcConnectionInterface {
+
+    /**
+     * Matches a value that is a legal unquoted Snowflake identifier and therefore
+     * needs no quoting (case is normalized to upper-case by the server).
+     */
+    Pattern SAFE_UNQUOTED_IDENTIFIER = Pattern.compile("^[A-Za-z_][A-Za-z0-9_$]*$");
 
     @PluginProperty(group = "advanced")
     @Schema(
@@ -125,22 +132,22 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
     default void renderProperties(RunContext runContext, Properties properties) throws IllegalVariableEvaluationException {
         if (this.getWarehouse() != null) {
             var rWarehouse = runContext.render(this.getWarehouse()).as(String.class).orElseThrow();
-            properties.put("warehouse", rWarehouse);
+            properties.put("warehouse", quoteIdentifierIfNeeded(rWarehouse));
         }
 
         if (this.getDatabase() != null) {
             var rDatabase = runContext.render(this.getDatabase()).as(String.class).orElseThrow();
-            properties.put("db", rDatabase);
+            properties.put("db", quoteIdentifierIfNeeded(rDatabase));
         }
 
         if (this.getSchema() != null) {
             var rSchema = runContext.render(this.getSchema()).as(String.class).orElseThrow();
-            properties.put("schema", rSchema);
+            properties.put("schema", quoteIdentifierIfNeeded(rSchema));
         }
 
         if (this.getRole() != null) {
             var rRole = runContext.render(this.getRole()).as(String.class).orElseThrow();
-            properties.put("role", rRole);
+            properties.put("role", quoteIdentifierIfNeeded(rRole));
         }
 
         if (this.getPrivateKey() != null) {
@@ -157,6 +164,32 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
             var rQueryTag = runContext.render(this.getQueryTag()).as(String.class).orElseThrow();
             properties.put("query_tag", rQueryTag);
         }
+    }
+
+    /**
+     * Quotes an identifier-valued connection property (db, schema, warehouse, role) only when
+     * the rendered value cannot be used as an unquoted Snowflake identifier.
+     * <p>
+     * Ordinary names such as {@code INGESTION} are returned unchanged, so their existing
+     * case-normalization behavior is preserved. A value the user already quoted (starting and
+     * ending with a double quote) is left untouched. Any other value (for example one containing
+     * a colon like {@code INGESTION:TOPIC_ENVIRONMENT}) is wrapped in double quotes, with embedded
+     * double quotes escaped as {@code ""}.
+     */
+    static String quoteIdentifierIfNeeded(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+            return value;
+        }
+
+        if (SAFE_UNQUOTED_IDENTIFIER.matcher(value).matches()) {
+            return value;
+        }
+
+        return "\"" + value.replace("\"", "\"\"") + "\"";
     }
 
     @Override
