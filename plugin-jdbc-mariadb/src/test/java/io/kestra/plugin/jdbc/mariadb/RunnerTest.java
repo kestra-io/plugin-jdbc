@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.mariadb;
 import io.kestra.core.junit.annotations.ExecuteFlow;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.executions.TaskRun;
 import io.kestra.core.models.flows.State;
 import org.junit.jupiter.api.Test;
 
@@ -14,9 +15,9 @@ import static org.hamcrest.Matchers.is;
 class RunnerTest {
 
     @Test
-    @ExecuteFlow("sanity-checks/all_mariadb.yaml")
+    @ExecuteFlow(value = "sanity-checks/all_mariadb.yaml", timeout = "PT600S")
     void all_mariadb(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(11));
+        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(12));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

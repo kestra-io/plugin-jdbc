@@ -23,9 +23,26 @@ tasks:
       MARIADB_USER: "{{ vars.mariadb_user }}"
       MARIADB_PASSWORD: "{{ vars.mariadb_password }}"
 
-  - id: sleep
-    type: io.kestra.plugin.core.flow.Sleep
-    duration: PT15S
+  # Poll for readiness with a loop rather than a task-level `retry`: a retry makes the executor
+  # duplicate the task run, which can silently drop a downstream task (see kestra-io/kestra#18909).
+  # The probe is `allowFailure` so a refused connection just ends the iteration; the loop exits
+  # once the probe returned a row, and fails loudly if the container never becomes reachable.
+  - id: wait_for_mariadb
+    type: io.kestra.plugin.core.flow.LoopUntil
+    condition: "{{ (outputs.mariadb_ping ?? {}).row is defined }}"
+    failOnMaxReached: true
+    checkFrequency:
+      interval: PT5S
+      maxDuration: PT300S
+    tasks:
+      - id: mariadb_ping
+        type: io.kestra.plugin.jdbc.mariadb.Query
+        username: "{{ vars.mariadb_user }}"
+        password: "{{ vars.mariadb_password }}"
+        url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
+        sql: SELECT 1
+        fetchType: FETCH_ONE
+        allowFailure: true
 
   - id: create_table
     type: io.kestra.plugin.jdbc.mariadb.Query
