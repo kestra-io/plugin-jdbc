@@ -97,8 +97,12 @@ public class Trigger extends AbstractJdbcTrigger implements SnowflakeInterface {
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
+            .connectionPooling(this.getConnectionPooling())
+            .connectionPoolSize(this.getConnectionPoolSize())
             .warehouse(this.getWarehouse())
             .database(this.getDatabase())
+            .schema(this.getSchema())
+            .role(this.getRole())
             .parameters(this.getParameters());
 
         if (this.getUsername() != null) {
