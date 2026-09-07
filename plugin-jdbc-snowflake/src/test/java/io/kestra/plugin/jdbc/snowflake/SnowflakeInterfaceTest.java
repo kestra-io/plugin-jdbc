@@ -54,6 +54,13 @@ class SnowflakeInterfaceTest {
         assertThat(SnowflakeInterface.quoteIdentifierIfNeeded("a\"b:c"), is("\"a\"\"b:c\""));
     }
 
+    @Test
+    void blankOrNullValueIsLeftUnchanged() {
+        assertThat(SnowflakeInterface.quoteIdentifierIfNeeded(""), is(""));
+        assertThat(SnowflakeInterface.quoteIdentifierIfNeeded("   "), is("   "));
+        assertThat(SnowflakeInterface.quoteIdentifierIfNeeded(null), is((String) null));
+    }
+
     // --- renderProperties (Fix B end-to-end at the Properties level, as verified in the issue) ---
 
     @Test
@@ -92,5 +99,22 @@ class SnowflakeInterfaceTest {
         assertThat(properties.get("db"), is("MYDB"));
         assertThat(properties, not(hasKey("schema")));
         assertThat(properties, not(hasKey("role")));
+    }
+
+    @Test
+    void renderPropertiesLeavesBlankRenderedValueUnquoted() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of("vars", Map.of("schema", "")));
+
+        Query query = Query.builder()
+            .url(Property.ofValue("jdbc:snowflake://acme.snowflakecomputing.com"))
+            .database(Property.ofValue("MYDB"))
+            .schema(Property.ofExpression("{{ vars.schema }}"))
+            .build();
+
+        Properties properties = new Properties();
+        query.renderProperties(runContext, properties);
+
+        assertThat(properties.get("db"), is("MYDB"));
+        assertThat(properties.get("schema"), is(""));
     }
 }

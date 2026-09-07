@@ -177,8 +177,8 @@ public interface SnowflakeInterface extends JdbcConnectionInterface {
      * double quotes escaped as {@code ""}.
      */
     static String quoteIdentifierIfNeeded(String value) {
-        if (value == null) {
-            return null;
+        if (value == null || value.isBlank()) {
+            return value;
         }
 
         if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
