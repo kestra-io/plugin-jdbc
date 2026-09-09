@@ -16,7 +16,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow("sanity-checks/all_sqlite.yaml")
     void all_sqlite(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(7));
+        assertThat(execution.getTaskRunList(), hasSize(9));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

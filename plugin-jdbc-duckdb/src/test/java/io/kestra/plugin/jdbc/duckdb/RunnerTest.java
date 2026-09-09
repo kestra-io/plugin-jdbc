@@ -16,7 +16,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow("sanity-checks/all_duckdb.yaml")
     void all_duckdb(Execution execution) {
-        assertThat(execution.getTaskRunList(), hasSize(7));
+        assertThat(execution.getTaskRunList(), hasSize(9));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

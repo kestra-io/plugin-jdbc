@@ -50,6 +50,28 @@ tasks:
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 LIMIT 2;
 
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL and DML in one call.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.sqlite.Queries
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
+    sqliteFile: '{{ outputs.insert_data.databaseUri }}'
+    fetchType: NONE
+    sql: |
+      DROP TABLE IF EXISTS multi_test;
+      CREATE TABLE multi_test(field1 INT, field2 INT);
+      INSERT INTO multi_test(field1, field2) VALUES (1, 2);
+      INSERT INTO multi_test(field1, field2) VALUES (3, 4);
+
+  - id: multi_statement_check
+    type: io.kestra.plugin.jdbc.sqlite.Query
+    url: "jdbc:sqlite:myfile.db"
+    outputDbFile: true
+    sqliteFile: '{{ outputs.multi_statement.databaseUri }}'
+    fetchType: FETCH_ONE
+    sql: SELECT COUNT(*) AS cnt FROM multi_test
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
@@ -57,6 +79,7 @@ tasks:
       - "{{ outputs.query.rows[1].field2 == 4 }}"
       - "{{ outputs.queries.outputs[0].size == 3 }}"
       - "{{ outputs.queries.outputs[1].size == 1 }}"
+      - "{{ outputs.multi_statement_check.row.cnt == 2 }}"
 
 finally:
   - id: purge

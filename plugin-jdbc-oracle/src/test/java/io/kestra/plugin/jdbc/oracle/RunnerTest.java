@@ -22,7 +22,7 @@ class RunnerTest {
             Could not pull image: write /var/lib/docker/tmp/GetImageBlob1934987450: no space left on device
         """)
     void all_oracle(Execution execution) {
-        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(13));
+        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(15));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

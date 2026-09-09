@@ -17,7 +17,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow(value = "sanity-checks/all_mariadb.yaml", timeout = "PT600S")
     void all_mariadb(Execution execution) {
-        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(12));
+        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(14));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

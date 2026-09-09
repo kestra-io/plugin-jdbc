@@ -17,7 +17,7 @@ class RunnerTest {
     @Test
     @ExecuteFlow(value = "sanity-checks/all_clickhouse.yaml", timeout = "PT600S")
     void all_clickhouse(Execution execution) {
-        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(14));
+        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(16));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

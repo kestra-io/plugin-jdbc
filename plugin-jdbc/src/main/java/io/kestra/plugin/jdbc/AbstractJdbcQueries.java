@@ -24,8 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -84,7 +82,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             String[] queries = shouldBatchQueries
                 ? new String[]{rSql}
-                : getQueries(rSql);
+                : JdbcStatementSplitter.split(rSql);
 
             for (String query : queries) {
                 // Create statement, execute

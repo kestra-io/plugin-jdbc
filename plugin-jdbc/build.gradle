@@ -2,6 +2,10 @@ project.description = 'Abstract JDBC plugin for Kestra'
 
 dependencies {
     api "com.zaxxer:HikariCP:7.1.0"
+
+    // Used to split multi-statement SQL scripts (see JooqSqlSplitter). Not on the platform BOM
+    // and not exposed to other submodules: the plugin classloader is isolated from core's own jOOQ.
+    implementation "org.jooq:jooq:3.21.7"
 }
 
 jar {

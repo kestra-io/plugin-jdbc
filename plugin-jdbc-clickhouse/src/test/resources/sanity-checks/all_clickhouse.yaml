@@ -94,6 +94,27 @@ tasks:
     fetchType: STORE
     sql: SELECT * FROM {{ vars.clickhouse_db }}.test ORDER BY field1 LIMIT 2
 
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL and DML in one call.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.clickhouse.Queries
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
+    fetchType: NONE
+    sql: |
+      DROP TABLE IF EXISTS {{ vars.clickhouse_db }}.multi_test;
+      CREATE TABLE {{ vars.clickhouse_db }}.multi_test (field1 Int32, field2 Int32) ENGINE = MergeTree ORDER BY field1;
+      INSERT INTO {{ vars.clickhouse_db }}.multi_test (field1, field2) VALUES (1, 2), (3, 4);
+
+  - id: multi_statement_check
+    type: io.kestra.plugin.jdbc.clickhouse.Query
+    url: "jdbc:clickhouse://localhost:{{ outputs.port.value }}/"
+    username: "{{ vars.clickhouse_user }}"
+    password: "{{ vars.clickhouse_password }}"
+    fetchType: FETCH_ONE
+    sql: SELECT COUNT(*) AS cnt FROM {{ vars.clickhouse_db }}.multi_test
+
   - id: chdb
     type: io.kestra.plugin.jdbc.clickhouse.ChDB
     query: |
@@ -120,6 +141,7 @@ tasks:
       - "{{ outputs.chdb.rowCount == 2 }}"
       - "{{ outputs.chdb.format == 'Ion' }}"
       - "{{ outputs.chdb_csv.format == 'CSVWithNames' }}"
+      - "{{ outputs.multi_statement_check.row.cnt == 2 }}"
 
 finally:
   - id: dockerStop

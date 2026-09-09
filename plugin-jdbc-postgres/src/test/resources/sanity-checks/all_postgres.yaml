@@ -102,6 +102,28 @@ tasks:
     header: true
     delimiter: ","
 
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL and DML in one call, rather than the DML-only or SELECT-only scripts above.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.postgresql.Queries
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
+    fetchType: NONE
+    sql: |
+      DROP TABLE IF EXISTS sanitychecks.multi_test;
+      CREATE TABLE sanitychecks.multi_test(field1 INT, field2 INT);
+      INSERT INTO sanitychecks.multi_test(field1, field2) VALUES (1, 2);
+      INSERT INTO sanitychecks.multi_test(field1, field2) VALUES (3, 4);
+
+  - id: multi_statement_check
+    type: io.kestra.plugin.jdbc.postgresql.Query
+    username: "{{ vars.postgres_user }}"
+    password: "{{ vars.postgres_password }}"
+    url: "jdbc:postgresql://localhost:{{ outputs.port.value }}/{{ vars.postgres_db }}"
+    fetchType: FETCH_ONE
+    sql: SELECT COUNT(*) AS cnt FROM sanitychecks.multi_test
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
@@ -111,6 +133,7 @@ tasks:
       - "{{ outputs.queries.outputs[0].size == 3 }}"
       - "{{ outputs.queries.outputs[1].size == 1 }}"
       - "{{ outputs.copyout.rowCount == 2 }}"
+      - "{{ outputs.multi_statement_check.row.cnt == 2 }}"
 
 finally:
   - id: dockerStop

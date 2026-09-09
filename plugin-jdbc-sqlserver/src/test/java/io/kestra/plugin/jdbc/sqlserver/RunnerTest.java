@@ -22,7 +22,7 @@ class RunnerTest {
             Could not pull image: write /var/lib/docker/tmp/GetImageBlob1585115176: no space left on device
         """)
     void all_sqlserver(Execution execution) {
-        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(12));
+        assertThat(execution.getTaskRunList().stream().map(TaskRun::getTaskId).distinct().toList(), hasSize(14));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
 }

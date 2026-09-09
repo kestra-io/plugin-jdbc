@@ -105,6 +105,42 @@ tasks:
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 FETCH FIRST 2 ROWS ONLY
 
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL (as PL/SQL anonymous blocks, Oracle's only way to run DDL conditionally) and DML.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.oracle.Queries
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
+    fetchType: NONE
+    sql: |
+      BEGIN
+        EXECUTE IMMEDIATE 'DROP TABLE multi_test';
+      EXCEPTION
+        WHEN OTHERS THEN
+          IF SQLCODE != -942 THEN RAISE; END IF;
+      END;
+      BEGIN
+        EXECUTE IMMEDIATE 'CREATE TABLE multi_test (field1 NUMBER, field2 NUMBER)';
+      END;
+      INSERT INTO multi_test(field1, field2) VALUES (1, 2);
+      INSERT INTO multi_test(field1, field2) VALUES (3, 4);
+
+  # Anonymous PL/SQL block containing several DML statements and internal semicolons, followed by
+  # a plain SELECT: the block must be kept as a single statement, not split on its inner semicolons.
+  - id: plsql_block
+    type: io.kestra.plugin.jdbc.oracle.Queries
+    username: "{{ vars.oracle_user }}"
+    password: "{{ vars.oracle_user_password }}"
+    url: "jdbc:oracle:thin:@//localhost:{{ outputs.port.value }}/{{ vars.oracle_service }}"
+    fetchType: FETCH
+    sql: |
+      BEGIN
+        INSERT INTO multi_test(field1, field2) VALUES (5, 6);
+        INSERT INTO multi_test(field1, field2) VALUES (7, 8);
+      END;
+      SELECT COUNT(*) AS CNT FROM multi_test;
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
@@ -113,6 +149,7 @@ tasks:
       - '{{ outputs.queries["outputs"]["0"]["size"] == 3 }}'
       - '{{ outputs.queries["outputs"]["1"]["size"] == 1 }}'
       - "{{ outputs.select_and_store.size == 2 }}"
+      - '{{ outputs.plsql_block["outputs"]["0"]["row"]["CNT"] == 6 }}'
 
 finally:
   - id: dockerStop

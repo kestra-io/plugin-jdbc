@@ -93,6 +93,28 @@ tasks:
     fetchType: STORE
     sql: SELECT * FROM test ORDER BY field1 LIMIT 2;
 
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL and DML in one call, and on a backtick-quoted identifier containing a semicolon.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.mariadb.Queries
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
+    fetchType: NONE
+    sql: |
+      DROP TABLE IF EXISTS `multi;test`;
+      CREATE TABLE `multi;test`(field1 INT, field2 INT);
+      INSERT INTO `multi;test`(field1, field2) VALUES (1, 2);
+      INSERT INTO `multi;test`(field1, field2) VALUES (3, 4);
+
+  - id: multi_statement_check
+    type: io.kestra.plugin.jdbc.mariadb.Query
+    username: "{{ vars.mariadb_user }}"
+    password: "{{ vars.mariadb_password }}"
+    url: "jdbc:mariadb://localhost:{{ outputs.port.value }}/{{ vars.mariadb_db }}"
+    fetchType: FETCH_ONE
+    sql: SELECT COUNT(*) AS cnt FROM `multi;test`
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
@@ -101,6 +123,7 @@ tasks:
       - "{{ outputs.queries.outputs[0].size == 3 }}"
       - "{{ outputs.queries.outputs[1].size == 1 }}"
       - "{{ outputs.select_and_store.size == 2 }}"
+      - "{{ outputs.multi_statement_check.row.cnt == 2 }}"
 
 finally:
   - id: dockerStop

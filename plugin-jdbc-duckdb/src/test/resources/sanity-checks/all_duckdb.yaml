@@ -49,3 +49,19 @@ tasks:
   - id: assert_size3
     type: io.kestra.plugin.core.execution.Fail
     condition: "{{ outputs.check_query_fetch.size != 1}}"
+
+  # Exercises the multi-statement splitter (SqlSplitter, see kestra-io/plugin-jdbc#782) on a script
+  # mixing DDL and DML in one call.
+  - id: multi_statement
+    type: io.kestra.plugin.jdbc.duckdb.Queries
+    url: 'jdbc:duckdb:'
+    fetchType: FETCH_ONE
+    sql: |
+      DROP TABLE IF EXISTS multi_test;
+      CREATE TABLE multi_test(field1 INT, field2 INT);
+      INSERT INTO multi_test VALUES (1, 2), (3, 4);
+      SELECT COUNT(*) AS cnt FROM multi_test;
+
+  - id: assert_multi_statement
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.multi_statement.outputs[0].row.cnt != 2 }}"

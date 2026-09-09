@@ -19,8 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
-
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -149,7 +147,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             return 1;
         }
 
-        return Arrays.stream(getQueries(rSql))
+        return Arrays.stream(JdbcStatementSplitter.split(rSql))
             .filter(s -> !s.isBlank())
             .filter(s -> !s.toLowerCase().startsWith("set file_search_path"))
             .count();
@@ -160,7 +158,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         if (this.afterSQL != null) {
             String rAfterSQL = runContext.render(this.afterSQL).as(String.class, this.additionalVars).orElseThrow();
 
-            long afterSQLStatements = Arrays.stream(rAfterSQL.split(";[^']"))
+            long afterSQLStatements = Arrays.stream(JdbcStatementSplitter.split(rAfterSQL))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.toLowerCase().startsWith("set file_search_path"))
                 .count();
