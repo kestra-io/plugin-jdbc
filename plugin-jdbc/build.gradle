@@ -3,9 +3,12 @@ project.description = 'Abstract JDBC plugin for Kestra'
 dependencies {
     api "com.zaxxer:HikariCP:7.1.0"
 
-    // Used to split multi-statement SQL scripts (see JooqSqlSplitter). Not on the platform BOM
-    // and not exposed to other submodules: the plugin classloader is isolated from core's own jOOQ.
-    implementation "org.jooq:jooq:3.21.7"
+    // Test-scoped investigation artifact only (see JooqSqlSplitter/JdbcStatementSplitter): jOOQ was
+    // evaluated as a SqlSplitter replacement and found unsafe (issue #782), so it never ships in the
+    // production jar. io.kestra:platform already constrains org.jooq:jooq to 3.19.18 via the
+    // micronaut-sql-bom (as a version constraint only, nothing pulls in an actual jOOQ artifact from
+    // it today) — this pins the test-only usage above that constraint.
+    testImplementation "org.jooq:jooq:3.21.7"
 }
 
 jar {
