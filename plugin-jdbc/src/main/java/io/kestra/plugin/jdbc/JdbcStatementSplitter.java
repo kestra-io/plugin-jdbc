@@ -4,11 +4,10 @@ package io.kestra.plugin.jdbc;
  * Production entry point used by {@code AbstractJdbcQueries} and {@code AbstractJdbcQuery} to split
  * a multi-statement SQL string.
  * <p>
- * jOOQ's parser ({@code JooqSqlSplitter}, kept as a test-scoped investigation artifact) was
- * implemented and run against the full corpus of real inputs (see {@code JooqSqlSplitterTest})
- * to evaluate replacing {@link SqlSplitter} with it
- * (https://github.com/kestra-io/plugin-jdbc/issues/782). That run confirmed jOOQ's OSS edition
- * re-renders every statement from its parsed AST instead of slicing the original source text, which:
+ * jOOQ's parser was evaluated as a replacement for {@link SqlSplitter}
+ * (https://github.com/kestra-io/plugin-jdbc/issues/782) and run against the full corpus of real
+ * inputs. That run confirmed jOOQ's OSS edition re-renders every statement from its parsed AST
+ * instead of slicing the original source text, which:
  * <ul>
  *     <li>re-cases every unquoted identifier to uppercase, which breaks execution against
  *     case-sensitive MySQL installations (the Linux default);</li>
