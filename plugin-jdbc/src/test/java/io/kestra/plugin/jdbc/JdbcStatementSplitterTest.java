@@ -7,8 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Validates the production entry point wired into {@code AbstractJdbcQueries} / {@code AbstractJdbcQuery}:
- * it delegates to the source-preserving {@link SqlSplitter}, not {@link JooqSqlSplitter}. See
- * {@link JdbcStatementSplitter}'s Javadoc and {@link JooqSqlSplitterTest} for why.
+ * it delegates to the source-preserving {@link SqlSplitter}. See {@link JdbcStatementSplitter}'s
+ * Javadoc for why (https://github.com/kestra-io/plugin-jdbc/issues/782).
  */
 class JdbcStatementSplitterTest {
 
