@@ -4,24 +4,36 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.NClob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class AbstractCellConverterTest {
 
@@ -156,8 +168,102 @@ class AbstractCellConverterTest {
         );
     }
 
+    @Test
+    void testReadBlob_returnsContentAndFrees() throws Exception {
+        byte[] expected = "some binary content".getBytes();
+        Blob blob = mock(Blob.class);
+        when(blob.getBinaryStream()).thenReturn(new ByteArrayInputStream(expected));
 
+        assertArrayEquals(expected, AbstractCellConverter.readBlob(blob));
+        verify(blob, times(1)).free();
+    }
 
+    @Test
+    void testReadClob_returnsContentAndFrees() throws Exception {
+        String expected = "some clob text content";
+        Clob clob = mock(Clob.class);
+        when(clob.getCharacterStream()).thenReturn(new StringReader(expected));
+
+        assertEquals(expected, AbstractCellConverter.readClob(clob));
+        verify(clob, times(1)).free();
+    }
+
+    @Test
+    void testReadNClob_returnsContentAndFrees() throws Exception {
+        String expected = "some nclob text content";
+        NClob nclob = mock(NClob.class);
+        when(nclob.getCharacterStream()).thenReturn(new StringReader(expected));
+
+        assertEquals(expected, AbstractCellConverter.readNClob(nclob));
+        verify(nclob, times(1)).free();
+    }
+
+    @Test
+    void testReadSqlXml_returnsContentAndFrees() throws Exception {
+        String expected = "<root><child>value</child></root>";
+        SQLXML sqlxml = mock(SQLXML.class);
+        when(sqlxml.getString()).thenReturn(expected);
+
+        assertEquals(expected, AbstractCellConverter.readSqlXml(sqlxml));
+        verify(sqlxml, times(1)).free();
+    }
+
+    @Test
+    void testReadBlob_freeFailureDoesNotDiscardAlreadyReadData() throws Exception {
+        // Regression for the bug flagged in review on #1005/#1014: free() throwing in the
+        // finally block must not replace the value the try block already successfully returned.
+        byte[] expected = "some binary content".getBytes();
+        Blob blob = mock(Blob.class);
+        when(blob.getBinaryStream()).thenReturn(new ByteArrayInputStream(expected));
+        doThrow(new SQLException("connection already closed")).when(blob).free();
+
+        assertArrayEquals(expected, AbstractCellConverter.readBlob(blob));
+    }
+
+    @Test
+    void testReadClob_freeFailureDoesNotDiscardAlreadyReadData() throws Exception {
+        String expected = "some clob text content";
+        Clob clob = mock(Clob.class);
+        when(clob.getCharacterStream()).thenReturn(new StringReader(expected));
+        doThrow(new SQLException("connection already closed")).when(clob).free();
+
+        assertEquals(expected, AbstractCellConverter.readClob(clob));
+    }
+
+    @Test
+    void testReadNClob_freeFailureDoesNotDiscardAlreadyReadData() throws Exception {
+        String expected = "some nclob text content";
+        NClob nclob = mock(NClob.class);
+        when(nclob.getCharacterStream()).thenReturn(new StringReader(expected));
+        doThrow(new SQLException("connection already closed")).when(nclob).free();
+
+        assertEquals(expected, AbstractCellConverter.readNClob(nclob));
+    }
+
+    @Test
+    void testReadSqlXml_freeFailureDoesNotDiscardAlreadyReadData() throws Exception {
+        String expected = "<root><child>value</child></root>";
+        SQLXML sqlxml = mock(SQLXML.class);
+        when(sqlxml.getString()).thenReturn(expected);
+        doThrow(new SQLException("connection already closed")).when(sqlxml).free();
+
+        assertEquals(expected, AbstractCellConverter.readSqlXml(sqlxml));
+    }
+
+    @Test
+    void testReadBlob_readFailureSurfacesEvenWhenFreeAlsoFails() throws Exception {
+        // The other half of the same bug: if the read itself fails, that real error must
+        // propagate -- not get silently replaced by a failure from the free() cleanup.
+        Blob blob = mock(Blob.class);
+        InputStream brokenStream = mock(InputStream.class);
+        when(brokenStream.read(Mockito.any(byte[].class))).thenThrow(new IOException("connection reset"));
+        when(blob.getBinaryStream()).thenReturn(brokenStream);
+        doThrow(new SQLException("connection already closed")).when(blob).free();
+
+        SQLException exception = assertThrows(SQLException.class, () -> AbstractCellConverter.readBlob(blob));
+        assertEquals("Error reading BLOB data", exception.getMessage());
+        assertInstanceOf(IOException.class, exception.getCause());
+    }
 
     private void verifyTimestampConversion(String inputString, Timestamp expectedTimestamp) throws Exception {
         AbstractCellConverter converter = createConverter();
