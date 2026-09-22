@@ -96,7 +96,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     }
 
                     logger.debug("Starting query: {}", query);
-                    stmt.execute();
+                    boolean hasResultSet = stmt.execute();
                     if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
@@ -108,7 +108,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         totalSize,
                         outputList,
                         fetchType,
-                        shouldBatchQueries
+                        shouldBatchQueries,
+                        hasResultSet
                     );
 
                     // if the task has been killed, avoid processing the next query
@@ -145,7 +146,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              long totalSize,
                                              final List<Output> outputList,
                                              final FetchType fetchType,
-                                             final boolean multiStatements
+                                             final boolean multiStatements,
+                                             final boolean hasResultSet
     ) throws SQLException, IOException {
 
         // ---------------------------------------------------------------------
@@ -204,12 +206,18 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         // - One execute() => multiple results (ResultSet or updateCount)
         // - Use JDBC standard pattern: getResultSet/getUpdateCount + getMoreResults
         // ---------------------------------------------------------------------
-        while (true) {
-            ResultSet rs = stmt.getResultSet();
-            int updateCount = stmt.getUpdateCount();
+        // Drive the loop off the boolean JDBC contract rather than re-probing getResultSet():
+        // Snowflake keeps returning a non-null but already-closed ResultSet once the results are
+        // drained, which made the old `rs != null` guard loop forever.
+        boolean hasResults = hasResultSet;
 
-            // When SQL is not a SELECT statement skip output creation
-            if (rs != null) {
+        if (fetchType == FetchType.NONE) {
+            runContext.logger().info("fetchType is set to NONE, no output will be returned");
+        }
+
+        while (true) {
+            if (hasResults) {
+                ResultSet rs = stmt.getResultSet();
                 Output.OutputBuilder<?, ?> output = Output.builder();
 
                 long size = 0L;
@@ -236,20 +244,20 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                             .rows(maps)
                             .size(size);
                     }
-                    case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
+                    case NONE -> { /* logged once before the loop */ }
                     default ->
                         throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
                 }
 
                 totalSize += size;
                 outputList.add(output.build());
-            } else if (updateCount == -1) {
-                // End of results
+            } else if (stmt.getUpdateCount() == -1) {
+                // No result set and no update count: end of results
                 break;
             }
 
             // Move to the next result
-            stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
+            hasResults = stmt.getMoreResults(Statement.CLOSE_CURRENT_RESULT);
         }
 
         return totalSize;
