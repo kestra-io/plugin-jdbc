@@ -13,7 +13,7 @@ tasks:
 
   - id: dockerStart
     type: io.kestra.plugin.docker.Run
-    containerImage: clickhouse/clickhouse-server:latest
+    containerImage: clickhouse/clickhouse-server:26.8
     portBindings:
       - "{{ outputs.port.value }}:8123"
     wait: false
