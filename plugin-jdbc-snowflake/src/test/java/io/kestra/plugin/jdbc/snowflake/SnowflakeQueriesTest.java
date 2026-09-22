@@ -6,8 +6,8 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -27,19 +27,18 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * After creating a Snowflake account, run this SQL query to obtain the host:
- *          use role acountadmin;
- *          select system$allowlist();
- * Then find "type":"SNOWFLAKE_DEPLOYMENT" and the associated "host" will be
- * like <account_id>.snowflakecomputing.com under
+ * Needs a live Snowflake account, so it only runs when SNOWFLAKE_HOST is set.
+ * Obtain the host with: use role accountadmin; select system$allowlist();
+ * then take the "host" of the entry whose "type" is "SNOWFLAKE_DEPLOYMENT".
  */
 @KestraTest
-@Disabled("Create a Snowflake account for unit testing")
+@EnabledIfEnvironmentVariable(named = "SNOWFLAKE_HOST", matches = ".+")
 public class SnowflakeQueriesTest extends AbstractRdbmsTest {
-    protected String host = "";
-    protected String username = "";
-    protected String password = "";
-    protected String database = "KESTRA";
+    protected String host = System.getenv("SNOWFLAKE_HOST");
+    protected String username = System.getenv("SNOWFLAKE_USERNAME");
+    protected String password = System.getenv("SNOWFLAKE_PASSWORD");
+    protected String database = System.getenv().getOrDefault("SNOWFLAKE_DATABASE", "KESTRA");
+    protected String warehouse = System.getenv().getOrDefault("SNOWFLAKE_WAREHOUSE", "COMPUTE_WH");
 
     @Test
     void testMultiSelectWithParameters() throws Exception {
@@ -55,7 +54,7 @@ public class SnowflakeQueriesTest extends AbstractRdbmsTest {
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .warehouse(Property.ofValue(warehouse))
             .database(Property.ofValue(database))
             .fetchType(Property.ofValue(FETCH))
             .timeZoneId(Property.ofValue("Europe/Paris"))
@@ -84,7 +83,7 @@ public class SnowflakeQueriesTest extends AbstractRdbmsTest {
 
     @Override
     protected String getUrl() {
-        return "jdbc:snowflake://" + this.host + "/?loginTimeout=3";
+        return "jdbc:snowflake://" + this.host + "/?loginTimeout=30";
     }
 
     @Override
@@ -102,8 +101,8 @@ public class SnowflakeQueriesTest extends AbstractRdbmsTest {
         Properties properties = new Properties();
         properties.put("user", getUsername());
         properties.put("password", getPassword());
-        properties.put("warehouse", "COMPUTE_WH");
-        properties.put("db", "UNITTEST");
+        properties.put("warehouse", warehouse);
+        properties.put("db", database);
         properties.put("schema", "public");
 
         return DriverManager.getConnection(getUrl(), properties);

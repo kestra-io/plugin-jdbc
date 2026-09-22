@@ -90,6 +90,9 @@ public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
 
         this.renderProperties(runContext, properties);
 
+        // Snowflake rejects a multi-statement string unless the expected count is declared upfront; 0 means unbounded
+        properties.put("MULTI_STATEMENT_COUNT", "0");
+
         return properties;
     }
 
