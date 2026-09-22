@@ -64,7 +64,7 @@ services:
 #      - "25433:5433"
 
   clickhouse:
-    image: clickhouse/clickhouse-server
+    image: clickhouse/clickhouse-server:26.8
     ports:
       - "28123:8123"
       - "29000:9000"
