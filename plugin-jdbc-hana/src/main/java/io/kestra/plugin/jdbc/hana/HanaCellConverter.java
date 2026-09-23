@@ -7,8 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneId;
 
-
-
 public class HanaCellConverter extends AbstractCellConverter {
 
     public HanaCellConverter(ZoneId zoneId) {
@@ -30,9 +28,14 @@ public class HanaCellConverter extends AbstractCellConverter {
             case "date" -> rs.getDate(columnIndex).toLocalDate();
             case "time" -> rs.getTime(columnIndex).toLocalTime();
             case "timestamp" -> rs.getTimestamp(columnIndex).toInstant();
-            case "blob" -> rs.getBlob(columnIndex);
-            case "clob" -> rs.getClob(columnIndex);
-            case "nclob" -> rs.getNClob(columnIndex);
+            // Blob/Clob/NClob are live locators backed by the ResultSet's connection: reading them
+            // lazily (after the row is out of scope, e.g. once rows are batched for downstream
+            // processing) throws once the underlying statement/connection has been closed or
+            // advanced. Materialize the actual content here, while the ResultSet is still
+            // positioned on this row (same fix as Db2CellConverter, #1005).
+            case "blob" -> readBlob(rs.getBlob(columnIndex));
+            case "clob" -> readClob(rs.getClob(columnIndex));
+            case "nclob" -> readNClob(rs.getNClob(columnIndex));
             case "varbinary", "binary" -> rs.getBytes(columnIndex);
             default -> super.convert(columnIndex, rs);
         };
