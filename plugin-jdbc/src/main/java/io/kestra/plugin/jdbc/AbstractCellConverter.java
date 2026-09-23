@@ -3,7 +3,12 @@ package io.kestra.plugin.jdbc;
 import com.google.common.collect.ImmutableList;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
@@ -86,6 +91,98 @@ public abstract class AbstractCellConverter {
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
 
         throw new IllegalArgumentException("Data of type '" + clazz + "' for column '" + columnName + "' is not supported, the column type is '" + columnTypeName + "'");
+    }
+
+    private static final int LOB_BUFFER_SIZE = 8192;
+
+    /**
+     * Blob/Clob/NClob/SQLXML are live locators backed by the ResultSet's connection: reading them
+     * lazily (e.g. once rows are batched for downstream processing, after the row is out of scope)
+     * throws once the underlying statement/connection has advanced or closed. These helpers
+     * materialize the actual content while the ResultSet is still positioned on the row (see #1005).
+     */
+    protected static byte[] readBlob(Blob blob) throws SQLException {
+        if (blob == null) {
+            return null;
+        }
+        try (InputStream inputStream = blob.getBinaryStream();
+             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[LOB_BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buffer)) != -1) {
+                outputStream.write(buffer, 0, bytesRead);
+            }
+            return outputStream.toByteArray();
+        } catch (IOException e) {
+            throw new SQLException("Error reading BLOB data", e);
+        } finally {
+            try {
+                blob.free();
+            } catch (SQLException ignored) {
+                // content is already read, a failed free should not fail the task
+            }
+        }
+    }
+
+    protected static String readClob(Clob clob) throws SQLException {
+        if (clob == null) {
+            return null;
+        }
+        try (Reader reader = clob.getCharacterStream();
+             StringWriter writer = new StringWriter()) {
+            char[] buffer = new char[LOB_BUFFER_SIZE];
+            int charsRead;
+            while ((charsRead = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, charsRead);
+            }
+            return writer.toString();
+        } catch (IOException e) {
+            throw new SQLException("Error reading CLOB data", e);
+        } finally {
+            try {
+                clob.free();
+            } catch (SQLException ignored) {
+                // content is already read, a failed free should not fail the task
+            }
+        }
+    }
+
+    protected static String readNClob(NClob nclob) throws SQLException {
+        if (nclob == null) {
+            return null;
+        }
+        try (Reader reader = nclob.getCharacterStream();
+             StringWriter writer = new StringWriter()) {
+            char[] buffer = new char[LOB_BUFFER_SIZE];
+            int charsRead;
+            while ((charsRead = reader.read(buffer)) != -1) {
+                writer.write(buffer, 0, charsRead);
+            }
+            return writer.toString();
+        } catch (IOException e) {
+            throw new SQLException("Error reading NCLOB data", e);
+        } finally {
+            try {
+                nclob.free();
+            } catch (SQLException ignored) {
+                // content is already read, a failed free should not fail the task
+            }
+        }
+    }
+
+    protected static String readSqlXml(SQLXML sqlxml) throws SQLException {
+        if (sqlxml == null) {
+            return null;
+        }
+        try {
+            return sqlxml.getString();
+        } finally {
+            try {
+                sqlxml.free();
+            } catch (SQLException ignored) {
+                // content is already read, a failed free should not fail the task
+            }
+        }
     }
 
     protected PreparedStatement addPreparedStatementValue(PreparedStatement ps, AbstractJdbcBatch.ParameterType parameterType, Object value, int index, Connection connection) throws Exception {

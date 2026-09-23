@@ -34,10 +34,14 @@ public class Db2CellConverter extends AbstractCellConverter {
                 var ts = rs.getTimestamp(columnIndex, cal);
                 yield ts == null ? null : ts.toInstant();
             }
-            case "blob" -> rs.getBlob(columnIndex);
-            case "clob" -> rs.getClob(columnIndex);
-            case "nclob" -> rs.getNClob(columnIndex);
-            case "xml" -> rs.getSQLXML(columnIndex);
+            // Blob/Clob/NClob/SQLXML are live locators backed by the ResultSet's connection: reading
+            // them lazily (after the row is out of scope, e.g. once rows are batched for downstream
+            // processing) throws once the underlying statement/connection has been closed or advanced.
+            // Materialize the actual content here, while the ResultSet is still positioned on this row.
+            case "blob" -> readBlob(rs.getBlob(columnIndex));
+            case "clob" -> readClob(rs.getClob(columnIndex));
+            case "nclob" -> readNClob(rs.getNClob(columnIndex));
+            case "xml" -> readSqlXml(rs.getSQLXML(columnIndex));
             default -> super.convert(columnIndex, rs);
         };
     }
