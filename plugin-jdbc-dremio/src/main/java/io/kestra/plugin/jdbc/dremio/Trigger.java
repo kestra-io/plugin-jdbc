@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.dremio;
 
-import com.dremio.jdbc.Driver;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.property.Property;
@@ -13,9 +12,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.sql.DriverManager;
-import java.sql.SQLException;
 
 @SuperBuilder
 @ToString
@@ -77,15 +73,5 @@ public class Trigger extends AbstractJdbcTrigger implements DremioConnectionInte
             .parameters(this.getParameters())
             .build();
         return query.run(runContext);
-    }
-
-    @Override
-    public void registerDriver() throws SQLException {
-        // only register the driver if not already exist to avoid a memory leak
-        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
-            // Netty needs this to use direct buffers on JDK9+, else TLS handshake fails
-            System.setProperty("io.netty.tryReflectionSetAccessible", "true");
-            DriverManager.registerDriver(new Driver());
-        }
     }
 }
