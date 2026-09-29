@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.dremio;
 
-import com.dremio.jdbc.Driver;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
@@ -16,8 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.ZoneId;
 
 @SuperBuilder
@@ -62,14 +59,6 @@ public class Queries extends AbstractJdbcQueries implements DremioConnectionInte
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new DremioCellConverter(zoneId);
-    }
-
-    @Override
-    public void registerDriver() throws SQLException {
-        // only register the driver if not already exist to avoid a memory leak
-        if (DriverManager.drivers().noneMatch(Driver.class::isInstance)) {
-            DriverManager.registerDriver(new Driver());
-        }
     }
 
     @Override
