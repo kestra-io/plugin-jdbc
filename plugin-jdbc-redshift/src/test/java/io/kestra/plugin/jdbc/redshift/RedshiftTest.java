@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -13,7 +12,9 @@ import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
@@ -22,18 +23,15 @@ import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-
 @KestraTest
-@Disabled("no server for unit test")
 public class RedshiftTest extends AbstractRdbmsTest {
-    @Value("${redshift.url}")
+    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra}")
     protected String url;
 
-
-    @Value("${redshift.user}")
+    @Value("${redshift.user:postgres}")
     protected String user;
 
-    @Value("${redshift.password}")
+    @Value("${redshift.password:pg_passwd}")
     protected String password;
 
     @SuppressWarnings("unchecked")
@@ -126,6 +124,14 @@ public class RedshiftTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-         executeSqlScript("scripts/redshift.sql");
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE DOMAIN super AS text");
+        } catch (SQLException ignored) {
+        }
+        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE OR REPLACE FUNCTION json_parse(val text) RETURNS text LANGUAGE sql IMMUTABLE AS 'SELECT $1'");
+        } catch (SQLException ignored) {
+        }
+        executeSqlScript("scripts/redshift.sql");
     }
 }
