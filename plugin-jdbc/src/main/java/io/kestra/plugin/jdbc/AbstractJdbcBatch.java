@@ -28,6 +28,9 @@ import java.sql.*;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -570,16 +573,16 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
-                long skip = resumeOffset;
+                AtomicLong skip = new AtomicLong(resumeOffset);
 
-                for (Object row : FileSerde.readAll(inputStream).toIterable()) {
-                    if (skip-- > 0) continue;
+                FileSerde.read(inputStream, throwConsumer(row -> {
+                    if (skip.getAndDecrement() > 0) return;
 
                     buffer.add(row);
                     if (buffer.size() >= config.chunk()) {
                         flush(ps, meta, buffer, connection, supportsTx);
                     }
-                }
+                }));
 
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
