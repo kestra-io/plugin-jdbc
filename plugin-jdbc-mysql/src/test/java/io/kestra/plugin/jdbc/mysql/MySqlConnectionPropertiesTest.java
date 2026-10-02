@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.mysql;
 
+import io.kestra.core.models.property.Property;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
@@ -13,17 +14,17 @@ import static org.hamcrest.Matchers.not;
 class MySqlConnectionPropertiesTest {
     private static final MySqlConnectionInterface MYSQL = new MySqlConnectionInterface() {
         @Override
-        public io.kestra.core.models.property.Property<String> getUrl() {
+        public Property<String> getUrl() {
             return null;
         }
 
         @Override
-        public io.kestra.core.models.property.Property<String> getUsername() {
+        public Property<String> getUsername() {
             return null;
         }
 
         @Override
-        public io.kestra.core.models.property.Property<String> getPassword() {
+        public Property<String> getPassword() {
             return null;
         }
 

@@ -120,7 +120,38 @@ public class LoadTest {
 
         SQLException e = assertThrows(SQLException.class, () -> load.run(runContext));
 
-        // No inputFile means no allowLoadLocalInfileInPath: local loading is rejected outright.
+        // No inputFile: local loading is disabled.
         assertThat(e.getMessage(), containsString("Loading local data is disabled"));
+    }
+
+    @Test
+    void inputFileStillRejectsPathOutsideWorkingDir() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        URL resource = LoadTest.class.getClassLoader().getResource("load.csv");
+        URI put = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/file/storage/get-outside.yml"),
+            new FileInputStream(Objects.requireNonNull(resource).getFile())
+        );
+
+        Query load = Query.builder()
+            .url(Property.ofValue("jdbc:mysql://127.0.0.1:64790/kestra?allowLoadLocalInfile=true"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mysql_passwd"))
+            .inputFile(put.toString())
+            .fetchType(Property.ofValue(NONE))
+            .sql(Property.ofValue("LOAD DATA LOCAL INFILE '/etc/passwd' \n" +
+                "INTO TABLE passwd \n" +
+                "FIELDS TERMINATED BY ',' \n" +
+                "ENCLOSED BY '\"'\n" +
+                "LINES TERMINATED BY '\\n'\n" +
+                "IGNORE 1 ROWS;"))
+            .build();
+
+        SQLException e = assertThrows(SQLException.class, () -> load.run(runContext));
+
+        assertThat(e.getMessage(), containsString("/etc/passwd"));
     }
 }

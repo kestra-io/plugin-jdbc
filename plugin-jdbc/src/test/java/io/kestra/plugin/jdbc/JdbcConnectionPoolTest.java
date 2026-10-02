@@ -53,12 +53,23 @@ class JdbcConnectionPoolTest {
     }
 
     @Test
+    void closedPoolIsReplacedOnNextBorrow() throws Exception {
+        JdbcConnectionPool.connection(H2, h2Props(), 2).close();
+        JdbcConnectionPool.closeAll();
+
+        try (var c = JdbcConnectionPool.connection(H2, h2Props(), 2)) {
+            assertThat(c.isValid(1), is(true));
+        }
+        assertThat(JdbcConnectionPool.poolCount(), is(1));
+    }
+
+    @Test
     void poolWithBorrowedConnectionIsNotEvicted() throws Exception {
         try (var c = JdbcConnectionPool.connection(H2, h2Props(), 2)) {
             JdbcConnectionPool.setIdleEvictionMs(0);
             Thread.sleep(5);
             JdbcConnectionPool.evictIdlePools();
-            assertThat(JdbcConnectionPool.poolCount(), greaterThan(0));
+            assertThat(JdbcConnectionPool.poolCount(), is(1));
             assertThat(c.isValid(1), is(true));
         }
     }
