@@ -120,6 +120,7 @@ public class LoadTest {
 
         SQLException e = assertThrows(SQLException.class, () -> load.run(runContext));
 
-        assertThat(e.getMessage(), containsString("/etc/passwd"));
+        // No inputFile means no allowLoadLocalInfileInPath: local loading is rejected outright.
+        assertThat(e.getMessage(), containsString("Loading local data is disabled"));
     }
 }

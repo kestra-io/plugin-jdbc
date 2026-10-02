@@ -8,6 +8,9 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -15,23 +18,106 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * All properties are included in the key so that connections with different settings
  * (credentials, SSL, ...) never share a pool.
  * Pools are created on first use and released on JVM shutdown or via closeAll().
+ * As a safety net against key churn (a key that changes on every run would otherwise leak one pool and its
+ * housekeeper thread per run), a daemon sweeper closes pools that have no borrowed connection and were not
+ * used for {@link #DEFAULT_IDLE_EVICTION_MS}.
  */
 final class JdbcConnectionPool {
 
     private static final ConcurrentHashMap<String, HikariDataSource> POOLS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Long> LAST_USED = new ConcurrentHashMap<>();
     private static final AtomicBoolean SHUTDOWN_HOOK_REGISTERED = new AtomicBoolean(false);
+
+    static final long DEFAULT_IDLE_EVICTION_MS = TimeUnit.MINUTES.toMillis(10);
+    private static final long SWEEP_INTERVAL_SECONDS = 60;
+
+    private static volatile long idleEvictionMs = DEFAULT_IDLE_EVICTION_MS;
+    private static ScheduledExecutorService sweeper;
 
     private JdbcConnectionPool() {}
 
     static Connection connection(String jdbcUrl, Properties props, int maxPoolSize) throws SQLException {
         var key = poolKey(jdbcUrl, props);
-        var ds = POOLS.computeIfAbsent(key, k -> buildDataSource(jdbcUrl, props, maxPoolSize));
-        return ds.getConnection();
+        startSweeper();
+        try {
+            return borrow(key, jdbcUrl, props, maxPoolSize);
+        } catch (SQLException e) {
+            // The sweeper or closeAll() may have closed the pool between lookup and getConnection(): retry once with a fresh one.
+            if (e.getMessage() != null && e.getMessage().contains("has been closed")) {
+                return borrow(key, jdbcUrl, props, maxPoolSize);
+            }
+            throw e;
+        }
+    }
+
+    private static Connection borrow(String key, String jdbcUrl, Properties props, int maxPoolSize) throws SQLException {
+        var ds = POOLS.compute(key, (k, existing) -> {
+            var pool = existing == null || existing.isClosed() ? buildDataSource(jdbcUrl, props, maxPoolSize) : existing;
+            // Updated inside compute() so the sweeper, which also holds the key lock, never sees a stale timestamp.
+            LAST_USED.put(k, System.currentTimeMillis());
+            return pool;
+        });
+        try {
+            return ds.getConnection();
+        } finally {
+            LAST_USED.put(key, System.currentTimeMillis());
+        }
     }
 
     static void closeAll() {
         POOLS.values().forEach(HikariDataSource::close);
         POOLS.clear();
+        LAST_USED.clear();
+    }
+
+    static int poolCount() {
+        return POOLS.size();
+    }
+
+    static void setIdleEvictionMs(long value) {
+        idleEvictionMs = value;
+    }
+
+    /** Closes pools without borrowed connection that were not used for the idle eviction delay. */
+    static void evictIdlePools() {
+        var threshold = System.currentTimeMillis() - idleEvictionMs;
+        for (var key : POOLS.keySet()) {
+            // compute() is atomic per key, so a concurrent connection(...) either runs before (and refreshes
+            // LAST_USED / holds a connection) or after (and builds a fresh pool).
+            POOLS.computeIfPresent(key, (k, ds) -> {
+                var last = LAST_USED.getOrDefault(k, 0L);
+                var mx = ds.getHikariPoolMXBean();
+                var active = mx == null ? 0 : mx.getActiveConnections();
+                if (ds.isClosed()) {
+                    LAST_USED.remove(k);
+                    return null;
+                }
+                if (active == 0 && last <= threshold) {
+                    LAST_USED.remove(k);
+                    ds.close();
+                    return null;
+                }
+                return ds;
+            });
+        }
+    }
+
+    private static synchronized void startSweeper() {
+        if (sweeper != null) {
+            return;
+        }
+        sweeper = Executors.newSingleThreadScheduledExecutor(r -> {
+            var t = new Thread(r, "kestra-jdbc-pool-evictor");
+            t.setDaemon(true);
+            return t;
+        });
+        sweeper.scheduleWithFixedDelay(() -> {
+            try {
+                evictIdlePools();
+            } catch (Throwable ignored) {
+                // never let an error cancel the periodic task
+            }
+        }, SWEEP_INTERVAL_SECONDS, SWEEP_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     static String poolKey(String jdbcUrl, Properties props) {

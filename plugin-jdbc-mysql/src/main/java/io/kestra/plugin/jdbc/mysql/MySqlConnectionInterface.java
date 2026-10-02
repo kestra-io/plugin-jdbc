@@ -13,7 +13,11 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
         return "jdbc:mysql";
     }
 
-    default Properties createMysqlProperties(Properties props, Path workingDirectory,
+    /**
+     * @param loadLocalInfilePath directory allowed for LOAD DATA LOCAL INFILE, or null when no input file is used.
+     *                            It is per-run, so it must stay out of the URL unless needed: the URL is part of the pool key.
+     */
+    default Properties createMysqlProperties(Properties props, Path loadLocalInfilePath,
                                              boolean isMultiQuery) {
         URI url = URI.create((String) props.get("jdbc.url"));
         url = URI.create(url.getSchemeSpecificPart());
@@ -21,7 +25,9 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
         UriBuilder builder = UriBuilder.of(url);
 
         // allow local in file for current worker and prevent the global one
-        builder.queryParam("allowLoadLocalInfileInPath", workingDirectory.toAbsolutePath().toString());
+        if (loadLocalInfilePath != null) {
+            builder.queryParam("allowLoadLocalInfileInPath", loadLocalInfilePath.toAbsolutePath().toString());
+        }
         builder.replaceQueryParam("allowLoadLocalInfile", false);
 
         // see https://dev.mysql.com/doc/connector-j/en/connector-j-reference-implementation-notes.html

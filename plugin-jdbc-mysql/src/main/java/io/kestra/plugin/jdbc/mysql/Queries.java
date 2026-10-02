@@ -102,7 +102,17 @@ public class Queries extends AbstractJdbcQueries implements MySqlConnectionInter
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, true);
+        return this.createMysqlProperties(
+            super.connectionProperties(runContext),
+            this.inputFile != null ? this.workingDirectory : null,
+            true
+        );
+    }
+
+    @Override
+    public boolean usesConnectionPool() {
+        // The URL embeds the per-run working directory when inputFile is set, so a pool would never be reused.
+        return this.inputFile == null;
     }
 
     @Override
