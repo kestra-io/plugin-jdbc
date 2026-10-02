@@ -50,8 +50,6 @@ final class JdbcConnectionPool {
                 return acquire(key, jdbcUrl, props, maxPoolSize).getConnection();
             }
             throw e;
-        } finally {
-            LAST_USED.put(key, System.currentTimeMillis());
         }
     }
 

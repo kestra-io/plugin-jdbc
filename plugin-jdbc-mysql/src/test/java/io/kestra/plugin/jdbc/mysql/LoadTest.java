@@ -128,6 +128,17 @@ public class LoadTest {
     void inputFileStillRejectsPathOutsideWorkingDir() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
+        // MySQL resolves the target table before requesting the LOCAL file.
+        Query.builder()
+            .url(Property.ofValue("jdbc:mysql://127.0.0.1:64790/kestra"))
+            .username(Property.ofValue("root"))
+            .password(Property.ofValue("mysql_passwd"))
+            .sql(Property.ofValue("CREATE TABLE IF NOT EXISTS passwd (\n" +
+                "    password TEXT\n" +
+                ");"))
+            .build()
+            .run(runContext);
+
         URL resource = LoadTest.class.getClassLoader().getResource("load.csv");
         URI put = storageInterface.put(
             TenantService.MAIN_TENANT,
