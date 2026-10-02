@@ -353,73 +353,13 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
     protected String getPassword() {
         return TestUtils.password();
     }
-
     @Override
     protected Connection getConnection() throws SQLException {
-        Properties props = new Properties();
-        props.put("jdbc.url", getUrl());
-        props.put("user", getUsername());
-        props.put("password", getPassword());
+    Properties props = new Properties();
+    props.put("user", getUsername());
+    props.put("password", getPassword());
 
-        try {
-            PostgresService.handleSsl(props, runContextFactory.of(), new PostgresConnection());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
-    }
-
-    public static class PostgresConnection implements PostgresConnectionInterface {
-        @Override
-        public Property<String> getUrl() {
-            return Property.ofValue("jdbc:postgresql://127.0.0.1:56983/");
-        }
-
-        @Override
-        public Property<String> getUsername() {
-            return Property.ofValue(TestUtils.username());
-        }
-
-        @Override
-        public Property<String> getPassword() {
-            return Property.ofValue(TestUtils.password());
-        }
-
-        @Override
-        public Property<Boolean> getSsl() {
-            return null;
-        }
-
-        @Override
-        public Property<SslMode> getSslMode() {
-            return null;
-        }
-
-        @Override
-        public Property<String> getSslRootCert() {
-            return null;
-        }
-
-        @Override
-        public Property<String> getSslCert() {
-            return null;
-        }
-
-        @Override
-        public Property<String> getSslKey() {
-            return null;
-        }
-
-        @Override
-        public Property<String> getSslKeyPassword() {
-            return null;
-        }
-
-        @Override
-        public void registerDriver() throws SQLException {
-
-        }
+    return DriverManager.getConnection(getUrl(), props);
     }
 
     @Override
