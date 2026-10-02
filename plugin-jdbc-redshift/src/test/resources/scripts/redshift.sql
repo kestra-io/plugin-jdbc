@@ -18,8 +18,8 @@ CREATE TABLE pgsql_types (
     timez_type TIME WITH TIME ZONE not null,
     timestamp_type TIMESTAMP not null,
     timestampz_type TIMESTAMP WITH TIME ZONE not null,
-    pay_by_quarter super encode zstd not null,
-    schedule super encode zstd not null/*,
+    pay_by_quarter super not null,
+    schedule super not null/*,
     hllsketch_type hllsketch not null*/
 );
 

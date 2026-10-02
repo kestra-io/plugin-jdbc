@@ -22,3 +22,8 @@ kestra:
 grpc:
   server:
     enabled: false
+
+redshift:
+  url: jdbc:redshift://127.0.0.1:55439/kestra?ssl=false
+  user: postgres
+  password: pg_passwd

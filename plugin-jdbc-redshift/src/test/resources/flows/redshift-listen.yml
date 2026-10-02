@@ -1,4 +1,3 @@
-# Not used as we cannot run redshift locally
 id: redshift-listen
 namespace: io.kestra.tests
 
@@ -6,9 +5,9 @@ triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.redshift.Trigger
     sql: SELECT * FROM pgsql_types
-    url: ???
-    username: ???
-    password: ???
+    url: jdbc:redshift://127.0.0.1:55439/kestra?ssl=false
+    username: postgres
+    password: pg_passwd
     fetchType: FETCH
     interval: PT10S
 
