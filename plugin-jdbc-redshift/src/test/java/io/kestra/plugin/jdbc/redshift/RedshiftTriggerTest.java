@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.is;
 
 @KestraTest(startRunner = true, startScheduler = true)
 class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
-    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra}")
+    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
     @Value("${redshift.user:postgres}")

@@ -5,7 +5,7 @@ triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.redshift.Trigger
     sql: SELECT * FROM pgsql_types
-    url: jdbc:redshift://127.0.0.1:55439/kestra
+    url: jdbc:redshift://127.0.0.1:55439/kestra?ssl=false
     username: postgres
     password: pg_passwd
     fetchType: FETCH

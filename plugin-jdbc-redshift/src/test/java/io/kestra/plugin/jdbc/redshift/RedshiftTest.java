@@ -25,7 +25,7 @@ import static org.hamcrest.Matchers.*;
 
 @KestraTest
 public class RedshiftTest extends AbstractRdbmsTest {
-    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra}")
+    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
     @Value("${redshift.user:postgres}")
