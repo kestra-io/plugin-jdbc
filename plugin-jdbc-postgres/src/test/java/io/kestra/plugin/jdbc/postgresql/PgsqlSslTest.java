@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.api.Test;
 
-@KestraTest
+@KestraTest(startRunner = true)
 public class PgsqlSslTest extends AbstractRdbmsTest {
   @Inject private FlowInputOutput flowIO;
 
