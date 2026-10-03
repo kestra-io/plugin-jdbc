@@ -75,12 +75,6 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.key()))
-            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("insert into pgsql_types\n" +
                 "(\n" +
@@ -166,12 +160,6 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.key()))
-            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("insert into namedInsert values( ? , ? , ? )"))
             .build();
@@ -203,12 +191,6 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.key()))
-            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("insert into namedInsert(id,name) values( ? , ? )"))
             .columns(Property.ofValue(Arrays.asList("id", "name")))
@@ -259,12 +241,6 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.key()))
-            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
             .from(Property.ofValue(uri.toString()))
             .table(Property.ofValue("pgsql_nosql"))
             .build();
@@ -293,12 +269,6 @@ public class BatchTest extends AbstractRdbmsTest {
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.key()))
-            .sslKeyPassword(Property.ofValue(TestUtils.keyPass()))
             .from(Property.ofValue(uri.toString()))
             .table(Property.ofValue("namedInsert"))
             .columns(Property.ofValue(List.of("name")))
@@ -324,19 +294,13 @@ public class BatchTest extends AbstractRdbmsTest {
         return TestUtils.password();
     }
 
+   @Override
     protected Connection getConnection() throws SQLException {
-        Properties props = new Properties();
-        props.put("jdbc.url", getUrl());
-        props.put("user", getUsername());
-        props.put("password", getPassword());
+    Properties props = new Properties();
+    props.put("user", getUsername());
+    props.put("password", getPassword());
 
-        try {
-            PostgresService.handleSsl(props, runContextFactory.of(), new PgsqlTest.PostgresConnection());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
+    return DriverManager.getConnection(getUrl(), props);
     }
 
 

@@ -43,9 +43,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * - https://www.postgresql.org/docs/12/datatype.html
  */
 public class PgsqlTest extends AbstractRdbmsTest {
-    @Inject
-    private FlowInputOutput flowIO;
-
     @Test
     void selectAndFetchOne() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
@@ -54,11 +51,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
@@ -77,11 +69,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT 'someString' as stringvalue, pg_sleep(0) as voidvalue"))
             .build();
@@ -138,11 +125,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type, tsvector_col, hstore_type from pgsql_types"))
@@ -163,11 +145,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("select concert_id from pgsql_types where b='random'"))
@@ -186,11 +163,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(STORE))
             .timeZoneId(Property.ofValue("Europe/Paris"))
             .sql(Property.ofValue("select concert_id, available, a, b, c, d, play_time, library_record, floatn_test, double_test, real_test, numeric_test, date_type, time_type, timez_type, timestamp_type, timestampz_type, interval_type, pay_by_quarter, schedule, json_type, jsonb_type, blob_type from pgsql_types"))
@@ -215,11 +187,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("select item from pgsql_types")) // PG SQL composite field are not supported
             .build();
@@ -238,11 +205,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("UPDATE pgsql_types SET b = 'pending'"))
             .build();
@@ -252,11 +214,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
             .afterSQL(Property.ofValue("UPDATE pgsql_types SET b = 'processed'"))
@@ -270,11 +227,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types"))
             .build();
@@ -286,11 +238,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
             .build();
@@ -307,11 +254,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("UPDATE pgsql_types SET b = 'initial_value'"))
             .build();
@@ -321,11 +263,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types"))
             .afterSQL(Property.ofValue("UPDATE non_existent_table SET x = 'y'"))
@@ -337,11 +274,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types"))
             .build();
@@ -358,11 +290,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("UPDATE pgsql_types SET b = 'pending'"))
             .build();
@@ -372,11 +299,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types WHERE b = 'pending'"))
             .afterSQL(Property.ofValue("UPDATE pgsql_types SET b = :newStatus"))
@@ -390,38 +312,12 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("SELECT b FROM pgsql_types"))
             .build();
 
         AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
         assertThat(verifyOutput.getRow().get("b"), is("completed"));
-    }
-
-    public static final Map<String, Object> INPUTS = ImmutableMap.of(
-        "sslRootCert", TestUtils.ca(),
-        "sslCert", TestUtils.cert(),
-        "sslKey", TestUtils.keyNoPass()
-    );
-
-    @Test
-    void updateFromFlow() throws Exception {
-        Execution execution = runnerUtils.runOne(
-            TenantService.MAIN_TENANT,
-            "io.kestra.jdbc.postgres",
-            "update_postgres",
-            null,
-            (flow, exec) -> flowIO.readExecutionInputs(flow, exec, INPUTS),
-            Duration.ofMinutes(1)
-        );
-
-        assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
-        assertThat(execution.getTaskRunList(), hasSize(2));
     }
 
     @ParameterizedTest
@@ -450,11 +346,6 @@ public class PgsqlTest extends AbstractRdbmsTest {
             .url(Property.ofValue(TestUtils.url()))
             .username(Property.ofValue(TestUtils.username()))
             .password(Property.ofValue(TestUtils.password()))
-            .ssl(Property.ofValue(TestUtils.ssl()))
-            .sslMode(Property.ofValue(TestUtils.sslMode()))
-            .sslRootCert(Property.ofValue(TestUtils.ca()))
-            .sslCert(Property.ofValue(TestUtils.cert()))
-            .sslKey(Property.ofValue(TestUtils.keyNoPass()))
             .fetchType(Property.ofValue(FETCH_ONE))
             .sql(Property.ofValue("pg_sleep(5)"))
             .build();
@@ -486,72 +377,14 @@ public class PgsqlTest extends AbstractRdbmsTest {
         return TestUtils.password();
     }
 
-    protected Connection getConnection() throws SQLException {
+        @Override
+        protected Connection getConnection() throws SQLException {
         Properties props = new Properties();
-        props.put("jdbc.url", getUrl());
         props.put("user", getUsername());
         props.put("password", getPassword());
 
-        try {
-            PostgresService.handleSsl(props, runContextFactory.of(), new PostgresConnection());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
-        return DriverManager.getConnection(props.getProperty("jdbc.url"), props);
-    }
-
-    public static class PostgresConnection implements PostgresConnectionInterface {
-        @Override
-        public Property<String> getUrl() {
-            return Property.ofValue(TestUtils.url());
-        }
-
-        @Override
-        public Property<String> getUsername() {
-            return Property.ofValue(TestUtils.username());
-        }
-
-        @Override
-        public Property<String> getPassword() {
-            return Property.ofValue(TestUtils.password());
-        }
-
-        @Override
-        public Property<Boolean> getSsl() {
-            return Property.ofValue(TestUtils.ssl());
-        }
-
-        @Override
-        public Property<SslMode> getSslMode() {
-            return Property.ofValue(TestUtils.sslMode());
-        }
-
-        @Override
-        public Property<String> getSslRootCert() {
-            return Property.ofValue(TestUtils.ca());
-        }
-
-        @Override
-        public Property<String> getSslCert() {
-            return Property.ofValue(TestUtils.cert());
-        }
-
-        @Override
-        public Property<String> getSslKey() {
-            return Property.ofValue(TestUtils.key());
-        }
-
-        @Override
-        public Property<String> getSslKeyPassword() {
-            return Property.ofValue(TestUtils.keyPass());
-        }
-
-        @Override
-        public void registerDriver() throws SQLException {
-
-        }
-    }
+        return DriverManager.getConnection(getUrl(), props);
+            }
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
