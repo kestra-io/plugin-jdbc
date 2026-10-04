@@ -107,7 +107,7 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
             Connection connection = this.connection(runContext);
             var statement = connection.createStatement()
         ) {
-            String sql = "PUT " + tempFile.toURI() + " " + rStageName;
+            String sql = "PUT 'file://" + tempFile.getAbsolutePath() + "' " + rStageName;
 
             if (statement.execute(sql)) {
                 try (var resultSet = statement.getResultSet()) {
