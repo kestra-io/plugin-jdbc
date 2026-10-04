@@ -90,16 +90,8 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
         URI fromUri = new URI(rFrom);
 
         var tempFile = runContext.workingDir()
-            .createTempFile()
+            .createFile(rFileName, runContext.storage().getFile(fromUri))
             .toFile();
-
-        try (InputStream inputStream = runContext.storage().getFile(fromUri)) {
-            Files.copy(
-                inputStream,
-                tempFile.toPath(),
-                StandardCopyOption.REPLACE_EXISTING
-            );
-        }
 
         var rows = new ArrayList<Map<String, Object>>();
 
