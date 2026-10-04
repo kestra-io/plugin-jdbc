@@ -20,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 import org.duckdb.DuckDBDriver;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,10 +29,13 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
+import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -44,6 +48,22 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 )
 @Plugin(
     examples = {
+        @Example(
+            full = true,
+            title = "Execute queries that export results to a file, which is automatically captured as an output file.",
+            code = """
+                id: queries_export
+                namespace: company.team
+
+                tasks:
+                  - id: queries
+                    type: io.kestra.plugin.jdbc.duckdb.Queries
+                    sql: |-
+                      CREATE TABLE users (id INT, name VARCHAR);
+                      INSERT INTO users VALUES (1, 'John'), (2, 'Jane');
+                      COPY users TO '{{ workingDir }}/users_export.csv' (HEADER, DELIMITER ',');
+                """
+        ),
         @Example(
             title = "Execute multiple queries that reads a csv, and outputs a select and a count.",
             full = true,
@@ -240,14 +260,41 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
+        Set<Path> existingFiles = new HashSet<>();
+        if (workingDirectory != null && Files.exists(workingDirectory)) {
+            try (var stream = Files.walk(workingDirectory)) {
+                stream.filter(Files::isRegularFile).forEach(existingFiles::add);
+            }
+        }
+
         AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
 
         // upload output files
         Map<String, URI> uploaded = new HashMap<>();
+        Set<Path> explicitOutputFilePaths = new HashSet<>();
 
         if (outputFiles != null) {
-            outputFiles
-                .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
+            outputFiles.forEach(throwBiConsumer((k, v) -> {
+                File file = new File(runContext.render(v, additionalVars));
+                uploaded.put(k, runContext.storage().putFile(file));
+                explicitOutputFilePaths.add(file.toPath().toAbsolutePath());
+            }));
+        }
+
+        if (workingDirectory != null && Files.exists(workingDirectory)) {
+            final Path workDir = workingDirectory;
+            final Path extDir = workDir.resolve(".duckdb_extensions").toAbsolutePath();
+            try (var stream = Files.walk(workDir)) {
+                stream.filter(Files::isRegularFile)
+                    .filter(path -> !existingFiles.contains(path))
+                    .filter(path -> this.databaseFile == null || (!path.equals(this.databaseFile) && !path.toString().startsWith(this.databaseFile.toString())))
+                    .filter(path -> !path.toAbsolutePath().startsWith(extDir))
+                    .filter(path -> !explicitOutputFilePaths.contains(path.toAbsolutePath()))
+                    .forEach(throwConsumer(path -> {
+                        String relativeKey = workDir.relativize(path).toString().replace('\\', '/');
+                        uploaded.put(relativeKey, runContext.storage().putFile(path.toFile()));
+                    }));
+            }
         }
 
         // Create and output DB URI
@@ -258,7 +305,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
         return Output.builder()
             .outputs(run.getOutputs())
-            .outputFiles(uploaded)
+            .outputFiles(uploaded.isEmpty() ? null : uploaded)
             .databaseUri(dbUri)
             .build();
     }
@@ -286,5 +333,4 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             : null;
         DuckDbConnectionSetup.configureSession(runContext, connection, workingDirectory, this.communityExtensions);
     }
-
 }

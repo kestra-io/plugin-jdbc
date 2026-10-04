@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -579,5 +580,82 @@ class DuckDbTest {
         var runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
         assertThat(runOutput.getRow().get("name"), is("Alice"));
+    }
+
+    @Test
+    void autoOutputFiles() throws Exception {
+        URI source = getCsvSourceUri(storageInterface);
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofExpression("COPY (SELECT id, name FROM read_csv_auto('in.csv', header=True) WHERE id = 4814976) TO '{{ workingDir }}/auto_out.csv' (HEADER, DELIMITER ',');"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("auto_out.csv"), is(true));
+        assertThat(runOutput.getOutputFiles().containsKey("in.csv"), is(false));
+
+        String content = IOUtils.toString(
+            storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("auto_out.csv")),
+            StandardCharsets.UTF_8
+        );
+        assertThat(content, is("id,name\n4814976,Viva\n"));
+    }
+
+    @Test
+    void autoOutputFilesWithRelativeDirectory() throws Exception {
+        URI source = getCsvSourceUri(storageInterface);
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Files.createDirectories(runContext.workingDir().path().resolve("exports"));
+
+        Query task = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofExpression("COPY (SELECT id, name FROM read_csv_auto('in.csv', header=True) WHERE id = 1010871) TO '{{ workingDir }}/exports/data.csv' (HEADER, DELIMITER ',');"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("exports/data.csv"), is(true));
+        assertThat(runOutput.getOutputFiles().containsKey("in.csv"), is(false));
+
+        String content = IOUtils.toString(
+            storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("exports/data.csv")),
+            StandardCharsets.UTF_8
+        );
+        assertThat(content, is("id,name\n1010871,Voomm\n"));
+    }
+
+    @Test
+    void backwardCompatibilityOutputFiles() throws Exception {
+        URI source = getCsvSourceUri(storageInterface);
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .outputFiles(Property.ofValue(List.of("out")))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofExpression("COPY (SELECT id, name FROM read_csv_auto('in.csv', header=True) WHERE id = 4814976) TO '{{ outputFiles.out }}' (HEADER, DELIMITER ',');"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("out"), is(true));
+
+        String content = IOUtils.toString(
+            storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("out")),
+            StandardCharsets.UTF_8
+        );
+        assertThat(content, is("id,name\n4814976,Viva\n"));
     }
 }

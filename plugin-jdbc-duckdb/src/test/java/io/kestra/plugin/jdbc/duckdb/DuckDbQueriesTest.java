@@ -263,4 +263,35 @@ class DuckDbQueriesTest {
             .orElseThrow()
             .get("name"), is("TestUser"));
     }
+
+    @Test
+    void autoOutputFilesMultiQuery() throws Exception {
+        URI source = getCsvSourceUri(storageInterface);
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .inputFiles(Map.of("in.csv", source.toString()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofExpression("""
+                CREATE TABLE new_tbl AS SELECT * FROM read_csv_auto('in.csv', header=True);
+                COPY (SELECT id, name FROM new_tbl WHERE id = 4814976) TO '{{ workingDir }}/queries_out.csv' (HEADER, DELIMITER ',');
+                SELECT COUNT(*) as count FROM new_tbl;
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs(), notNullValue());
+        assertThat(runOutput.getOutputs().size(), is(1));
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("queries_out.csv"), is(true));
+        assertThat(runOutput.getOutputFiles().containsKey("in.csv"), is(false));
+
+        String content = IOUtils.toString(
+            storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("queries_out.csv")),
+            Charsets.UTF_8
+        );
+        assertThat(content, is("id,name\n4814976,Viva\n"));
+    }
 }

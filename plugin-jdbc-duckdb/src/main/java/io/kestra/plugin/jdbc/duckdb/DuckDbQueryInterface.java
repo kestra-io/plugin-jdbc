@@ -21,9 +21,11 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     )
     Object getInputFiles();
 
+    @Deprecated
     @Schema(
         title = "Output file list that will be uploaded to internal storage",
-        description = "List of keys that will generate temporary files.\n" +
+        description = "Deprecated: Files generated within the query in the working directory are now automatically captured as output files. " +
+            "List of keys that will generate temporary files.\n" +
             "On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
             " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
