@@ -51,14 +51,6 @@ class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE DOMAIN super AS text");
-        } catch (SQLException ignored) {
-        }
-        try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute("CREATE OR REPLACE FUNCTION json_parse(val text) RETURNS text LANGUAGE sql IMMUTABLE AS 'SELECT $1'");
-        } catch (SQLException ignored) {
-        }
         executeSqlScript("scripts/redshift.sql");
     }
 }
