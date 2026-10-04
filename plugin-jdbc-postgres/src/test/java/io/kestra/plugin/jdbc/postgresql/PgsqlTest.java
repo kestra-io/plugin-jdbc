@@ -1,16 +1,12 @@
 package io.kestra.plugin.jdbc.postgresql;
 
 import com.google.common.collect.ImmutableMap;
-import io.kestra.core.models.executions.Execution;
-import io.kestra.core.models.flows.State;
 import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.FlowInputOutput;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import jakarta.inject.Inject;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.jupiter.api.Test;

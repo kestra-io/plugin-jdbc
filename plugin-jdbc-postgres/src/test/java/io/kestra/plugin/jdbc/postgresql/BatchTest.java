@@ -294,15 +294,14 @@ public class BatchTest extends AbstractRdbmsTest {
         return TestUtils.password();
     }
 
-   @Override
+    @Override
     protected Connection getConnection() throws SQLException {
-    Properties props = new Properties();
-    props.put("user", getUsername());
-    props.put("password", getPassword());
+        Properties props = new Properties();
+        props.put("user", getUsername());
+        props.put("password", getPassword());
 
-    return DriverManager.getConnection(getUrl(), props);
+        return DriverManager.getConnection(getUrl(), props);
     }
-
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {

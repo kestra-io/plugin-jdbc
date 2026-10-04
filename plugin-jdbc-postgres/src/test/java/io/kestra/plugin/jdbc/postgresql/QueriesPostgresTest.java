@@ -353,13 +353,14 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
     protected String getPassword() {
         return TestUtils.password();
     }
+
     @Override
     protected Connection getConnection() throws SQLException {
-    Properties props = new Properties();
-    props.put("user", getUsername());
-    props.put("password", getPassword());
+        Properties props = new Properties();
+        props.put("user", getUsername());
+        props.put("password", getPassword());
 
-    return DriverManager.getConnection(getUrl(), props);
+        return DriverManager.getConnection(getUrl(), props);
     }
 
     @Override

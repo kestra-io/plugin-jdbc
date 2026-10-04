@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
@@ -15,7 +14,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest(startRunner = true, startScheduler = true)
-@Disabled("Disable for now as refactory may be done to split SSL test")
 class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
 
     @Test
@@ -23,12 +21,12 @@ class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
         var execution = triggerFlow(this.getClass().getClassLoader(), "flows","pgsql-listen");
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
-        assertThat(rows.size(), is(1));
+        assertThat(rows.size(), is(2));
     }
 
     @Override
     protected String getUrl() {
-        return "jdbc:postgresql://127.0.0.1:56982/";
+        return TestUtils.url();
     }
 
     @Override
