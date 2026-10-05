@@ -15,6 +15,7 @@ import org.postgresql.core.BaseConnection;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
@@ -23,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.UnaryOperator;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.enums.MonacoLanguages;
@@ -79,17 +81,17 @@ import io.kestra.core.models.enums.MonacoLanguages;
                     type: io.kestra.plugin.core.log.Log
                     message: "{{ outputs.export.rowCount }}"
                 """
+            )
+        },
+        metrics = {
+            @Metric(
+                name = "rows",
+                type = Counter.TYPE,
+                unit = "rows",
+                description = "The number of rows copied from PostgreSQL."
         )
-    },
-    metrics = {
-        @Metric(
-            name = "rows",
-            type = Counter.TYPE,
-            unit = "rows",
-            description = "The number of rows copied from PostgreSQL."
-        )
-    }
-)
+        }
+    )
 public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output>, PostgresConnectionInterface {
 
     @Schema(
@@ -110,47 +112,138 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             String sql = this.query(runContext, runContext.render(this.sql).as(String.class).orElse(null), "TO STDOUT");
             logger.debug("Starting query: {}", sql);
 
-            try (PipedInputStream pipedIn = new PipedInputStream(65536);
-                 ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-                PipedOutputStream pipedOut = new PipedOutputStream(pipedIn);
-
-                Future<Long> copyFuture = executor.submit(() -> {
-                    try {
-                        return copyManager.copyOut(sql, pipedOut);
-                    } finally {
-                        pipedOut.close();
-                    }
-                });
-
-                URI uri;
-                try {
-                    uri = runContext.storage().putFile(pipedIn, "copy-out");
-                } catch (IOException storageEx) {
-                    pipedIn.close();
-                    try {
-                        copyFuture.get();
-                        throw storageEx;
-                    } catch (ExecutionException jdbcEx) {
-                        Throwable cause = jdbcEx.getCause();
-                        throw cause instanceof Exception ex ? ex : jdbcEx;
-                    }
-                }
-
-                long rowsAffected;
-                try {
-                    rowsAffected = copyFuture.get();
-                } catch (ExecutionException e) {
-                    Throwable cause = e.getCause();
-                    throw cause instanceof Exception ex ? ex : new RuntimeException(cause);
-                }
-
-                runContext.metric(Counter.of("rows", rowsAffected));
-                return Output
-                    .builder()
-                    .uri(uri)
-                    .rowCount(rowsAffected)
-                    .build();
+            if (outputMode == OutputMode.RAW) {
+                return this.storeCopyOutput(
+                    runContext,
+                    copyManager,
+                    sql,
+                    CopyTextDecoderInputStream::new
+                );
             }
+
+            return this.storeCopyOutput(
+                runContext,
+                copyManager,
+                sql,
+                UnaryOperator.identity());
+        }
+    }
+
+    private Output storeCopyOutput(
+            RunContext runContext,
+            CopyManager copyManager,
+            String sql,
+            UnaryOperator<InputStream> inputWrapper) throws Exception {
+        try (PipedInputStream input = new PipedInputStream(65536);
+                PipedOutputStream output = new PipedOutputStream(input);
+                ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+
+            Future<Long> copyFuture = executor.submit(() -> {
+                try {
+                    return copyManager.copyOut(sql, output);
+                } finally {
+                    output.close();
+                }
+            });
+
+            URI uri;
+            try (InputStream storageInput = inputWrapper.apply(input)) {
+                uri = runContext.storage().putFile(storageInput, "copy-out");
+            } catch (IOException storageEx) {
+                input.close();
+                awaitCopy(copyFuture);
+                throw storageEx;
+            }
+
+            return buildOutput(runContext, uri, awaitCopy(copyFuture));
+        }
+    }
+
+    private long awaitCopy(Future<Long> copyFuture) throws Exception {
+        try {
+            return copyFuture.get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            throw cause instanceof Exception ex ? ex : new RuntimeException(cause);
+        }
+    }
+
+    private Output buildOutput(RunContext runContext, URI uri, long rowsAffected) {
+        runContext.metric(Counter.of("rows", rowsAffected));
+        return Output.builder()
+                .uri(uri)
+                .rowCount(rowsAffected)
+                .build();
+    }
+
+    private static final class CopyTextDecoderInputStream extends InputStream {
+        private final InputStream source;
+        private final byte[] buffer = new byte[8192];
+        private int position;
+        private int limit;
+        private boolean escaped;
+        private boolean isEndOfStream;
+
+        private CopyTextDecoderInputStream(InputStream source) {
+            this.source = source;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int value = readSource();
+            isEndOfStream = value < 0;
+
+            if (isEndOfStream) {
+                boolean hasPendingEscape = escaped;
+                escaped = false;
+
+                if (hasPendingEscape) {
+                    return '\\';
+                }
+                return -1;
+            }
+
+            if (!escaped && value == '\\')
+            {
+                escaped = true;
+                return read();
+            }
+
+            if (escaped) {
+                escaped = false;
+                return decodedEscapeByte(value);
+            }
+
+            return value;
+        }
+
+        private int decodedEscapeByte(int value) {
+            return switch (value) {
+                case 'b' -> '\b';
+                case 'f' -> '\f';
+                case 'n' -> '\n';
+                case 'r' -> '\r';
+                case 't' -> '\t';
+                case 'v' -> '\u000B';
+                case '\\' -> '\\';
+                default -> value;
+            };
+        }
+
+        private int readSource() throws IOException {
+            if (position >= limit) {
+                limit = source.read(buffer);
+                position = 0;
+                if (limit < 0) {
+                    return -1;
+                }
+            }
+            return Byte.toUnsignedInt(buffer[position++]);
+        }
+
+        @Override
+        public void close() throws IOException {
+            source.close();
         }
     }
 
