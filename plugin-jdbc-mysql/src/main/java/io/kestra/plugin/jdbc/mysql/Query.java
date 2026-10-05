@@ -92,7 +92,7 @@ import java.util.Properties;
 public class Query extends AbstractJdbcQuery implements MySqlConnectionInterface {
     @Schema(
         title = "Input file for LOAD DATA LOCAL INFILE operations",
-        description = "URI to a file in Kestra's internal storage (kestra://). Used with MySQL's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables"
+        description = "URI to a file in Kestra's internal storage (kestra://). Used with MySQL's LOAD DATA LOCAL INFILE statement to efficiently load CSV or delimited files into tables. Required for LOAD DATA LOCAL INFILE; local loading is disabled when it is not set."
     )
     @PluginProperty(dynamic = true, group = "source")
     protected String inputFile;
@@ -115,7 +115,17 @@ public class Query extends AbstractJdbcQuery implements MySqlConnectionInterface
 
     @Override
     public Properties connectionProperties(RunContext runContext) throws Exception {
-        return this.createMysqlProperties(super.connectionProperties(runContext), this.workingDirectory, false);
+        return this.createMysqlProperties(
+            super.connectionProperties(runContext),
+            this.inputFile != null ? this.workingDirectory : null,
+            false
+        );
+    }
+
+    @Override
+    public boolean usesConnectionPool() {
+        // The URL embeds the per-run working directory when inputFile is set, so a pool would never be reused.
+        return this.inputFile == null;
     }
 
     @Override
