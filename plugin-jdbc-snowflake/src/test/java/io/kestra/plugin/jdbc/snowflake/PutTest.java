@@ -77,8 +77,52 @@ class PutTest {
         );
 
         verify(statement).execute(argThat(sql ->
-            sql.startsWith("PUT file:")
-                && sql.endsWith(" @MY_STAGE")
+            sql.startsWith("PUT 'file://")
+                && sql.endsWith("' @MY_STAGE")
         ));
     }
+
+@Test
+void putWithNativeOptions() throws Exception {
+    URI source = storageInterface.put(
+        TenantService.MAIN_TENANT,
+        null,
+        URI.create("/file/storage/put-options-test.csv"),
+        new ByteArrayInputStream(
+            "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+        )
+    );
+
+    RunContext runContext = runContextFactory.of(Map.of());
+
+    Connection connection = mock(Connection.class);
+    Statement statement = mock(Statement.class);
+
+    when(connection.createStatement()).thenReturn(statement);
+    when(statement.execute(anyString())).thenReturn(false);
+
+    Put put = spy(
+        Put.builder()
+            .from(Property.ofValue(source.toString()))
+            .stageName(Property.ofValue("@MY_STAGE"))
+            .autoCompress(Property.ofValue(true))
+            .sourceCompression(Property.ofValue(Put.SourceCompression.GZIP))
+            .overwrite(Property.ofValue(true))
+            .parallel(Property.ofValue(4))
+            .build()
+    );
+
+    doReturn(connection).when(put).connection(runContext);
+
+    put.run(runContext);
+
+    verify(statement).execute(argThat(sql ->
+        sql.startsWith("PUT 'file://")
+            && sql.contains(" @MY_STAGE")
+            && sql.contains(" AUTO_COMPRESS = true")
+            && sql.contains(" SOURCE_COMPRESSION = GZIP")
+            && sql.contains(" OVERWRITE = true")
+            && sql.contains(" PARALLEL = 4")
+    ));
+}
 }

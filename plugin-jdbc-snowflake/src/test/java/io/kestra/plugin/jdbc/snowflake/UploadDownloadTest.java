@@ -90,4 +90,34 @@ public class UploadDownloadTest {
             is(IOUtils.toString(this.storageInterface.get(TenantService.MAIN_TENANT, null, put), Charsets.UTF_8))
         );
     }
+
+    @Test
+    void putSuccess() throws Exception {
+        URL resource = UploadDownloadTest.class.getClassLoader().getResource("scripts/snowflake.sql");
+
+        URI put = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            new URI("/file/storage/snowflake-put.sql"),
+            new FileInputStream(Objects.requireNonNull(resource).getFile())
+        );
+
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Put task = Put.builder()
+            .url(Property.ofValue("jdbc:snowflake://" + this.host + "/?loginTimeout=3"))
+            .username(Property.ofValue(this.username))
+            .password(Property.ofValue(this.password))
+            .warehouse(Property.ofValue("COMPUTE_WH"))
+            .database(Property.ofValue("UNITTEST"))
+            .from(Property.ofValue(put.toString()))
+            .schema(Property.ofValue("public"))
+            .stageName(Property.ofValue("UNITSTAGE"))
+            .fileName(Property.ofValue("test-put.sql"))
+            .build();
+
+        Put.Output result = task.run(runContext);
+
+        assertThat(result.getRows(), notNullValue());
+    }
 }

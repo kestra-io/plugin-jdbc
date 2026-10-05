@@ -7,14 +7,14 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.io.InputStream;
+import java.nio.file.Path;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,8 +27,8 @@ import java.util.Map;
 @Getter
 @NoArgsConstructor
 @Schema(
-    title = "Upload data from an internal storage file to a Snowflake stage",
-    description = "Executes the native Snowflake PUT command to upload a file from Kestra internal storage to a Snowflake stage."
+    title = "Run a native Snowflake PUT command on an internal storage file",
+    description = "Executes the native Snowflake PUT command on a file from Kestra internal storage. Use this task when native PUT options are required; use Upload for simpler file uploads to a Snowflake stage."
 )
 @Plugin(
     examples = {
@@ -62,6 +62,39 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
     @PluginProperty(group = "main")
     private Property<String> stageName;
 
+    @Schema(
+        title = "Name of the file in the stage",
+        description = "Defaults to the file name of the `from` URI."
+    )
+    @PluginProperty(group = "main")
+    private Property<String> fileName;
+
+    @Schema(
+        title = "Whether to automatically compress the file"
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> autoCompress;
+
+    @Schema(
+        title = "Source file compression type"
+    )
+    @PluginProperty(group = "advanced")
+    private Property<SourceCompression> sourceCompression;
+
+    @Schema(
+        title = "Whether to overwrite existing files"
+    )
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> overwrite;
+
+    @Schema(
+    title = "Number of parallel threads"
+    )
+    @Min(1)
+    @Max(99)
+    @PluginProperty(group = "advanced")
+    private Property<Integer> parallel;
+
     @PluginProperty(group = "connection")
     private Property<String> database;
 
@@ -77,55 +110,89 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
     @PluginProperty(group = "advanced")
     private Property<String> queryTag;
 
+    public enum SourceCompression {
+
+        AUTO_DETECT,
+        GZIP,
+        BZ2,
+        BROTLI,
+        ZSTD,
+        DEFLATE,
+        RAW_DEFLATE,
+        NONE
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
-        String rFrom = runContext.render(this.from)
-            .as(String.class)
-            .orElseThrow();
+    String rFrom = runContext.render(this.from)
+        .as(String.class)
+        .orElseThrow();
 
-        String rStageName = runContext.render(this.stageName)
-            .as(String.class)
-            .orElseThrow();
+    String rStageName = runContext.render(this.stageName)
+        .as(String.class)
+        .orElseThrow();
 
-        URI fromUri = new URI(rFrom);
+    URI fromUri = new URI(rFrom);
 
-        var tempFile = runContext.workingDir()
-            .createFile(rFileName, runContext.storage().getFile(fromUri))
-            .toFile();
+    String rFileName = runContext.render(this.fileName)
+        .as(String.class)
+        .orElse(Path.of(fromUri.getPath()).getFileName().toString());
 
-        var rows = new ArrayList<Map<String, Object>>();
+    var tempFile = runContext.workingDir()
+        .createFile(rFileName, runContext.storage().getFile(fromUri))
+        .toFile();
 
-        try (
-            Connection connection = this.connection(runContext);
-            var statement = connection.createStatement()
-        ) {
-            String sql = "PUT 'file://" + tempFile.getAbsolutePath() + "' " + rStageName;
+    var rows = new ArrayList<Map<String, Object>>();
 
-            if (statement.execute(sql)) {
-                try (var resultSet = statement.getResultSet()) {
-                    var metadata = resultSet.getMetaData();
-                    int columnCount = metadata.getColumnCount();
+    try (
+        Connection connection = this.connection(runContext);
+        var statement = connection.createStatement()
+    ) {
+        StringBuilder sql = new StringBuilder(
+            "PUT 'file://" + tempFile.getAbsolutePath() + "' " + rStageName
+        );
 
-                    while (resultSet.next()) {
-                        var row = new LinkedHashMap<String, Object>();
+        runContext.render(this.autoCompress)
+            .as(Boolean.class)
+            .ifPresent(value -> sql.append(" AUTO_COMPRESS = ").append(value));
 
-                        for (int i = 1; i <= columnCount; i++) {
-                            row.put(
-                                metadata.getColumnLabel(i),
-                                resultSet.getObject(i)
-                            );
-                        }
+        runContext.render(this.sourceCompression)
+            .as(SourceCompression.class)
+            .ifPresent(value -> sql.append(" SOURCE_COMPRESSION = ").append(value.name()));
 
-                        rows.add(row);
+        runContext.render(this.overwrite)
+            .as(Boolean.class)
+            .ifPresent(value -> sql.append(" OVERWRITE = ").append(value));
+
+        runContext.render(this.parallel)
+            .as(Integer.class)
+            .ifPresent(value -> sql.append(" PARALLEL = ").append(value));
+
+        if (statement.execute(sql.toString())) {
+            try (var resultSet = statement.getResultSet()) {
+                var metadata = resultSet.getMetaData();
+                int columnCount = metadata.getColumnCount();
+
+                while (resultSet.next()) {
+                    var row = new LinkedHashMap<String, Object>();
+
+                    for (int i = 1; i <= columnCount; i++) {
+                        row.put(
+                            metadata.getColumnLabel(i),
+                            resultSet.getObject(i)
+                        );
                     }
+
+                    rows.add(row);
                 }
             }
         }
-
-        return Output.builder()
-            .rows(rows)
-            .build();
     }
+
+    return Output.builder()
+        .rows(rows)
+        .build();
+}
 
     @Builder
     @Getter
