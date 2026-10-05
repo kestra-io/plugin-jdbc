@@ -21,6 +21,10 @@ public abstract class TestUtils {
     }
 
     public static String url() {
+        return "jdbc:postgresql://127.0.0.1:56983/";
+    }
+
+    public static String sslUrl() {
         return "jdbc:postgresql://127.0.0.1:56982/";
     }
 

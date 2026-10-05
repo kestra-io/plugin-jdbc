@@ -39,3 +39,32 @@ tasks:
 ```
 
 `read_ion` also supports globs and lists of files. When reading multiple files with varying schemas, `union_by_name := true` can help merge fields by name.
+
+#### Automatic output files
+
+Files generated within DuckDB queries in the task's working directory (such as via `COPY ... TO '{{ workingDir }}/results.csv'`) are automatically captured and uploaded to Kestra's internal storage as task outputs.
+
+To reference these output files in downstream tasks, use bracket syntax:
+
+```yaml
+{{ outputs.taskId.outputFiles['results.csv'] }}
+```
+
+Nested directory paths (e.g., `COPY ... TO '{{ workingDir }}/exports/data.csv'`) are also supported and accessible via `{{ outputs.taskId.outputFiles['exports/data.csv'] }}`.
+
+Automatic capture is enabled by default and can be opted out of by setting `captureOutputFiles: false`.
+
+##### Exclusions and Limits
+
+The following files are excluded from automatic capture:
+- Database files (`*.db` and `*.wal`)
+- Temporary files (`*.tmp`)
+- Extension downloads in `.duckdb_extensions/`
+- Pre-existing files that were not modified during query execution
+
+Safety limits are enforced to prevent unintended large uploads:
+- `maxCapturedFiles` (default: 100): Maximum number of new or modified files captured.
+- `maxCapturedBytes` (default: 100 MB / 104,857,600 bytes): Maximum total size of captured files.
+
+If either limit is exceeded, execution fails with an error explaining how to adjust the limits or disable auto-capture.
+
