@@ -81,17 +81,35 @@ import io.kestra.core.models.enums.MonacoLanguages;
                     type: io.kestra.plugin.core.log.Log
                     message: "{{ outputs.export.rowCount }}"
                 """
-            )
-        },
-        metrics = {
-            @Metric(
-                name = "rows",
-                type = Counter.TYPE,
-                unit = "rows",
-                description = "The number of rows copied from PostgreSQL."
+            ),
+        @Example(
+            full = true,
+            title = "Export JSON payloads from a text column without COPY TEXT escaping",
+            code = """
+                id: export_json_from_postgres
+                namespace: company.team
+                tasks:
+                  - id: export
+                    type: io.kestra.plugin.jdbc.postgresql.CopyOut
+                    url: jdbc:postgresql://sample_postgres:5432/world
+                    username: "{{ secret('POSTGRES_USERNAME') }}"
+                    password: "{{ secret('POSTGRES_PASSWORD') }}"
+                    format: TEXT
+                    outputMode: RAW
+                    sql: SELECT payload FROM events
+                """
         )
-        }
-    )
+    },
+    metrics = {
+        @Metric(
+            name = "rows",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of rows copied from PostgreSQL."
+        )
+    }
+)
+
 public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output>, PostgresConnectionInterface {
 
     @Schema(
