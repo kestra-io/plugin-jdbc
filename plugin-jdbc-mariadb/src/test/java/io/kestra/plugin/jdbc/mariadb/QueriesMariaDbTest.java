@@ -87,7 +87,7 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
     }
 
     @Test
-    void testMultiQueriesOnlySelectOutputs() throws Exception {
+    void testMultiQueriesMixedDmlAndSelectOutputs() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
@@ -111,9 +111,13 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(2));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("animals_count"), is(2L));
-        assertThat(runOutput.getOutputs().getLast().getRow().get("animals_count"), is(5L));
+        // DROP + CREATE + INSERT + SELECT + INSERT + SELECT
+        assertThat(runOutput.getOutputs().size(), is(6));
+        assertThat(runOutput.getOutputs().get(2).getAffectedRows(), is(2L));
+        assertThat(runOutput.getOutputs().get(3).getRow().get("animals_count"), is(2L));
+        assertThat(runOutput.getOutputs().get(3).getAffectedRows(), nullValue());
+        assertThat(runOutput.getOutputs().get(4).getAffectedRows(), is(3L));
+        assertThat(runOutput.getOutputs().get(5).getRow().get("animals_count"), is(5L));
     }
 
     @Test
@@ -135,8 +139,9 @@ public class QueriesMariaDbTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
+        assertThat(runOutput.getOutputs().size(), is(2));
+        assertThat(runOutput.getOutputs().get(0).getAffectedRows(), is(1L));
+        assertThat(runOutput.getOutputs().get(1).getRow().get("transaction_count"), is(expectedUpdateNumber));
 
         //Queries should fail due to bad sql
         Queries queriesFail = Queries.builder()

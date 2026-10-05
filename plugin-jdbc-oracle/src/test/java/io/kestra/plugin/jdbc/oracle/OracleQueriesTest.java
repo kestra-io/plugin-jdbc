@@ -91,8 +91,10 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("TEST_ROLLBACK_COUNT"), is(BigDecimal.valueOf(1)));
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRow() != null).toList();
+        assertThat(selectOutputs.size(), is(1));
+        assertThat(selectOutputs.getFirst().getRow().get("TEST_ROLLBACK_COUNT"), is(BigDecimal.valueOf(1)));
+        assertThat(runOutput.getOutputs().stream().anyMatch(o -> o.getAffectedRows() != null), is(true));
 
         // Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
@@ -230,10 +232,12 @@ public class OracleQueriesTest extends AbstractRdbmsTest {
 
         AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
 
-        // Only the SELECT generates one output
-        assertThat(output.getOutputs().size(), is(1));
+        // SELECT produces rows; preceding DML/DDL produce affectedRows entries
+        var selectOutputs = output.getOutputs().stream().filter(o -> o.getRows() != null).toList();
+        assertThat(selectOutputs.size(), is(1));
+        assertThat(output.getOutputs().stream().anyMatch(o -> o.getAffectedRows() != null), is(true));
 
-        List<Map<String, Object>> rows = output.getOutputs().getFirst().getRows();
+        List<Map<String, Object>> rows = selectOutputs.getFirst().getRows();
         assertThat(rows.size(), is(1));
 
         // 1 (before block) + 2,3 (in block) + 4 (after block)
