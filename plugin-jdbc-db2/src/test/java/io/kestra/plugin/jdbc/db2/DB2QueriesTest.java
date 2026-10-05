@@ -92,8 +92,10 @@ public class DB2QueriesTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("TRANSACTION_COUNT"), is(1));
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRow() != null).toList();
+        assertThat(selectOutputs.size(), is(1));
+        assertThat(selectOutputs.getFirst().getRow().get("TRANSACTION_COUNT"), is(1));
+        assertThat(runOutput.getOutputs().stream().anyMatch(o -> o.getAffectedRows() != null), is(true));
 
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()

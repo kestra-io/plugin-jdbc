@@ -533,5 +533,11 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             description = "Only populated when fetchType is FETCH or STORE"
         )
         private final Long size;
+
+        @Schema(
+            title = "The number of affected rows",
+            description = "Only populated for DML/DDL statements such as INSERT, UPDATE, DELETE, and CREATE when the driver reports an update count. Null when the statement produced a ResultSet (e.g. SELECT) or when the driver reports an unknown count (-1)."
+        )
+        private final Long affectedRows;
     }
 }

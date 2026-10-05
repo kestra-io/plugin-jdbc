@@ -70,12 +70,14 @@ class DuckDbQueriesTest {
             .build();
 
         Queries.Output runOutput = task.run(runContext);
-        assertThat(runOutput.getOutputs().getFirst(), notNullValue());
-        assertThat(runOutput.getOutputs().getLast(), notNullValue());
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRows() != null).toList();
+        assertThat(selectOutputs.size(), is(2));
+        assertThat(selectOutputs.getFirst(), notNullValue());
+        assertThat(selectOutputs.getLast(), notNullValue());
 
-        assertThat("employee selected", runOutput.getOutputs().getFirst().getRows().size(), is(1));
-        assertThat("employee name with age > 30", runOutput.getOutputs().getFirst().getRows().getFirst().get("name"), is("Bryan"));
-        assertThat("laptops size", runOutput.getOutputs().getLast().getRows().size(), is(2));
+        assertThat("employee selected", selectOutputs.getFirst().getRows().size(), is(1));
+        assertThat("employee name with age > 30", selectOutputs.getFirst().getRows().getFirst().get("name"), is("Bryan"));
+        assertThat("laptops size", selectOutputs.getLast().getRows().size(), is(2));
     }
 
     @Test
@@ -113,9 +115,10 @@ class DuckDbQueriesTest {
 
         Queries.Output runOutput = task.run(runContext);
 
-        assertThat(runOutput.getOutputs(), hasSize(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("a"), is(1L));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("b"), is("x"));
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRow() != null).toList();
+        assertThat(selectOutputs, hasSize(1));
+        assertThat(selectOutputs.getFirst().getRow().get("a"), is(1L));
+        assertThat(selectOutputs.getFirst().getRow().get("b"), is("x"));
     }
 
     @Test
@@ -142,12 +145,14 @@ class DuckDbQueriesTest {
             .build();
 
         Queries.Output runOutput = task.run(runContext);
-        assertThat(runOutput.getOutputs().getFirst(), notNullValue());
-        assertThat(runOutput.getOutputs().getLast(), notNullValue());
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRows() != null).toList();
+        assertThat(selectOutputs.size(), is(2));
+        assertThat(selectOutputs.getFirst(), notNullValue());
+        assertThat(selectOutputs.getLast(), notNullValue());
 
-        assertThat("employee selected", runOutput.getOutputs().getFirst().getRows().size(), is(1));
-        assertThat("employee name with age > 30", runOutput.getOutputs().getFirst().getRows().getFirst().get("name"), is("Bryan"));
-        assertThat("laptops size", runOutput.getOutputs().getLast().getRows().size(), is(2));
+        assertThat("employee selected", selectOutputs.getFirst().getRows().size(), is(1));
+        assertThat("employee name with age > 30", selectOutputs.getFirst().getRows().getFirst().get("name"), is("Bryan"));
+        assertThat("laptops size", selectOutputs.getLast().getRows().size(), is(2));
     }
 
 
@@ -193,10 +198,11 @@ class DuckDbQueriesTest {
             .build()
             .run(runContext);
 
-        assertThat(runOutput.getOutputs().size(), is(2));
-        assertThat(runOutput.getOutputs().getFirst(), notNullValue());
-        assertThat("Query count", runOutput.getOutputs().getFirst().getRow().get("count"), is(10L));
-        assertThat("Query name", runOutput.getOutputs().getLast().getRow().get("name"), is("Ailane"));
+        var selectOutputs = runOutput.getOutputs().stream().filter(o -> o.getRow() != null).toList();
+        assertThat(selectOutputs.size(), is(2));
+        assertThat(selectOutputs.getFirst(), notNullValue());
+        assertThat("Query count", selectOutputs.getFirst().getRow().get("count"), is(10L));
+        assertThat("Query name", selectOutputs.getLast().getRow().get("name"), is("Ailane"));
 
         assertThat(
             IOUtils.toString(storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("out")), Charsets.UTF_8),
@@ -238,8 +244,9 @@ class DuckDbQueriesTest {
             .build()
             .run(runContext);
 
-        assertThat(createTableAndFetchData.getOutputs().getFirst().getRows().size(), is(10));
-        assertThat(createTableAndFetchData.getOutputs().getFirst().getRows().stream()
+        var createSelects = createTableAndFetchData.getOutputs().stream().filter(o -> o.getRows() != null).toList();
+        assertThat(createSelects.getFirst().getRows().size(), is(10));
+        assertThat(createSelects.getFirst().getRows().stream()
             .filter(row -> (long) row.get("id") == testId)
             .findFirst()
             .orElseThrow()
@@ -256,8 +263,9 @@ class DuckDbQueriesTest {
             .build()
             .run(runContext);
 
-        assertThat(updateTableAndFetchData.getOutputs().getFirst().getRows().size(), is(10));
-        assertThat(updateTableAndFetchData.getOutputs().getFirst().getRows().stream()
+        var updateSelects = updateTableAndFetchData.getOutputs().stream().filter(o -> o.getRows() != null).toList();
+        assertThat(updateSelects.getFirst().getRows().size(), is(10));
+        assertThat(updateSelects.getFirst().getRows().stream()
             .filter(row -> (long) row.get("id") == testId)
             .findFirst()
             .orElseThrow()

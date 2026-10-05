@@ -154,11 +154,17 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .build();
 
         Queries.MultiQueryOutput output = insertAndSelect.run(runContext);
-        assertThat(output.getOutputs().size(), is(2));
+        assertThat(output.getOutputs().size(), is(4));
+        assertThat(output.getOutputs().get(0).getAffectedRows(), is(3L));
+        assertThat(output.getOutputs().get(1).getAffectedRows(), is(3L));
+        assertThat(output.getOutputs().get(2).getRows(), notNullValue());
+        assertThat(output.getOutputs().get(3).getRows(), notNullValue());
+        assertThat(output.getOutputs().get(2).getAffectedRows(), nullValue());
+        assertThat(output.getOutputs().get(3).getAffectedRows(), nullValue());
     }
 
     @Test
-    void testMultiQueriesOnlySelectOutputs() throws Exception {
+    void testMultiQueriesMixedDmlAndSelectOutputs() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 
         Queries taskGet = Queries.builder()
@@ -182,9 +188,20 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = taskGet.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(2));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("animals_count"), is(2L));
-        assertThat(runOutput.getOutputs().getLast().getRow().get("animals_count"), is(5L));
+        // DROP + CREATE + INSERT + SELECT + INSERT + SELECT
+        assertThat(runOutput.getOutputs().size(), is(6));
+
+        assertThat(runOutput.getOutputs().get(0).getAffectedRows(), is(0L)); // DROP
+        assertThat(runOutput.getOutputs().get(1).getAffectedRows(), is(0L)); // CREATE
+        assertThat(runOutput.getOutputs().get(2).getAffectedRows(), is(2L)); // INSERT 2 rows
+        assertThat(runOutput.getOutputs().get(2).getRow(), nullValue());
+
+        assertThat(runOutput.getOutputs().get(3).getRow().get("animals_count"), is(2L));
+        assertThat(runOutput.getOutputs().get(3).getAffectedRows(), nullValue());
+
+        assertThat(runOutput.getOutputs().get(4).getAffectedRows(), is(3L)); // INSERT 3 rows
+        assertThat(runOutput.getOutputs().get(5).getRow().get("animals_count"), is(5L));
+        assertThat(runOutput.getOutputs().get(5).getAffectedRows(), nullValue());
     }
 
     @Test
@@ -206,8 +223,9 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(expectedUpdateNumber));
+        assertThat(runOutput.getOutputs().size(), is(2));
+        assertThat(runOutput.getOutputs().get(0).getAffectedRows(), is(1L));
+        assertThat(runOutput.getOutputs().get(1).getRow().get("transaction_count"), is(expectedUpdateNumber));
 
         // Queries should fail due to bad sql
         Queries queriesFail = Queries.builder()
@@ -337,6 +355,51 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
 
         assertThat(verify.getOutputs().size(), is(1));
         assertThat(verify.getOutputs().getFirst().getRow().get("cnt"), is(7L));
+    }
+
+
+    @Test
+    void testAffectedRowsForInsertUpdateDelete() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        Queries setup = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(NONE))
+            .sql(Property.ofValue("""
+                DROP TABLE IF EXISTS affected_rows_demo;
+                CREATE TABLE affected_rows_demo (
+                    id SERIAL PRIMARY KEY,
+                    name VARCHAR(30) NOT NULL,
+                    status VARCHAR(10) NOT NULL DEFAULT 'new'
+                );
+                """))
+            .build();
+        setup.run(runContext);
+
+        Queries dml = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .sql(Property.ofValue("""
+                INSERT INTO affected_rows_demo (name) VALUES ('a'), ('b'), ('c');
+                UPDATE affected_rows_demo SET status = 'done' WHERE name IN ('a', 'b');
+                DELETE FROM affected_rows_demo WHERE name = 'c';
+                SELECT name, status FROM affected_rows_demo ORDER BY name;
+                """))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput output = dml.run(runContext);
+        assertThat(output.getOutputs().size(), is(4));
+        assertThat(output.getOutputs().get(0).getAffectedRows(), is(3L));
+        assertThat(output.getOutputs().get(0).getRows(), nullValue());
+        assertThat(output.getOutputs().get(1).getAffectedRows(), is(2L));
+        assertThat(output.getOutputs().get(2).getAffectedRows(), is(1L));
+        assertThat(output.getOutputs().get(3).getRows().size(), is(2));
+        assertThat(output.getOutputs().get(3).getAffectedRows(), nullValue());
+        assertThat(output.getOutputs().get(3).getSize(), is(2L));
     }
 
     @Override

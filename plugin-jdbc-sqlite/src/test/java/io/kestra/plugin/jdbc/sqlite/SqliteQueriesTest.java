@@ -87,8 +87,10 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
             .build();
 
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
-        assertThat(runOutput.getOutputs().size(), is(1));
-        assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
+        assertThat(runOutput.getOutputs().size(), is(4));
+        assertThat(runOutput.getOutputs().get(2).getAffectedRows(), is(1L));
+        assertThat(runOutput.getOutputs().get(3).getRow().get("transaction_count"), is(1));
+        assertThat(runOutput.getOutputs().get(3).getAffectedRows(), nullValue());
 
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()
@@ -192,9 +194,11 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
 
         Queries.Output runOutput = task.run(runContext);
 
-        assertThat(runOutput.getOutputs().size(), is(1));
+        assertThat(runOutput.getOutputs().size(), is(2));
         assertThat(runOutput.getOutputs().getFirst(), notNullValue());
         assertThat(runOutput.getOutputs().getFirst().getRows().size(), is(25));
+        assertThat(runOutput.getOutputs().getFirst().getAffectedRows(), nullValue());
+        assertThat(runOutput.getOutputs().get(1).getAffectedRows(), is(1L));
 
         //Check DB size
         //Update DB and output file
@@ -248,12 +252,47 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
 
         Queries.Output out = insertAndSelect.run(runContext);
 
-        // MultiQueryOutput: only the SELECT should produce a fetch output
+        // INSERT produces affectedRows; SELECT produces the fetched row
         assertThat(out.getDatabaseUri(), notNullValue());
         assertThat(out.getOutputs(), notNullValue());
-        assertThat(out.getOutputs().size(), is(1));
-        assertThat(out.getOutputs().getFirst().getRow(), notNullValue());
-        assertThat(out.getOutputs().getFirst().getRow().get("name"), is("hello"));
+        assertThat(out.getOutputs().size(), is(2));
+        assertThat(out.getOutputs().get(0).getAffectedRows(), is(1L));
+        assertThat(out.getOutputs().get(1).getRow(), notNullValue());
+        assertThat(out.getOutputs().get(1).getRow().get("name"), is("hello"));
+        assertThat(out.getOutputs().get(1).getAffectedRows(), nullValue());
+    }
+
+    @Test
+    void testAffectedRowsForInsertUpdateDelete() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        Queries dml = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH))
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
+                DROP TABLE IF EXISTS affected_rows_demo;
+                CREATE TABLE affected_rows_demo (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'new'
+                );
+                INSERT INTO affected_rows_demo (id, name) VALUES (1, 'a'), (2, 'b'), (3, 'c');
+                UPDATE affected_rows_demo SET status = 'done' WHERE name IN ('a', 'b');
+                DELETE FROM affected_rows_demo WHERE name = 'c';
+                SELECT name, status FROM affected_rows_demo ORDER BY name;
+                """))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput output = dml.run(runContext);
+        assertThat(output.getOutputs().size(), is(6));
+        assertThat(output.getOutputs().get(2).getAffectedRows(), is(3L));
+        assertThat(output.getOutputs().get(3).getAffectedRows(), is(2L));
+        assertThat(output.getOutputs().get(4).getAffectedRows(), is(1L));
+        assertThat(output.getOutputs().get(5).getRows().size(), is(2));
+        assertThat(output.getOutputs().get(5).getAffectedRows(), nullValue());
     }
 
     @Override
