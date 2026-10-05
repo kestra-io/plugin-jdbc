@@ -27,11 +27,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 @SuperBuilder
 @ToString
@@ -44,6 +41,28 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 )
 @Plugin(
     examples = {
+        @Example(
+            full = true,
+            title = "Run a query that exports results to a file, which is automatically captured and uploaded to internal storage.",
+            code = """
+                id: duckdb_export
+                namespace: company.team
+
+                tasks:
+                  - id: export_data
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    sql: |
+                      COPY (
+                        SELECT 1 AS id, 'Alice' AS name
+                        UNION ALL
+                        SELECT 2 AS id, 'Bob' AS name
+                      ) TO '{{ workingDir }}/results.csv' (HEADER, DELIMITER ',');
+
+                  - id: read_exported_file
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Exported file URI: {{ outputs.export_data.outputFiles['results.csv'] }}"
+                """
+        ),
         @Example(
             full = true,
             title = "Query multiple CSV files from a ZIP file, include the filename in the result, and output both the final dataset in ION format and the DuckDB database file.",
@@ -163,6 +182,15 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
+    @Builder.Default
+    protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
+
+    @Builder.Default
+    protected Property<Integer> maxCapturedFiles = Property.ofValue(100);
+
+    @Builder.Default
+    protected Property<Long> maxCapturedBytes = Property.ofValue(100L * 1024 * 1024);
+
     @Override
     @Schema(
         title = "The JDBC URL to connect to the database",
@@ -272,15 +300,21 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         this.sql = Property.ofValue(sql);
 
-        AbstractJdbcQuery.Output run = super.run(runContext);
+        var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
+
+        var run = super.run(runContext);
 
         // upload output files
-        Map<String, URI> uploaded = new HashMap<>();
-
-        if (outputFiles != null) {
-            outputFiles
-                .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
-        }
+        var uploaded = DuckDbQueryUtils.uploadOutputFiles(
+            runContext,
+            workingDirectory,
+            this.databaseFile,
+            outputFiles,
+            additionalVars,
+            snapshot,
+            this.maxCapturedFiles,
+            this.maxCapturedBytes
+        );
 
         // Create and output DB URI
         URI dbUri = null;

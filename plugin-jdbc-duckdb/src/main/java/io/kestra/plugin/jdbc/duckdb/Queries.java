@@ -27,11 +27,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 @SuperBuilder
 @ToString
@@ -44,6 +41,22 @@ import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 )
 @Plugin(
     examples = {
+        @Example(
+            full = true,
+            title = "Execute queries that export results to a file, which is automatically captured as an output file.",
+            code = """
+                id: queries_export
+                namespace: company.team
+
+                tasks:
+                  - id: queries
+                    type: io.kestra.plugin.jdbc.duckdb.Queries
+                    sql: |-
+                      CREATE TABLE users (id INT, name VARCHAR);
+                      INSERT INTO users VALUES (1, 'John'), (2, 'Jane');
+                      COPY users TO '{{ workingDir }}/users_export.csv' (HEADER, DELIMITER ',');
+                """
+        ),
         @Example(
             title = "Execute multiple queries that reads a csv, and outputs a select and a count.",
             full = true,
@@ -119,6 +132,15 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
+
+    @Builder.Default
+    protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
+
+    @Builder.Default
+    protected Property<Integer> maxCapturedFiles = Property.ofValue(100);
+
+    @Builder.Default
+    protected Property<Long> maxCapturedBytes = Property.ofValue(100L * 1024 * 1024);
 
     @Getter(AccessLevel.NONE)
     private transient Path databaseFile;
@@ -240,15 +262,21 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
-        AbstractJdbcQueries.MultiQueryOutput run = super.run(runContext);
+        var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
+
+        var run = super.run(runContext);
 
         // upload output files
-        Map<String, URI> uploaded = new HashMap<>();
-
-        if (outputFiles != null) {
-            outputFiles
-                .forEach(throwBiConsumer((k, v) -> uploaded.put(k, runContext.storage().putFile(new File(runContext.render(v, additionalVars))))));
-        }
+        var uploaded = DuckDbQueryUtils.uploadOutputFiles(
+            runContext,
+            workingDirectory,
+            this.databaseFile,
+            outputFiles,
+            additionalVars,
+            snapshot,
+            this.maxCapturedFiles,
+            this.maxCapturedBytes
+        );
 
         // Create and output DB URI
         URI dbUri = null;
@@ -286,5 +314,4 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             : null;
         DuckDbConnectionSetup.configureSession(runContext, connection, workingDirectory, this.communityExtensions);
     }
-
 }
