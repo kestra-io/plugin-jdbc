@@ -157,47 +157,18 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         // - Do NOT call getUpdateCount() before consuming the ResultSet (Pinot can invalidate it)
         // ---------------------------------------------------------------------
         if (!multiStatements) {
-            ResultSet rs = stmt.getResultSet();
-
-            // When SQL is not a SELECT statement skip output creation
-            if (rs == null) {
+            // Only call getUpdateCount when execute() returned false (Pinot-safe)
+            if (!hasResultSet) {
+                maybeAddUpdateOutput(stmt, outputList);
                 return totalSize;
             }
 
-            Output.OutputBuilder<?, ?> output = Output.builder();
-
-            long size = 0L;
-            switch (fetchType) {
-                case FETCH_ONE -> {
-                    size = 1L;
-                    output
-                        .row(fetchResult(rs, cellConverter, connection))
-                        .size(size);
-                }
-                case STORE -> {
-                    File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                    try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
-                    }
-                    output
-                        .uri(runContext.storage().putFile(tempFile))
-                        .size(size);
-                }
-                case FETCH -> {
-                    List<Map<String, Object>> maps = new ArrayList<>();
-                    size = fetchResults(stmt, rs, maps, cellConverter, connection);
-                    output
-                        .rows(maps)
-                        .size(size);
-                }
-                case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
-                default ->
-                    throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+            if (fetchType == FetchType.NONE) {
+                runContext.logger().info("fetchType is set to NONE, no output will be returned");
             }
 
-            totalSize += size;
-            outputList.add(output.build());
-
+            ResultSet rs = stmt.getResultSet();
+            totalSize += addResultSetOutput(connection, stmt, rs, runContext, cellConverter, outputList, fetchType);
             return totalSize;
         }
 
@@ -218,42 +189,14 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         while (true) {
             if (hasResults) {
                 ResultSet rs = stmt.getResultSet();
-                Output.OutputBuilder<?, ?> output = Output.builder();
-
-                long size = 0L;
-                switch (fetchType) {
-                    case FETCH_ONE -> {
-                        size = 1L;
-                        output
-                            .row(fetchResult(rs, cellConverter, connection))
-                            .size(size);
-                    }
-                    case STORE -> {
-                        File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
-                        try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
-                        }
-                        output
-                            .uri(runContext.storage().putFile(tempFile))
-                            .size(size);
-                    }
-                    case FETCH -> {
-                        List<Map<String, Object>> maps = new ArrayList<>();
-                        size = fetchResults(stmt, rs, maps, cellConverter, connection);
-                        output
-                            .rows(maps)
-                            .size(size);
-                    }
-                    case NONE -> { /* logged once before the loop */ }
-                    default ->
-                        throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+                totalSize += addResultSetOutput(connection, stmt, rs, runContext, cellConverter, outputList, fetchType);
+            } else {
+                int updateCount = stmt.getUpdateCount();
+                // JDBC: -1 means no more results (or unknown count)
+                if (updateCount == -1) {
+                    break;
                 }
-
-                totalSize += size;
-                outputList.add(output.build());
-            } else if (stmt.getUpdateCount() == -1) {
-                // No result set and no update count: end of results
-                break;
+                outputList.add(buildUpdateOutput(updateCount));
             }
 
             // Move to the next result
@@ -261,6 +204,67 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
 
         return totalSize;
+    }
+
+    /** Appends a ResultSet output; returns fetched row count for the fetch.size metric. */
+    private long addResultSetOutput(final Connection connection,
+                                    final PreparedStatement stmt,
+                                    final ResultSet rs,
+                                    final RunContext runContext,
+                                    final AbstractCellConverter cellConverter,
+                                    final List<Output> outputList,
+                                    final FetchType fetchType
+    ) throws SQLException, IOException {
+        Output.OutputBuilder<?, ?> output = Output.builder();
+
+        long size = 0L;
+        switch (fetchType) {
+            case FETCH_ONE -> {
+                size = 1L;
+                output
+                    .row(fetchResult(rs, cellConverter, connection))
+                    .size(size);
+            }
+            case STORE -> {
+                File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
+                try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
+                    size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
+                }
+                output
+                    .uri(runContext.storage().putFile(tempFile))
+                    .size(size);
+            }
+            case FETCH -> {
+                List<Map<String, Object>> maps = new ArrayList<>();
+                size = fetchResults(stmt, rs, maps, cellConverter, connection);
+                output
+                    .rows(maps)
+                    .size(size);
+            }
+            case NONE -> {
+                // Empty output preserved for callers that still inspect outputs when fetchType is NONE
+            }
+            default ->
+                throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
+        }
+
+        outputList.add(output.build());
+        return size;
+    }
+
+    /** Appends DML/DDL output when getUpdateCount() >= 0; JDBC -1 (unknown) is omitted. */
+    private static void maybeAddUpdateOutput(final Statement stmt, final List<Output> outputList) throws SQLException {
+        int updateCount = stmt.getUpdateCount();
+        if (updateCount < 0) {
+            return;
+        }
+        outputList.add(buildUpdateOutput(updateCount));
+    }
+
+    private static Output buildUpdateOutput(final int updateCount) {
+        return Output.builder()
+            .affectedRows((long) updateCount)
+            .build();
     }
 
     private static void rollbackIfTransactional(final Connection connection,
