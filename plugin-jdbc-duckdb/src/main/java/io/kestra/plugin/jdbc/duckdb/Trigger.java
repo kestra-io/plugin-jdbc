@@ -70,6 +70,15 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
+    @Builder.Default
+    protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
+
+    @Builder.Default
+    protected Property<Integer> maxCapturedFiles = Property.ofValue(100);
+
+    @Builder.Default
+    protected Property<Long> maxCapturedBytes = Property.ofValue(100L * 1024 * 1024);
+
     @Override
     public Property<String> getUrl() {
         return Property.ofValue("jdbc:duckdb:" + databaseFile);
@@ -102,6 +111,9 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
             .outputDbFile(this.getOutputDbFile())
             .inputFiles(this.getInputFiles())
             .communityExtensions(this.getCommunityExtensions())
+            .captureOutputFiles(this.getCaptureOutputFiles())
+            .maxCapturedFiles(this.getMaxCapturedFiles())
+            .maxCapturedBytes(this.getMaxCapturedBytes())
             .build();
         return query.run(runContext);
     }
