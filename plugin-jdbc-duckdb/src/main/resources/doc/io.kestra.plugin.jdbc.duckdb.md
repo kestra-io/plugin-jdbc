@@ -54,3 +54,17 @@ Nested directory paths (e.g., `COPY ... TO '{{ workingDir }}/exports/data.csv'`)
 
 Automatic capture is enabled by default and can be opted out of by setting `captureOutputFiles: false`.
 
+##### Exclusions and Limits
+
+The following files are excluded from automatic capture:
+- Database files (`*.db` and `*.wal`)
+- Temporary files (`*.tmp`)
+- Extension downloads in `.duckdb_extensions/`
+- Pre-existing files that were not modified during query execution
+
+Safety limits are enforced to prevent unintended large uploads:
+- `maxCapturedFiles` (default: 100): Maximum number of new or modified files captured.
+- `maxCapturedBytes` (default: 100 MB / 104,857,600 bytes): Maximum total size of captured files.
+
+If either limit is exceeded, execution fails with an error explaining how to adjust the limits or disable auto-capture.
+

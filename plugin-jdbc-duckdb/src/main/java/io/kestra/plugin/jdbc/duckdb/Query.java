@@ -27,13 +27,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 @SuperBuilder
 @ToString
@@ -190,6 +185,12 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Builder.Default
     protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
 
+    @Builder.Default
+    protected Property<Integer> maxCapturedFiles = Property.ofValue(100);
+
+    @Builder.Default
+    protected Property<Long> maxCapturedBytes = Property.ofValue(100L * 1024 * 1024);
+
     @Override
     @Schema(
         title = "The JDBC URL to connect to the database",
@@ -304,27 +305,16 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         var run = super.run(runContext);
 
         // upload output files
-        var uploaded = new HashMap<String, URI>();
-        var explicitOutputFilePaths = new HashSet<Path>();
-
-        if (outputFiles != null) {
-            outputFiles.forEach(throwBiConsumer((k, v) -> {
-                var file = new File(runContext.render(v, additionalVars));
-                uploaded.put(k, runContext.storage().putFile(file));
-                explicitOutputFilePaths.add(file.toPath().toAbsolutePath());
-            }));
-        }
-
-        if (snapshot != null) {
-            DuckDbQueryUtils.autoCaptureOutputFiles(
-                runContext,
-                workingDirectory,
-                this.databaseFile,
-                snapshot,
-                uploaded,
-                explicitOutputFilePaths
-            );
-        }
+        var uploaded = DuckDbQueryUtils.uploadOutputFiles(
+            runContext,
+            workingDirectory,
+            this.databaseFile,
+            outputFiles,
+            additionalVars,
+            snapshot,
+            this.maxCapturedFiles,
+            this.maxCapturedBytes
+        );
 
         // Create and output DB URI
         URI dbUri = null;

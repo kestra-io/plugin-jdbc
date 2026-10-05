@@ -10,6 +10,7 @@ import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import jakarta.inject.Inject;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -715,7 +716,7 @@ class DuckDbTest {
             assertThat(runOutput.getOutputFiles().containsKey("outside_file.txt"), is(false));
             assertThat(runOutput.getOutputFiles().isEmpty(), is(true));
         } finally {
-            org.apache.commons.io.FileUtils.deleteDirectory(outsideDir.toFile());
+            FileUtils.deleteDirectory(outsideDir.toFile());
         }
     }
 
@@ -778,5 +779,40 @@ class DuckDbTest {
             StandardCharsets.UTF_8
         );
         assertThat(content, containsString("updated"));
+    }
+
+    @Test
+    void maxCapturedFilesExceededThrowsException() {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .maxCapturedFiles(Property.ofValue(1))
+            .sql(Property.ofExpression("""
+                COPY (SELECT 1 AS id) TO '{{ workingDir }}/file1.csv' (HEADER, DELIMITER ',');
+                COPY (SELECT 2 AS id) TO '{{ workingDir }}/file2.csv' (HEADER, DELIMITER ',');
+                """))
+            .build();
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> task.run(runContext)
+        );
+        assertThat(exception.getMessage(), containsString("Auto-capture exceeded maximum file count limit of 1 (found 2 files)"));
+    }
+
+    @Test
+    void maxCapturedBytesExceededThrowsException() {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .maxCapturedBytes(Property.ofValue(5L))
+            .sql(Property.ofExpression("COPY (SELECT 'some large content' AS id) TO '{{ workingDir }}/file.csv' (HEADER, DELIMITER ',');"))
+            .build();
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> task.run(runContext)
+        );
+        assertThat(exception.getMessage(), containsString("Auto-capture exceeded maximum total size limit of 5 bytes"));
     }
 }
