@@ -658,4 +658,125 @@ class DuckDbTest {
         );
         assertThat(content, is("id,name\n4814976,Viva\n"));
     }
+
+    @Test
+    void emptyOutputFiles() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .sql(Property.ofValue("SELECT 1 AS col;"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().isEmpty(), is(true));
+    }
+
+    @Test
+    void autoOutputFilesExclusions() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .sql(Property.ofExpression("""
+                COPY (SELECT 1 AS id) TO '{{ workingDir }}/app.db_summary.csv' (HEADER, DELIMITER ',');
+                COPY (SELECT 1 AS id) TO '{{ workingDir }}/temp_data.tmp' (HEADER, DELIMITER ',');
+                COPY (SELECT 1 AS id) TO '{{ workingDir }}/extra.wal' (HEADER, DELIMITER ',');
+                ATTACH '{{ workingDir }}/other.db' AS other_db;
+                CREATE TABLE other_db.tbl AS SELECT 1 AS id;
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("app.db_summary.csv"), is(true));
+        assertThat(runOutput.getOutputFiles().containsKey("temp_data.tmp"), is(false));
+        assertThat(runOutput.getOutputFiles().containsKey("extra.wal"), is(false));
+        assertThat(runOutput.getOutputFiles().containsKey("other.db"), is(false));
+    }
+
+    @Test
+    void customUrlDoesNotCaptureOutsideWorkingDir() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+        Path outsideDir = Files.createTempDirectory("outside-duckdb");
+        try {
+            Path outsideDb = outsideDir.resolve("custom.db");
+            Files.writeString(outsideDir.resolve("outside_file.txt"), "hello");
+
+            Query task = Query.builder()
+                .url(Property.ofValue("jdbc:duckdb:" + outsideDb.toAbsolutePath()))
+                .sql(Property.ofValue("SELECT 1 AS col;"))
+                .build();
+
+            Query.Output runOutput = task.run(runContext);
+
+            assertThat(runOutput.getOutputFiles(), notNullValue());
+            assertThat(runOutput.getOutputFiles().containsKey("outside_file.txt"), is(false));
+            assertThat(runOutput.getOutputFiles().isEmpty(), is(true));
+        } finally {
+            org.apache.commons.io.FileUtils.deleteDirectory(outsideDir.toFile());
+        }
+    }
+
+    @Test
+    void symlinkOutsideWorkingDirNotCaptured() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+        Path outsideFile = Files.createTempFile("outside", ".csv");
+        try {
+            Files.writeString(outsideFile, "secret,data\n1,2\n");
+            Path symlink = runContext.workingDir().path().resolve("link_to_outside.csv");
+            Files.createSymbolicLink(symlink, outsideFile);
+
+            Query task = Query.builder()
+                .sql(Property.ofExpression("COPY (SELECT 1 AS id) TO '{{ workingDir }}/safe.csv' (HEADER, DELIMITER ',');"))
+                .build();
+
+            Query.Output runOutput = task.run(runContext);
+
+            assertThat(runOutput.getOutputFiles(), notNullValue());
+            assertThat(runOutput.getOutputFiles().containsKey("safe.csv"), is(true));
+            assertThat(runOutput.getOutputFiles().containsKey("link_to_outside.csv"), is(false));
+        } finally {
+            Files.deleteIfExists(outsideFile);
+        }
+    }
+
+    @Test
+    void optOutCaptureOutputFiles() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .captureOutputFiles(Property.ofValue(false))
+            .sql(Property.ofExpression("COPY (SELECT 1 AS id) TO '{{ workingDir }}/opt_out.csv' (HEADER, DELIMITER ',');"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("opt_out.csv"), is(false));
+        assertThat(runOutput.getOutputFiles().isEmpty(), is(true));
+    }
+
+    @Test
+    void overwrittenFileIsCaptured() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+        Path file = runContext.workingDir().path().resolve("data.csv");
+        Files.writeString(file, "initial");
+
+        Query task = Query.builder()
+            .sql(Property.ofExpression("COPY (SELECT 100 AS id, 'updated' AS val) TO '{{ workingDir }}/data.csv' (HEADER, DELIMITER ',');"))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputFiles(), notNullValue());
+        assertThat(runOutput.getOutputFiles().containsKey("data.csv"), is(true));
+
+        String content = IOUtils.toString(
+            storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getOutputFiles().get("data.csv")),
+            StandardCharsets.UTF_8
+        );
+        assertThat(content, containsString("updated"));
+    }
 }

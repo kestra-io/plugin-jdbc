@@ -70,6 +70,9 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
+    @Builder.Default
+    protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
+
     @Override
     public Property<String> getUrl() {
         return Property.ofValue("jdbc:duckdb:" + databaseFile);
@@ -102,6 +105,7 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
             .outputDbFile(this.getOutputDbFile())
             .inputFiles(this.getInputFiles())
             .communityExtensions(this.getCommunityExtensions())
+            .captureOutputFiles(this.getCaptureOutputFiles())
             .build();
         return query.run(runContext);
     }

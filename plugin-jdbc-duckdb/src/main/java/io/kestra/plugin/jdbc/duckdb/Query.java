@@ -20,7 +20,6 @@ import lombok.experimental.SuperBuilder;
 import org.duckdb.DuckDBDriver;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
-import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -189,6 +187,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
+    @Builder.Default
+    protected Property<Boolean> captureOutputFiles = Property.ofValue(true);
+
     @Override
     @Schema(
         title = "The JDBC URL to connect to the database",
@@ -298,41 +299,31 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         this.sql = Property.ofValue(sql);
 
-        Set<Path> existingFiles = new HashSet<>();
-        if (workingDirectory != null && Files.exists(workingDirectory)) {
-            try (var stream = Files.walk(workingDirectory)) {
-                stream.filter(Files::isRegularFile).forEach(existingFiles::add);
-            }
-        }
+        var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
 
-        AbstractJdbcQuery.Output run = super.run(runContext);
+        var run = super.run(runContext);
 
         // upload output files
-        Map<String, URI> uploaded = new HashMap<>();
-        Set<Path> explicitOutputFilePaths = new HashSet<>();
+        var uploaded = new HashMap<String, URI>();
+        var explicitOutputFilePaths = new HashSet<Path>();
 
         if (outputFiles != null) {
             outputFiles.forEach(throwBiConsumer((k, v) -> {
-                File file = new File(runContext.render(v, additionalVars));
+                var file = new File(runContext.render(v, additionalVars));
                 uploaded.put(k, runContext.storage().putFile(file));
                 explicitOutputFilePaths.add(file.toPath().toAbsolutePath());
             }));
         }
 
-        if (workingDirectory != null && Files.exists(workingDirectory)) {
-            final Path workDir = workingDirectory;
-            final Path extDir = workDir.resolve(".duckdb_extensions").toAbsolutePath();
-            try (var stream = Files.walk(workDir)) {
-                stream.filter(Files::isRegularFile)
-                    .filter(path -> !existingFiles.contains(path))
-                    .filter(path -> this.databaseFile == null || (!path.equals(this.databaseFile) && !path.toString().startsWith(this.databaseFile.toString())))
-                    .filter(path -> !path.toAbsolutePath().startsWith(extDir))
-                    .filter(path -> !explicitOutputFilePaths.contains(path.toAbsolutePath()))
-                    .forEach(throwConsumer(path -> {
-                        String relativeKey = workDir.relativize(path).toString().replace('\\', '/');
-                        uploaded.put(relativeKey, runContext.storage().putFile(path.toFile()));
-                    }));
-            }
+        if (snapshot != null) {
+            DuckDbQueryUtils.autoCaptureOutputFiles(
+                runContext,
+                workingDirectory,
+                this.databaseFile,
+                snapshot,
+                uploaded,
+                explicitOutputFilePaths
+            );
         }
 
         // Create and output DB URI
@@ -346,7 +337,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
             .rows(run.getRows())
             .uri(run.getUri())
             .size(run.getSize())
-            .outputFiles(uploaded.isEmpty() ? null : uploaded)
+            .outputFiles(uploaded)
             .databaseUri(dbUri)
             .build();
     }

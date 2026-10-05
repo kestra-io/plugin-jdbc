@@ -28,10 +28,21 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
             "List of keys that will generate temporary files.\n" +
             "On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.\n" +
             "If you add a file with `[\"first\"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');`" +
-            " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`."
+            " and use this file in others tasks using `{{ outputs.taskId.outputFiles.first }}`.\n" +
+            "For files captured automatically with extensions or directory paths (e.g., `results.csv`), use bracket syntax: `{{ outputs.taskId.outputFiles['results.csv'] }}`.",
+        deprecated = true
     )
     @PluginProperty(group = "destination")
     Property<List<String>> getOutputFiles();
+
+    @Schema(
+        title = "Whether to automatically capture output files",
+        description = "Whether to automatically capture and upload files created in the working directory during execution. Defaults to true."
+    )
+    @PluginProperty(group = "destination")
+    default Property<Boolean> getCaptureOutputFiles() {
+        return Property.ofValue(true);
+    }
 
     @Schema(
         title = "Database URI",
