@@ -101,9 +101,34 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     @PluginProperty(language = MonacoLanguages.SQL, group = "main")
     protected Property<String> sql;
 
+    @Schema(
+        title = "Output mode",
+        description = "Controls how the output of the COPY TEXT command is handled. The default value, `COPY`, preserves PostgreSQL's COPY TEXT representation, including its escaping of backslashes, delimiters, and line breaks. `RAW` removes the COPY TEXT escaping, which is useful when exporting a single column of JSON or other serialized text. Because escaping is removed, delimiters and line breaks inside values can no longer be told apart from column and row separators, and the default NULL marker `\\N` becomes `N`; set `nullString` if NULLs must stay distinguishable. This option is allowed only when using TEXT format."
+    )
+    @PluginProperty(group = "processing")
+    @Builder.Default
+    protected Property<OutputMode> outputMode = Property.ofValue(OutputMode.COPY);
+
+    public enum OutputMode {
+        COPY,
+        RAW
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
+
+        Format format = runContext.render(this.format)
+                .as(Format.class)
+                .orElseThrow(() -> new IllegalArgumentException("format is required"));
+
+        OutputMode outputMode = runContext.render(this.outputMode)
+                .as(OutputMode.class)
+                .orElse(OutputMode.COPY);
+
+        if (outputMode == OutputMode.RAW && format != Format.TEXT) {
+            throw new IllegalArgumentException("RAW output mode is only allowed with TEXT format");
+        }
 
         try (Connection connection = this.connection(runContext)) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
