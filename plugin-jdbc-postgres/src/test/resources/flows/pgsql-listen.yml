@@ -4,8 +4,8 @@ namespace: io.kestra.tests
 triggers:
   - id: watch
     type: io.kestra.plugin.jdbc.postgresql.Trigger
-    sql: SELECT * FROM pgsql_types
-    url: jdbc:postgresql://127.0.0.1:56982/
+    sql: SELECT concert_id, available, b FROM pgsql_types
+    url: jdbc:postgresql://127.0.0.1:56983/
     username: postgres
     password: pg_passwd
     fetchType: FETCH
