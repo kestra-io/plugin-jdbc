@@ -1,3 +1,0 @@
-CREATE DOMAIN super AS text;
-
-CREATE OR REPLACE FUNCTION json_parse(val text) RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT val $$;

@@ -21,10 +21,10 @@ class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
     @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
-    @Value("${redshift.user:postgres}")
+    @Value("${redshift.user:kestra}")
     protected String user;
 
-    @Value("${redshift.password:pg_passwd}")
+    @Value("${redshift.password:k3str4}")
     protected String password;
     @Test
     void run() throws Exception {

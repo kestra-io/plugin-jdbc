@@ -12,7 +12,7 @@ CREATE TABLE pgsql_types (
     floatn_test float8 not null,
     double_test double precision not null,
     real_test real not null,
-    numeric_test numeric not null,
+    numeric_test numeric(18,0) not null,
     date_type DATE not null,
     time_type TIME not null,
     timez_type TIME WITH TIME ZONE not null,

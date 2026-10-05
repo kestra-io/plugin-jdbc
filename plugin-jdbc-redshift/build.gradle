@@ -19,3 +19,8 @@ dependencies {
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
+
+test {
+    systemProperty "user.timezone", "UTC"
+}
+

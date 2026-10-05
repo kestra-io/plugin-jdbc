@@ -6,8 +6,8 @@ triggers:
     type: io.kestra.plugin.jdbc.redshift.Trigger
     sql: SELECT * FROM pgsql_types
     url: jdbc:redshift://127.0.0.1:55439/kestra?ssl=false
-    username: postgres
-    password: pg_passwd
+    username: kestra
+    password: k3str4
     fetchType: FETCH
     interval: PT10S
 

@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.Collections;
@@ -27,10 +26,10 @@ public class RedshiftQueriesTest extends AbstractRdbmsTest {
     @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
-    @Value("${redshift.user:postgres}")
+    @Value("${redshift.user:kestra}")
     protected String user;
 
-    @Value("${redshift.password:pg_passwd}")
+    @Value("${redshift.password:k3str4}")
     protected String password;
 
     @Test
@@ -62,7 +61,7 @@ public class RedshiftQueriesTest extends AbstractRdbmsTest {
         List<Map<String, Object>> employees = runOutput.getOutputs().getFirst().getRows();
         assertThat("employees", employees, notNullValue());
         assertThat("employees", employees.size(), is(1));
-        assertThat("employee selected", employees.getFirst().get("age"), is(BigDecimal.valueOf(45)));
+        assertThat("employee selected", employees.getFirst().get("age"), is(45));
         assertThat("employee selected", employees.getFirst().get("firstname"), is("John"));
         assertThat("employee selected", employees.getFirst().get("lastname"), is("Doe"));
 
