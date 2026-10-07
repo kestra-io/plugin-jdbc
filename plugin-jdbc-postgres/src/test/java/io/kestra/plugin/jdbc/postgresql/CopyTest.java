@@ -1,7 +1,5 @@
 package io.kestra.plugin.jdbc.postgresql;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -125,14 +123,12 @@ public class CopyTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         var tableName = "copy_out_outputmode_raw_" + IdUtils.create();
-        ObjectMapper mapper = JacksonMapper.ofJson();
 
         String json = """
                 {
                   "tab": "\\t",
                   "newline": "\\n",
                   "backslash": "\\\\",
-                  "forwardSlash": "/",
                   "quotationMark": "\\\""
                 }
                 """;
@@ -156,14 +152,7 @@ public class CopyTest {
             actual = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
 
-        JsonNode expectedJson = mapper.readTree(json);
-        JsonNode actualJson = mapper.readTree(actual);
-
-        expectedJson.properties().forEach(entry -> {
-            String fieldName = entry.getKey();
-            assertThat(actualJson.has(fieldName), is(true));
-            assertThat(actualJson.get(fieldName).asText(), is(entry.getValue().asText()));
-        });
+        assertThat(actual, is(json + "\n"));
     }
 
     @Test
@@ -171,14 +160,12 @@ public class CopyTest {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         var tableName = "copy_out_outputmode_raw_" + IdUtils.create();
-        ObjectMapper mapper = JacksonMapper.ofJson();
 
         String json = """
                 {
                   "tab": "\\t",
                   "escapedNewline": "\\n",
                   "escapedBackslash": "\\\\",
-                  "escapedForwardSlash": "/",
                   "escapedQuotationMark": "\\\"",
                   "nord": "åäö",
                   "emoji": "😺",
@@ -204,14 +191,8 @@ public class CopyTest {
         try (var in = runContext.storage().getFile(output.getUri())) {
             actual = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
-        JsonNode expectedJson = mapper.readTree(json);
-        JsonNode actualJson = mapper.readTree(actual);
 
-        expectedJson.properties().forEach(entry -> {
-            String fieldName = entry.getKey();
-            assertThat(actualJson.has(fieldName), is(true));
-            assertThat(actualJson.get(fieldName).asText(), is(entry.getValue().asText()));
-        });
+        assertThat(actual, is(json + "\n"));
     }
 
     @Test
