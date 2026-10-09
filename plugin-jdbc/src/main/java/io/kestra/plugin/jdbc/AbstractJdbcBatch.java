@@ -573,8 +573,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 List<Object> buffer = new ArrayList<>(config.chunk());
                 var skip = resumeOffset;
 
-                // FileSerde.read(InputStream, Consumer) may only parse the first ION value of each line on some core versions.
-                // The parser is created explicitly: readValues(InputStream) would unwrap a leading top-level list as an array of rows.
+                // readValues(InputStream) would unwrap a leading top-level list as an array of rows, so the parser is created explicitly.
                 var mapper = JacksonMapper.ofIon();
                 try (var parser = mapper.createParser(inputStream); var rows = mapper.readerFor(Object.class).readValues(parser)) {
                     while (rows.hasNextValue()) {

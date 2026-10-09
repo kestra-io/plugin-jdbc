@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -191,7 +192,12 @@ class AbstractJdbcBatchStreamingTest {
 
         var task = batch(dbUrl, uri, 2, AbstractJdbcBatch.InputHandling.STREAM, flushes);
 
-        assertThrows(Exception.class, () -> task.run(runContextFactory.of(Map.of())));
+        var thrown = assertThrows(Exception.class, () -> task.run(runContextFactory.of(Map.of())));
+        Throwable cause = thrown;
+        while (cause != null && !(cause instanceof JsonProcessingException || cause.getClass().getName().startsWith("com.amazon.ion."))) {
+            cause = cause.getCause();
+        }
+        assertThat("cause chain should contain a Jackson or Ion parse exception: " + thrown, cause, is(notNullValue()));
         // a wrong resume skip count would re-insert rows, which the primary key rejects or the count reveals
         assertThat(count(dbUrl), is(4));
     }
