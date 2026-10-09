@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -18,17 +19,25 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -109,10 +118,220 @@ class AbstractJdbcBatchStreamingTest {
         }
     }
 
+    @Test
+    void shouldReadAllRowsWhenSeveralRowsShareOneLine() throws Exception {
+        var dbUrl = createDatabase();
+        var uri = store(ionRows(250, " ", false));
+        var flushes = new ArrayList<Long>();
+
+        var output = batch(dbUrl, uri, 100, AbstractJdbcBatch.InputHandling.STREAM, flushes).run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(250L));
+        assertThat(output.getUpdatedCount(), is(250));
+        assertThat(flushes, hasSize(3));
+        assertThat(count(dbUrl), is(250));
+    }
+
+    @Test
+    void shouldReadAllListRowsWrittenWithFileSerde() throws Exception {
+        var dbUrl = createDatabase();
+        var content = new ByteArrayOutputStream();
+        for (var i = 0; i < 5; i++) {
+            FileSerde.write(content, List.of(i, "row-" + i));
+        }
+        var uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new ByteArrayInputStream(content.toByteArray()));
+        var flushes = new ArrayList<Long>();
+
+        var output = batch(dbUrl, uri, 2, AbstractJdbcBatch.InputHandling.STREAM, flushes).run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(5L));
+        assertThat(count(dbUrl), is(5));
+    }
+
+    @Test
+    void shouldReadAllRowsWithLocalInputHandling() throws Exception {
+        var dbUrl = createDatabase();
+        var uri = store(ionRows(250, " ", true));
+        var flushes = new ArrayList<Long>();
+
+        var output = batch(dbUrl, uri, 100, AbstractJdbcBatch.InputHandling.LOCAL, flushes).run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(250L));
+        assertThat(flushes, hasSize(3));
+        assertThat(count(dbUrl), is(250));
+    }
+
+    @Test
+    void shouldIgnoreBlankLinesAndTrailingNewlines() throws Exception {
+        var dbUrl = createDatabase();
+        var uri = store("\n" + ionRows(5, "\n\n", true) + "\n\n");
+        var flushes = new ArrayList<Long>();
+
+        var output = batch(dbUrl, uri, 100, AbstractJdbcBatch.InputHandling.STREAM, flushes).run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(5L));
+        assertThat(flushes, hasSize(1));
+        assertThat(count(dbUrl), is(5));
+    }
+
+    @Test
+    void shouldSucceedWithoutExecutingBatchOnEmptyInput() throws Exception {
+        var dbUrl = createDatabase();
+        var uri = store("");
+        var flushes = new ArrayList<Long>();
+
+        var output = batch(dbUrl, uri, 100, AbstractJdbcBatch.InputHandling.STREAM, flushes).run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(0L));
+        assertThat(output.getUpdatedCount(), is(0));
+        assertThat(flushes, hasSize(0));
+        assertThat(count(dbUrl), is(0));
+    }
+
+    @Test
+    void shouldFailOnCorruptIon() throws Exception {
+        var dbUrl = createDatabase();
+        // 5 valid rows with chunk 2: rows 1-4 are committed, row 5 is buffered when the parser fails
+        var uri = store(ionRows(5, "\n", true) + "{{{{ not ion");
+
+        var task = batch(dbUrl, uri, 2, AbstractJdbcBatch.InputHandling.STREAM, new ArrayList<>());
+
+        var thrown = assertThrows(Exception.class, () -> task.run(runContextFactory.of(Map.of())));
+        Throwable cause = thrown;
+        while (cause != null && !(cause instanceof JsonProcessingException || cause.getClass().getName().startsWith("com.amazon.ion."))) {
+            cause = cause.getCause();
+        }
+        assertThat("cause chain should contain a Jackson or Ion parse exception: " + thrown, cause, is(notNullValue()));
+        // ion parse errors are not retryable and committed chunks stay in place
+        assertThat(count(dbUrl), is(4));
+    }
+
+    @Test
+    void shouldResumeAfterInputIOExceptionWithoutDuplicatingRows() throws Exception {
+        var dbUrl = createDatabase();
+        // 10 rows of about 20 bytes: the first attempt dies after 100 bytes, so some chunks are committed before the failure
+        var uri = store(ionRows(10, "\n", true));
+
+        var attempts = new AtomicInteger();
+        var runContext = spy(runContextFactory.of(Map.of()));
+        var storage = spy(runContext.storage());
+        doReturn(storage).when(runContext).storage();
+        doAnswer(invocation -> {
+            var real = (InputStream) invocation.callRealMethod();
+            return attempts.incrementAndGet() == 1 ? new FailingInputStream(real, 100) : real;
+        }).when(storage).getFile(any(URI.class));
+
+        var task = batch(dbUrl, uri, 2, AbstractJdbcBatch.InputHandling.STREAM, new ArrayList<>());
+
+        var output = task.run(runContext);
+
+        assertThat(attempts.get(), is(2));
+        assertThat(task.connections.get(), is(2));
+        // a wrong resume skip count would re-insert rows, which the primary key rejects
+        assertThat(count(dbUrl), is(10));
+        assertThat(output.getRowCount(), is(10L));
+    }
+
+    @Test
+    void shouldInsertTemporalValuesWrittenWithFileSerde() throws Exception {
+        var dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (var setup = DriverManager.getConnection(dbUrl); var statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE temporal_batch (id INT PRIMARY KEY, d DATE, ldt TIMESTAMP, inst TIMESTAMP, zdt TIMESTAMP)");
+        }
+
+        var content = new ByteArrayOutputStream();
+        FileSerde.write(content, Map.of(
+            "id", 1,
+            "d", LocalDate.of(2024, 5, 17),
+            "ldt", LocalDateTime.of(2024, 5, 17, 10, 30, 15),
+            "inst", Instant.parse("2024-05-17T10:30:15Z"),
+            "zdt", ZonedDateTime.of(2024, 5, 17, 10, 30, 15, 0, ZoneId.of("UTC"))
+        ));
+        var uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), new ByteArrayInputStream(content.toByteArray()));
+
+        var task = StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .connectionPooling(Property.ofValue(false))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO temporal_batch (id, d, ldt, inst, zdt) VALUES (?, ?, ?, ?, ?)"))
+            .columns(Property.ofValue(List.of("id", "d", "ldt", "inst", "zdt")))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.STREAM))
+            .onExecuteBatch(() -> {})
+            .build();
+
+        var output = task.run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getRowCount(), is(1L));
+        try (var check = DriverManager.getConnection(dbUrl);
+             var statement = check.createStatement();
+             var rs = statement.executeQuery("SELECT d, ldt, inst, zdt FROM temporal_batch")) {
+            assertThat(rs.next(), is(true));
+            assertThat(rs.getObject("d", LocalDate.class), is(LocalDate.of(2024, 5, 17)));
+            assertThat(rs.getObject("ldt", LocalDateTime.class), is(LocalDateTime.of(2024, 5, 17, 10, 30, 15)));
+            assertThat(rs.getObject("inst", LocalDateTime.class), is(LocalDateTime.of(2024, 5, 17, 10, 30, 15)));
+            assertThat(rs.getObject("zdt", LocalDateTime.class).toLocalDate(), is(LocalDate.of(2024, 5, 17)));
+        }
+    }
+
+    private String createDatabase() throws SQLException {
+        var dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (var setup = DriverManager.getConnection(dbUrl); var statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE streaming_batch (id INT PRIMARY KEY, name VARCHAR(255))");
+        }
+        return dbUrl;
+    }
+
+    private static String ionRows(int rows, String separator, boolean trailingSeparator) {
+        var content = new StringBuilder();
+        for (var i = 0; i < rows; i++) {
+            content.append("{id:").append(i).append(",name:\"row-").append(i).append("\"}");
+            if (i < rows - 1 || trailingSeparator) content.append(separator);
+        }
+        return content.toString();
+    }
+
+    private URI store(String content) throws IOException {
+        return storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8))
+        );
+    }
+
+    private static StreamingBatch batch(String dbUrl, URI uri, int chunk, AbstractJdbcBatch.InputHandling handling, List<Long> flushes) {
+        return StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .connectionPooling(Property.ofValue(false))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO streaming_batch (id, name) VALUES (?, ?)"))
+            .columns(Property.ofValue(List.of("id", "name")))
+            .chunk(Property.ofValue(chunk))
+            .inputHandling(Property.ofValue(handling))
+            .maxRetries(Property.ofValue(1))
+            .retryBackoff(Property.ofValue(Duration.ofMillis(10)))
+            .onExecuteBatch(() -> flushes.add(0L))
+            .build();
+    }
+
+    private static int count(String dbUrl) throws SQLException {
+        try (var check = DriverManager.getConnection(dbUrl);
+             var statement = check.createStatement();
+             var rs = statement.executeQuery("SELECT COUNT(*) FROM streaming_batch")) {
+            rs.next();
+            return rs.getInt(1);
+        }
+    }
+
     @SuperBuilder
     @NoArgsConstructor
     public static class StreamingBatch extends AbstractJdbcBatch {
         private transient Runnable onExecuteBatch;
+        private final transient AtomicInteger connections = new AtomicInteger();
 
         @Override
         protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -135,6 +354,7 @@ class AbstractJdbcBatchStreamingTest {
 
         @Override
         public Connection connection(RunContext runContext) throws Exception {
+            connections.incrementAndGet();
             Connection connection = super.connection(runContext);
             return proxy(Connection.class, connection, (method, args) -> {
                 Object result = method.invoke(connection, args);
@@ -168,6 +388,31 @@ class AbstractJdbcBatchStreamingTest {
                     }
                 }
             ));
+        }
+    }
+
+    private static class FailingInputStream extends FilterInputStream {
+        private int remaining;
+
+        FailingInputStream(InputStream in, int failAfterBytes) {
+            super(in);
+            this.remaining = failAfterBytes;
+        }
+
+        @Override
+        public int read() throws IOException {
+            if (remaining <= 0) throw new IOException("simulated connection loss");
+            int b = super.read();
+            if (b != -1) remaining--;
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (remaining <= 0) throw new IOException("simulated connection loss");
+            int n = super.read(b, off, Math.min(len, remaining));
+            if (n > 0) remaining -= n;
+            return n;
         }
     }
 

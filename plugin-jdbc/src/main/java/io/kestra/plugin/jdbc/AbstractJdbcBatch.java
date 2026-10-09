@@ -9,6 +9,7 @@ import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.RetryUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -21,16 +22,15 @@ import io.kestra.core.models.enums.MonacoLanguages;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -573,16 +573,25 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
-                AtomicLong skip = new AtomicLong(resumeOffset);
+                var skip = resumeOffset;
 
-                FileSerde.read(inputStream, throwConsumer(row -> {
-                    if (skip.getAndDecrement() > 0) return;
+                // readValues(InputStream) would unwrap a leading top-level list as an array of rows, so the parser is created explicitly.
+                // a Reader makes core 1.3.x IonParser resolve LocalDateTime::/ZonedDateTime:: annotations.
+                var mapper = JacksonMapper.ofIon();
+                try (var parser = mapper.createParser(new InputStreamReader(inputStream, StandardCharsets.UTF_8)); var rows = mapper.readerFor(Object.class).readValues(parser)) {
+                    while (rows.hasNextValue()) {
+                        var row = rows.nextValue();
+                        if (skip > 0) {
+                            skip--;
+                            continue;
+                        }
 
-                    buffer.add(row);
-                    if (buffer.size() >= config.chunk()) {
-                        flush(ps, meta, buffer, connection, supportsTx);
+                        buffer.add(row);
+                        if (buffer.size() >= config.chunk()) {
+                            flush(ps, meta, buffer, connection, supportsTx);
+                        }
                     }
-                }));
+                }
 
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
