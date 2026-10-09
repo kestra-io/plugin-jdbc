@@ -21,6 +21,7 @@ import java.io.*;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLSyntaxErrorException;
@@ -304,6 +305,59 @@ public class BatchTest extends AbstractRdbmsTest {
         AbstractJdbcBatch.Output output = task.run(runContext);
 
         assertThat(output.getRowCount(), is(5L));
+    }
+
+    @Test
+    void shouldInsertAllRowsWithOneRowPerLine() throws Exception {
+        assertAllRowsInserted(false);
+    }
+
+    @Test
+    void shouldInsertAllRowsWithSeveralRowsPerLine() throws Exception {
+        assertAllRowsInserted(true);
+    }
+
+    private void assertAllRowsInserted(boolean severalRowsPerLine) throws Exception {
+        var table = "batch_rows_" + (severalRowsPerLine ? "multi" : "single");
+        var rows = 2500;
+
+        try (var c = getConnection(); var statement = c.createStatement()) {
+            statement.execute("DROP TABLE IF EXISTS " + table);
+            statement.execute("CREATE TABLE " + table + " (id INT PRIMARY KEY, name VARCHAR(50))");
+        }
+
+        var content = new StringBuilder();
+        for (var i = 0; i < rows; i++) {
+            content.append("{id:").append(i).append(",name:\"row-").append(i).append("\"}");
+            content.append(severalRowsPerLine && i % 10 != 9 ? " " : "\n");
+        }
+
+        var uri = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/" + IdUtils.create() + ".ion"),
+            new ByteArrayInputStream(content.toString().getBytes(StandardCharsets.UTF_8))
+        );
+
+        var task = Batch.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO " + table + " (id, name) VALUES (?, ?)"))
+            .columns(Property.ofValue(List.of("id", "name")))
+            .chunk(Property.ofValue(1000))
+            .build();
+
+        var output = task.run(runContextFactory.of(ImmutableMap.of()));
+
+        assertThat(output.getRowCount(), is((long) rows));
+        assertThat(output.getUpdatedCount(), is(rows));
+
+        try (var c = getConnection(); var statement = c.createStatement(); var rs = statement.executeQuery("SELECT COUNT(*) FROM " + table)) {
+            rs.next();
+            assertThat(rs.getInt(1), is(rows));
+        }
     }
 
     @Test

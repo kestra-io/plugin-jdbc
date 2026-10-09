@@ -9,6 +9,7 @@ import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.RetryUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -28,9 +29,6 @@ import java.sql.*;
 import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicLong;
-
-import static io.kestra.core.utils.Rethrow.throwConsumer;
 
 @SuperBuilder
 @ToString
@@ -573,16 +571,25 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
-                AtomicLong skip = new AtomicLong(resumeOffset);
+                var skip = resumeOffset;
 
-                FileSerde.read(inputStream, throwConsumer(row -> {
-                    if (skip.getAndDecrement() > 0) return;
+                // FileSerde.read(InputStream, Consumer) may only parse the first ION value of each line on some core versions.
+                // The parser is created explicitly: readValues(InputStream) would unwrap a leading top-level list as an array of rows.
+                var mapper = JacksonMapper.ofIon();
+                try (var parser = mapper.createParser(inputStream); var rows = mapper.readerFor(Object.class).readValues(parser)) {
+                    while (rows.hasNextValue()) {
+                        var row = rows.nextValue();
+                        if (skip > 0) {
+                            skip--;
+                            continue;
+                        }
 
-                    buffer.add(row);
-                    if (buffer.size() >= config.chunk()) {
-                        flush(ps, meta, buffer, connection, supportsTx);
+                        buffer.add(row);
+                        if (buffer.size() >= config.chunk()) {
+                            flush(ps, meta, buffer, connection, supportsTx);
+                        }
                     }
-                }));
+                }
 
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
