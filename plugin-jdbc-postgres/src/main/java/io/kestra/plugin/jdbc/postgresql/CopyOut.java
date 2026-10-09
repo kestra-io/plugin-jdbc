@@ -20,6 +20,9 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.net.URI;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -121,7 +124,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
 
     @Schema(
         title = "Output mode",
-        description = "Controls how the output of the COPY TEXT command is handled. The default value, `COPY`, preserves PostgreSQL's COPY TEXT representation, including its escaping of backslashes, delimiters, and line breaks. `RAW` removes the COPY TEXT escaping, which is useful when exporting a single column of JSON or other serialized text. Because escaping is removed, delimiters and line breaks inside values can no longer be told apart from column and row separators, and the default NULL marker `\\N` becomes `N`; set `nullString` if NULLs must stay distinguishable. This option is allowed only when using TEXT format."
+        description = "Controls how the output of the COPY TEXT command is handled. The default value, `COPY`, preserves PostgreSQL's COPY TEXT representation, including its escaping of backslashes, delimiters, and line breaks. `RAW` removes the COPY TEXT escaping, which is useful when exporting a single column of JSON or other serialized text. Because escaping is removed, delimiters and line breaks inside values can no longer be told apart from column and row separators, and the default NULL marker `\\N` becomes `N`; set `nullString` if NULLs must stay distinguishable. This option is allowed only when using TEXT format. Also note that the `RAW` option is not supported for data using client-only multibyte encodings, such as SJIS, BIG5, GBK, GB18030, UHC, and SHIFT_JIS_2004 because COPY TEXT escaping is decoded at the byte level; a multibyte character's trail byte may be interpreted as an escape marker, silently corrupting the output."
     )
     @PluginProperty(group = "processing")
     @Builder.Default
@@ -131,6 +134,32 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         COPY,
         RAW
     }
+
+    private static final Set<String> UNSAFE_RAW_ENCODINGS = Set.of(
+    "BIG5",
+    "WIN950",
+    "WINDOWS950",
+
+    "GB18030",
+    
+    "GBK",
+    "WIN936",
+    "WINDOWS936",
+    
+    "JOHAB",
+    
+    "SJIS",
+    "MSKANJI",
+    "SHIFTJIS",
+    "WIN932",
+    "WINDOWS932",
+
+    "SHIFT_JIS_2004",
+    
+    "UHC",
+    "WIN949",
+    "WINDOWS949"
+);
 
     @Override
     public Output run(RunContext runContext) throws Exception {
@@ -148,8 +177,23 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             throw new IllegalArgumentException("RAW output mode is only allowed with TEXT format");
         }
 
+        String encoding;
+
         try (Connection connection = this.connection(runContext)) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
+
+            encoding = runContext.render(this.encoding)
+                    .as(String.class)
+                    .orElse(null);
+
+            if (encoding == null) {
+                encoding = getClientEncoding(connection);
+            }
+            if (outputMode == OutputMode.RAW && isUnsafeMultibyteEncoding(encoding)) {
+                throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
+                + encoding + "'" 
+                );
+            }
             CopyManager copyManager = new CopyManager(pgConnection);
 
             String sql = this.query(runContext, runContext.render(this.sql).as(String.class).orElse(null), "TO STDOUT");
@@ -217,6 +261,25 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
                 .uri(uri)
                 .rowCount(rowsAffected)
                 .build();
+    }
+
+    private String getClientEncoding(Connection connection) throws SQLException {
+        try (var statement = connection.createStatement();
+             var resultSet = statement.executeQuery("SHOW client_encoding")) {
+            if (!resultSet.next()) {
+                throw new SQLException("Unable to determine client encoding");
+            }
+            return resultSet.getString(1);
+        }
+    }
+
+    private boolean isUnsafeMultibyteEncoding(String encoding) {
+        if (encoding == null) {
+            return false;
+        }
+        return UNSAFE_RAW_ENCODINGS.contains(
+            encoding.trim().toUpperCase(Locale.ROOT)
+        );
     }
 
     private static final class CopyTextDecoderInputStream extends InputStream {

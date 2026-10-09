@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 
 import jakarta.inject.Inject;
 
@@ -76,7 +77,7 @@ public class CopyTest {
         assertThat(runIn.getRowCount(), is(2L));
     }
 
-     @Test
+    @Test
     void copyOut_outputModeCopyShouldPreserveDefaultCopyTextRepresentationEscaping() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
@@ -196,26 +197,49 @@ public class CopyTest {
     }
 
     @Test
-      void copyOut_RawShouldThrowForInvalidFormats() throws Exception {
+    void copyOut_RawShouldThrowForInvalidFormats() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         var invalidFormats = new AbstractCopy.Format[] {
-                AbstractCopy.Format.CSV,
-                AbstractCopy.Format.BINARY
+            AbstractCopy.Format.CSV,
+            AbstractCopy.Format.BINARY
         };
 
         for (AbstractCopy.Format format : invalidFormats) {
             CopyOut copyOut = CopyOut.builder()
-                    .format(Property.ofValue(format))
-                    .outputMode(Property.ofValue(CopyOut.OutputMode.RAW))
-                    .build();
-                                        
-                    assertThrows(
-                        IllegalArgumentException.class,
-                        () -> copyOut.run(runContext)
-                    );
-                }
+                .format(Property.ofValue(format))
+                .outputMode(Property.ofValue(CopyOut.OutputMode.RAW))
+                .build();
+
+            IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> copyOut.run(runContext)
+            );
+
+            assertThat(ex.getMessage(), containsString("format"));
         }
+    }
+
+    @Test
+    void copyOut_RawShouldThrowForUnsupportedClientEncodings() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        for (String encoding : List.of("BIG5", "GBK", "SJIS")) {
+            CopyOut copyOut = CopyOut.builder()
+                .url(Property.ofValue(TestUtils.url()))
+                .username(Property.ofValue(TestUtils.username()))
+                .password(Property.ofValue(TestUtils.password()))
+                .outputMode(Property.ofValue(CopyOut.OutputMode.RAW))
+                .encoding(Property.ofValue(encoding))
+                .build();
+
+            IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> copyOut.run(runContext)
+            );
+            assertThat(ex.getMessage(), containsString("encoding"));
+        }
+    }
 
         private String createPayloadTable(
                 RunContext runContext,
@@ -229,8 +253,8 @@ public class CopyTest {
                 .sql(Property.ofValue(
                     "CREATE TABLE " + tableName + " (payload TEXT)"))
                     .build();
-                    
-                create.run(runContext);                
+                
+                create.run(runContext);          
          return """
                 INSERT INTO %s (payload)
                 VALUES ($json$%s$json$)
