@@ -19,6 +19,8 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.*;
@@ -78,51 +80,149 @@ class PutTest {
 
         verify(statement).execute(argThat(sql ->
             sql.startsWith("PUT 'file://")
-                && sql.endsWith("' @MY_STAGE")
+                && sql.endsWith(" @MY_STAGE")
         ));
     }
 
-@Test
-void putWithNativeOptions() throws Exception {
-    URI source = storageInterface.put(
-        TenantService.MAIN_TENANT,
-        null,
-        URI.create("/file/storage/put-options-test.csv"),
-        new ByteArrayInputStream(
-            "name\nTest\n".getBytes(StandardCharsets.UTF_8)
-        )
-    );
+    @Test
+    void putWithNativeOptions() throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/file/storage/put-options-test.csv"),
+            new ByteArrayInputStream(
+                "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+            )
+        );
 
-    RunContext runContext = runContextFactory.of(Map.of());
+        RunContext runContext = runContextFactory.of(Map.of());
 
-    Connection connection = mock(Connection.class);
-    Statement statement = mock(Statement.class);
+        Connection connection = mock(Connection.class);
+        Statement statement = mock(Statement.class);
 
-    when(connection.createStatement()).thenReturn(statement);
-    when(statement.execute(anyString())).thenReturn(false);
+        when(connection.createStatement()).thenReturn(statement);
+        when(statement.execute(anyString())).thenReturn(false);
 
-    Put put = spy(
-        Put.builder()
+        Put put = spy(
+            Put.builder()
+                .from(Property.ofValue(source.toString()))
+                .stageName(Property.ofValue("@MY_STAGE"))
+                .autoCompress(Property.ofValue(true))
+                .sourceCompression(Property.ofValue(Put.SourceCompression.GZIP))
+                .overwrite(Property.ofValue(true))
+                .parallel(Property.ofValue(4))
+                .build()
+        );
+
+        doReturn(connection).when(put).connection(runContext);
+
+        put.run(runContext);
+
+        verify(statement).execute(argThat(sql ->
+            sql.startsWith("PUT 'file://")
+                && sql.contains(" @MY_STAGE")
+                && sql.contains(" AUTO_COMPRESS = true")
+                && sql.contains(" SOURCE_COMPRESSION = GZIP")
+                && sql.contains(" OVERWRITE = true")
+                && sql.contains(" PARALLEL = 4")
+        ));
+    }
+
+    @Test
+    void parallelMustBeBetweenOneAndNinetyNine() throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/file/storage/put-invalid-parallel.csv"),
+            new ByteArrayInputStream(
+                "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+            )
+        );
+
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Connection connection = mock(Connection.class);
+        Statement statement = mock(Statement.class);
+        when(connection.createStatement()).thenReturn(statement);
+
+        Put put = spy(
+            Put.builder()
+                .from(Property.ofValue(source.toString()))
+                .stageName(Property.ofValue("@MY_STAGE"))
+                .parallel(Property.ofValue(100))
+                .build()
+        );
+
+        doReturn(connection).when(put).connection(runContext);
+
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> put.run(runContext)
+        );
+
+        assertTrue(exception.getMessage().contains("parallel must be between 1 and 99"));
+    }
+
+    @Test
+    void fileNameMustNotContainWildcardOrQuoteCharacters() throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/file/storage/put-invalid-filename.csv"),
+            new ByteArrayInputStream(
+                "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+            )
+        );
+
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Put put = Put.builder()
             .from(Property.ofValue(source.toString()))
             .stageName(Property.ofValue("@MY_STAGE"))
-            .autoCompress(Property.ofValue(true))
-            .sourceCompression(Property.ofValue(Put.SourceCompression.GZIP))
-            .overwrite(Property.ofValue(true))
-            .parallel(Property.ofValue(4))
-            .build()
-    );
+            .fileName(Property.ofValue("test?.csv"))
+            .build();
 
-    doReturn(connection).when(put).connection(runContext);
+        IllegalArgumentException exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> put.run(runContext)
+        );
 
-    put.run(runContext);
+        assertTrue(exception.getMessage().contains("fileName must not contain"));
+    }
 
-    verify(statement).execute(argThat(sql ->
-        sql.startsWith("PUT 'file://")
-            && sql.contains(" @MY_STAGE")
-            && sql.contains(" AUTO_COMPRESS = true")
-            && sql.contains(" SOURCE_COMPRESSION = GZIP")
-            && sql.contains(" OVERWRITE = true")
-            && sql.contains(" PARALLEL = 4")
-    ));
-}
+    @Test
+    void stageNameWithoutAtPrefixIsAccepted() throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/file/storage/put-stage-prefix-test.csv"),
+            new ByteArrayInputStream(
+                "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+            )
+        );
+
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Connection connection = mock(Connection.class);
+        Statement statement = mock(Statement.class);
+
+        when(connection.createStatement()).thenReturn(statement);
+        when(statement.execute(anyString())).thenReturn(false);
+
+        Put put = spy(
+            Put.builder()
+                .from(Property.ofValue(source.toString()))
+                .stageName(Property.ofValue("MY_STAGE"))
+                .build()
+        );
+
+        doReturn(connection).when(put).connection(runContext);
+
+        put.run(runContext);
+
+        verify(statement).execute(argThat(sql ->
+            sql.endsWith("' @MY_STAGE")
+        ));
+    }
+
 }

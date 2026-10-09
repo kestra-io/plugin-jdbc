@@ -112,7 +112,7 @@ public class UploadDownloadTest {
             .database(Property.ofValue("UNITTEST"))
             .from(Property.ofValue(put.toString()))
             .schema(Property.ofValue("public"))
-            .stageName(Property.ofValue("UNITSTAGE"))
+            .stageName(Property.ofValue("@UNITSTAGE"))
             .fileName(Property.ofValue("test-put.sql"))
             .build();
 

@@ -7,8 +7,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -57,7 +55,10 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
     @PluginProperty(group = "main")
     private Property<String> from;
 
-    @Schema(title = "Snowflake stage name")
+    @Schema(
+        title = "Snowflake internal stage name",
+        description = "Name of the Snowflake internal stage. The @ prefix is added automatically if omitted. External stages are not supported."
+    )
     @NotNull
     @PluginProperty(group = "main")
     private Property<String> stageName;
@@ -88,10 +89,9 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
     private Property<Boolean> overwrite;
 
     @Schema(
-    title = "Number of parallel threads"
+        title = "Parallelism",
+        description = "Number of threads used for uploading. Must be between 1 and 99."
     )
-    @Min(1)
-    @Max(99)
     @PluginProperty(group = "advanced")
     private Property<Integer> parallel;
 
@@ -124,75 +124,104 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-    String rFrom = runContext.render(this.from)
-        .as(String.class)
-        .orElseThrow();
+        String rFrom = runContext.render(this.from)
+            .as(String.class)
+            .orElseThrow();
 
-    String rStageName = runContext.render(this.stageName)
-        .as(String.class)
-        .orElseThrow();
+        String rStageName = runContext.render(this.stageName)
+            .as(String.class)
+            .orElseThrow();
 
-    URI fromUri = new URI(rFrom);
+        if (!rStageName.startsWith("@")) {
+            rStageName = "@" + rStageName;
+        }
 
-    String rFileName = runContext.render(this.fileName)
-        .as(String.class)
-        .orElse(Path.of(fromUri.getPath()).getFileName().toString());
+        URI fromUri = new URI(rFrom);
 
-    var tempFile = runContext.workingDir()
-        .createFile(rFileName, runContext.storage().getFile(fromUri))
-        .toFile();
+        String rFileName = runContext.render(this.fileName)
+            .as(String.class)
+            .orElse(Path.of(fromUri.getPath()).getFileName().toString());
 
-    var rows = new ArrayList<Map<String, Object>>();
+        if (rFileName.contains("*")
+            || rFileName.contains("?")
+            || rFileName.contains("'")) {
+            throw new IllegalArgumentException(
+                "fileName must not contain wildcard characters '*' or '?' or a single quote"
+            );
+        }
 
-    try (
-        Connection connection = this.connection(runContext);
-        var statement = connection.createStatement()
-    ) {
-        StringBuilder sql = new StringBuilder(
-            "PUT 'file://" + tempFile.getAbsolutePath() + "' " + rStageName
-        );
+        var renderedParallel = runContext.render(this.parallel)
+            .as(Integer.class);
 
-        runContext.render(this.autoCompress)
-            .as(Boolean.class)
-            .ifPresent(value -> sql.append(" AUTO_COMPRESS = ").append(value));
+        renderedParallel.ifPresent(value -> {
+            if (value < 1 || value > 99) {
+                throw new IllegalArgumentException(
+                    "parallel must be between 1 and 99, got " + value
+                );
+            }
+        });
 
-        runContext.render(this.sourceCompression)
-            .as(SourceCompression.class)
-            .ifPresent(value -> sql.append(" SOURCE_COMPRESSION = ").append(value.name()));
+        var tempFile = runContext.workingDir()
+            .createFile(rFileName, runContext.storage().getFile(fromUri))
+            .toFile();
 
-        runContext.render(this.overwrite)
-            .as(Boolean.class)
-            .ifPresent(value -> sql.append(" OVERWRITE = ").append(value));
+        var rows = new ArrayList<Map<String, Object>>();
 
-        runContext.render(this.parallel)
-            .as(Integer.class)
-            .ifPresent(value -> sql.append(" PARALLEL = ").append(value));
+        try (
+            Connection connection = this.connection(runContext);
+            var statement = connection.createStatement()
+        ) {
+            StringBuilder sql = new StringBuilder(
+                "PUT 'file://" + tempFile.getAbsolutePath() + "' " + rStageName
+            );
 
-        if (statement.execute(sql.toString())) {
-            try (var resultSet = statement.getResultSet()) {
-                var metadata = resultSet.getMetaData();
-                int columnCount = metadata.getColumnCount();
+            runContext.render(this.autoCompress)
+                .as(Boolean.class)
+                .ifPresent(value ->
+                    sql.append(" AUTO_COMPRESS = ").append(value)
+                );
 
-                while (resultSet.next()) {
-                    var row = new LinkedHashMap<String, Object>();
+            runContext.render(this.sourceCompression)
+                .as(SourceCompression.class)
+                .ifPresent(value ->
+                    sql.append(" SOURCE_COMPRESSION = ").append(value.name())
+                );
 
-                    for (int i = 1; i <= columnCount; i++) {
-                        row.put(
-                            metadata.getColumnLabel(i),
-                            resultSet.getObject(i)
-                        );
+            runContext.render(this.overwrite)
+                .as(Boolean.class)
+                .ifPresent(value ->
+                    sql.append(" OVERWRITE = ").append(value)
+                );
+
+            renderedParallel.ifPresent(value ->
+                sql.append(" PARALLEL = ").append(value)
+            );
+
+            if (statement.execute(sql.toString())) {
+                try (var resultSet = statement.getResultSet()) {
+                    var metadata = resultSet.getMetaData();
+                    int columnCount = metadata.getColumnCount();
+
+                    while (resultSet.next()) {
+                        var row = new LinkedHashMap<String, Object>();
+
+                        for (int i = 1; i <= columnCount; i++) {
+                            row.put(
+                                metadata.getColumnLabel(i),
+                                resultSet.getObject(i)
+                            );
+                        }
+
+                        rows.add(row);
                     }
-
-                    rows.add(row);
                 }
             }
         }
-    }
 
-    return Output.builder()
-        .rows(rows)
-        .build();
-}
+        return Output.builder()
+            .rows(rows)
+            .build();
+    }
 
     @Builder
     @Getter
