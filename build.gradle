@@ -1,7 +1,7 @@
 plugins {
-    id 'io.kestra.gradle.repository-conventions' version '1.2.11'
-    id "io.kestra.gradle.plugin-doc-lint" version '1.2.11' apply(false)
-    id 'io.kestra.gradle.spotless-conventions' version '1.2.11'
+    id 'io.kestra.gradle.repository-conventions' version '1.2.12'
+    id "io.kestra.gradle.plugin-doc-lint" version '1.2.12' apply(false)
+    id 'io.kestra.gradle.spotless-conventions' version '1.2.12'
     id 'java-library'
     id "idea"
     id 'jacoco-report-aggregation'
@@ -9,7 +9,7 @@ plugins {
     id 'signing'
     id 'net.researchgate.release' version '3.2.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
-    id "io.kestra.gradle.inject-bom-versions" version '1.2.11'
+    id "io.kestra.gradle.inject-bom-versions" version '1.2.12'
 }
 
 def isBuildSnapshot = version.toString().endsWith("-SNAPSHOT")
