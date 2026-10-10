@@ -3,12 +3,13 @@ package io.kestra.plugin.jdbc.redshift;
 import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
@@ -16,16 +17,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @KestraTest(startRunner = true, startScheduler = true)
-@Disabled("no server for unit test")
 class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
-    @Value("${redshift.url}")
+    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
-
-    @Value("${redshift.user}")
+    @Value("${redshift.user:kestra}")
     protected String user;
 
-    @Value("${redshift.password}")
+    @Value("${redshift.password:k3str4}")
     protected String password;
     @Test
     void run() throws Exception {

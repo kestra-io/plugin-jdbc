@@ -56,6 +56,25 @@ services:
     ports:
       - "56982:5432"
 
+  redshift-pg:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: k3str4
+    volumes:
+      - ./plugin-jdbc-redshift/src/test/resources/initdb:/docker-entrypoint-initdb.d:ro
+
+  redshift:
+    image: edoburu/pgbouncer:v1.26.0-p0
+    depends_on:
+      - redshift-pg
+    ports:
+      - "55439:5432"
+    volumes:
+      - ./plugin-jdbc-redshift/src/test/resources/pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./plugin-jdbc-redshift/src/test/resources/pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+
 #  vertica:
 #    image: jbfavre/vertica:latest
 #    environment:

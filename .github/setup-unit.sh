@@ -47,7 +47,7 @@ local   all all trust
 EOF
 
 # Druid tests are @Disabled (cluster is slow to start), and its services are commented out in docker-compose-ci.yml, so they are not started here.
-docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres mysql clickhouse oracle pinot
+docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver postgres mysql clickhouse oracle pinot redshift-pg redshift
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
 sleep 3
 
@@ -89,6 +89,8 @@ wait_for_tcp() {
 }
 
 wait_for "postgres-multi-query" "docker compose -f docker-compose-ci.yml exec -T postgres-multi-query pg_isready -U postgres -d kestra" 600
+wait_for "redshift-pg" "docker compose -f docker-compose-ci.yml exec -T redshift-pg pg_isready -U kestra -d kestra" 600
+wait_for "redshift" "docker compose -f docker-compose-ci.yml exec -e PGPASSWORD=k3str4 -T redshift-pg psql -h redshift -p 5432 -U kestra -d kestra -c 'select 1;'" 600
 wait_for "mysql" "docker compose -f docker-compose-ci.yml exec -T mysql mysqladmin ping -h127.0.0.1 -uroot -pmysql_passwd" 600
 wait_for "mariadb" "docker compose -f docker-compose-ci.yml exec -T mariadb mariadb-admin ping -h127.0.0.1 -uroot -pmariadb_passwd" 600
 

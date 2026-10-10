@@ -1,0 +1,11 @@
+SELECT binary_upgrade_set_next_pg_type_oid(4000);
+CREATE TYPE super;
+CREATE FUNCTION super_in(cstring) RETURNS super AS 'textin' LANGUAGE internal IMMUTABLE STRICT;
+CREATE FUNCTION super_out(super) RETURNS cstring AS 'textout' LANGUAGE internal IMMUTABLE STRICT;
+CREATE FUNCTION super_recv(internal) RETURNS super AS 'textrecv' LANGUAGE internal IMMUTABLE STRICT;
+CREATE FUNCTION super_send(super) RETURNS bytea AS 'textsend' LANGUAGE internal IMMUTABLE STRICT;
+SELECT binary_upgrade_set_next_array_pg_type_oid(4001);
+CREATE TYPE super (INPUT = super_in, OUTPUT = super_out, RECEIVE = super_recv, SEND = super_send, LIKE = text, CATEGORY = 'S');
+CREATE CAST (text AS super) WITHOUT FUNCTION AS ASSIGNMENT;
+CREATE CAST (super AS text) WITHOUT FUNCTION AS IMPLICIT;
+CREATE FUNCTION json_parse(text) RETURNS super AS 'SELECT $1::super' LANGUAGE sql IMMUTABLE STRICT;
