@@ -57,6 +57,7 @@ tasks:
       - "{{ outputs.query.rows[1].field2 == 4 }}"
       - "{{ outputs.queries.outputs[0].size == 3 }}"
       - "{{ outputs.queries.outputs[1].size == 1 }}"
+      - "{{ outputs.insert_data.affectedRows[2] == 1 }}"
 
 finally:
   - id: purge

@@ -262,6 +262,7 @@ class DuckDbQueriesTest {
             .findFirst()
             .orElseThrow()
             .get("name"), is("TestUser"));
+        assertThat(updateTableAndFetchData.getAffectedRows(), contains(1L));
     }
 
     @Test

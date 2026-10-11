@@ -286,6 +286,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
         return Output.builder()
             .outputs(run.getOutputs())
+            .affectedRows(run.getAffectedRows())
             .outputFiles(uploaded)
             .databaseUri(dbUri)
             .build();

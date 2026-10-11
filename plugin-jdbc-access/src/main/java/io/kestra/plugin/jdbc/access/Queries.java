@@ -238,6 +238,7 @@ public class Queries extends AbstractJdbcQueries implements AccessQueryInterface
             .databaseUri(dbUri)
             .outputFiles(uploaded.isEmpty() ? null : uploaded)
             .outputs(multiQueryOutput.getOutputs())
+            .affectedRows(multiQueryOutput.getAffectedRows())
             .build();
     }
 
