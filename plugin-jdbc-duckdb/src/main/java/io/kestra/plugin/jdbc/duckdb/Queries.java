@@ -265,14 +265,19 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
 
         var processDir = DuckDbQueryUtils.processDirectory();
         var rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
-        DuckDbQueryUtils.assertInputFilesNotShadowed(processDir, finalInputFiles, rSql);
+        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, finalInputFiles, rSql);
+        // Pass the already-rendered SQL on so the guard checks exactly what DuckDB executes.
+        this.sql = Property.ofValue(rSql);
 
         var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
         var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir);
 
-        var run = super.run(runContext);
-
-        DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        AbstractJdbcQueries.MultiQueryOutput run;
+        try {
+            run = super.run(runContext);
+        } finally {
+            DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        }
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(

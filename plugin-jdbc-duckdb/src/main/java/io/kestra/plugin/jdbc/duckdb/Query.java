@@ -11,6 +11,7 @@ import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -293,7 +294,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
         var processDir = DuckDbQueryUtils.processDirectory();
-        DuckDbQueryUtils.assertInputFilesNotShadowed(processDir, finalInputFiles, sql);
+        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, finalInputFiles, sql);
 
         // we transform filename column to show relative paths if filename parameter is used
         if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
@@ -308,9 +309,12 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir);
 
-        var run = super.run(runContext);
-
-        DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        AbstractJdbcBaseQuery.Output run;
+        try {
+            run = super.run(runContext);
+        } finally {
+            DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        }
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(

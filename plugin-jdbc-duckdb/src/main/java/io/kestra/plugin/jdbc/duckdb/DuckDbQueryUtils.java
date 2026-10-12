@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -30,18 +31,29 @@ abstract class DuckDbQueryUtils {
     }
 
     // DuckDB resolves relative paths against the process directory first, so a same-named file there shadows the input file.
-    static void assertInputFilesNotShadowed(Path processDir, Map<String, String> inputFiles, String rSql) {
+    static void assertInputFilesNotShadowed(RunContext runContext, Path processDir, Map<String, String> inputFiles, String rSql) {
         if (inputFiles == null || rSql == null) {
             return;
         }
 
         for (var key : inputFiles.keySet()) {
-            var keyPath = Path.of(key);
-            if (keyPath.isAbsolute()) {
+            Path normalizedPath;
+            try {
+                var keyPath = Path.of(key);
+                if (keyPath.isAbsolute()) {
+                    continue;
+                }
+                normalizedPath = keyPath.normalize();
+            } catch (InvalidPathException e) {
+                runContext.logger().debug("Skipping shadow check for input file '{}': {}", key, e.getMessage());
                 continue;
             }
-            var normalized = keyPath.normalize().toString().replace('\\', '/');
-            if (normalized.isEmpty() || !rSql.contains("'" + normalized + "'")) {
+
+            var normalized = normalizedPath.toString().replace('\\', '/');
+            if (normalized.isEmpty() || normalizedPath.startsWith("..")) {
+                continue;
+            }
+            if (!rSql.contains("'" + normalized + "'") && !rSql.contains("'./" + normalized + "'")) {
                 continue;
             }
             var stray = processDir.resolve(normalized).toAbsolutePath();
@@ -56,22 +68,17 @@ abstract class DuckDbQueryUtils {
         }
     }
 
+    // Returns null when the directory is unreadable or too large: a partial snapshot would make the later comparison misleading.
     static Map<Path, FileMetadata> snapshotProcessDirectory(RunContext runContext, Path processDir) {
-        var snapshot = new HashMap<Path, FileMetadata>();
-        try (var stream = Files.newDirectoryStream(processDir)) {
-            for (var path : stream) {
-                if (snapshot.size() >= MAX_PROCESS_DIR_ENTRIES) {
-                    break;
-                }
-                if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
-                    snapshot.put(path, new FileMetadata(Files.size(path), Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS)));
-                }
-            }
+        try {
+            return scanRegularFiles(processDir);
         } catch (IOException | SecurityException e) {
             runContext.logger().debug("Unable to snapshot the process directory '{}', skipping write detection: {}", processDir, e.getMessage());
             return null;
+        } catch (TooManyFilesException e) {
+            runContext.logger().debug("The process directory '{}' has more than {} files, skipping write detection", processDir, MAX_PROCESS_DIR_ENTRIES);
+            return null;
         }
-        return snapshot;
     }
 
     static void warnOnProcessDirectoryWrites(RunContext runContext, Path processDir, Map<Path, FileMetadata> snapshot) {
@@ -79,20 +86,22 @@ abstract class DuckDbQueryUtils {
             return;
         }
 
-        var changed = new TreeSet<String>();
-        try (var stream = Files.newDirectoryStream(processDir)) {
-            var seen = 0;
-            for (var path : stream) {
-                if (seen++ >= MAX_PROCESS_DIR_ENTRIES) {
-                    break;
-                }
-                if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && isNewOrModified(path, snapshot)) {
-                    changed.add(path.getFileName().toString());
-                }
-            }
+        Map<Path, FileMetadata> current;
+        try {
+            current = scanRegularFiles(processDir);
         } catch (IOException | SecurityException e) {
             runContext.logger().debug("Unable to scan the process directory '{}' for written files: {}", processDir, e.getMessage());
             return;
+        } catch (TooManyFilesException e) {
+            runContext.logger().debug("The process directory '{}' has more than {} files, skipping write detection", processDir, MAX_PROCESS_DIR_ENTRIES);
+            return;
+        }
+
+        var changed = new TreeSet<String>();
+        for (var path : current.keySet()) {
+            if (isNewOrModified(path, snapshot)) {
+                changed.add(path.getFileName().toString());
+            }
         }
 
         for (var name : changed) {
@@ -102,6 +111,28 @@ abstract class DuckDbQueryUtils {
                     "Write to '{{ workingDir }}/{}' or '{{ outputFiles.<key> }}' instead.",
                 name, processDir.toAbsolutePath(), name
             );
+        }
+    }
+
+    private static Map<Path, FileMetadata> scanRegularFiles(Path processDir) throws IOException {
+        var files = new HashMap<Path, FileMetadata>();
+        try (var stream = Files.newDirectoryStream(processDir)) {
+            for (var path : stream) {
+                if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                    continue;
+                }
+                if (files.size() >= MAX_PROCESS_DIR_ENTRIES) {
+                    throw new TooManyFilesException();
+                }
+                files.put(path, new FileMetadata(Files.size(path), Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS)));
+            }
+        }
+        return files;
+    }
+
+    private static final class TooManyFilesException extends RuntimeException {
+        TooManyFilesException() {
+            super(null, null, false, false);
         }
     }
 

@@ -1,20 +1,20 @@
 package io.kestra.plugin.jdbc.duckdb;
 
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.core.utils.IdUtils;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.IdUtils;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -209,6 +208,57 @@ class DuckDbProcessDirPathsTest {
             .build();
         second.run(runContextFactory.of(Map.of()));
 
-        assertThat(warnings().stream().filter(l -> l.getFormattedMessage().contains("process directory")).toList(), is(empty()));
+        assertThat(warnings().stream().anyMatch(l -> l.getFormattedMessage().contains(name)), is(false));
+    }
+
+    @Test
+    void queriesWarnsOnRelativeWriteEvenWhenALaterStatementFails() throws Exception {
+        var name = IdUtils.create() + ".csv";
+        var written = PROCESS_DIR.resolve(name);
+        try {
+            var queries = Queries.builder()
+                .id(IdUtils.create()).type(Queries.class.getName())
+                .sql(Property.ofValue("COPY (SELECT 1 AS id) TO '" + name + "' (HEADER, DELIMITER ',');\nSELECT * FROM table_that_does_not_exist;"))
+                .build();
+
+            assertThrows(Exception.class, () -> queries.run(runContextFactory.of(Map.of())));
+
+            assertThat(hasWarningFor(name), is(true));
+        } finally {
+            Files.deleteIfExists(written);
+        }
+    }
+
+    @Test
+    void failsWhenStrayFileShadowsDotSlashRelativeInput() throws Exception {
+        var key = IdUtils.create() + ".csv";
+        var stray = PROCESS_DIR.resolve(key);
+        try {
+            Files.writeString(stray, "id,name\n9,stale\n");
+            var query = Query.builder()
+                .id(IdUtils.create()).type(Query.class.getName())
+                .fetchType(Property.ofValue(FETCH))
+                .inputFiles(Map.of(key, csv()))
+                .sql(Property.ofValue("SELECT * FROM read_csv_auto('./" + key + "')"))
+                .build();
+
+            assertThrows(IllegalStateException.class, () -> query.run(runContextFactory.of(Map.of())));
+        } finally {
+            Files.deleteIfExists(stray);
+        }
+    }
+
+    @Test
+    void guardSkipsKeysOutsideTheProcessDirectoryAndInvalidPaths() throws Exception {
+        var outside = "../" + IdUtils.create() + ".csv";
+        var runContext = runContextFactory.of(Map.of());
+        var keys = Map.of(outside, csv(), "bad\0name.csv", csv());
+
+        DuckDbQueryUtils.assertInputFilesNotShadowed(
+            runContext,
+            PROCESS_DIR,
+            keys,
+            "SELECT * FROM read_csv_auto('" + outside + "') UNION ALL SELECT * FROM read_csv_auto('bad\0name.csv')"
+        );
     }
 }
