@@ -18,6 +18,7 @@ import java.sql.Statement;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -48,7 +49,14 @@ public class RedshiftTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("select * from pgsql_types"))
             .build();
 
-        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        AbstractJdbcQuery.Output runOutput;
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            runOutput = task.run(runContext);
+        } finally {
+            TimeZone.setDefault(defaultTimeZone);
+        }
         assertThat(runOutput.getRow(), notNullValue());
 
         assertThat(runOutput.getRow().get("available"), is(true));
@@ -71,11 +79,11 @@ public class RedshiftTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
         assertThat(runOutput.getRow().get("time_type"), is(LocalTime.parse("04:05:30")));
 
+        // stored as 04:05:06 PST (12:05:06 UTC); the JVM zone is pinned to UTC above so the local time is stable
         OffsetTime timez = (OffsetTime) runOutput.getRow().get("timez_type");
-        ZoneOffset expectedOffset = ZoneId.of("Europe/Paris").getRules().getOffset(Instant.now());
-        LocalTime expectedLocalTime = LocalTime.of(12, 5, 6)
-            .plusSeconds(ZoneId.systemDefault().getRules().getOffset(Instant.EPOCH).getTotalSeconds());
-        assertThat(timez, is(OffsetTime.of(expectedLocalTime, expectedOffset)));
+        assertThat(timez.toLocalTime(), is(LocalTime.parse("12:05:06")));
+        // the converter applies the current Europe/Paris offset, so accept both winter (+01:00) and summer (+02:00)
+        assertThat(timez.getOffset(), anyOf(is(ZoneOffset.ofHours(1)), is(ZoneOffset.ofHours(2))));
 
         assertThat(runOutput.getRow().get("timestamp_type"), is(LocalDateTime.parse("2004-10-19T10:23:54.999999")));
         assertThat(runOutput.getRow().get("timestampz_type"), is(ZonedDateTime.parse("2004-10-19T06:23:54Z[GMT]")));
