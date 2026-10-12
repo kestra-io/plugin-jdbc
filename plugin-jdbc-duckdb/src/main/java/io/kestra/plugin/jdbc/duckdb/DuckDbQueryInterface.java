@@ -13,7 +13,11 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Input files to be loaded from DuckDb",
         description = "Describe a files map that will be written and usable by DuckDb. " +
-            "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` "
+            "You can reach files by their filename, example: `SELECT * FROM read_csv_auto('myfile.csv');` " +
+            "Relative paths are resolved by DuckDB against the Kestra process directory, not the task working directory; " +
+            "the working directory is only used as a fallback for reads when no file with that name exists in the process directory. " +
+            "If such a file exists, the task fails to avoid silently reading the wrong data. " +
+            "To be unambiguous, reference the file as `'{{ workingDir }}/myfile.csv'`."
     )
     @PluginProperty(group = "source", 
         additionalProperties = String.class,
@@ -27,6 +31,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
         description = """
             Deprecated: Files generated within the query in the working directory are now automatically captured as output files.
             List of keys that will generate temporary files.
+            Relative paths in `COPY ... TO` are written by DuckDB to the Kestra process directory, not the working directory, so they are not captured: use `{{ workingDir }}/...` or `{{ outputFiles.key }}`.
             On the SQL query, you can just use a variable named `outputFiles.key` for the corresponding file.
             If you add a file with `["first"]`, you can use the special vars `COPY tbl TO '{{ outputFiles.first }}' (HEADER, DELIMITER ',');` and use this file in other tasks using `{{ outputs.taskId.outputFiles.first }}`.
             For files captured automatically with extensions or directory paths (e.g., `results.csv`), use bracket syntax: `{{ outputs.taskId.outputFiles['results.csv'] }}`.""",
