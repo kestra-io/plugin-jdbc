@@ -99,7 +99,7 @@ abstract class DuckDbQueryUtils {
             runContext.logger().warn(
                 "File '{}' was created or modified in the Kestra process directory '{}' and may have been written by this task through a relative path. " +
                     "It is not captured as an output file and is visible to other executions. " +
-                    "Write to '{{{{ workingDir }}}}/{}' or '{{{{ outputFiles.<key> }}}}' instead.",
+                    "Write to '{{ workingDir }}/{}' or '{{ outputFiles.<key> }}' instead.",
                 name, processDir.toAbsolutePath(), name
             );
         }

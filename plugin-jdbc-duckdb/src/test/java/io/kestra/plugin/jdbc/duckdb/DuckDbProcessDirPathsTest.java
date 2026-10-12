@@ -69,7 +69,10 @@ class DuckDbProcessDirPathsTest {
 
     private boolean hasWarningFor(String fileName) {
         return warnings().stream().anyMatch(l -> l.getFormattedMessage().contains("'" + fileName + "'")
-            && l.getFormattedMessage().contains("may have been written by this task"));
+            && l.getFormattedMessage().contains("may have been written by this task")
+            && l.getFormattedMessage().contains("'{{ workingDir }}/" + fileName + "'")
+            && l.getFormattedMessage().contains("'{{ outputFiles.<key> }}'")
+            && !l.getFormattedMessage().contains("{{{{"));
     }
 
     @Test
