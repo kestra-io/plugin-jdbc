@@ -144,12 +144,13 @@ public class Put extends AbstractSnowflakeConnection implements RunnableTask<Put
 
         if (rFileName.contains("*")
             || rFileName.contains("?")
-            || rFileName.contains("'")) {
+            || rFileName.contains("'")
+            || rFileName.contains("/")
+            || rFileName.contains("\\")) {
             throw new IllegalArgumentException(
-                "fileName must not contain wildcard characters '*' or '?' or a single quote"
+                "fileName must not contain wildcard characters, quotes, or path separators"
             );
         }
-
         var renderedParallel = runContext.render(this.parallel)
             .as(Integer.class);
 

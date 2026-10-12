@@ -191,6 +191,35 @@ class PutTest {
     }
 
     @Test
+    void fileNameMustNotContainPathSeparators() throws Exception {
+        URI source = storageInterface.put(
+            TenantService.MAIN_TENANT,
+            null,
+            URI.create("/file/storage/put-invalid-path-test.csv"),
+            new ByteArrayInputStream(
+                "name\nTest\n".getBytes(StandardCharsets.UTF_8)
+            )
+        );
+
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        for (String fileName : List.of("../test.csv", "..\\test.csv")) {
+            Put put = Put.builder()
+                .from(Property.ofValue(source.toString()))
+                .stageName(Property.ofValue("@MY_STAGE"))
+                .fileName(Property.ofValue(fileName))
+                .build();
+
+            IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> put.run(runContext)
+            );
+
+            assertTrue(exception.getMessage().contains("fileName must not contain"));
+        }
+    }
+
+    @Test
     void stageNameWithoutAtPrefixIsAccepted() throws Exception {
         URI source = storageInterface.put(
             TenantService.MAIN_TENANT,
