@@ -1,0 +1,20 @@
+id: duckdb_working_dir_paths
+namespace: sanitychecks.plugin-jdbc
+
+tasks:
+  - id: write
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    sql: |
+      COPY (SELECT 1 AS id, 'alpha' AS name) TO '{{ workingDir }}/data.csv' (HEADER, DELIMITER ',');
+
+  - id: read
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    inputFiles:
+      data.csv: "{{ outputs.write.outputFiles['data.csv'] }}"
+    fetchType: FETCH_ONE
+    sql: |
+      SELECT id, name FROM read_csv_auto('{{ workingDir }}/data.csv');
+
+  - id: assert_name
+    type: io.kestra.plugin.core.execution.Fail
+    condition: "{{ outputs.read.row.name != 'alpha' }}"

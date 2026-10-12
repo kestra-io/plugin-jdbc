@@ -227,8 +227,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
         }
 
+        Map<String, String> finalInputFiles = null;
         if (this.inputFiles != null) {
-            Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
+            finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
             PluginUtilsService.createInputFiles(
                 runContext,
@@ -262,9 +263,16 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
+        var processDir = DuckDbQueryUtils.processDirectory();
+        var rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+        DuckDbQueryUtils.assertInputFilesNotShadowed(processDir, finalInputFiles, rSql);
+
         var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
+        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir);
 
         var run = super.run(runContext);
+
+        DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(

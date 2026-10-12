@@ -87,4 +87,5 @@ dependencies {
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
+    testImplementation "ch.qos.logback:logback-classic"
 }

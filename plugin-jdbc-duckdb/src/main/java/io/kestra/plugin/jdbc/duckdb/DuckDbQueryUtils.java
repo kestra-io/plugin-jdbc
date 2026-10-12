@@ -13,13 +13,97 @@ import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static io.kestra.core.utils.Rethrow.throwBiConsumer;
 
 abstract class DuckDbQueryUtils {
     record FileMetadata(long size, FileTime lastModifiedTime) {}
+
+    private static final int MAX_PROCESS_DIR_ENTRIES = 1000;
+
+    static Path processDirectory() {
+        return Path.of(System.getProperty("user.dir"));
+    }
+
+    // DuckDB resolves relative paths against the process directory first, so a same-named file there shadows the input file.
+    static void assertInputFilesNotShadowed(Path processDir, Map<String, String> inputFiles, String rSql) {
+        if (inputFiles == null || rSql == null) {
+            return;
+        }
+
+        for (var key : inputFiles.keySet()) {
+            var keyPath = Path.of(key);
+            if (keyPath.isAbsolute()) {
+                continue;
+            }
+            var normalized = keyPath.normalize().toString().replace('\\', '/');
+            if (normalized.isEmpty() || !rSql.contains("'" + normalized + "'")) {
+                continue;
+            }
+            var stray = processDir.resolve(normalized).toAbsolutePath();
+            if (Files.exists(stray)) {
+                throw new IllegalStateException(String.format(
+                    "The SQL references the input file '%s' with a relative path, but DuckDB resolves relative paths against the Kestra process directory " +
+                        "and a file already exists there: '%s'. DuckDB would read that file instead of your input file. " +
+                        "Delete the stray file or reference the input file as '{{ workingDir }}/%s'.",
+                    normalized, stray, normalized
+                ));
+            }
+        }
+    }
+
+    static Map<Path, FileMetadata> snapshotProcessDirectory(RunContext runContext, Path processDir) {
+        var snapshot = new HashMap<Path, FileMetadata>();
+        try (var stream = Files.newDirectoryStream(processDir)) {
+            for (var path : stream) {
+                if (snapshot.size() >= MAX_PROCESS_DIR_ENTRIES) {
+                    break;
+                }
+                if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
+                    snapshot.put(path, new FileMetadata(Files.size(path), Files.getLastModifiedTime(path, LinkOption.NOFOLLOW_LINKS)));
+                }
+            }
+        } catch (IOException | SecurityException e) {
+            runContext.logger().debug("Unable to snapshot the process directory '{}', skipping write detection: {}", processDir, e.getMessage());
+            return null;
+        }
+        return snapshot;
+    }
+
+    static void warnOnProcessDirectoryWrites(RunContext runContext, Path processDir, Map<Path, FileMetadata> snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+
+        var changed = new TreeSet<String>();
+        try (var stream = Files.newDirectoryStream(processDir)) {
+            var seen = 0;
+            for (var path : stream) {
+                if (seen++ >= MAX_PROCESS_DIR_ENTRIES) {
+                    break;
+                }
+                if (Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) && isNewOrModified(path, snapshot)) {
+                    changed.add(path.getFileName().toString());
+                }
+            }
+        } catch (IOException | SecurityException e) {
+            runContext.logger().debug("Unable to scan the process directory '{}' for written files: {}", processDir, e.getMessage());
+            return;
+        }
+
+        for (var name : changed) {
+            runContext.logger().warn(
+                "File '{}' was created or modified in the Kestra process directory '{}' and may have been written by this task through a relative path. " +
+                    "It is not captured as an output file and is visible to other executions. " +
+                    "Write to '{{{{ workingDir }}}}/{}' or '{{{{ outputFiles.<key> }}}}' instead.",
+                name, processDir.toAbsolutePath(), name
+            );
+        }
+    }
 
     static Map<Path, FileMetadata> takeSnapshot(
         RunContext runContext,

@@ -253,8 +253,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         }
 
         // inputFiles
+        Map<String, String> finalInputFiles = null;
         if (this.inputFiles != null) {
-            Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
+            finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
             PluginUtilsService.createInputFiles(
                 runContext,
@@ -291,6 +292,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
+        var processDir = DuckDbQueryUtils.processDirectory();
+        DuckDbQueryUtils.assertInputFilesNotShadowed(processDir, finalInputFiles, sql);
+
         // we transform filename column to show relative paths if filename parameter is used
         if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
             String escapedWorkingDir = workingDirectory.toString().replace("\\", "\\\\").replace("/", "\\/");
@@ -302,7 +306,11 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
 
+        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir);
+
         var run = super.run(runContext);
+
+        DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(
