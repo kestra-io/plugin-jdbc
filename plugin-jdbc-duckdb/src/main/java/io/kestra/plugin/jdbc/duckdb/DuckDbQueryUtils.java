@@ -30,9 +30,21 @@ abstract class DuckDbQueryUtils {
         return Path.of(System.getProperty("user.dir"));
     }
 
+    // When the working directory is the process directory, relative paths resolve to the very files the task created or may legitimately write.
+    static boolean isSameDirectory(Path a, Path b) {
+        if (a == null || b == null) {
+            return false;
+        }
+        try {
+            return a.toRealPath().equals(b.toRealPath());
+        } catch (IOException | SecurityException e) {
+            return a.toAbsolutePath().normalize().equals(b.toAbsolutePath().normalize());
+        }
+    }
+
     // DuckDB resolves relative paths against the process directory first, so a same-named file there shadows the input file.
-    static void assertInputFilesNotShadowed(RunContext runContext, Path processDir, Map<String, String> inputFiles, String rSql) {
-        if (inputFiles == null || rSql == null) {
+    static void assertInputFilesNotShadowed(RunContext runContext, Path processDir, Path workingDirectory, Map<String, String> inputFiles, String rSql) {
+        if (inputFiles == null || rSql == null || isSameDirectory(processDir, workingDirectory)) {
             return;
         }
 
@@ -69,7 +81,10 @@ abstract class DuckDbQueryUtils {
     }
 
     // Returns null when the directory is unreadable or too large: a partial snapshot would make the later comparison misleading.
-    static Map<Path, FileMetadata> snapshotProcessDirectory(RunContext runContext, Path processDir) {
+    static Map<Path, FileMetadata> snapshotProcessDirectory(RunContext runContext, Path processDir, Path workingDirectory) {
+        if (isSameDirectory(processDir, workingDirectory)) {
+            return null;
+        }
         try {
             return scanRegularFiles(processDir);
         } catch (IOException | SecurityException e) {

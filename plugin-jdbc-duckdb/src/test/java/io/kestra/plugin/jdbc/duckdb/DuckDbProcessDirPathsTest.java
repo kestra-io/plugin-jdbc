@@ -257,8 +257,109 @@ class DuckDbProcessDirPathsTest {
         DuckDbQueryUtils.assertInputFilesNotShadowed(
             runContext,
             PROCESS_DIR,
+            null,
             keys,
             "SELECT * FROM read_csv_auto('" + outside + "') UNION ALL SELECT * FROM read_csv_auto('bad\0name.csv')"
         );
+    }
+
+    // A working directory equal to the process directory makes DuckDB drop its extension cache there.
+    private static void deleteExtensionsDirectory(boolean existedBefore) throws Exception {
+        var ext = PROCESS_DIR.resolve(".duckdb_extensions");
+        if (existedBefore || !Files.exists(ext)) {
+            return;
+        }
+        try (var walk = Files.walk(ext)) {
+            for (var p : walk.sorted(java.util.Comparator.reverseOrder()).toList()) {
+                Files.deleteIfExists(p);
+            }
+        }
+    }
+
+    @Test
+    void noGuardFailureWhenWorkingDirIsTheProcessDirectory() throws Exception {
+        var key = IdUtils.create() + ".csv";
+        var extExisted = Files.exists(PROCESS_DIR.resolve(".duckdb_extensions"));
+        var dbFile = PROCESS_DIR.resolve(IdUtils.create() + ".db");
+        try {
+            var query = Query.builder()
+                .id(IdUtils.create()).type(Query.class.getName())
+                .url(Property.ofValue("jdbc:duckdb:" + dbFile))
+                .fetchType(Property.ofValue(FETCH))
+                .inputFiles(Map.of(key, csv()))
+                .sql(Property.ofValue("SELECT id, name FROM read_csv_auto('" + key + "')"))
+                .build();
+
+            var output = query.run(runContextFactory.of(Map.of()));
+
+            assertThat(output.getRows(), hasSize(1));
+        } finally {
+            Files.deleteIfExists(PROCESS_DIR.resolve(key));
+            Files.deleteIfExists(dbFile);
+            deleteExtensionsDirectory(extExisted);
+            Files.deleteIfExists(PROCESS_DIR.resolve(dbFile.getFileName() + ".wal"));
+        }
+    }
+
+    @Test
+    void noWarningForWorkingDirWriteWhenWorkingDirIsTheProcessDirectory() throws Exception {
+        var name = IdUtils.create() + ".csv";
+        var extExisted = Files.exists(PROCESS_DIR.resolve(".duckdb_extensions"));
+        var dbFile = PROCESS_DIR.resolve(IdUtils.create() + ".db");
+        try {
+            var query = Query.builder()
+                .id(IdUtils.create()).type(Query.class.getName())
+                .url(Property.ofValue("jdbc:duckdb:" + dbFile))
+                .sql(Property.ofExpression("COPY (SELECT 1 AS id) TO '{{ workingDir }}/" + name + "' (HEADER, DELIMITER ',')"))
+                .build();
+
+            query.run(runContextFactory.of(Map.of()));
+
+            assertThat(warnings().stream().anyMatch(l -> l.getFormattedMessage().contains(name)), is(false));
+        } finally {
+            Files.deleteIfExists(PROCESS_DIR.resolve(name));
+            Files.deleteIfExists(dbFile);
+            deleteExtensionsDirectory(extExisted);
+            Files.deleteIfExists(PROCESS_DIR.resolve(dbFile.getFileName() + ".wal"));
+        }
+    }
+
+    @Test
+    void queriesDoesNotMutateSqlProperty() throws Exception {
+        var sql = Property.<String>ofExpression("SELECT {{ 1 + 1 }} AS id;");
+        var queries = Queries.builder()
+            .id(IdUtils.create()).type(Queries.class.getName())
+            .sql(sql)
+            .build();
+
+        queries.run(runContextFactory.of(Map.of()));
+
+        assertThat(queries.getSql() == sql, is(true));
+    }
+
+    @Test
+    void queriesRestoresSqlPropertyWhenExecutionFails() {
+        var sql = Property.<String>ofValue("SELECT * FROM table_that_does_not_exist;");
+        var queries = Queries.builder()
+            .id(IdUtils.create()).type(Queries.class.getName())
+            .sql(sql)
+            .build();
+
+        assertThrows(Exception.class, () -> queries.run(runContextFactory.of(Map.of())));
+
+        assertThat(queries.getSql() == sql, is(true));
+    }
+
+    @Test
+    void queryDoesNotMutateSqlProperty() throws Exception {
+        var sql = Property.<String>ofExpression("SELECT {{ 1 + 1 }} AS id");
+        var query = Query.builder()
+            .id(IdUtils.create()).type(Query.class.getName())
+            .sql(sql)
+            .build();
+
+        query.run(runContextFactory.of(Map.of()));
+
+        assertThat(query.getSql() == sql, is(true));
     }
 }

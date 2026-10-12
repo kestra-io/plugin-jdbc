@@ -294,7 +294,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
         var processDir = DuckDbQueryUtils.processDirectory();
-        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, finalInputFiles, sql);
+        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, workingDirectory, finalInputFiles, sql);
 
         // we transform filename column to show relative paths if filename parameter is used
         if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
@@ -303,16 +303,18 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 sql.replaceAll(";\\s*$", "") + ")";
         }
 
-        this.sql = Property.ofValue(sql);
-
         var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
 
-        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir);
+        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir, workingDirectory);
 
         AbstractJdbcBaseQuery.Output run;
+        // Restored below so a retry re-renders the original SQL instead of replaying this attempt's rendered value.
+        var originalSql = this.sql;
+        this.sql = Property.ofValue(sql);
         try {
             run = super.run(runContext);
         } finally {
+            this.sql = originalSql;
             DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
         }
 
