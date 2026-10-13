@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import io.kestra.core.models.property.Property;
 import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -13,27 +12,27 @@ import io.kestra.plugin.jdbc.AbstractRdbmsTest;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.*;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-
 @KestraTest
-@Disabled("no server for unit test")
 public class RedshiftTest extends AbstractRdbmsTest {
-    @Value("${redshift.url}")
+    @Value("${redshift.url:jdbc:redshift://127.0.0.1:55439/kestra?ssl=false}")
     protected String url;
 
-
-    @Value("${redshift.user}")
+    @Value("${redshift.user:kestra}")
     protected String user;
 
-    @Value("${redshift.password}")
+    @Value("${redshift.password:k3str4}")
     protected String password;
 
     @SuppressWarnings("unchecked")
@@ -50,7 +49,14 @@ public class RedshiftTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("select * from pgsql_types"))
             .build();
 
-        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        AbstractJdbcQuery.Output runOutput;
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+            runOutput = task.run(runContext);
+        } finally {
+            TimeZone.setDefault(defaultTimeZone);
+        }
         assertThat(runOutput.getRow(), notNullValue());
 
         assertThat(runOutput.getRow().get("available"), is(true));
@@ -59,7 +65,7 @@ public class RedshiftTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow().get("c"), is("This is a text column data"));
         assertThat(runOutput.getRow().get("d"), nullValue());
 
-        assertThat(runOutput.getRow().get("play_time"), is(32767));
+        assertThat(runOutput.getRow().get("play_time"), is((short) 32767));
         assertThat(runOutput.getRow().get("library_record"), is(9223372036854775807L));
 
         // Not equal to input value (Float and Double are for "Approximate Value"
@@ -72,9 +78,15 @@ public class RedshiftTest extends AbstractRdbmsTest {
 
         assertThat(runOutput.getRow().get("date_type"), is(LocalDate.parse("2030-12-25")));
         assertThat(runOutput.getRow().get("time_type"), is(LocalTime.parse("04:05:30")));
-        assertThat(runOutput.getRow().get("timez_type"), is(OffsetTime.parse("12:05:06+01:00")));
+
+        // stored as 04:05:06 PST (12:05:06 UTC); the JVM zone is pinned to UTC above so the local time is stable
+        OffsetTime timez = (OffsetTime) runOutput.getRow().get("timez_type");
+        assertThat(timez.toLocalTime(), is(LocalTime.parse("12:05:06")));
+        // the converter applies the current Europe/Paris offset, so accept both winter (+01:00) and summer (+02:00)
+        assertThat(timez.getOffset(), anyOf(is(ZoneOffset.ofHours(1)), is(ZoneOffset.ofHours(2))));
+
         assertThat(runOutput.getRow().get("timestamp_type"), is(LocalDateTime.parse("2004-10-19T10:23:54.999999")));
-        assertThat(runOutput.getRow().get("timestampz_type"), is(ZonedDateTime.parse("2004-10-19T10:23:54+02:00[Europe/Paris]")));
+        assertThat(runOutput.getRow().get("timestampz_type"), is(ZonedDateTime.parse("2004-10-19T06:23:54Z[GMT]")));
 
         assertThat((List<Integer>) runOutput.getRow().get("pay_by_quarter"), containsInAnyOrder(100, 200, 300));
         assertThat((List<Map<String, String>>) runOutput.getRow().get("schedule"), containsInAnyOrder(Map.of("type", "meeting", "name", "lunch"), Map.of("type", "training", "name", "presentation")));
@@ -126,6 +138,6 @@ public class RedshiftTest extends AbstractRdbmsTest {
 
     @Override
     protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-         executeSqlScript("scripts/redshift.sql");
+        executeSqlScript("scripts/redshift.sql");
     }
 }

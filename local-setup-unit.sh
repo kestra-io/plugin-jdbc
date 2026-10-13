@@ -67,7 +67,7 @@ sudo chmod -R 700 plugin-jdbc-postgres/src/test/resources/ssl/
 
 docker compose -f docker-compose-ci.yml down -v
 docker compose -f docker-compose-ci.yml up --quiet-pull -d --wait
-docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver
+docker compose -f docker-compose-ci.yml up --quiet-pull -d mariadb sqlserver redshift-pg redshift
 sleep 3
 
 docker exec -i plugin-jdbc-mariadb-1 mariadb -uroot -pmariadb_passwd --database=kestra -e """
