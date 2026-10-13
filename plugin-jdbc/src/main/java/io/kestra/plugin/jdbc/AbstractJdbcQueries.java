@@ -53,6 +53,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         final boolean isTransactional = runContext.render(this.transaction).as(Boolean.class).orElseThrow();
         long totalSize = 0L;
         List<Output> outputList = new LinkedList<>();
+        List<Long> affectedRows = new ArrayList<>();
 
         // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
@@ -107,6 +108,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         cellConverter,
                         totalSize,
                         outputList,
+                        affectedRows,
                         fetchType,
                         shouldBatchQueries,
                         hasResultSet
@@ -127,7 +129,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             upsertAssets(runContext, queries, this.runningConnection);
 
-            return MultiQueryOutput.builder().outputs(outputList).build();
+            return MultiQueryOutput.builder().outputs(outputList).affectedRows(affectedRows).build();
         } catch (Exception e) {
             if (supportsTx && isTransactional) {
                 rollbackIfTransactional(this.runningConnection, savepoint);
@@ -145,6 +147,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final AbstractCellConverter cellConverter,
                                              long totalSize,
                                              final List<Output> outputList,
+                                             final List<Long> affectedRows,
                                              final FetchType fetchType,
                                              final boolean multiStatements,
                                              final boolean hasResultSet
@@ -159,8 +162,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         if (!multiStatements) {
             ResultSet rs = stmt.getResultSet();
 
-            // When SQL is not a SELECT statement skip output creation
+            // When SQL is not a SELECT statement skip output creation, only record the update count
             if (rs == null) {
+                int updateCount = stmt.getUpdateCount();
+                if (updateCount != -1) {
+                    affectedRows.add((long) updateCount);
+                }
                 return totalSize;
             }
 
@@ -251,9 +258,13 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
                 totalSize += size;
                 outputList.add(output.build());
-            } else if (stmt.getUpdateCount() == -1) {
+            } else {
+                int updateCount = stmt.getUpdateCount();
                 // No result set and no update count: end of results
-                break;
+                if (updateCount == -1) {
+                    break;
+                }
+                affectedRows.add((long) updateCount);
             }
 
             // Move to the next result
@@ -324,5 +335,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     public static class MultiQueryOutput implements io.kestra.core.models.tasks.Output {
         @Schema(title = "The list of per-query outputs")
         List<Output> outputs;
+
+        @Schema(
+            title = "The number of affected rows for each query that doesn't return a result set",
+            description = "One entry per INSERT, UPDATE, DELETE or DDL statement, in execution order, as reported by the JDBC driver (DDL statements usually report 0). " +
+                "Queries returning a result set are not included here; their results are in `outputs`."
+        )
+        List<Long> affectedRows;
     }
 }

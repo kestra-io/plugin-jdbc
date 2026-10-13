@@ -89,6 +89,7 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
         AbstractJdbcQueries.MultiQueryOutput runOutput = queriesPass.run(runContext);
         assertThat(runOutput.getOutputs().size(), is(1));
         assertThat(runOutput.getOutputs().getFirst().getRow().get("transaction_count"), is(1));
+        assertThat(runOutput.getAffectedRows(), contains(0L, 0L, 1L));
 
         //Queries should fail due to bad sql
         Queries insertsFail = Queries.builder()

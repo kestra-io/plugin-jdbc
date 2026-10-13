@@ -185,6 +185,7 @@ public class QueriesPostgresTest extends AbstractRdbmsTest {
         assertThat(runOutput.getOutputs().size(), is(2));
         assertThat(runOutput.getOutputs().getFirst().getRow().get("animals_count"), is(2L));
         assertThat(runOutput.getOutputs().getLast().getRow().get("animals_count"), is(5L));
+        assertThat(runOutput.getAffectedRows(), contains(0L, 0L, 2L, 3L));
     }
 
     @Test
