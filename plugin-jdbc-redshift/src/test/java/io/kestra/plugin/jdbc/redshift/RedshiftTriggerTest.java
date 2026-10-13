@@ -1,57 +1,69 @@
 package io.kestra.plugin.jdbc.redshift;
 
-import io.kestra.plugin.jdbc.AbstractJdbcTriggerTest;
-import io.micronaut.context.annotation.Value;
 import io.kestra.core.junit.annotations.KestraTest;
-import org.junit.jupiter.api.Disabled;
+import io.kestra.core.models.conditions.ConditionContext;
+import io.kestra.core.models.executions.Execution;
+import io.kestra.core.models.triggers.TriggerState;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.utils.TestsUtils;
+import io.kestra.plugin.jdbc.AbstractJdbcQuery;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
-import java.io.FileNotFoundException;
-import java.net.URISyntaxException;
-import java.sql.SQLException;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@KestraTest(startRunner = true, startScheduler = true)
-@Disabled("no server for unit test")
-class RedshiftTriggerTest extends AbstractJdbcTriggerTest {
-    @Value("${redshift.url}")
-    protected String url;
+@KestraTest
+class RedshiftTriggerTest {
+    @Inject
+    protected RunContextFactory runContextFactory;
 
-
-    @Value("${redshift.user}")
-    protected String user;
-
-    @Value("${redshift.password}")
-    protected String password;
     @Test
-    void run() throws Exception {
-        var execution = triggerFlow(this.getClass().getClassLoader(), "flows","redshift-listen");
+    void noRowsDoesNotTrigger() throws Exception {
+        Trigger trigger = new Trigger(0L);
 
-        var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
-        assertThat(rows.size(), is(1));
+        Map.Entry<ConditionContext, TriggerState> context =
+            TestsUtils.mockTrigger(runContextFactory, trigger);
+
+        Optional<Execution> execution = trigger.evaluate(
+            context.getKey(),
+            context.getValue().context()
+        );
+
+        assertThat(execution.isEmpty(), is(true));
     }
 
-    @Override
-    protected String getUrl() {
-        return url;
+    @Test
+    void rowsTriggerExecution() throws Exception {
+        Trigger trigger = new Trigger(1L);
+
+        Map.Entry<ConditionContext, TriggerState> context =
+            TestsUtils.mockTrigger(runContextFactory, trigger);
+
+        Optional<Execution> execution = trigger.evaluate(
+            context.getKey(),
+            context.getValue().context()
+        );
+
+        assertThat(execution.isPresent(), is(true));
     }
 
-    @Override
-    protected String getUsername() {
-        return user;
-    }
+    static class Trigger extends io.kestra.plugin.jdbc.redshift.Trigger {
+        private final Long resultSize;
 
-    @Override
-    protected String getPassword() {
-        return password;
-    }
+        Trigger(Long resultSize) {
+            this.resultSize = resultSize;
+        }
 
-    @Override
-    protected void initDatabase() throws SQLException, FileNotFoundException, URISyntaxException {
-        executeSqlScript("scripts/redshift.sql");
+        @Override
+        protected AbstractJdbcQuery.Output runQuery(RunContext runContext) {
+            return AbstractJdbcQuery.Output.builder()
+                .size(resultSize)
+                .build();
+        }
     }
 }
