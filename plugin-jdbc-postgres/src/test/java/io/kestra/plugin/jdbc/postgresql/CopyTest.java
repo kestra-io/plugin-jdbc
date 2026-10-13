@@ -224,7 +224,7 @@ public class CopyTest {
     void copyOut_RawShouldThrowForUnsupportedClientEncodings() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
-        for (String encoding : List.of("BIG5", "GBK", "SJIS")) {
+        for (String encoding : List.of("BIG5", "GBK", "Shift_JIS", "SHIFT-JIS-2004")) {
             CopyOut copyOut = CopyOut.builder()
                 .url(Property.ofValue(TestUtils.url()))
                 .username(Property.ofValue(TestUtils.username()))

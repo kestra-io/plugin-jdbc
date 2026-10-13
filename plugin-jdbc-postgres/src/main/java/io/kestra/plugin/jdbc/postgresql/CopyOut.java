@@ -154,7 +154,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
     "WIN932",
     "WINDOWS932",
 
-    "SHIFT_JIS_2004",
+    "SHIFTJIS2004",
     
     "UHC",
     "WIN949",
@@ -191,7 +191,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             }
             if (outputMode == OutputMode.RAW && isUnsafeMultibyteEncoding(encoding)) {
                 throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
-                + encoding + "'" 
+                + encoding + "'"
                 );
             }
             CopyManager copyManager = new CopyManager(pgConnection);
@@ -278,7 +278,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             return false;
         }
         return UNSAFE_RAW_ENCODINGS.contains(
-            encoding.trim().toUpperCase(Locale.ROOT)
+            encoding.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT)
         );
     }
 
@@ -309,8 +309,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
                 return -1;
             }
 
-            if (!escaped && value == '\\')
-            {
+            if (!escaped && value == '\\') {
                 escaped = true;
                 return read();
             }
