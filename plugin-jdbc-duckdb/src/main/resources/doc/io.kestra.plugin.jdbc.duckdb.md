@@ -68,3 +68,27 @@ Safety limits are enforced to prevent unintended large uploads:
 
 If either limit is exceeded, execution fails with an error explaining how to adjust the limits or disable auto-capture.
 
+#### File paths
+
+DuckDB resolves relative paths against the Kestra process directory, not the task working directory. To stay safe:
+
+- Read input files with `'{{ workingDir }}/data.csv'`. A relative `'data.csv'` also works as long as no file of that name exists in the process directory; if one does, the task fails instead of silently reading it.
+- Write files with `COPY ... TO '{{ workingDir }}/results.csv'` or `'{{ outputFiles.key }}'`. A relative `COPY ... TO 'results.csv'` lands in the process directory, is not captured as an output, and is visible to other executions. Kestra logs a warning when it detects such a write.
+
+Write detection only scans the top level of the process directory, and it may report files written by other tasks running concurrently on the same worker.
+
+```yaml
+id: duckdb-paths
+namespace: company.team
+
+tasks:
+  - id: query
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    inputFiles:
+      data.csv: |
+        id,name
+        1,alpha
+    sql: |
+      COPY (SELECT * FROM read_csv_auto('{{ workingDir }}/data.csv'))
+      TO '{{ workingDir }}/results.csv' (HEADER, DELIMITER ',');
+```

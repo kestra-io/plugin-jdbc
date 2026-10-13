@@ -11,6 +11,7 @@ import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.IdUtils;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcBaseQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.micronaut.http.uri.UriBuilder;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -253,8 +254,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         }
 
         // inputFiles
+        Map<String, String> finalInputFiles = null;
         if (this.inputFiles != null) {
-            Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
+            finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
             PluginUtilsService.createInputFiles(
                 runContext,
@@ -291,6 +293,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
         String sql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
 
+        var processDir = DuckDbQueryUtils.processDirectory();
+        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, workingDirectory, finalInputFiles, sql);
+
         // we transform filename column to show relative paths if filename parameter is used
         if (workingDirectory != null && sql.toLowerCase().matches(".*filename\\s*=\\s*(true|1).*")) {
             String escapedWorkingDir = workingDirectory.toString().replace("\\", "\\\\").replace("/", "\\/");
@@ -298,11 +303,20 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
                 sql.replaceAll(";\\s*$", "") + ")";
         }
 
-        this.sql = Property.ofValue(sql);
-
         var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
 
-        var run = super.run(runContext);
+        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir, workingDirectory);
+
+        AbstractJdbcBaseQuery.Output run;
+        // Restored below so a retry re-renders the original SQL instead of replaying this attempt's rendered value.
+        var originalSql = this.sql;
+        this.sql = Property.ofValue(sql);
+        try {
+            run = super.run(runContext);
+        } finally {
+            this.sql = originalSql;
+            DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        }
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(

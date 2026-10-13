@@ -227,8 +227,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             additionalVars.put("workingDir", workingDirectory.toAbsolutePath().toString());
         }
 
+        Map<String, String> finalInputFiles = null;
         if (this.inputFiles != null) {
-            Map<String, String> finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
+            finalInputFiles = PluginUtilsService.transformInputFiles(runContext, this.inputFiles);
 
             PluginUtilsService.createInputFiles(
                 runContext,
@@ -262,9 +263,23 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             );
         }
 
-        var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
+        var processDir = DuckDbQueryUtils.processDirectory();
+        var rSql = runContext.render(this.sql).as(String.class, this.additionalVars).orElseThrow();
+        DuckDbQueryUtils.assertInputFilesNotShadowed(runContext, processDir, workingDirectory, finalInputFiles, rSql);
 
-        var run = super.run(runContext);
+        var snapshot = DuckDbQueryUtils.takeSnapshot(runContext, workingDirectory, this.captureOutputFiles);
+        var processSnapshot = DuckDbQueryUtils.snapshotProcessDirectory(runContext, processDir, workingDirectory);
+
+        AbstractJdbcQueries.MultiQueryOutput run;
+        // Pass the already-rendered SQL on so the guard checks exactly what DuckDB executes; restored below so a retry re-renders.
+        var originalSql = this.sql;
+        this.sql = Property.ofValue(rSql);
+        try {
+            run = super.run(runContext);
+        } finally {
+            this.sql = originalSql;
+            DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
+        }
 
         // upload output files
         var uploaded = DuckDbQueryUtils.uploadOutputFiles(

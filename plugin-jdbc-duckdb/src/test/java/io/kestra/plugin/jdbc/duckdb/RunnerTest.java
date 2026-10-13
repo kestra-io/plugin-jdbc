@@ -19,4 +19,11 @@ class RunnerTest {
         assertThat(execution.getTaskRunList(), hasSize(7));
         assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
     }
+
+    @Test
+    @ExecuteFlow("sanity-checks/duckdb_working_dir_paths.yaml")
+    void duckdb_working_dir_paths(Execution execution) {
+        assertThat(execution.getTaskRunList(), hasSize(3));
+        assertThat(execution.getState().getCurrent(), is(State.Type.SUCCESS));
+    }
 }
