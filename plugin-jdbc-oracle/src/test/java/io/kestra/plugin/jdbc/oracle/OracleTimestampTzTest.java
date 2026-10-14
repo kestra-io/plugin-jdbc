@@ -15,6 +15,8 @@ import org.h2.tools.RunScript;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -49,6 +51,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
+@Execution(ExecutionMode.SAME_THREAD)
 public class OracleTimestampTzTest extends AbstractRdbmsTest {
     private static final List<ZonedDateTime> EXPECTED = List.of(
         ZonedDateTime.of(2024, 7, 15, 10, 30, 0, 123_456_000, ZoneId.of("America/New_York")),

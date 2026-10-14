@@ -123,8 +123,8 @@ public class Batch extends AbstractJdbcBatch implements OracleConnectionInterfac
         }
 
         return new IllegalStateException(
-            "Oracle rejected the time zone region(s) " + oracleConverter.boundRegions() + " with ORA-01882 (timezone region not found): "
-                + "the target database's time zone file is older than the data. "
+            "Oracle rejected a time zone region with ORA-01882 (timezone region not found). Regions bound in this run: "
+                + oracleConverter.boundRegions() + ", at least one is unknown to the target database's time zone file. "
                 + "Check its version with `SELECT version FROM v$timezone_file`, then either upgrade the time zone file (DBMS_DST) "
                 + "or convert these values to a plain offset (e.g. +02:00) upstream.",
             failure

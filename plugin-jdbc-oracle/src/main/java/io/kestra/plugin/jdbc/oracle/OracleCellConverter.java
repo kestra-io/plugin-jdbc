@@ -14,6 +14,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -130,6 +131,6 @@ public class OracleCellConverter extends AbstractCellConverter {
     }
 
     Set<String> boundRegions() {
-        return Set.copyOf(boundRegions);
+        return Collections.unmodifiableSortedSet(new TreeSet<>(boundRegions));
     }
 }
