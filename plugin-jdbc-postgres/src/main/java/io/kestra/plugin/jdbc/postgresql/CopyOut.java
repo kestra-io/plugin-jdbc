@@ -182,17 +182,20 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         try (Connection connection = this.connection(runContext)) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
 
-            encoding = runContext.render(this.encoding)
-                    .as(String.class)
-                    .orElse(null);
-
-            if (encoding == null) {
-                encoding = getClientEncoding(connection);
-            }
-            if (outputMode == OutputMode.RAW && isUnsafeMultibyteEncoding(encoding)) {
-                throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
-                + encoding + "'"
-                );
+            if (outputMode == OutputMode.RAW) {
+                encoding = runContext.render(this.encoding)
+                        .as(String.class)
+                        .orElse(null);
+    
+                if (encoding == null) {
+                    encoding = getClientEncoding(connection);
+                }
+                
+                if (isUnsafeMultibyteEncoding(encoding)) {
+                    throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
+                        + encoding + "'"
+                    );
+                }
             }
             CopyManager copyManager = new CopyManager(pgConnection);
 
