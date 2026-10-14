@@ -1,7 +1,15 @@
 project.description = 'Manage data in DuckDB with Kestra\'s JDBC plugin.'
 
-// Keep duckdb_jdbc inline for Dependabot; update duckdbCommunityExtensionVersion in sync.
-def duckdbCommunityExtensionVersion = "v1.5.6"
+// DuckDB only loads an extension built for its own version, so the bundled one follows the resolved driver (1.5.6.0 -> v1.5.6).
+def duckdbCommunityExtensionVersion = providers.provider {
+    def driver = configurations.runtimeClasspath.incoming.resolutionResult.allComponents
+        .collect { it.moduleVersion }
+        .find { it != null && it.group == "org.duckdb" && it.name == "duckdb_jdbc" }
+    if (driver == null) {
+        throw new GradleException("Cannot bundle DuckDB community extensions: org.duckdb:duckdb_jdbc is not on the runtime classpath.")
+    }
+    "v" + driver.version.tokenize(".").take(3).join(".")
+}
 def bundledDuckDbExtensionsDir = layout.buildDirectory.dir("generated/duckdb-community-extensions")
 def bundledDuckDbExtensions = [
     ion: ["linux_amd64", "linux_arm64"]
@@ -9,14 +17,19 @@ def bundledDuckDbExtensions = [
 def bundledDuckDbExtensionsMetadataFile = bundledDuckDbExtensionsDir.map { it.file("duckdb-community-extensions.properties") }
 
 tasks.register("bundleDuckDbCommunityExtensions") {
+    inputs.property("duckdbVersion", duckdbCommunityExtensionVersion)
     outputs.dir(bundledDuckDbExtensionsDir)
 
     doLast {
+        def duckdbVersion = duckdbCommunityExtensionVersion.get()
+        def versionsDir = bundledDuckDbExtensionsDir.get().dir("duckdb-community-extensions").asFile
+        versionsDir.listFiles()?.findAll { it.name != duckdbVersion }?.each { it.deleteDir() }
+
         def metadataFile = bundledDuckDbExtensionsMetadataFile.get().asFile
         metadataFile.parentFile.mkdirs()
 
         def properties = new Properties()
-        properties.setProperty("duckdb.version", duckdbCommunityExtensionVersion)
+        properties.setProperty("duckdb.version", duckdbVersion)
         properties.setProperty("bundled.extensions", bundledDuckDbExtensions.keySet().join(","))
         bundledDuckDbExtensions.each { extensionName, platforms ->
             properties.setProperty("bundled.extensions.${extensionName}", platforms.join(","))
@@ -27,7 +40,7 @@ tasks.register("bundleDuckDbCommunityExtensions") {
 
         bundledDuckDbExtensions.each { extensionName, platforms ->
             platforms.each { platform ->
-                def outputDir = bundledDuckDbExtensionsDir.get().file("duckdb-community-extensions/${duckdbCommunityExtensionVersion}/${platform}").asFile
+                def outputDir = bundledDuckDbExtensionsDir.get().file("duckdb-community-extensions/${duckdbVersion}/${platform}").asFile
                 def outputFile = new File(outputDir, "${extensionName}.duckdb_extension")
 
                 if (outputFile.exists()) {
@@ -36,11 +49,16 @@ tasks.register("bundleDuckDbCommunityExtensions") {
 
                 outputDir.mkdirs()
 
-                def gzUrl = new URL("https://community-extensions.duckdb.org/${duckdbCommunityExtensionVersion}/${platform}/${extensionName}.duckdb_extension.gz")
+                def gzUrl = new URL("https://community-extensions.duckdb.org/${duckdbVersion}/${platform}/${extensionName}.duckdb_extension.gz")
                 def gzFile = new File(outputDir, "${extensionName}.duckdb_extension.gz")
 
-                gzUrl.withInputStream { input ->
-                    gzFile.withOutputStream { output -> output << input }
+                try {
+                    gzUrl.withInputStream { input ->
+                        gzFile.withOutputStream { output -> output << input }
+                    }
+                } catch (IOException e) {
+                    gzFile.delete()
+                    throw new GradleException("Cannot download the DuckDB community extension '${extensionName}' ${duckdbVersion} for ${platform} from ${gzUrl}. It may not be published yet for this DuckDB release.", e)
                 }
 
                 new java.util.zip.GZIPInputStream(new FileInputStream(gzFile)).withCloseable { input ->
