@@ -109,9 +109,42 @@ import java.time.ZoneId;
     }
 )
 public class Batch extends AbstractJdbcBatch implements OracleConnectionInterface {
+    private static final int UNKNOWN_TIMEZONE_REGION = 1882;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new OracleCellConverter(zoneId);
+    }
+
+    @Override
+    protected Exception mapBatchFailure(Exception failure, AbstractCellConverter converter) {
+        if (!(converter instanceof OracleCellConverter oracleConverter) || !hasOracleErrorCode(failure, UNKNOWN_TIMEZONE_REGION)) {
+            return failure;
+        }
+
+        return new IllegalStateException(
+            "Oracle rejected the time zone region(s) " + oracleConverter.boundRegions() + " with ORA-01882 (timezone region not found): "
+                + "the target database's time zone file is older than the data. "
+                + "Check its version with `SELECT version FROM v$timezone_file`, then either upgrade the time zone file (DBMS_DST) "
+                + "or convert these values to a plain offset (e.g. +02:00) upstream.",
+            failure
+        );
+    }
+
+    private static boolean hasOracleErrorCode(Throwable failure, int errorCode) {
+        for (var cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLException sqlException) {
+                if (sqlException.getErrorCode() == errorCode) {
+                    return true;
+                }
+                for (var next = sqlException.getNextException(); next != null; next = next.getNextException()) {
+                    if (next.getErrorCode() == errorCode) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override

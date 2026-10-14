@@ -1,0 +1,14 @@
+CREATE TABLE oracle_tstz_source (
+    t_id NUMBER NOT NULL,
+    t_ts TIMESTAMP(6) WITH TIME ZONE NOT NULL
+);
+
+INSERT INTO oracle_tstz_source VALUES (1, TIMESTAMP '2024-07-15 10:30:00.123456 America/New_York');
+INSERT INTO oracle_tstz_source VALUES (2, TIMESTAMP '2024-01-15 08:00:00.000000 Europe/Berlin');
+INSERT INTO oracle_tstz_source VALUES (3, TIMESTAMP '2024-03-01 12:00:00.000000 UTC');
+INSERT INTO oracle_tstz_source VALUES (4, TIMESTAMP '2024-07-15 10:30:00.123456 +02:00');
+
+CREATE TABLE oracle_tstz_target (
+    t_id NUMBER NOT NULL,
+    t_ts TIMESTAMP(6) WITH TIME ZONE NOT NULL
+);

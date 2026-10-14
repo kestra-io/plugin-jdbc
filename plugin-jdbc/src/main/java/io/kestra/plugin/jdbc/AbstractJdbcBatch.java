@@ -184,6 +184,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
+    protected Exception mapBatchFailure(Exception failure, AbstractCellConverter converter) {
+        return failure;
+    }
+
     @Override
     public Output run(RunContext runContext) throws Exception {
         Logger logger = runContext.logger();
@@ -198,11 +202,15 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
             var rRetryScope = runContext.render(retryScope).as(RetryScope.class).orElse(RetryScope.INPUT);
 
-            RetryUtils.of(buildRetryPolicy(runContext), logger)
-                .runRetryIf(t -> isRetryable(rRetryScope, t), () -> {
-                    executor.execute();
-                    return null;
-                });
+            try {
+                RetryUtils.of(buildRetryPolicy(runContext), logger)
+                    .runRetryIf(t -> isRetryable(rRetryScope, t), () -> {
+                        executor.execute();
+                        return null;
+                    });
+            } catch (Exception e) {
+                throw mapBatchFailure(e, converter);
+            }
 
             Output output = executor.output();
 
