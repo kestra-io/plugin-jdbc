@@ -20,6 +20,7 @@ import static io.kestra.core.models.tasks.common.FetchType.NONE;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
@@ -197,7 +198,7 @@ public class CopyTest {
     }
 
     @Test
-    void copyOut_RawShouldThrowForInvalidFormats() throws Exception {
+    void copyOut_outputModeRawShouldThrowForInvalidFormats() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
         var invalidFormats = new AbstractCopy.Format[] {
@@ -241,24 +242,42 @@ public class CopyTest {
         }
     }
 
-        private String createPayloadTable(
-                RunContext runContext,
-                String tableName,
-                String json) throws Exception {
-            Query create = Query.builder()
-            .url(Property.ofValue(TestUtils.url()))
+    @Test
+    void copyOut_outputModeCopyShouldAllowClientOnlyMultiByteEncoding() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        String encoding = "SJIS";
+        CopyOut copyOut = CopyOut.builder()
+                .url(Property.ofValue(TestUtils.url()))
                 .username(Property.ofValue(TestUtils.username()))
                 .password(Property.ofValue(TestUtils.password()))
-                .fetchType(Property.ofValue(NONE))
-                .sql(Property.ofValue(
-                    "CREATE TABLE " + tableName + " (payload TEXT)"))
-                    .build();
-                
-                create.run(runContext);          
-         return """
-                INSERT INTO %s (payload)
-                VALUES ($json$%s$json$)
-                RETURNING payload
-                """.formatted(tableName, json);
+                .encoding(Property.ofValue(encoding))
+                .sql(Property.ofValue("SELECT 1"))
+                .build();
+
+        assertDoesNotThrow(() -> copyOut.run(runContext));
+    }
+
+    private String createPayloadTable(
+        RunContext runContext,
+        String tableName,
+        String json
+    ) throws Exception {
+        Query create = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .fetchType(Property.ofValue(NONE))
+            .sql(Property.ofValue(
+                "CREATE TABLE " + tableName + " (payload TEXT)"
+            ))
+            .build();
+
+        create.run(runContext);
+        return """
+            INSERT INTO %s (payload)
+            VALUES ($json$%s$json$)
+            RETURNING payload
+            """.formatted(tableName, json);
     }
 }

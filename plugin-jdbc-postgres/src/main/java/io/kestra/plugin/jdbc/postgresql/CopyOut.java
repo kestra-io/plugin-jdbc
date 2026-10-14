@@ -177,21 +177,19 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             throw new IllegalArgumentException("RAW output mode is only allowed with TEXT format");
         }
 
-        String encoding;
+        String clientEncoding;
 
         try (Connection connection = this.connection(runContext)) {
             BaseConnection pgConnection = connection.unwrap(BaseConnection.class);
 
             if (outputMode == OutputMode.RAW) {
-                encoding = runContext.render(this.encoding)
-                        .as(String.class)
-                        .orElse(null);
-    
-                if (encoding == null) {
-                    encoding = getClientEncoding(connection);
+                clientEncoding = runContext.render(this.encoding)
+                .as(String.class)
+                .orElse(null);
+                if (clientEncoding == null) {
+                    clientEncoding = getClientEncoding(connection);
                 }
-                
-                if (isUnsafeMultibyteEncoding(encoding)) {
+                if (isUnsafeMultibyteEncoding(clientEncoding)) {
                     throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
                         + encoding + "'"
                     );
@@ -276,12 +274,12 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
         }
     }
 
-    private boolean isUnsafeMultibyteEncoding(String encoding) {
-        if (encoding == null) {
+    private boolean isUnsafeMultibyteEncoding(String clientEncoding) {
+        if (clientEncoding == null) {
             return false;
         }
         return UNSAFE_RAW_ENCODINGS.contains(
-            encoding.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT)
+            clientEncoding.replaceAll("[^A-Za-z0-9]", "").toUpperCase(Locale.ROOT)
         );
     }
 
