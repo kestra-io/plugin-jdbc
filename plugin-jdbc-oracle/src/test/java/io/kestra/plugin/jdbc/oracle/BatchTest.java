@@ -76,6 +76,18 @@ public class BatchTest extends AbstractRdbmsTest {
         AbstractJdbcBatch.Output runOutput = task.run(runContext);
 
         assertThat(runOutput.getRowCount(), is(5L));
+
+        try (var connection = getConnection();
+             var statement = connection.createStatement();
+             var rs = statement.executeQuery("select to_char(sys_extract_utc(t_TIMESTAMP_TIME_ZONE), 'YYYY-MM-DD HH24:MI:SS'), to_char(t_TIMESTAMP_TIME_ZONE, 'TZR') from oracle_types")) {
+            var rows = 0;
+            while (rs.next()) {
+                assertThat(rs.getString(1), is("1998-01-23 11:00:00"));
+                assertThat(rs.getString(2), is("-05:00"));
+                rows++;
+            }
+            assertThat(rows, is(5));
+        }
     }
 
     @Test

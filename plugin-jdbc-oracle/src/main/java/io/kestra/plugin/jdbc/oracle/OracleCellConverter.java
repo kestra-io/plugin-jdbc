@@ -10,15 +10,20 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Calendar;
-import java.util.TimeZone;
+import java.util.Collections;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class OracleCellConverter extends AbstractCellConverter {
 
     private static final int CLOB_BUFFER_SIZE = 4096;
     private static final int BLOB_BUFFER_SIZE = 8192;
+
+    private final Set<String> boundRegions = new TreeSet<>();
 
     public OracleCellConverter(ZoneId zoneId) {
         super(zoneId);
@@ -76,7 +81,7 @@ public class OracleCellConverter extends AbstractCellConverter {
         }
 
         if (data instanceof oracle.sql.TIMESTAMPTZ col) {
-            return col.toOffsetDateTime().toZonedDateTime();
+            return col.toZonedDateTime();
         }
 
         if (data instanceof oracle.sql.TIMESTAMPLTZ col) {
@@ -111,11 +116,21 @@ public class OracleCellConverter extends AbstractCellConverter {
             }
         }  else if (cls ==  oracle.sql.TIMESTAMPTZ.class) {
             if (value instanceof ZonedDateTime current) {
-                ps.setTimestamp(index, Timestamp.valueOf(current.toLocalDateTime()), Calendar.getInstance(TimeZone.getTimeZone(current.getZone())));
+                if (!(current.getZone() instanceof ZoneOffset)) {
+                    boundRegions.add(current.getZone().getId());
+                }
+                ps.setObject(index, current);
+                return ps;
+            } else if (value instanceof OffsetDateTime current) {
+                ps.setObject(index, current);
                 return ps;
             }
         }
 
         return super.addPreparedStatementValue(ps, parameterType, value, index, connection);
+    }
+
+    Set<String> boundRegions() {
+        return Collections.unmodifiableSortedSet(new TreeSet<>(boundRegions));
     }
 }
