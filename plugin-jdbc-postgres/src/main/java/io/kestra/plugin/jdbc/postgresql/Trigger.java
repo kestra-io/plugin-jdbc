@@ -88,7 +88,15 @@ public class Trigger extends AbstractJdbcTrigger implements PostgresConnectionIn
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
+            .connectionPooling(this.getConnectionPooling())
+            .connectionPoolSize(this.getConnectionPoolSize())
             .parameters(this.getParameters())
+            .ssl(this.getSsl())
+            .sslMode(this.getSslMode())
+            .sslRootCert(this.getSslRootCert())
+            .sslCert(this.getSslCert())
+            .sslKey(this.getSslKey())
+            .sslKeyPassword(this.getSslKeyPassword())
             .build();
         return query.run(runContext);
     }

@@ -63,6 +63,8 @@ public class Trigger extends AbstractJdbcTrigger implements HanaConnectionInterf
             .fetchOne(this.isFetchOne())
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
+            .connectionPooling(this.getConnectionPooling())
+            .connectionPoolSize(this.getConnectionPoolSize())
             .parameters(this.getParameters())
             .build();
 

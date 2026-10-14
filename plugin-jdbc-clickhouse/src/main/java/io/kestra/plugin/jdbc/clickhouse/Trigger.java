@@ -68,12 +68,15 @@ public class Trigger extends AbstractJdbcTrigger implements ClickhouseConnection
             .password(this.getPassword())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
+            .afterSQL(this.getAfterSQL())
             .fetch(this.isFetch())
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
+            .connectionPooling(this.getConnectionPooling())
+            .connectionPoolSize(this.getConnectionPoolSize())
             .parameters(this.getParameters())
             .build();
         return query.run(runContext);
