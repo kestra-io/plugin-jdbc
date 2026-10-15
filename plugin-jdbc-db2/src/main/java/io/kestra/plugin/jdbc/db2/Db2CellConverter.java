@@ -40,6 +40,9 @@ public class Db2CellConverter extends AbstractCellConverter {
             // Materialize the actual content here, while the ResultSet is still positioned on this row.
             case "blob" -> readBlob(rs.getBlob(columnIndex));
             case "clob" -> readClob(rs.getClob(columnIndex));
+            // DB2 has no NCLOB type: its national-character LOB is DBCLOB, which the JCC driver exposes
+            // as a java.sql.Clob, so it goes through the same eager read as CLOB.
+            case "dbclob" -> readClob(rs.getClob(columnIndex));
             case "nclob" -> readNClob(rs.getNClob(columnIndex));
             case "xml" -> readSqlXml(rs.getSQLXML(columnIndex));
             default -> super.convert(columnIndex, rs);
