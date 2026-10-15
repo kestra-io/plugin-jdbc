@@ -110,6 +110,7 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
             .databaseUri(this.getDatabaseUri())
             .outputDbFile(this.getOutputDbFile())
             .inputFiles(this.getInputFiles())
+            .outputFiles(this.getOutputFiles())
             .communityExtensions(this.getCommunityExtensions())
             .captureOutputFiles(this.getCaptureOutputFiles())
             .maxCapturedFiles(this.getMaxCapturedFiles())

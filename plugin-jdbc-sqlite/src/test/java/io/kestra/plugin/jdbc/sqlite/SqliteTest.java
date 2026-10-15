@@ -299,6 +299,29 @@ public class SqliteTest extends AbstractRdbmsTest {
     }
 
     @Test
+    void afterSQLWithSemicolonInStringLiteral() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query taskWithAfterSQL = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .afterSQL(Property.ofValue("UPDATE lite_types SET text_column = 'a;b'"))
+            .build();
+
+        taskWithAfterSQL.run(runContext);
+
+        Query verify = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("SELECT text_column FROM lite_types"))
+            .build();
+
+        AbstractJdbcQuery.Output verifyOutput = verify.run(runContext);
+        assertThat(verifyOutput.getRow().get("text_column"), is("a;b"));
+    }
+
+    @Test
     void afterSQLWithTransaction_shouldRollbackOnError() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 

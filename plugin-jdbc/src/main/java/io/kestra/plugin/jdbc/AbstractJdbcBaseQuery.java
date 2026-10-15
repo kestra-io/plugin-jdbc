@@ -213,6 +213,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                 count++;
             }
             hasMoreResults = stmt.getMoreResults();
+            if (hasMoreResults) {
+                // getMoreResults() closes the current ResultSet, so read the next one from the statement.
+                rs = stmt.getResultSet();
+            }
         } while (hasMoreResults);
 
         return count;

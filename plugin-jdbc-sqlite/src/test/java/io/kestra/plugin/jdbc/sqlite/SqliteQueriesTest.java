@@ -68,6 +68,31 @@ public class SqliteQueriesTest extends AbstractRdbmsTest {
     }
 
     @Test
+    void fetchOneOnEmptyResultReportsSizeZero() throws Exception {
+        RunContext runContext = runContextFactory.of(Collections.emptyMap());
+
+        Queries task = Queries.builder()
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue("""
+                SELECT firstName FROM employee WHERE 1 = 0;
+                SELECT firstName FROM employee WHERE age = 45;
+                """))
+            .build();
+
+        AbstractJdbcQueries.MultiQueryOutput runOutput = task.run(runContext);
+        assertThat(runOutput.getOutputs().size(), is(2));
+
+        assertThat(runOutput.getOutputs().getFirst().getRow(), nullValue());
+        assertThat(runOutput.getOutputs().getFirst().getSize(), is(0L));
+
+        assertThat(runOutput.getOutputs().getLast().getRow().get("firstName"), is("John"));
+        assertThat(runOutput.getOutputs().getLast().getSize(), is(1L));
+    }
+
+    @Test
     void testRollback() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 

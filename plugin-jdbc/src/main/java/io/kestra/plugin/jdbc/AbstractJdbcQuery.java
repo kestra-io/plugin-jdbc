@@ -160,7 +160,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
         if (this.afterSQL != null) {
             String rAfterSQL = runContext.render(this.afterSQL).as(String.class, this.additionalVars).orElseThrow();
 
-            long afterSQLStatements = Arrays.stream(rAfterSQL.split(";[^']"))
+            long afterSQLStatements = Arrays.stream(getQueries(rAfterSQL))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty() && !s.toLowerCase().startsWith("set file_search_path"))
                 .count();

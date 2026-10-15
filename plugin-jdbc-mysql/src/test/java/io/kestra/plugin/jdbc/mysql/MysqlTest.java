@@ -37,6 +37,30 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @KestraTest
 public class MysqlTest extends AbstractRdbmsTest {
 
+    @ParameterizedTest
+    @EnumSource(value = FetchType.class, names = {"FETCH", "STORE"})
+    void fetchReadsEveryResultSet(FetchType fetchType) throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        Query task = Query.builder()
+            .url(Property.ofValue(getUrl() + "?allowMultiQueries=true"))
+            .username(Property.ofValue(getUsername()))
+            .password(Property.ofValue(getPassword()))
+            .fetchType(Property.ofValue(fetchType))
+            .sql(Property.ofValue("SELECT 1 AS a; SELECT 2 AS a"))
+            .build();
+
+        AbstractJdbcQuery.Output runOutput = task.run(runContext);
+        assertThat(runOutput.getSize(), is(2L));
+
+        if (fetchType == FetchType.FETCH) {
+            assertThat(
+                runOutput.getRows().stream().map(row -> ((Number) row.get("a")).intValue()).toList(),
+                contains(1, 2)
+            );
+        }
+    }
+
     @Test
     void aliasQuery() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
