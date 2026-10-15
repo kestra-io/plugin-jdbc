@@ -238,7 +238,7 @@ public class CopyTest {
                 IllegalArgumentException.class,
                 () -> copyOut.run(runContext)
             );
-            assertThat(ex.getMessage(), containsString("encoding"));
+            assertThat(ex.getMessage(), containsString("'" + encoding + "'"));
         }
     }
 
@@ -255,7 +255,9 @@ public class CopyTest {
                 .sql(Property.ofValue("SELECT 1"))
                 .build();
 
-        assertDoesNotThrow(() -> copyOut.run(runContext));
+        CopyOut.Output output = assertDoesNotThrow(() -> copyOut.run(runContext));
+        assertThat(output.getRowCount(), is(1L));
+        assertThat(output.getUri(), notNullValue());
     }
 
     private String createPayloadTable(

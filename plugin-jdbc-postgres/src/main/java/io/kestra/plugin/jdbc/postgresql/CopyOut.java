@@ -191,7 +191,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
                 }
                 if (isUnsafeMultibyteEncoding(clientEncoding)) {
                     throw new IllegalArgumentException("RAW output mode is not supported with client-only multibyte encoding '"
-                        + encoding + "'"
+                        + clientEncoding + "'"
                     );
                 }
             }
