@@ -71,6 +71,31 @@ class Db2CellConverterTest {
     }
 
     @Test
+    void testDbClob_isMaterializedBeforeResultSetCanClose() throws Exception {
+        String expected = "Héllo DBCLOB row 1 ✓";
+        Clob clob = mock(Clob.class);
+        when(clob.getCharacterStream()).thenReturn(new StringReader(expected));
+
+        ResultSet rs = mockResultSet("DBCLOB", clob);
+        when(rs.getClob(anyInt())).thenReturn(clob);
+
+        Object result = converter().convertCell(1, rs, mock(Connection.class));
+
+        assertEquals(expected, result);
+        verify(clob, times(1)).free();
+    }
+
+    @Test
+    void testDbClob_nullValueReturnsNull() throws Exception {
+        ResultSet rs = mockResultSet("DBCLOB", null);
+
+        Object result = converter().convertCell(1, rs, mock(Connection.class));
+
+        assertEquals(null, result);
+        Mockito.verify(rs, Mockito.never()).getClob(anyInt());
+    }
+
+    @Test
     void testNClob_isMaterializedBeforeResultSetCanClose() throws Exception {
         String expected = "some nclob text content";
         NClob nclob = mock(NClob.class);
