@@ -8,6 +8,7 @@ import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.TriggerContext;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.JacksonMapper;
 import jakarta.inject.Inject;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -81,6 +82,26 @@ class JdbcTriggerTest {
         );
 
         assertThat(evaluate.isEmpty(), is(true));
+    }
+
+    @Test
+    void deprecatedConnectionPoolingPropertiesAreStillAccepted() throws Exception {
+        var yaml = """
+            id: test
+            type: %s
+            url: jdbc:h2:mem:test
+            sql: SELECT 1
+            connectionPooling: true
+            connectionPoolSize: 5
+            """.formatted(DoNothingTrigger.class.getName());
+
+        DoNothingTrigger trigger = JacksonMapper.ofYaml().readValue(yaml, DoNothingTrigger.class);
+
+        assertThat(validator.validate(trigger), hasSize(0));
+        assertThat(trigger.evaluate(
+            ConditionContext.builder().runContext(runContextFactory.of()).build(),
+            new TriggerContext()
+        ).isEmpty(), is(true));
     }
 
     @NoArgsConstructor

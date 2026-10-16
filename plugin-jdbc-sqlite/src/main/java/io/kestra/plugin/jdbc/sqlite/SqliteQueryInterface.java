@@ -32,10 +32,4 @@ public interface SqliteQueryInterface extends JdbcConnectionInterface {
     default String getScheme() {
         return "jdbc:sqlite";
     }
-
-    // SQLite databases are file-scoped; pooling across tasks on the same file causes locking issues.
-    @Override
-    default boolean usesConnectionPool() {
-        return false;
-    }
 }

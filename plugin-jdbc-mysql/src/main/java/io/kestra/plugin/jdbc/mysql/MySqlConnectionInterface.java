@@ -15,7 +15,6 @@ public interface MySqlConnectionInterface extends JdbcConnectionInterface {
         return "jdbc:mysql";
     }
 
-    // loadLocalInfilePath is null when no inputFile, since a per-run path in the URL would defeat pooling (the URL is part of the pool key).
     default Properties createMysqlProperties(Properties props, Path loadLocalInfilePath,
                                              boolean isMultiQuery) {
         URI url = URI.create((String) props.get("jdbc.url"));

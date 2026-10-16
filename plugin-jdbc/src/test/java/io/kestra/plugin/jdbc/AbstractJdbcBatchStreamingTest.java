@@ -25,10 +25,12 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -83,7 +85,6 @@ class AbstractJdbcBatchStreamingTest {
             .id(IdUtils.create())
             .type(StreamingBatch.class.getName())
             .url(Property.ofValue(dbUrl))
-            .connectionPooling(Property.ofValue(false))
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("INSERT INTO streaming_batch (id, name) VALUES (?, ?)"))
             .columns(Property.ofValue(List.of("id", "name")))
@@ -109,10 +110,74 @@ class AbstractJdbcBatchStreamingTest {
         }
     }
 
+    @Test
+    void deprecatedConnectionPoolingPropertiesAreStillAccepted() throws Exception {
+        var yaml = """
+            id: test
+            type: %s
+            url: jdbc:h2:mem:test
+            from: kestra:///file.ion
+            sql: INSERT INTO t (id) VALUES (?)
+            connectionPooling: true
+            connectionPoolSize: 5
+            """.formatted(StreamingBatch.class.getName());
+
+        assertThat(io.kestra.core.serializers.JacksonMapper.ofYaml().readValue(yaml, StreamingBatch.class), is(notNullValue()));
+    }
+
+    @Test
+    void shouldRollbackWhenBatchFails() throws Exception {
+        String dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (Connection setup = DriverManager.getConnection(dbUrl); Statement statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE rollback_batch (id INT, name VARCHAR(255))");
+        }
+
+        Path ionFile = Files.createTempFile("rollback_batch_", ".ion");
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(ionFile))) {
+            for (int i = 0; i < 10; i++) {
+                FileSerde.write(output, Map.of("id", i, "name", "row-" + i));
+            }
+        }
+        URI uri;
+        try (InputStream input = Files.newInputStream(ionFile)) {
+            uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), input);
+        }
+        Files.delete(ionFile);
+
+        AtomicInteger flushes = new AtomicInteger();
+        AtomicInteger rollbacks = new AtomicInteger();
+        StreamingBatch task = StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO rollback_batch (id, name) VALUES (?, ?)"))
+            .columns(Property.ofValue(List.of("id", "name")))
+            .chunk(Property.ofValue(5))
+            .onExecuteBatch(() -> {
+                if (flushes.incrementAndGet() == 2) {
+                    throw new IllegalStateException("boom");
+                }
+            })
+            .onRollback(rollbacks::incrementAndGet)
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of(Map.of())));
+
+        assertThat(rollbacks.get(), is(1));
+        try (Connection check = DriverManager.getConnection(dbUrl);
+             Statement statement = check.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM rollback_batch")) {
+            rs.next();
+            assertThat(rs.getInt(1), is(5));
+        }
+    }
+
     @SuperBuilder
     @NoArgsConstructor
     public static class StreamingBatch extends AbstractJdbcBatch {
         private transient Runnable onExecuteBatch;
+        private transient Runnable onRollback;
 
         @Override
         protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -137,11 +202,14 @@ class AbstractJdbcBatchStreamingTest {
         public Connection connection(RunContext runContext) throws Exception {
             Connection connection = super.connection(runContext);
             return proxy(Connection.class, connection, (method, args) -> {
+                if (method.getName().equals("rollback") && onRollback != null) {
+                    onRollback.run();
+                }
                 Object result = method.invoke(connection, args);
                 if (method.getName().equals("prepareStatement")) {
                     PreparedStatement ps = (PreparedStatement) result;
                     return proxy(PreparedStatement.class, ps, (psMethod, psArgs) -> {
-                        if (psMethod.getName().equals("executeBatch")) {
+                        if (psMethod.getName().equals("executeBatch") && onExecuteBatch != null) {
                             onExecuteBatch.run();
                         }
                         return psMethod.invoke(ps, psArgs);

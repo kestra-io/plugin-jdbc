@@ -48,14 +48,13 @@ class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
     }
 
     @Test
-    void connectionPoolingDisabledOpensANewConnectionEachPoll() throws Exception {
+    void eachPollOpensANewConnection() throws Exception {
         var trigger = Trigger.builder()
             .id("watch")
             .type(Trigger.class.getName())
             .url(Property.ofValue(getUrl()))
             .username(Property.ofValue(getUsername()))
             .password(Property.ofValue(getPassword()))
-            .connectionPooling(Property.ofValue(false))
             .sql(Property.ofValue("SELECT pg_backend_pid() AS pid"))
             .fetchType(Property.ofValue(FetchType.FETCH_ONE))
             .build();
@@ -63,7 +62,7 @@ class PgsqlTriggerTest extends AbstractJdbcTriggerTest {
         var firstPid = trigger.runQuery(runContextFactory.of()).getRow().get("pid");
         var secondPid = trigger.runQuery(runContextFactory.of()).getRow().get("pid");
 
-        // A pooled connection would be handed back to the second poll and report the same backend
+        // Connections are not pooled, so each poll gets a new backend
         assertThat(secondPid, not(is(firstPid)));
     }
 
