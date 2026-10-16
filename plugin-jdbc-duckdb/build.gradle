@@ -22,8 +22,8 @@ tasks.register("bundleDuckDbCommunityExtensions") {
 
     doLast {
         def duckdbVersion = duckdbCommunityExtensionVersion.get()
-        def versionsDir = bundledDuckDbExtensionsDir.get().dir("duckdb-community-extensions").asFile
-        versionsDir.listFiles()?.findAll { it.name != duckdbVersion }?.each { it.deleteDir() }
+        // Start clean: the task only reruns when the driver version changes, and no truncated extension from an interrupted run is reused.
+        project.delete(bundledDuckDbExtensionsDir)
 
         def metadataFile = bundledDuckDbExtensionsMetadataFile.get().asFile
         metadataFile.parentFile.mkdirs()
@@ -42,10 +42,6 @@ tasks.register("bundleDuckDbCommunityExtensions") {
             platforms.each { platform ->
                 def outputDir = bundledDuckDbExtensionsDir.get().file("duckdb-community-extensions/${duckdbVersion}/${platform}").asFile
                 def outputFile = new File(outputDir, "${extensionName}.duckdb_extension")
-
-                if (outputFile.exists()) {
-                    return
-                }
 
                 outputDir.mkdirs()
 
