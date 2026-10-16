@@ -83,7 +83,6 @@ class AbstractJdbcBatchStreamingTest {
             .id(IdUtils.create())
             .type(StreamingBatch.class.getName())
             .url(Property.ofValue(dbUrl))
-            .connectionPooling(Property.ofValue(false))
             .from(Property.ofValue(uri.toString()))
             .sql(Property.ofValue("INSERT INTO streaming_batch (id, name) VALUES (?, ?)"))
             .columns(Property.ofValue(List.of("id", "name")))

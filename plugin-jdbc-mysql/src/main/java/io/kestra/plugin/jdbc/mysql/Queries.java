@@ -110,12 +110,6 @@ public class Queries extends AbstractJdbcQueries implements MySqlConnectionInter
     }
 
     @Override
-    public boolean usesConnectionPool() {
-        // The URL embeds the per-run working directory when inputFile is set, so a pool would never be reused.
-        return this.inputFile == null;
-    }
-
-    @Override
     protected Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException {
         // The combination of useCursorFetch=true and preparedStatement.setFetchSize(10); push to use cursor on the MySQL instance side.
         // This leads to consuming DB instance disk memory when we try to fetch more than aware table size.

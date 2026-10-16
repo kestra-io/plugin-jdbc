@@ -77,8 +77,6 @@ public class Trigger extends AbstractJdbcTrigger implements As400ConnectionInter
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
-            .connectionPooling(this.getConnectionPooling())
-            .connectionPoolSize(this.getConnectionPoolSize())
             .parameters(this.getParameters())
             .build();
 

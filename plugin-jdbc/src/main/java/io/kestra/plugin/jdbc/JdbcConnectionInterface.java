@@ -92,22 +92,6 @@ public interface JdbcConnectionInterface {
         return props;
     }
 
-    /**
-     * Whether this driver participates in connection pooling.
-     * Embedded drivers (DuckDB, SQLite, MS Access) override this to return false.
-     */
-    default boolean usesConnectionPool() {
-        return true;
-    }
-
-    default Property<Boolean> getConnectionPooling() {
-        return Property.ofValue(true);
-    }
-
-    default Property<Integer> getConnectionPoolSize() {
-        return Property.ofValue(10);
-    }
-
     default Connection connection(RunContext runContext) throws Exception {
         registerDriver();
 
@@ -115,13 +99,7 @@ public interface JdbcConnectionInterface {
         String jdbcUrl = props.getProperty("jdbc.url");
         props.remove("jdbc.url");
 
-        boolean pool = usesConnectionPool()
-            && runContext.render(getConnectionPooling()).as(Boolean.class).orElse(true);
-        if (!pool) {
-            return DriverManager.getConnection(jdbcUrl, props);
-        }
-        int size = runContext.render(getConnectionPoolSize()).as(Integer.class).orElse(10);
-        return JdbcConnectionPool.connection(jdbcUrl, props, size);
+        return DriverManager.getConnection(jdbcUrl, props);
     }
 
     private Properties createConnectionProperties(RunContext runContext) throws IllegalVariableEvaluationException {
