@@ -51,7 +51,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default
@@ -60,7 +61,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default

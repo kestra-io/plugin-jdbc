@@ -53,7 +53,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default
@@ -62,7 +63,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default
@@ -561,8 +563,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         }
 
         private void executeAttempt(long resumeOffset) throws Exception {
+            // Connection is closed explicitly in finally so the rollback in the catch runs on a still-open connection.
+            Connection connection = connection(runContext);
+            boolean rollbackOnFailure = false;
             try (
-                Connection connection = connection(runContext);
                 PreparedStatement ps = connection.prepareStatement(config.sql());
                 InputStream inputStream = preparedInput.streamSupplier().open()
             ) {
@@ -571,6 +575,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 boolean supportsTx = connection.getMetaData().supportsTransactions();
                 if (supportsTx) connection.setAutoCommit(false);
+                rollbackOnFailure = supportsTx;
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
@@ -587,6 +592,22 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
+                }
+            } catch (Exception e) {
+                if (rollbackOnFailure) {
+                    try {
+                        connection.rollback();
+                    } catch (Exception rollbackError) {
+                        // best effort, keep the original failure
+                        e.addSuppressed(rollbackError);
+                    }
+                }
+                throw e;
+            } finally {
+                try {
+                    connection.close();
+                } catch (SQLException closeError) {
+                    logger.warn("Unable to close connection", closeError);
                 }
             }
         }

@@ -29,6 +29,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class SqliteQueriesTest extends AbstractRdbmsTest {
 
     @Test
+    void deprecatedConnectionPoolingPropertiesAreStillAccepted() throws Exception {
+        var yaml = """
+            id: test
+            type: io.kestra.plugin.jdbc.sqlite.Queries
+            url: jdbc:sqlite:test.db
+            sql: SELECT 1
+            connectionPooling: true
+            connectionPoolSize: 5
+            """;
+
+        var task = io.kestra.core.serializers.JacksonMapper.ofYaml().readValue(yaml, Queries.class);
+
+        assertThat(task, is(notNullValue()));
+    }
+
+    @Test
     void testMultiSelectWithParameters() throws Exception {
         RunContext runContext = runContextFactory.of(Collections.emptyMap());
 

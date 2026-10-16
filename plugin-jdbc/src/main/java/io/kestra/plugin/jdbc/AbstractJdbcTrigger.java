@@ -48,7 +48,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default
@@ -57,7 +58,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
     @Schema(
         title = "Deprecated, ignored",
-        description = "Deprecated, ignored. Connections are no longer pooled."
+        description = "Deprecated, ignored. Connections are no longer pooled.",
+        deprecated = true
     )
     @Deprecated
     @Builder.Default
