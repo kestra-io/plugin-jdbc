@@ -111,6 +111,48 @@ class AbstractJdbcBatchStreamingTest {
     }
 
     @Test
+    void shouldReadMultipleRowsOnSameLineWithoutNewlines() throws Exception {
+        String dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (Connection setup = DriverManager.getConnection(dbUrl); Statement statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE multiline_batch (id INT, name VARCHAR(255))");
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 25; i++) {
+            sb.append("{id:").append(i).append(",name:\"row-").append(i).append("\"} ");
+        }
+
+        URI uri;
+        try (InputStream input = new ByteArrayInputStream(sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
+            uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), input);
+        }
+
+        RunContext runContext = runContextFactory.of(Map.of());
+        StreamingBatch task = StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO multiline_batch (id, name) VALUES (?, ?)"))
+            .columns(Property.ofValue(List.of("id", "name")))
+            .chunk(Property.ofValue(10))
+            .inputHandling(Property.ofValue(AbstractJdbcBatch.InputHandling.STREAM))
+            .build();
+
+        AbstractJdbcBatch.Output output = task.run(runContext);
+
+        assertThat(output.getRowCount(), is(25L));
+        assertThat(output.getUpdatedCount(), is(25));
+
+        try (Connection check = DriverManager.getConnection(dbUrl);
+             Statement statement = check.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM multiline_batch")) {
+            rs.next();
+            assertThat(rs.getInt(1), is(25));
+        }
+    }
+
+    @Test
     void deprecatedConnectionPoolingPropertiesAreStillAccepted() throws Exception {
         var yaml = """
             id: test
