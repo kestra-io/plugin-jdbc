@@ -8,7 +8,9 @@ import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.retrys.Exponential;
 import io.kestra.core.runners.RunContext;
+import com.fasterxml.jackson.databind.MappingIterator;
 import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.utils.RetryUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -579,16 +581,22 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
-                AtomicLong skip = new AtomicLong(resumeOffset);
+                long skip = resumeOffset;
 
-                FileSerde.read(inputStream, throwConsumer(row -> {
-                    if (skip.getAndDecrement() > 0) return;
+                try (MappingIterator<Object> it = JacksonMapper.ofIon().readerFor(Object.class).readValues(inputStream)) {
+                    while (it.hasNext()) {
+                        Object row = it.next();
+                        if (skip > 0) {
+                            skip--;
+                            continue;
+                        }
 
-                    buffer.add(row);
-                    if (buffer.size() >= config.chunk()) {
-                        flush(ps, meta, buffer, connection, supportsTx);
+                        buffer.add(row);
+                        if (buffer.size() >= config.chunk()) {
+                            flush(ps, meta, buffer, connection, supportsTx);
+                        }
                     }
-                }));
+                }
 
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
