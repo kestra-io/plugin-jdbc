@@ -67,7 +67,7 @@ public class DuckDbCellConverter extends AbstractCellConverter {
             }
         }
 
-        // Handle JSON type - get as string and parse
+        // Handle JSON type - get as string and parse any JSON value (object, array, scalar or null)
         if (columnTypeName != null && columnTypeName.equalsIgnoreCase("JSON")) {
             String jsonString = null;
             try {
@@ -75,7 +75,7 @@ public class DuckDbCellConverter extends AbstractCellConverter {
                 if (jsonString == null) {
                     return null;
                 }
-                return JacksonMapper.toMap(jsonString);
+                return JacksonMapper.toObject(jsonString);
             } catch (JsonProcessingException e) {
                 throw new IllegalArgumentException("Invalid data type [" + columnTypeName + "] with value [" + jsonString + "]", e);
             }

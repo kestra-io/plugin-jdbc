@@ -514,6 +514,34 @@ class DuckDbTest {
     }
 
     @Test
+    void selectJsonOfAnyValueType() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        var result = Query.builder()
+            .timeZoneId(Property.ofValue("Europe/Paris"))
+            .sql(Property.ofValue("""
+                SELECT
+                    '{"ok": true}'::JSON AS object_value,
+                    '[1, 2, 3]'::JSON AS array_value,
+                    '42'::JSON AS number_value,
+                    '"hello"'::JSON AS string_value,
+                    'null'::JSON AS null_value
+                """))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .build()
+            .run(runContext);
+
+        Map<String, Object> row = result.getRow();
+        assertThat(row, notNullValue());
+        assertThat(row.get("object_value"), is(Map.of("ok", true)));
+        assertThat(row.get("array_value"), is(List.of(1, 2, 3)));
+        assertThat(row.get("number_value"), is(42));
+        assertThat(row.get("string_value"), is("hello"));
+        assertThat(row.containsKey("null_value"), is(true));
+        assertThat(row.get("null_value"), nullValue());
+    }
+
+    @Test
     void selectWithStructOnly() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
 
