@@ -128,7 +128,13 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @Schema(
         title = "Named parameter bindings for SQL query",
-        description = "Map of parameter names to values. Use :name placeholders rendered then bound as prepared-statement parameters; supports nulls and typed values"
+        description = """
+            Map of parameter names to values. Each `:name` placeholder in the SQL is replaced by a `?` marker \
+            and the value is bound as a prepared-statement parameter; supports nulls and typed values. \
+            Colons inside quoted literals, quoted identifiers, dollar-quoted bodies (`$$ ... $$`), PostgreSQL `E'...'` strings \
+            and comments, and `::` casts such as `'7'::INTEGER`, are left as written. Oracle `q'[...]'` literals are not recognized: \
+            double the quote (`''`) inside a standard literal instead. A `:name` that is absent from this map is bound to NULL \
+            and logged as a warning."""
     )
     @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
@@ -258,34 +264,48 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                                                  final Connection conn,
                                                  final String sql) throws SQLException, IllegalVariableEvaluationException {
 
-        // Inject named parameters (ex: ':param')
-        Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
-
-        if (namedParamsRendered.isEmpty()) {
+        if (this.getParameters() == null) {
             return createPreparedStatement(conn, sql);
         }
 
-        //Extract parameters in orders and replace them with '?'
-        String preparedSql = sql;
-        Pattern pattern = Pattern.compile(":\\w+");
-        Matcher matcher = pattern.matcher(preparedSql);
+        // Inject named parameters (ex: ':param')
+        var rParameters = runContext.render(this.getParameters()).asMap(String.class, Object.class);
 
-        List<String> params = new LinkedList<>();
+        // casts, literals and comments are skipped, see NamedParameterSql
+        var prepared = NamedParameterSql.parse(sql, this.backslashEscapesInLiterals(), this.hashLineComments());
 
-        while (matcher.find()) {
-            String param = matcher.group();
-            params.add(param.substring(1));
-            preparedSql = matcher.replaceFirst("?");
-            matcher = pattern.matcher(preparedSql);
+        var stmt = createPreparedStatement(conn, prepared.sql());
+
+        var names = prepared.names();
+        var undeclared = new LinkedHashSet<String>();
+        for (var i = 0; i < names.size(); i++) {
+            var name = names.get(i);
+            if (!rParameters.containsKey(name)) {
+                undeclared.add(name);
+            }
+            stmt.setObject(i + 1, rParameters.get(name));
         }
 
-        PreparedStatement stmt = createPreparedStatement(conn, preparedSql);
-
-        for (int i = 0; i < params.size(); i++) {
-            stmt.setObject(i + 1, namedParamsRendered.get(params.get(i)));
+        if (!undeclared.isEmpty()) {
+            runContext.logger().warn("Named parameters {} have no value in `parameters` after rendering (null or not declared) and are bound to NULL", undeclared);
         }
 
         return stmt;
+    }
+
+    /**
+     * Whether a backslash escapes the next character inside a quoted SQL literal ({@code 'it\'s'}).
+     * Standard SQL only doubles the quote; MySQL, MariaDB, ClickHouse and Snowflake opt in.
+     */
+    protected boolean backslashEscapesInLiterals() {
+        return false;
+    }
+
+    /**
+     * Whether {@code #} starts a line comment, as in MySQL, MariaDB and ClickHouse.
+     */
+    protected boolean hashLineComments() {
+        return false;
     }
 
     protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {
