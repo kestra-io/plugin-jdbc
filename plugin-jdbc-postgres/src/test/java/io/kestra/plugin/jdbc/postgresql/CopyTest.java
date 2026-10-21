@@ -282,4 +282,25 @@ public class CopyTest {
             RETURNING payload
             """.formatted(tableName, json);
     }
+
+    @Test
+    void copyOut_invalidSqlShouldFailCleanly() {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        CopyOut copyOut = CopyOut.builder()
+                .url(Property.ofValue(TestUtils.url()))
+                .username(Property.ofValue(TestUtils.username()))
+                .password(Property.ofValue(TestUtils.password()))
+                .format(Property.ofValue(AbstractCopy.Format.CSV))
+                .sql(Property.ofValue("SELECT * FROM non_existent_table_for_copyout_test"))
+                .build();
+
+        // This ensures the executor shuts down cleanly and doesn't hang the JVM on failure
+        RuntimeException ex = assertThrows(
+                RuntimeException.class,
+                () -> copyOut.run(runContext)
+        );
+        
+        assertThat(ex.getMessage(), containsString("non_existent_table_for_copyout_test"));
+    }
 }
