@@ -36,7 +36,11 @@ class DuckDbExplorerTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> run(DuckDbQueryEndpoint endpoint, Map<String, Object> body) throws Exception {
         var response = endpoint.handle(ExplorerTestContext.of(database, body));
-        return JacksonMapper.ofJson().readValue(response.body(), Map.class);
+        var result = JacksonMapper.ofJson().readValue(response.body(), Map.class);
+        if (result.containsKey("error")) {
+            throw new IllegalArgumentException((String) result.get("error"));
+        }
+        return result;
     }
 
     @Test
@@ -124,12 +128,9 @@ class DuckDbExplorerTest {
 
     @Test
     void missingDatabaseUriGivesActionableError() {
-        var endpoint = new DuckDbQueryEndpoint();
-        var exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> endpoint.handle(new io.kestra.plugin.jdbc.explorer.ExplorerTestContext.NoOutputs().context(Map.of("sql", "SELECT 1")))
-        );
-        assertThat(exception.getMessage(), containsString("outputDbFile: true"));
+        var response = new DuckDbQueryEndpoint().handle(new ExplorerTestContext.NoOutputs().context(Map.of("sql", "SELECT 1")));
+
+        assertThat(new String(response.body()), containsString("outputDbFile: true"));
     }
 
     @Test

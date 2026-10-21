@@ -36,7 +36,11 @@ class SqliteExplorerTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> run(SqliteQueryEndpoint endpoint, Map<String, Object> body) throws Exception {
         var response = endpoint.handle(ExplorerTestContext.of(database, body));
-        return JacksonMapper.ofJson().readValue(response.body(), Map.class);
+        var result = JacksonMapper.ofJson().readValue(response.body(), Map.class);
+        if (result.containsKey("error")) {
+            throw new IllegalArgumentException((String) result.get("error"));
+        }
+        return result;
     }
 
     @Test

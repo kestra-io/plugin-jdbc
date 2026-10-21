@@ -92,9 +92,19 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
                 return PluginEndpointResponse.ofBytes(capped(result), "application/json");
             }
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(sanitize(e.getMessage(), file));
+            return error(sanitize(e.getMessage(), file));
         } catch (SQLException | IOException | RuntimeException e) {
-            throw new IllegalArgumentException("The explorer could not run the request: " + sanitize(e.getMessage(), file));
+            return error("The explorer could not run the request: " + sanitize(e.getMessage(), file));
+        }
+    }
+
+    // The core never surfaces the message of an exception thrown by an endpoint, so refusals and SQL errors are
+    // returned as a regular `{"error": "..."}` body that the explorer UI displays as is.
+    private static PluginEndpointResponse error(String message) {
+        try {
+            return PluginEndpointResponse.ofBytes(JacksonMapper.ofJson().writeValueAsBytes(Map.of("error", message)), "application/json");
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
         }
     }
 
