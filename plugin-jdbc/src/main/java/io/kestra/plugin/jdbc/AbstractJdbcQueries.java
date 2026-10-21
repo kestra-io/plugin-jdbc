@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -141,7 +140,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             var durationNanos = System.nanoTime() - startedAt;
             runContext.metric(Counter.of("fetch.size", totalSize, this.tags(runContext)));
 
-            upsertAssets(runContext, queries, this.runningConnection);
+            emitAssets(runContext, queries, stats, this.runningConnection);
 
             var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, this.sql, rSql) : null;
             var columnStatsUri = collector == null || stats.statementLog.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, collector.results());
@@ -357,11 +356,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
     }
 
-    private void upsertAssets(RunContext runContext, String[] queries, Connection conn)
-        throws SQLException, QueueException, IllegalVariableEvaluationException {
-
-        for (String query : queries) {
-            upsertAsset(runContext, conn, query);
+    private void emitAssets(RunContext runContext, String[] queries, RunStats stats, Connection conn)
+        throws IllegalVariableEvaluationException {
+        for (var i = 0; i < queries.length; i++) {
+            var rowsAffected = i < stats.statementLog.size() ? (Long) stats.statementLog.get(i).get("rowsAffected") : null;
+            emitAssets(runContext, conn, queries[i], rowsAffected);
         }
     }
 

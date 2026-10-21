@@ -3,12 +3,11 @@ package io.kestra.plugin.jdbc;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.assets.Custom;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
+import io.kestra.core.models.tasks.AssetFailureBehavior;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.queues.QueueException;
-import io.kestra.core.runners.AssetEmit;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.Rethrow;
@@ -410,33 +409,28 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
 
-    protected void upsertAsset(RunContext runContext, Connection conn, String query) throws SQLException, QueueException, IllegalVariableEvaluationException {
-        var table = extractTableNameFromCreateTable(query);
-        if (table != null) {
-            var system = conn.getMetaData().getDatabaseProductName();
-            var database = getDatabaseName(conn);
-            Map<String, Object> metadata = Map.of(
-                "system", system,
-                "database", database,
-                "name", table
-            );
-            try {
-                runContext.assets().emit(
-                    new AssetEmit(
-                        List.of(),
-                        List.of(
-                            Custom.builder()
-                                .id(database + "." + table)
-                                .type("io.kestra.plugin.ee.assets.Table")
-                                .metadata(metadata)
-                                .build()
-                        )
-                    )
-                );
-                runContext.logger().info("Creating asset for system \"{}\", database \"{}\", table \"{}\"", system, database, table);
-            } catch (UnsupportedOperationException | NullPointerException ignored) {
-                // OSS edition or tests where EE assets are not available — silently skip.
+    protected void emitAssets(RunContext runContext, Connection conn, String statement, Long rowsAffected) throws IllegalVariableEvaluationException {
+        var declaration = getAssets();
+        var enableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
+        try {
+            var emit = JdbcAssets.build(conn, statement, rowsAffected, enableAuto);
+            if (emit == null) {
+                return;
             }
+            runContext.assets().emit(emit);
+            runContext.logger().info(
+                "Emitted {} input asset(s) and {} output asset(s) for the statement",
+                emit.inputs().size(),
+                emit.outputs().size()
+            );
+        } catch (UnsupportedOperationException | NullPointerException ignored) {
+            // OSS edition or tests where EE assets are not available: silently skip.
+        } catch (SQLException | QueueException | RuntimeException e) {
+            var behavior = declaration == null ? null : runContext.render(declaration.getAssetFailureBehavior()).as(AssetFailureBehavior.class).orElse(null);
+            if (behavior == AssetFailureBehavior.FAIL) {
+                throw new IllegalStateException("Unable to emit assets: " + e.getMessage(), e);
+            }
+            runContext.logger().warn("Unable to emit assets: {}", e.getMessage());
         }
     }
 
@@ -444,7 +438,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
      * Get the database name by executing a database-specific query.
      * Different databases have different ways to query the current database name.
      */
-    private String getDatabaseName(Connection conn) {
+    static String getDatabaseName(Connection conn) {
         try {
             String productName = conn.getMetaData().getDatabaseProductName().toLowerCase();
             String query = switch (productName) {
@@ -523,50 +517,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             }
             return "unknown";
         }
-    }
-
-    /**
-     * Extract the table name from a CREATE TABLE statement.
-     * Returns null if the SQL is not a CREATE TABLE statement.
-     * The CREATE TABLE syntax is similar across most SQL databases:
-     * CREATE [TEMPORARY|TEMP] TABLE [IF NOT EXISTS] [schema.]table_name ...
-     */
-    private String extractTableNameFromCreateTable(String sql) {
-        if (sql == null || sql.isEmpty()) {
-            return null;
-        }
-
-        // Normalize the SQL: remove extra whitespace and convert to single spaces
-        String normalizedSql = sql.trim().replaceAll("\\s+", " ");
-
-        // Check if it's a CREATE TABLE statement (case-insensitive)
-        if (!normalizedSql.toUpperCase().startsWith("CREATE ")) {
-            return null;
-        }
-
-        // Pattern to match CREATE TABLE statements
-        // Handles: CREATE TABLE, CREATE TEMP TABLE, CREATE TEMPORARY TABLE, CREATE TABLE IF NOT EXISTS
-        String pattern = "(?i)^CREATE\\s+(TEMP|TEMPORARY\\s+)?TABLE\\s+(IF\\s+NOT\\s+EXISTS\\s+)?([\\w.`\"\\[\\]]+)";
-        Pattern p = Pattern.compile(pattern);
-        Matcher m = p.matcher(normalizedSql);
-
-        if (m.find()) {
-            String tableName = m.group(3);
-            // Clean up the table name: remove quotes, brackets, and schema prefixes if needed
-            tableName = tableName
-                .replaceAll("[`\"\\[\\]]", "") // Remove quotes and brackets
-                .trim();
-
-            // If there's a schema prefix (e.g., schema.table), take only the table name
-            if (tableName.contains(".")) {
-                String[] parts = tableName.split("\\.");
-                tableName = parts[parts.length - 1]; // Get the last part (table name)
-            }
-
-            return tableName.isEmpty() ? null : tableName;
-        }
-
-        return null;
     }
 
     @SuperBuilder
