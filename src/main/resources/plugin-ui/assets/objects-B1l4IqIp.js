@@ -1,0 +1,1 @@
+import{n as e,t}from"./_baseSet-DupFfY08.js";function n(t,n,r){var i=t==null?void 0:e(t,n);return i===void 0?r:i}function r(e,n,r){return e==null?e:t(e,n,r)}var i=e=>Object.keys(e),a=e=>Object.entries(e),o=(e,t,i)=>({get value(){return n(e,t,i)},set value(n){r(e,t,n)}});export{n as i,o as n,i as r,a as t};

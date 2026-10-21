@@ -201,7 +201,7 @@ Infrastructure dependencies (Docker Compose services):
 - `ColumnStatsCollector`: per-column statistics computed while rows are read (`columnStats` output).
 - `JdbcAssets`: builds table assets and lineage emitted by the Query, Queries and Batch tasks.
 - `explorer/`: read-only explorer endpoints over an exported database file, implemented for DuckDB and SQLite (`duckdb-catalog`, `duckdb-query`, `sqlite-catalog`, `sqlite-query`).
-- `ui/`: Vue artifact (`Show Details`) for every Query, Queries and Batch type, built by Gradle into `plugin-jdbc/src/main/resources/plugin-ui/`.
+- `ui/`: Vue artifact (`Show Details`) for every Query, Queries and Batch type, built by Gradle once per sub-plugin module (one federated container per `io.kestra.plugin.jdbc.<package>`) into that module's `plugin-ui/` resources.
 
 ### Project Structure
 

@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-BCiCTKAo.js";import{t}from"./KsId-Cr18K8Ue-CzhH2V7z.js";var n=e({default:()=>t}),r=Reflect.get(n,`default`)??n;export{r as default};

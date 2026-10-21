@@ -1,15 +1,26 @@
 import defaultViteConfig from "@kestra-io/artifact-sdk/vite.config";
 import types from "./jdbc-types.json" with { type: "json" };
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-// Every Query, Queries and Batch type of every JDBC sub-plugin gets the same two components, so the
-// exposes map is generated from jdbc-types.json (`<package>.<Class>` under io.kestra.plugin.jdbc).
+// The host loads one federated container per sub-plugin group (io.kestra.plugin.jdbc.<package>) and asks it
+// for `./<SimpleClassName>/<slot>`, so one build is made per group: JDBC_UI_GROUP selects the package and
+// the classes come from jdbc-types.json. Gradle runs this once per sub-plugin module.
+const group = process.env.JDBC_UI_GROUP;
+const classes = (types as Record<string, string[]>)[group ?? ""];
+if (!group || !classes) {
+    throw new Error(`Set JDBC_UI_GROUP to one of: ${Object.keys(types).join(", ")}`);
+}
+const plugin = `io.kestra.plugin.jdbc.${group}`;
+
 // topology-details: 2 rows without execution, 4 rows with one (node base 56px + ~31px per row).
 const exposes = Object.fromEntries(
-    (types as string[]).map((type) => [
+    classes.map((type) => [
         type,
         [
             {
-                slotName: "topology-details",
+                slotName: "topology-details" as const,
                 path: "./src/components/JdbcTopologyDetails.vue",
                 additionalProperties: {
                     height: 120,
@@ -18,18 +29,24 @@ const exposes = Object.fromEntries(
                 },
             },
             {
-                slotName: "topology-task-drawer",
+                slotName: "topology-task-drawer" as const,
                 path: "./src/components/JdbcTopologyDetails.vue",
             },
             {
-                slotName: "topology-task-modal",
+                slotName: "topology-task-modal" as const,
                 path: "./src/components/JdbcTaskModal.vue",
             },
         ],
     ]),
 );
 
-export default defaultViteConfig({
-    plugin: "io.kestra.plugin.jdbc",
-    exposes,
-});
+// The SDK names the federated container after the package.json found in the working directory,
+// so it is built from a throwaway package.json carrying the group name.
+const root = process.cwd();
+const nameDir = mkdtempSync(join(tmpdir(), "jdbc-ui-"));
+writeFileSync(join(nameDir, "package.json"), JSON.stringify({ name: plugin }));
+process.chdir(nameDir);
+const config = defaultViteConfig({ plugin, exposes });
+process.chdir(root);
+
+export default config;

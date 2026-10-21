@@ -1,53 +1,97 @@
-[
-  "access.Batch",
-  "access.Queries",
-  "access.Query",
-  "actianvector.Batch",
-  "actianvector.Queries",
-  "actianvector.Query",
-  "arrowflight.Queries",
-  "arrowflight.Query",
-  "as400.Queries",
-  "as400.Query",
-  "clickhouse.BulkInsert",
-  "clickhouse.Queries",
-  "clickhouse.Query",
-  "db2.Queries",
-  "db2.Query",
-  "dremio.Queries",
-  "dremio.Query",
-  "druid.Queries",
-  "druid.Query",
-  "duckdb.Queries",
-  "duckdb.Query",
-  "hana.Queries",
-  "hana.Query",
-  "mariadb.Queries",
-  "mariadb.Query",
-  "mysql.Batch",
-  "mysql.Queries",
-  "mysql.Query",
-  "oracle.Batch",
-  "oracle.Queries",
-  "oracle.Query",
-  "pinot.Queries",
-  "pinot.Query",
-  "postgresql.Batch",
-  "postgresql.Queries",
-  "postgresql.Query",
-  "redshift.Queries",
-  "redshift.Query",
-  "snowflake.Queries",
-  "snowflake.Query",
-  "sqlite.Queries",
-  "sqlite.Query",
-  "sqlserver.Batch",
-  "sqlserver.Queries",
-  "sqlserver.Query",
-  "sybase.Queries",
-  "sybase.Query",
-  "trino.Query",
-  "vertica.Batch",
-  "vertica.Queries",
-  "vertica.Query"
-]
+{
+  "access": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "actianvector": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "arrowflight": [
+    "Queries",
+    "Query"
+  ],
+  "as400": [
+    "Queries",
+    "Query"
+  ],
+  "clickhouse": [
+    "BulkInsert",
+    "Queries",
+    "Query"
+  ],
+  "db2": [
+    "Queries",
+    "Query"
+  ],
+  "dremio": [
+    "Queries",
+    "Query"
+  ],
+  "druid": [
+    "Queries",
+    "Query"
+  ],
+  "duckdb": [
+    "Queries",
+    "Query"
+  ],
+  "hana": [
+    "Queries",
+    "Query"
+  ],
+  "mariadb": [
+    "Queries",
+    "Query"
+  ],
+  "mysql": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "oracle": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "pinot": [
+    "Queries",
+    "Query"
+  ],
+  "postgresql": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "redshift": [
+    "Queries",
+    "Query"
+  ],
+  "snowflake": [
+    "Queries",
+    "Query"
+  ],
+  "sqlite": [
+    "Queries",
+    "Query"
+  ],
+  "sqlserver": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "sybase": [
+    "Queries",
+    "Query"
+  ],
+  "trino": [
+    "Query"
+  ],
+  "vertica": [
+    "Batch",
+    "Queries",
+    "Query"
+  ]
+}

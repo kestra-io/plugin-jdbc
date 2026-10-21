@@ -26,4 +26,4 @@ plugin-jdbc-duckdb/*.db
 bin/
 
 node_modules/
-plugin-jdbc/src/main/resources/plugin-ui/
+plugin-jdbc*/src/main/resources/plugin-ui/

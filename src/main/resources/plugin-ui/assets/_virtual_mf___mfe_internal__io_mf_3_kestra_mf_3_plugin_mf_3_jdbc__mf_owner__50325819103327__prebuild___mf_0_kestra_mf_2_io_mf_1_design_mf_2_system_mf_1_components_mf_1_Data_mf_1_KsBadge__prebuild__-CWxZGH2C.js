@@ -1,0 +1,1 @@
+import{r as e}from"./rolldown-runtime-BCiCTKAo.js";import{t}from"./KsBadge-BaW4og3S-DiGnKn8p.js";var n=e({default:()=>t}),r=Reflect.get(n,`default`)??n;export{r as default};

@@ -1,0 +1,3 @@
+import{Ur as e,pr as t}from"./_virtual_mf___mfe_internal__io_mf_3_kestra_mf_3_plugin_mf_3_jdbc__mf_owner__50325819103327__loadShare__shared-BpcjH7t3.js";import{t as n}from"./error-DgvpZbwv.js";var r=({from:r,replacement:i,scope:a,version:o,ref:s,type:c=`API`},l)=>{t(()=>e(l),e=>{e&&n(a,`[${c}] ${r} is about to be deprecated in version ${o}, please use ${i} instead.
+For more detail, please visit: ${s}
+`)},{immediate:!0})};export{r as t};
