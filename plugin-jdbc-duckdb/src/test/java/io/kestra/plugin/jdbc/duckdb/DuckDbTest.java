@@ -515,7 +515,7 @@ class DuckDbTest {
 
     @Test
     void selectJsonOfAnyValueType() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var runContext = runContextFactory.of(ImmutableMap.of());
 
         var result = Query.builder()
             .timeZoneId(Property.ofValue("Europe/Paris"))
@@ -531,7 +531,7 @@ class DuckDbTest {
             .build()
             .run(runContext);
 
-        Map<String, Object> row = result.getRow();
+        var row = result.getRow();
         assertThat(row, notNullValue());
         assertThat(row.get("object_value"), is(Map.of("ok", true)));
         assertThat(row.get("array_value"), is(List.of(1, 2, 3)));

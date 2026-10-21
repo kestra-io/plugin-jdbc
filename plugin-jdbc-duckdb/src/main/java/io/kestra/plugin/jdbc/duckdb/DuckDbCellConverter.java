@@ -67,7 +67,7 @@ public class DuckDbCellConverter extends AbstractCellConverter {
             }
         }
 
-        // Handle JSON type - get as string and parse any JSON value (object, array, scalar or null)
+        // Handle JSON type - get as string and parse
         if (columnTypeName != null && columnTypeName.equalsIgnoreCase("JSON")) {
             String jsonString = null;
             try {
