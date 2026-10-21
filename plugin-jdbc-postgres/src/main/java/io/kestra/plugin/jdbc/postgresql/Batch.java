@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
@@ -145,6 +146,17 @@ import java.util.Properties;
             type = Counter.TYPE,
             unit = "queries",
             description = "The number of batch queries executed."
+        ),
+        @Metric(
+            name = "duration",
+            type = Timer.TYPE,
+            description = "The duration of the SQL execution, including reading the result rows."
+        ),
+        @Metric(
+            name = "rows.affected",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of rows affected, as reported by the JDBC driver."
         )
     }
 )
