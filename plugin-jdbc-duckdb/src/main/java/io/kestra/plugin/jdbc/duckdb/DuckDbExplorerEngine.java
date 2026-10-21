@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.duckdb;
 
+import io.kestra.plugin.jdbc.explorer.AbstractReadOnlyExplorerEndpoint;
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
 
 import org.duckdb.DuckDBDriver;
@@ -49,6 +50,12 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
     // json_serialize_sql only serializes a single SELECT: anything else, including several statements, comes back as an error.
     @Override
     public void validate(Connection connection, String sql) throws SQLException {
+        // json_serialize_sql only looks at the first statement, so a second one has to be refused here.
+        var code = AbstractReadOnlyExplorerEndpoint.stripLiteralsAndComments(sql).trim();
+        var firstSemicolon = code.indexOf(';');
+        if (firstSemicolon >= 0 && !code.substring(firstSemicolon + 1).replace(";", "").isBlank()) {
+            throw new IllegalArgumentException(READ_ONLY_MESSAGE);
+        }
         // The function needs a constant argument, so the statement is passed as an escaped literal.
         try (var statement = connection.createStatement();
              var rs = statement.executeQuery("SELECT json_serialize_sql('" + sql.replace("'", "''") + "')")) {

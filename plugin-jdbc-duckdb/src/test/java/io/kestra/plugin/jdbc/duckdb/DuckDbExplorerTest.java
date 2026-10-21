@@ -187,4 +187,16 @@ class DuckDbExplorerTest {
     void columnExplorerStatementsRun(String sql) throws Exception {
         assertThat(run(new DuckDbQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SELECT 1; SELECT 2", "SELECT 1; INSERT INTO people VALUES (9, 'z')", "SELECT 1;; SELECT 2"})
+    void multipleStatementsAreRefused(String sql) {
+        assertThrows(IllegalArgumentException.class, () -> run(new DuckDbQueryEndpoint(), Map.of("sql", sql)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"SELECT ';' AS semicolon", "SELECT 1;", "SELECT 1 ; -- done"})
+    void semicolonsInLiteralsAndTrailingAreAllowed(String sql) throws Exception {
+        assertThat(run(new DuckDbQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
+    }
 }

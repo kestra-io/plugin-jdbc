@@ -173,4 +173,17 @@ class SqliteExplorerTest {
     void columnExplorerStatementsRun(String sql) throws Exception {
         assertThat(run(new SqliteQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PRAGMA table_info(people)", "PRAGMA table_info('people')", "PRAGMA table_info(\"people\")", "pragma table_info( people );"})
+    @SuppressWarnings("unchecked")
+    void tableInfoAcceptsQuotedAndUnquotedIdentifiers(String sql) throws Exception {
+        assertThat((List<Object>) run(new SqliteQueryEndpoint(), Map.of("sql", sql)).get("rows"), hasSize(2));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"PRAGMA table_info(people, other)", "PRAGMA table_info(people); PRAGMA user_version", "PRAGMA table_info"})
+    void otherPragmaFormsAreRefused(String sql) {
+        assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", sql)));
+    }
 }
