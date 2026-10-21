@@ -58,9 +58,9 @@ class PostgresJsonCellConverterTest {
     }
 
     private Object convert(String type, String value) throws Exception {
-        ResultSet rs = mock(ResultSet.class);
-        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
-        PGobject json = new PGobject();
+        var rs = mock(ResultSet.class);
+        var metadata = mock(ResultSetMetaData.class);
+        var json = new PGobject();
         json.setType(type);
         json.setValue(value);
         when(rs.getObject(anyInt())).thenReturn(json);

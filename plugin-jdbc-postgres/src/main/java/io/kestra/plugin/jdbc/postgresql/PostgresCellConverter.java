@@ -75,7 +75,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 case "json":
                 case "jsonb":
                     try {
-                        return JacksonMapper.ofJson(false).readValue(o.getValue(), Object.class);
+                        return JacksonMapper.toObject(o.getValue());
                     } catch (JsonProcessingException e) {
                         throw new IllegalArgumentException("Invalid data type [" + type + "] with value [" + o.getValue() + "]");
                     }
