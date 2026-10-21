@@ -1,5 +1,32 @@
 project.description = 'Abstract JDBC plugin for Kestra'
 
+apply plugin: 'com.github.node-gradle.node'
+
+// One UI bundle covers every Query, Queries and Batch type of every sub-plugin (see ui/jdbc-types.json).
+// It is built into this module's resources, which the sub-plugin shadow jars include, so each jar ships
+// the same bundle and the manifest keyed by full task type.
+def uiDir = rootProject.file('ui')
+def uiOutputDir = layout.projectDirectory.dir('src/main/resources/plugin-ui')
+
+tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
+    args = ['install', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
+    workingDir = uiDir
+    inputs.files(uiDir.toPath().resolve('package.json'), uiDir.toPath().resolve('package-lock.json'))
+    outputs.dir(uiDir.toPath().resolve('node_modules'))
+}
+
+tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
+    dependsOn 'npmInstallUI'
+    args = ['run', 'build', '--', '--outDir', uiOutputDir.asFile.absolutePath, '--emptyOutDir']
+    workingDir = uiDir
+    inputs.dir(uiDir.toPath().resolve('src'))
+    inputs.files(uiDir.toPath().resolve('vite.config.ts'), uiDir.toPath().resolve('jdbc-types.json'), uiDir.toPath().resolve('package-lock.json'))
+    outputs.dir(uiOutputDir)
+}
+
+processResources.dependsOn 'buildUI'
+tasks.matching { it.name == 'sourcesJar' }.configureEach { dependsOn 'buildUI' }
+
 jar {
     manifest {
         attributes(
