@@ -299,7 +299,7 @@ def uiDir = file('ui')
 def uiGroups = new groovy.json.JsonSlurper().parse(file('ui/jdbc-types.json')).keySet()
 
 tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
-    args = ['install', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
+    args = ['ci', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
     workingDir = uiDir
     inputs.files(file('ui/package.json'), file('ui/package-lock.json'))
     outputs.dir(file('ui/node_modules'))

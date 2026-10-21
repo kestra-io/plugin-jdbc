@@ -254,4 +254,23 @@ class SqlTableExtractorTest {
         assertThat(SqlTableExtractor.statementKind("WITH x AS (SELECT 1) UPDATE t SET a = 1"), is("UPDATE"));
         assertThat(SqlTableExtractor.statementKind("VACUUM"), is("OTHER"));
     }
+
+    @Test
+    void duckdbUrlsNeverKeepCredentials() {
+        var tables = SqlTableExtractor.extract(
+            "SELECT * FROM read_csv('https://user:token@example.com/data/f.csv?password=hunter2&x=1') a "
+                + "JOIN read_parquet('s3://bucket/key.parquet?X-Amz-Signature=abc&X-Amz-Credential=def') b ON true",
+            Dialect.DUCKDB
+        );
+
+        assertThat(tables.stream().map(TableReference::getName).toList(), contains("https://example.com/data/f.csv", "s3://bucket/key.parquet"));
+        assertThat(tables.stream().map(TableReference::getKind).toList(), contains(Kind.URL, Kind.URL));
+    }
+
+    @Test
+    void duckdbAttachConnectionStringsAreNotOutput() {
+        assertThat(SqlTableExtractor.extract("ATTACH 'host=pg user=app password=s3cr3t dbname=x' AS pg (TYPE postgres)", Dialect.DUCKDB), is(empty()));
+        assertThat(SqlTableExtractor.extract("ATTACH 'postgres:dbname=x' AS pg", Dialect.DUCKDB), is(empty()));
+        assertThat(SqlTableExtractor.extract("ATTACH 'https://user:pw@host/db.duckdb' AS r", Dialect.DUCKDB).getFirst().getName(), is("https://host/db.duckdb"));
+    }
 }

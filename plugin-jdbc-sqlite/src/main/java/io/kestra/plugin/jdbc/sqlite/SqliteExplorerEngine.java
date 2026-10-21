@@ -13,11 +13,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Opens the exported file with `mode=ro` and `PRAGMA query_only=ON`.
- * The sqlite-jdbc driver exposes no authorizer hook and SQLite cannot disable external access, so the statement
- * guard is a keyword allowlist: thinner than the DuckDB one.
- */
+// mode=ro with query_only: the sqlite-jdbc driver has no authorizer hook, so the guard is a keyword allowlist.
 final class SqliteExplorerEngine implements ExplorerEngine {
     static final SqliteExplorerEngine INSTANCE = new SqliteExplorerEngine();
 
@@ -41,6 +37,8 @@ final class SqliteExplorerEngine implements ExplorerEngine {
     public Connection openReadOnly(Path file) throws SQLException {
         var properties = new Properties();
         properties.setProperty("open_mode", "1");
+        // A single value above 1 MiB fails instead of being read in full by the webserver.
+        properties.setProperty("limit_length", "1048576");
         // Drivers of a plugin jar are not registered with DriverManager, so the driver is called directly.
         var connection = new JDBC().connect("jdbc:sqlite:file:" + file.toAbsolutePath() + "?mode=ro", properties);
         try (var statement = connection.createStatement()) {

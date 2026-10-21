@@ -1,6 +1,6 @@
 export type Row = { label: string; value: string };
 
-export const DASH = "—";
+export const DASH = "-";
 
 // Only the database name is shown: user-info, host, port and query parameters of the URL are dropped
 // so that credentials can never reach the UI. Unrendered templates are not parsed.

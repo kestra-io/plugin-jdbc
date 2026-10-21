@@ -5,7 +5,6 @@ import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
-import io.kestra.core.models.tasks.AssetFailureBehavior;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.RunContext;
@@ -202,15 +201,15 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected ColumnStatsCollector columnStatsCollector(RunContext runContext, FetchType fetchType) throws IllegalVariableEvaluationException {
-        var enabled = runContext.render(this.columnStats).as(Boolean.class).orElse(false);
-        if (!enabled || (fetchType != FetchType.FETCH && fetchType != FetchType.STORE)) {
+        var rColumnStats = runContext.render(this.columnStats).as(Boolean.class).orElse(false);
+        if (!rColumnStats || (fetchType != FetchType.FETCH && fetchType != FetchType.STORE)) {
             return null;
         }
-        var sampleRows = runContext.render(this.columnStatsSampleRows).as(Integer.class).orElse(100_000);
-        if (sampleRows < 1) {
-            throw new IllegalArgumentException("`columnStatsSampleRows` must be at least 1 but was " + sampleRows);
+        var rColumnStatsSampleRows = runContext.render(this.columnStatsSampleRows).as(Integer.class).orElse(100_000);
+        if (rColumnStatsSampleRows < 1) {
+            throw new IllegalArgumentException("`columnStatsSampleRows` must be at least 1 but was " + rColumnStatsSampleRows);
         }
-        return new ColumnStatsCollector(sampleRows);
+        return new ColumnStatsCollector(rColumnStatsSampleRows);
     }
 
     protected boolean renderOutputStatement(RunContext runContext) throws IllegalVariableEvaluationException {
@@ -409,31 +408,6 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected abstract Integer getFetchSize(RunContext runContext) throws IllegalVariableEvaluationException;
 
-    protected void emitAssets(RunContext runContext, Connection conn, String statement, Long rowsAffected) throws IllegalVariableEvaluationException {
-        var declaration = getAssets();
-        var enableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
-        try {
-            var emit = JdbcAssets.build(conn, statement, rowsAffected, enableAuto);
-            if (emit == null) {
-                return;
-            }
-            runContext.assets().emit(emit);
-            runContext.logger().info(
-                "Emitted {} input asset(s) and {} output asset(s) for the statement",
-                emit.inputs().size(),
-                emit.outputs().size()
-            );
-        } catch (UnsupportedOperationException | NullPointerException ignored) {
-            // OSS edition or tests where EE assets are not available: silently skip.
-        } catch (SQLException | QueueException | RuntimeException e) {
-            var behavior = declaration == null ? null : runContext.render(declaration.getAssetFailureBehavior()).as(AssetFailureBehavior.class).orElse(null);
-            if (behavior == AssetFailureBehavior.FAIL) {
-                throw new IllegalStateException("Unable to emit assets: " + e.getMessage(), e);
-            }
-            runContext.logger().warn("Unable to emit assets: {}", e.getMessage());
-        }
-    }
-
     /**
      * Get the database name by executing a database-specific query.
      * Different databases have different ways to query the current database name.
@@ -575,7 +549,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             title = "Tables read or written by the statement",
             description = """
                 Detected from the SQL text, so this is a best effort: CTEs, temporary tables and dialect specific syntax can lower the `confidence` or be missed.
-                Entries found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
+                The first 10 tables found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
         )
         private final List<SqlTableExtractor.TableReference> tables;
 

@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
  */
 final class JdbcExecutionSupport {
     static final int MAX_TABLES = 50;
+    static final int MAX_METADATA_LOOKUPS = 10;
     static final int MAX_STATEMENT_BYTES = 64 * 1024;
     private static final Pattern SECRET_CALL = Pattern.compile("secret\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)");
 
@@ -158,17 +159,24 @@ final class JdbcExecutionSupport {
         }
     }
 
-    // Metadata lookups are best effort: drivers such as Pinot, Druid or Arrow Flight do not implement them.
+    // Best effort and bounded: drivers such as Pinot, Druid or Arrow Flight have no metadata, and others are slow.
     private static List<TableReference> validate(Connection connection, List<TableReference> references) {
         if (connection == null) {
             return references;
         }
         var validated = new ArrayList<TableReference>(references.size());
+        var lookups = 0;
         try {
             var metaData = connection.getMetaData();
             for (var reference : references) {
-                var isCandidate = reference.getConfidence() == Confidence.MEDIUM && (reference.getKind() == null || reference.getKind() == SqlTableExtractor.Kind.TABLE);
-                validated.add(isCandidate && exists(metaData, reference) ? reference.withConfidence(Confidence.HIGH) : reference);
+                var isCandidate = reference.getConfidence() == Confidence.MEDIUM
+                    && (reference.getKind() == null || reference.getKind() == SqlTableExtractor.Kind.TABLE);
+                if (isCandidate && lookups < MAX_METADATA_LOOKUPS && exists(metaData, reference)) {
+                    validated.add(reference.withConfidence(Confidence.HIGH));
+                } else {
+                    validated.add(reference);
+                }
+                lookups += isCandidate ? 1 : 0;
             }
             return validated;
         } catch (SQLException | RuntimeException e) {
@@ -177,13 +185,14 @@ final class JdbcExecutionSupport {
     }
 
     private static boolean exists(DatabaseMetaData metaData, TableReference reference) throws SQLException {
-        for (var name : List.of(reference.getName(), reference.getName().toUpperCase(Locale.ROOT), reference.getName().toLowerCase(Locale.ROOT))) {
-            try (var tables = metaData.getTables(reference.getDatabase(), reference.getSchema(), name, null)) {
-                if (tables.next()) {
-                    return true;
-                }
-            }
+        var name = reference.getName();
+        if (metaData.storesUpperCaseIdentifiers()) {
+            name = name.toUpperCase(Locale.ROOT);
+        } else if (metaData.storesLowerCaseIdentifiers()) {
+            name = name.toLowerCase(Locale.ROOT);
         }
-        return false;
+        try (var tables = metaData.getTables(reference.getDatabase(), reference.getSchema(), name, null)) {
+            return tables.next();
+        }
     }
 }

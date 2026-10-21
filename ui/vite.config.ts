@@ -1,6 +1,6 @@
 import defaultViteConfig from "@kestra-io/artifact-sdk/vite.config";
 import types from "./jdbc-types.json" with { type: "json" };
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -53,5 +53,6 @@ writeFileSync(join(nameDir, "package.json"), JSON.stringify({ name: plugin }));
 process.chdir(nameDir);
 const config = defaultViteConfig({ plugin, exposes });
 process.chdir(root);
+rmSync(nameDir, { recursive: true, force: true });
 
 export default config;

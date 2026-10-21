@@ -16,10 +16,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-/**
- * Best-effort extraction of the tables touched by a SQL statement.
- * This is a tokenizer, not a SQL parser: CTEs, temporary tables and dialect quirks lower the confidence or are missed.
- */
+// Best-effort tokenizer, not a SQL parser: CTEs, temporary tables and dialect quirks lower the confidence or are missed.
 public final class SqlTableExtractor {
     private static final Set<String> FILE_READERS = Set.of(
         "read_parquet", "read_csv", "read_csv_auto", "read_json", "read_json_auto", "read_ndjson",
@@ -38,6 +35,8 @@ public final class SqlTableExtractor {
         "select", "insert", "update", "delete", "merge", "create", "drop", "alter", "truncate", "copy", "replace"
     );
     private static final Pattern URL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://.*");
+    private static final Pattern TYPE_PREFIX = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*:(?!//)");
+    private static final Pattern URL_PARTS = Pattern.compile("^([a-zA-Z][a-zA-Z0-9+.-]*://)(?:[^/@?#]*@)?([^?#]*)");
 
     private SqlTableExtractor() {
     }
@@ -176,6 +175,11 @@ public final class SqlTableExtractor {
         var found = new LinkedHashMap<String, TableReference>();
         new Walker(tokens, dialect, cteNames, found).walk();
         return List.copyOf(found.values());
+    }
+
+    static String safeUrl(String url) {
+        var matcher = URL_PARTS.matcher(url);
+        return matcher.find() ? matcher.group(1) + matcher.group(2) : "";
     }
 
     public static String statementKind(String sql) {
@@ -369,7 +373,7 @@ public final class SqlTableExtractor {
                             next = peek(4);
                         }
                         if (next != null && next.type() == TokenType.STRING) {
-                            addFile(next.text);
+                            addFile(next.text, true);
                         }
                     }
                 }
@@ -404,13 +408,13 @@ public final class SqlTableExtractor {
             while (cursor < tokens.size()) {
                 var token = tokens.get(cursor);
                 if (dialect.detectFiles && token.type() == TokenType.STRING && access == Access.READ) {
-                    addFile(token.text);
+                    addFile(token.text, false);
                     return;
                 }
                 if (token.type() == TokenType.WORD && FILE_READERS.contains(token.lower()) && peekIs(cursor + 1, "(")) {
                     var argument = tokenAt(cursor + 2);
                     if (dialect.detectFiles && argument != null && argument.type() == TokenType.STRING) {
-                        addFile(argument.text);
+                        addFile(argument.text, false);
                     }
                     return;
                 }
@@ -522,13 +526,17 @@ public final class SqlTableExtractor {
             found.putIfAbsent(reference.key(), reference);
         }
 
-        private void addFile(String path) {
-            var kind = URL_PATTERN.matcher(path).matches() ? Kind.URL : Kind.FILE;
+        // Literals can carry secrets: connection strings are never output and URLs lose user-info, query and fragment.
+        private void addFile(String literal, boolean attach) {
+            if (attach && (literal.contains("=") || TYPE_PREFIX.matcher(literal).find())) {
+                return;
+            }
+            var isUrl = URL_PATTERN.matcher(literal).matches();
             var reference = TableReference.builder()
-                .name(path)
+                .name(isUrl ? safeUrl(literal) : literal)
                 .access(Access.READ)
                 .confidence(Confidence.MEDIUM)
-                .kind(kind)
+                .kind(isUrl ? Kind.URL : Kind.FILE)
                 .build();
             found.putIfAbsent(reference.key(), reference);
         }

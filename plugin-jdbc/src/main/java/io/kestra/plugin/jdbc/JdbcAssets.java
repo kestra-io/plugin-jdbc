@@ -1,17 +1,25 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.assets.Asset;
 import io.kestra.core.models.assets.AssetIdentifier;
 import io.kestra.core.models.assets.Custom;
+import io.kestra.core.models.assets.AssetsDeclaration;
+import io.kestra.core.models.tasks.AssetFailureBehavior;
+import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.AssetEmit;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Access;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Kind;
 import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -30,13 +38,49 @@ final class JdbcAssets {
     private JdbcAssets() {
     }
 
+    static void emit(RunContext runContext, AssetsDeclaration declaration, Connection connection, String statement, Long rowsAffected)
+        throws IllegalVariableEvaluationException {
+        var rEnableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
+
+        AssetEmit emit;
+        try {
+            emit = build(connection, statement, rowsAffected, rEnableAuto);
+        } catch (SQLException | RuntimeException e) {
+            onFailure(runContext, declaration, e);
+            return;
+        }
+        if (emit == null) {
+            return;
+        }
+
+        try {
+            runContext.assets().emit(emit);
+            runContext.logger().info("Emitted {} input asset(s) and {} output asset(s)", emit.inputs().size(), emit.outputs().size());
+        } catch (UnsupportedOperationException | NullPointerException ignored) {
+            // OSS edition or tests where EE assets are not available: silently skip.
+        } catch (QueueException | RuntimeException e) {
+            onFailure(runContext, declaration, e);
+        }
+    }
+
+    private static void onFailure(RunContext runContext, AssetsDeclaration declaration, Exception e) throws IllegalVariableEvaluationException {
+        var rAssetFailureBehavior = declaration == null
+            ? null
+            : runContext.render(declaration.getAssetFailureBehavior()).as(AssetFailureBehavior.class).orElse(null);
+        if (rAssetFailureBehavior == AssetFailureBehavior.FAIL) {
+            throw new IllegalStateException("Unable to emit assets: " + e.getMessage(), e);
+        }
+        runContext.logger().warn("Unable to emit assets: {}", e.getMessage());
+    }
+
     // Returns null when the statement touches no table worth an asset.
     static AssetEmit build(Connection connection, String statement, Long rowsAffected, boolean enableAuto) throws SQLException {
         var dialect = JdbcExecutionSupport.dialectOf(connection);
         var references = SqlTableExtractor.extract(statement, dialect).stream()
             .filter(JdbcAssets::isAssetCandidate)
             .toList();
-        if (references.isEmpty()) {
+        var hasCreate = references.stream().anyMatch(r -> r.getAccess() == Access.CREATE);
+        if (references.isEmpty() || (!enableAuto && !hasCreate)) {
             return null;
         }
 
@@ -46,7 +90,7 @@ final class JdbcAssets {
 
         var outputs = new ArrayList<Asset>();
         var inputs = new ArrayList<AssetIdentifier>();
-        var outputIds = new java.util.HashSet<String>();
+        var outputIds = new HashSet<String>();
 
         for (var reference : references) {
             var isWrite = reference.getAccess() == Access.WRITE || reference.getAccess() == Access.CREATE;
@@ -62,7 +106,7 @@ final class JdbcAssets {
         }
 
         if (enableAuto) {
-            var inputIds = new java.util.LinkedHashSet<String>();
+            var inputIds = new LinkedHashSet<String>();
             for (var reference : references) {
                 if (reference.getAccess() == Access.READ) {
                     var id = assetId(reference, currentDatabase);
@@ -141,7 +185,7 @@ final class JdbcAssets {
                         var column = new LinkedHashMap<String, Object>();
                         column.put("name", rs.getString("COLUMN_NAME"));
                         column.put("jdbcType", jdbcTypeName(rs.getInt("DATA_TYPE")));
-                        column.put("nullable", rs.getInt("NULLABLE") != java.sql.DatabaseMetaData.columnNoNulls);
+                        column.put("nullable", rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls);
                         columns.add(column);
                     }
                 }

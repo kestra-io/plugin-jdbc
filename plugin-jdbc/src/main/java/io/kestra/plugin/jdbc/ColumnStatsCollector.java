@@ -5,7 +5,9 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.time.temporal.TemporalAccessor;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +115,8 @@ public final class ColumnStatsCollector {
                 maxLen = maxLen == null ? length : Math.max(maxLen, length);
                 if (length > MAX_MIN_MAX_STRING_LENGTH) {
                     longString = true;
+                    min = null;
+                    max = null;
                 }
             }
             if (value instanceof Number number) {
@@ -120,7 +124,7 @@ public final class ColumnStatsCollector {
                 numericCount++;
             }
             var nonFinite = (value instanceof Double d && !Double.isFinite(d)) || (value instanceof Float f && !Float.isFinite(f));
-            if (orderingBroken || nonFinite || !(value instanceof Comparable<?>)) {
+            if (orderingBroken || longString || nonFinite || !(value instanceof Comparable<?>)) {
                 return;
             }
 
@@ -132,7 +136,9 @@ public final class ColumnStatsCollector {
                 if (max == null || comparable.compareTo(max) > 0) {
                     max = comparable;
                 }
-                sample(comparable);
+                if (value instanceof Number || value instanceof TemporalAccessor || value instanceof Date) {
+                    sample(comparable);
+                }
             } catch (ClassCastException e) {
                 orderingBroken = true;
                 min = null;

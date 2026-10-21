@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -135,7 +136,7 @@ class SqliteExplorerTest {
     void hugeOffsetIsCapped() throws Exception {
         var result = run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT 1 AS one", "offset", 2147483647));
 
-        assertThat(((java.util.List<?>) result.get("rows")).size(), is(0));
+        assertThat(((List<?>) result.get("rows")).size(), is(0));
     }
 
     @Test
@@ -150,16 +151,16 @@ class SqliteExplorerTest {
 
     @Test
     void worksWhenNoDriverIsRegisteredWithDriverManager() throws Exception {
-        var registered = java.util.Collections.list(java.sql.DriverManager.getDrivers());
+        var registered = Collections.list(DriverManager.getDrivers());
         for (var driver : registered) {
-            java.sql.DriverManager.deregisterDriver(driver);
+            DriverManager.deregisterDriver(driver);
         }
         try {
             var result = run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT 1 AS one"));
-            assertThat(((java.util.List<?>) result.get("rows")).size(), is(1));
+            assertThat(((List<?>) result.get("rows")).size(), is(1));
         } finally {
             for (var driver : registered) {
-                java.sql.DriverManager.registerDriver(driver);
+                DriverManager.registerDriver(driver);
             }
         }
     }
@@ -188,5 +189,14 @@ class SqliteExplorerTest {
     void otherPragmaFormsAreRefused(String sql) {
         var exception = assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", sql)));
         assertThat(exception.getMessage(), anyOf(containsString("PRAGMA table_info(<table>)"), containsString("single read-only")));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void valuesAboveTheLengthLimitAreRefusedAndLargeOnesCut() throws Exception {
+        assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT printf('%.*c', 900000000, 'x')")));
+
+        var result = run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT printf('%.*c', 500000, 'x') AS big"));
+        assertThat(((String) ((List<List<Object>>) result.get("rows")).getFirst().getFirst()).length(), lessThanOrEqualTo(260));
     }
 }

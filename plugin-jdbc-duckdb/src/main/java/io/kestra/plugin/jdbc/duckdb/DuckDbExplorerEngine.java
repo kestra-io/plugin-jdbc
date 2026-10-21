@@ -7,13 +7,12 @@ import org.duckdb.DuckDBDriver;
 
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Properties;
 import java.sql.SQLException;
 
-/**
- * Opens the exported file attached `READ_ONLY` to a fresh in-memory database, then locks the configuration
- * so the user SQL cannot lift the limits or reach the filesystem and the network.
- */
+// Attaches the file READ_ONLY to a fresh in-memory database, then locks the configuration.
 final class DuckDbExplorerEngine implements ExplorerEngine {
     static final DuckDbExplorerEngine INSTANCE = new DuckDbExplorerEngine();
 
@@ -38,6 +37,7 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
             statement.execute("SET autoload_known_extensions=false");
             statement.execute("SET memory_limit='512MB'");
             statement.execute("SET threads=2");
+            statement.execute("SET max_temp_directory_size='0KiB'");
             statement.execute("SET enable_external_access=false");
             statement.execute("SET lock_configuration=true");
         } catch (SQLException e) {
@@ -63,6 +63,29 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
                 throw new IllegalArgumentException(READ_ONLY_MESSAGE);
             }
         }
+    }
+
+    // Text columns are cut inside the query so a huge value is never materialized in the webserver JVM.
+    @Override
+    public String boundCells(Connection connection, String sql) throws SQLException {
+        var semicolon = AbstractReadOnlyExplorerEndpoint.lastTopLevelSemicolon(sql);
+        var inner = semicolon < 0 ? sql : sql.substring(0, semicolon) + " " + sql.substring(semicolon + 1);
+
+        var projections = new ArrayList<String>();
+        var names = new HashSet<String>();
+        try (var statement = connection.createStatement();
+             var rs = statement.executeQuery("SELECT column_name, column_type FROM (DESCRIBE " + inner + "\n)")) {
+            while (rs.next()) {
+                var name = rs.getString(1);
+                if (!names.add(name)) {
+                    throw new IllegalArgumentException("Column names must be unique in the explorer, use aliases.");
+                }
+                var quoted = "\"" + name.replace("\"", "\"\"") + "\"";
+                var isText = "VARCHAR".equals(rs.getString(2)) || "JSON".equals(rs.getString(2));
+                projections.add(isText ? "left(CAST(" + quoted + " AS VARCHAR), 257) AS " + quoted : quoted);
+            }
+        }
+        return "SELECT " + String.join(", ", projections) + " FROM (\n" + inner + "\n) q";
     }
 
     @Override

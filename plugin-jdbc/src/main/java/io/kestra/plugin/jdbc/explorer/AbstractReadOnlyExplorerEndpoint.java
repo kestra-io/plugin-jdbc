@@ -7,15 +7,13 @@ import io.kestra.core.serializers.JacksonMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
-import java.nio.file.attribute.FileTime;
-import java.time.Instant;
-import java.util.Comparator;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileTime;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -23,20 +21,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-/**
- * Read-only SQL explorer over the database file exported by a task run (`databaseUri` output).
- * Everything is computed on demand from the file, which is copied once to a size capped temporary file.
- */
+// Read-only SQL explorer over the database file exported by a task run (`databaseUri` output).
 public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint {
     public static final int MAX_LIMIT = 1000;
     public static final int DEFAULT_LIMIT = 100;
@@ -48,10 +47,10 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
     public static final int MAX_OFFSET = 1_000_000;
     private static final long MAX_CACHE_BYTES = 1024L * 1024 * 1024;
     private static final Duration IN_USE_WINDOW = Duration.ofSeconds(60);
-    // Absolute paths only: preceded by the start, a space, a quote, a parenthesis or `=`, so `a/b` and `1/0` are kept.
+    // Absolute paths only, so `a/b` and `1/0` are kept.
     private static final Pattern PATH_PATTERN = Pattern.compile("(?<![^\\s'\"(=])(?:/[^\\s'\"():;,]+|[A-Za-z]:\\\\[^\\s'\"():;,]+)");
 
-    // The core calls handle() on the webserver IO thread with no timeout, so statements are cancelled from here.
+    // The core gives handle() no timeout, so statements are cancelled from here.
     private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(runnable -> {
         var thread = new Thread(runnable, "jdbc-explorer-watchdog");
         thread.setDaemon(true);
@@ -62,6 +61,9 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         CATALOG,
         QUERY
     }
+
+    // Each request opens its own native engine, so parallel requests are bounded to protect the webserver.
+    private static final Semaphore SLOTS = new Semaphore(3);
 
     private final ExplorerEngine engine;
     private final Operation operation;
@@ -83,7 +85,12 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
     @Override
     public PluginEndpointResponse handle(PluginEndpointContext context) {
         Path file = null;
+        var acquired = false;
         try {
+            acquired = SLOTS.tryAcquire(5, TimeUnit.SECONDS);
+            if (!acquired) {
+                return error("The explorer is busy, retry in a moment.");
+            }
             file = databaseFile(context);
             try (var connection = engine.openReadOnly(file)) {
                 var result = operation == Operation.CATALOG
@@ -95,11 +102,17 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
             return error(sanitize(e.getMessage(), file));
         } catch (SQLException | IOException | RuntimeException e) {
             return error("The explorer could not run the request: " + sanitize(e.getMessage(), file));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return error("The explorer request was interrupted.");
+        } finally {
+            if (acquired) {
+                SLOTS.release();
+            }
         }
     }
 
-    // The core never surfaces the message of an exception thrown by an endpoint, so refusals and SQL errors are
-    // returned as a regular `{"error": "..."}` body that the explorer UI displays as is.
+    // The core hides endpoint exception messages, so errors are returned as an `error` body.
     private static PluginEndpointResponse error(String message) {
         try {
             return PluginEndpointResponse.ofBytes(JacksonMapper.ofJson().writeValueAsBytes(Map.of("error", message)), "application/json");
@@ -152,7 +165,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         }
     }
 
-    // Drops expired files, then the oldest ones until the cache fits, never the file about to be used or one used a minute ago.
+    // Drops expired files, then the oldest until the cache fits, sparing files used in the last minute.
     private static void evict(Path directory, Path keep) {
         try (var stream = Files.list(directory)) {
             var files = new ArrayList<>(stream.filter(f -> !f.equals(keep) && !f.getFileName().toString().endsWith(".partial")).toList());
@@ -227,6 +240,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         var offset = Math.min(MAX_OFFSET, Math.max(0, number(body.get("offset"), 0)));
 
         engine.validate(connection, statement);
+        var executable = engine.boundCells(connection, statement);
 
         var startedAt = System.nanoTime();
         var columns = new ArrayList<Map<String, Object>>();
@@ -236,7 +250,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         try (var stmt = connection.createStatement()) {
             stmt.setMaxRows(offset + limit + 1);
             var watchdog = watch(stmt);
-            try (ResultSet rs = stmt.executeQuery(statement)) {
+            try (ResultSet rs = stmt.executeQuery(executable)) {
                 var meta = rs.getMetaData();
                 for (var i = 1; i <= meta.getColumnCount(); i++) {
                     columns.add(Map.of("name", meta.getColumnLabel(i), "type", String.valueOf(meta.getColumnTypeName(i))));
@@ -269,7 +283,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         return result;
     }
 
-    private java.util.concurrent.ScheduledFuture<?> watch(Statement statement) {
+    private ScheduledFuture<?> watch(Statement statement) {
         return WATCHDOG.schedule(() -> {
             try {
                 statement.cancel();
@@ -296,7 +310,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         return value instanceof Number number ? number.intValue() : fallback;
     }
 
-    // Rows are dropped from the end until the JSON fits, and the page is flagged as incomplete.
+    // Rows are dropped from the end until the JSON fits.
     @SuppressWarnings("unchecked")
     private static byte[] capped(Map<String, Object> result) throws IOException {
         var mapper = JacksonMapper.ofJson();
@@ -355,5 +369,40 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
             }
         }
         return out.toString();
+    }
+
+    // Index of the last `;` that is not inside a literal, quoted identifier or comment, or -1.
+    public static int lastTopLevelSemicolon(String sql) {
+        var last = -1;
+        var i = 0;
+        while (i < sql.length()) {
+            var c = sql.charAt(i);
+            if (c == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
+                var end = sql.indexOf('\n', i);
+                i = end < 0 ? sql.length() : end;
+            } else if (c == '/' && i + 1 < sql.length() && sql.charAt(i + 1) == '*') {
+                var end = sql.indexOf("*/", i + 2);
+                i = end < 0 ? sql.length() : end + 2;
+            } else if (c == '\'' || c == '"' || c == '`') {
+                var j = i + 1;
+                while (j < sql.length()) {
+                    if (sql.charAt(j) == c) {
+                        if (j + 1 < sql.length() && sql.charAt(j + 1) == c) {
+                            j += 2;
+                            continue;
+                        }
+                        break;
+                    }
+                    j++;
+                }
+                i = j + 1;
+            } else {
+                if (c == ';') {
+                    last = i;
+                }
+                i++;
+            }
+        }
+        return last;
     }
 }

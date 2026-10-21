@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -61,12 +63,12 @@ class DuckDbExplorerTest {
     void queryPagesAndCutsCells() throws Exception {
         var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM people ORDER BY id", "limit", 2, "offset", 1));
 
-        var rows = (java.util.List<java.util.List<Object>>) result.get("rows");
+        var rows = (List<List<Object>>) result.get("rows");
         assertThat(rows, hasSize(2));
         assertThat(rows.getFirst().getFirst(), is(1));
         assertThat(((String) rows.getFirst().get(1)).length(), lessThanOrEqualTo(259));
         assertThat(result.get("hasMore"), is(true));
-        assertThat(((java.util.List<Object>) result.get("columns")), hasSize(2));
+        assertThat(((List<Object>) result.get("columns")), hasSize(2));
         assertThat(result.get("durationMs"), notNullValue());
     }
 
@@ -74,7 +76,7 @@ class DuckDbExplorerTest {
     void limitIsCappedAtOneThousand() throws Exception {
         var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM range(5000)", "limit", 50000));
 
-        assertThat(((java.util.List<?>) result.get("rows")).size(), is(1000));
+        assertThat(((List<?>) result.get("rows")).size(), is(1000));
         assertThat(result.get("hasMore"), is(true));
     }
 
@@ -137,7 +139,7 @@ class DuckDbExplorerTest {
     void hugeOffsetIsCapped() throws Exception {
         var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT 1 AS one", "offset", 2147483647));
 
-        assertThat(((java.util.List<?>) result.get("rows")).size(), is(0));
+        assertThat(((List<?>) result.get("rows")).size(), is(0));
     }
 
     @Test
@@ -152,16 +154,16 @@ class DuckDbExplorerTest {
 
     @Test
     void worksWhenNoDriverIsRegisteredWithDriverManager() throws Exception {
-        var registered = java.util.Collections.list(java.sql.DriverManager.getDrivers());
+        var registered = Collections.list(DriverManager.getDrivers());
         for (var driver : registered) {
-            java.sql.DriverManager.deregisterDriver(driver);
+            DriverManager.deregisterDriver(driver);
         }
         try {
             var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT 1 AS one"));
-            assertThat(((java.util.List<?>) result.get("rows")).size(), is(1));
+            assertThat(((List<?>) result.get("rows")).size(), is(1));
         } finally {
             for (var driver : registered) {
-                java.sql.DriverManager.registerDriver(driver);
+                DriverManager.registerDriver(driver);
             }
         }
     }
@@ -172,8 +174,8 @@ class DuckDbExplorerTest {
         var describe = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM (DESCRIBE people)"));
         var summarize = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM (SUMMARIZE SELECT id FROM (SELECT * FROM people) q)"));
 
-        assertThat((java.util.List<Object>) describe.get("rows"), hasSize(2));
-        assertThat((java.util.List<Object>) summarize.get("rows"), hasSize(1));
+        assertThat((List<Object>) describe.get("rows"), hasSize(2));
+        assertThat((List<Object>) summarize.get("rows"), hasSize(1));
     }
 
     // The statements the explorer UI sends for its column cards (see ui/src/lib/explorer.ts).
@@ -198,5 +200,22 @@ class DuckDbExplorerTest {
     @ValueSource(strings = {"SELECT ';' AS semicolon", "SELECT 1;", "SELECT 1 ; -- done"})
     void semicolonsInLiteralsAndTrailingAreAllowed(String sql) throws Exception {
         assertThat(run(new DuckDbQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void hugeValuesAreCutInsideTheQuery() throws Exception {
+        var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT repeat('x', 300000000) AS big, 1 AS one"));
+
+        var row = ((List<List<Object>>) result.get("rows")).getFirst();
+        assertThat(((String) row.getFirst()).length(), lessThanOrEqualTo(260));
+        assertThat(row.get(1), is(1));
+    }
+
+    @Test
+    void duplicateColumnNamesAreRefusedWithAHint() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT 1 AS a, 2 AS a")));
+
+        assertThat(exception.getMessage(), containsString("use aliases"));
     }
 }

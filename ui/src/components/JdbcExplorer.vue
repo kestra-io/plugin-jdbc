@@ -187,7 +187,7 @@ function barHeights(bars: number[]) {
     return bars.map((n) => Math.max(2, Math.round((n / max) * 28)));
 }
 
-const fmt = (value: unknown) => (value === undefined || value === null ? "—" : String(value));
+const fmt = (value: unknown) => (value === undefined || value === null ? "-" : String(value));
 const typeClass = (type: string) => columnKind(type);
 </script>
 
@@ -281,7 +281,7 @@ const typeClass = (type: string) => columnKind(type);
             </section>
 
             <aside class="xp__col">
-                <h4 class="xp__label">{{ t("columnExplorer", { rows: total === undefined ? "—" : total.toLocaleString("en-US") }) }}</h4>
+                <h4 class="xp__label">{{ t("columnExplorer", { rows: total === undefined ? "-" : total.toLocaleString("en-US") }) }}</h4>
                 <button
                     v-for="column in result?.columns ?? []"
                     :key="column.name"

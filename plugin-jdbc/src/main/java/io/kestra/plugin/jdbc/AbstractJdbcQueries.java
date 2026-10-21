@@ -360,7 +360,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         throws IllegalVariableEvaluationException {
         for (var i = 0; i < queries.length; i++) {
             var rowsAffected = i < stats.statementLog.size() ? (Long) stats.statementLog.get(i).get("rowsAffected") : null;
-            emitAssets(runContext, conn, queries[i], rowsAffected);
+            JdbcAssets.emit(runContext, getAssets(), conn, queries[i], rowsAffected);
         }
     }
 
@@ -433,7 +433,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             title = "Tables read or written by the statements",
             description = """
                 Detected from the SQL text, so this is a best effort: CTEs, temporary tables and dialect specific syntax can lower the `confidence` or be missed.
-                Entries found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
+                The first 10 tables found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
         )
         List<SqlTableExtractor.TableReference> tables;
 

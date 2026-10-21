@@ -224,7 +224,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 runContext,
                 executor.tables(),
                 statement,
-                (long) executor.updatedCount,
+                executor.rowsAffected(),
                 null,
                 durationNanos,
                 executor.warnings,
@@ -518,7 +518,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         @Schema(
             title = "Tables written by the statement",
             description = """
-                Detected from the SQL text, so this is a best effort. Entries found through the JDBC metadata have a `HIGH` confidence.
+                Detected from the SQL text, so this is a best effort. The first 10 tables found through the JDBC metadata have a `HIGH` confidence.
                 Limited to 50 entries, see `tablesTruncated`"""
         )
         private final List<SqlTableExtractor.TableReference> tables;
@@ -601,6 +601,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         private int updatedCount;
         private long queryCount;
         private int warnings;
+        private long affected;
+        private boolean affectedUnknown;
         private JdbcExecutionSupport.TableSummary tables;
 
         private PreparedInput preparedInput;
@@ -665,6 +667,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 }
 
                 tables = JdbcExecutionSupport.tables(connection, List.of(config.sql()));
+                JdbcAssets.emit(runContext, getAssets(), connection, config.sql(), rowsAffected());
             } catch (Exception e) {
                 if (rollbackOnFailure) {
                     try {
@@ -698,6 +701,13 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
             rowCount += size;
             updatedCount += Arrays.stream(updated).sum();
+            for (var count : updated) {
+                if (count < 0) {
+                    affectedUnknown = true;
+                } else {
+                    affected += count;
+                }
+            }
             queryCount++;
             warnings += JdbcExecutionSupport.countWarnings(ps);
             ps.clearWarnings();
@@ -713,6 +723,11 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                     preparedInput = null;
                 }
             }
+        }
+
+        // SUCCESS_NO_INFO entries mean the driver does not know the count, so the total is unknown.
+        Long rowsAffected() {
+            return affectedUnknown ? null : affected;
         }
 
         JdbcExecutionSupport.TableSummary tables() {
