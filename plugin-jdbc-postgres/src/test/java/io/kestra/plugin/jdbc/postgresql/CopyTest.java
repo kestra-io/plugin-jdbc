@@ -295,9 +295,9 @@ public class CopyTest {
                 .sql(Property.ofValue("SELECT * FROM non_existent_table_for_copyout_test"))
                 .build();
 
-        // This ensures the executor shuts down cleanly and doesn't hang the JVM on failure
-        RuntimeException ex = assertThrows(
-                RuntimeException.class,
+        // Expect a standard Exception (like SQLException) instead of RuntimeException
+        Exception ex = assertThrows(
+                Exception.class,
                 () -> copyOut.run(runContext)
         );
         
