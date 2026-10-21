@@ -30,9 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-/**
- * Helpers shared by the JDBC tasks to build the post-execution outputs.
- */
+// Helpers shared by the JDBC tasks to build the post-execution outputs.
 final class JdbcExecutionSupport {
     static final int MAX_TABLES = 50;
     static final int MAX_METADATA_LOOKUPS = 10;

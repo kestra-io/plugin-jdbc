@@ -235,4 +235,21 @@ class DuckDbExplorerTest {
         assertThat(((String) row.get(2)).length(), lessThanOrEqualTo(260));
         assertThat(row.get(3), is(1));
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void userTypesNamedLikeFixedSizeTypesAreStillCut() throws Exception {
+        var custom = dir.resolve("custom-type.duckdb");
+        try (var connection = DriverManager.getConnection("jdbc:duckdb:" + custom); var statement = connection.createStatement()) {
+            statement.execute("CREATE TYPE TIMESTAMP_RAW AS BLOB");
+            statement.execute("CREATE TABLE raw (v TIMESTAMP_RAW)");
+            statement.execute("INSERT INTO raw SELECT repeat('x', 5000000)::BLOB");
+        }
+
+        var response = new DuckDbQueryEndpoint().handle(ExplorerTestContext.of(custom, Map.of("sql", "SELECT v FROM raw")));
+        var result = JacksonMapper.ofJson().readValue(response.body(), Map.class);
+
+        var row = ((List<List<Object>>) result.get("rows")).getFirst();
+        assertThat(((String) row.getFirst()).length(), lessThanOrEqualTo(260));
+    }
 }

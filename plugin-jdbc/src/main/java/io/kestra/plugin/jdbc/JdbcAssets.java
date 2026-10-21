@@ -25,9 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Builds the table assets (and their lineage) of a SQL statement.
- */
+// Builds the table assets and their lineage for a SQL statement.
 final class JdbcAssets {
     static final String TABLE_TYPE = "io.kestra.plugin.ee.assets.Table";
     private static final Set<String> SYSTEM_SCHEMAS = Set.of(

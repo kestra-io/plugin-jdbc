@@ -176,13 +176,19 @@ public final class SqlTableExtractor {
         return List.copyOf(found.values());
     }
 
-    // Everything up to the last `@` is dropped, so passwords containing `/`, `?`, `#` or `@` cannot survive; then query and fragment.
+    // The user-info ends at the last `@`; when a `?` or `#` comes before it the split is ambiguous, so nothing is kept.
     static String safeUrl(String url) {
         var schemeEnd = url.indexOf("://");
+        var scheme = url.substring(0, schemeEnd + 3);
         var rest = url.substring(schemeEnd + 3);
-        rest = rest.substring(rest.lastIndexOf('@') + 1);
+        var at = rest.lastIndexOf('@');
         var cut = indexOfAny(rest, '?', '#');
-        return url.substring(0, schemeEnd + 3) + (cut < 0 ? rest : rest.substring(0, cut));
+        if (at >= 0 && cut >= 0 && cut < at) {
+            return scheme + "***";
+        }
+        rest = rest.substring(at + 1);
+        cut = indexOfAny(rest, '?', '#');
+        return scheme + (cut < 0 ? rest : rest.substring(0, cut));
     }
 
     private static int indexOfAny(String text, char first, char second) {

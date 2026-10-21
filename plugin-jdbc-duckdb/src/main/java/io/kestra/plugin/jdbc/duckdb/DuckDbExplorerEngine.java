@@ -16,7 +16,8 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
     static final DuckDbExplorerEngine INSTANCE = new DuckDbExplorerEngine();
 
     private static final Pattern FIXED_SIZE_TYPE = Pattern.compile(
-        "BOOLEAN|U?(TINY|SMALL|BIG|HUGE)?INT(EGER)?|FLOAT|DOUBLE|DECIMAL.*|DATE|TIME.*|TIMESTAMP.*|INTERVAL|UUID"
+        "BOOLEAN|U?(TINY|SMALL|BIG|HUGE)?INT(EGER)?|FLOAT|DOUBLE|DECIMAL\\(\\d+,\\d+\\)|DATE|TIME( WITH TIME ZONE)?"
+            + "|TIMESTAMP(_S|_MS|_NS)?( WITH TIME ZONE)?|INTERVAL|UUID"
     );
     private static final String READ_ONLY_MESSAGE = "Only a single read-only SELECT statement is allowed in the explorer.";
 

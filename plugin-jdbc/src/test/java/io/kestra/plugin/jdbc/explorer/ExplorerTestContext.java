@@ -15,9 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Endpoint context for tests: the "internal storage" is a local file served for any URI.
- */
+// Endpoint context for tests: the "internal storage" is a local file served for any URI.
 public final class ExplorerTestContext {
     private ExplorerTestContext() {
     }
