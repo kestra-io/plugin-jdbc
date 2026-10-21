@@ -1,1 +1,0 @@
-function e(e,t){return()=>Object.fromEntries(Object.entries(e).filter(([e,n])=>n!==void 0&&!t?.includes(e)))}export{e as t};

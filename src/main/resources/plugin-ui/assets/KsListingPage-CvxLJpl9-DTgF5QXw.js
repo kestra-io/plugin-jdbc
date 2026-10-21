@@ -1,1 +1,0 @@
-import{Qn as e,Vn as t,ci as n,ri as r,tr as i}from"./_virtual_mf___mfe_internal__io_mf_3_kestra_mf_3_plugin_mf_3_jdbc__mf_owner__50325819103327__loadShare__shared-BpcjH7t3.js";var a=n({inheritAttrs:!1,__name:`KsListingPage`,setup(n){return(n,a)=>(e(),r(`section`,t({class:`ks-listing-page`},n.$attrs),[i(n.$slots,`default`)],16))}});export{a as t};

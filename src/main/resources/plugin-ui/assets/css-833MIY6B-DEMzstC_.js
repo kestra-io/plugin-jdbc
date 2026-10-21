@@ -1,1 +1,0 @@
-function e(e,t){if(typeof window>`u`)return``;let n=getComputedStyle(document.documentElement).getPropertyValue(e).trim();if(t===void 0)return n;let r=n.replace(`#`,``);return`rgba(${parseInt(r.substring(0,2),16)}, ${parseInt(r.substring(2,4),16)}, ${parseInt(r.substring(4,6),16)}, ${t})`}export{e as t};

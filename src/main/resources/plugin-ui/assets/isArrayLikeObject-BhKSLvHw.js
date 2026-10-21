@@ -1,1 +1,0 @@
-import{v as e}from"./install-BhZ2ZsuQ.js";import{a as t,n,r}from"./_flatRest-CYeZc7N9.js";import{v as i}from"./_Uint8Array-Dz6-aH7A.js";function a(e,i){return r(n(e,i,t),e+``)}function o(t){return e(t)&&i(t)}export{a as n,o as t};

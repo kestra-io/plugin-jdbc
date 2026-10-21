@@ -1,1 +1,0 @@
-import{Rn as e,Ur as t,ei as n}from"./_virtual_mf___mfe_internal__io_mf_3_kestra_mf_3_plugin_mf_3_jdbc__mf_owner__50325819103327__loadShare__shared-BpcjH7t3.js";import{t as r}from"./size-CbXD8RNi.js";import{t as i}from"./runtime-DQnAl5k4.js";var a=i({type:String,values:r,required:!1}),o=Symbol(`size`),s=()=>{let r=e(o,{});return n(()=>t(r.size)||``)};export{s as n,a as r,o as t};

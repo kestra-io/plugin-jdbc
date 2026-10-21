@@ -1,1 +1,0 @@
-function e(e,t,n=.03){return e-t>n}export{e as t};
