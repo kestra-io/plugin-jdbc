@@ -46,7 +46,7 @@ public final class ExplorerTestContext {
 
             @Override
             public String taskRunId() {
-                return "taskrun-" + (databaseFile == null ? "none" : databaseFile.getFileName());
+                return "taskrun-" + java.util.UUID.randomUUID();
             }
 
             @Override

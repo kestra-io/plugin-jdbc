@@ -65,7 +65,7 @@ final class SqliteExplorerEngine implements ExplorerEngine {
             throw new IllegalArgumentException(READ_ONLY_MESSAGE);
         }
         if (first.equals("pragma") && !PRAGMA_TABLE_INFO.matcher(code).matches()) {
-            throw new IllegalArgumentException(READ_ONLY_MESSAGE);
+            throw new IllegalArgumentException("Only PRAGMA table_info(<table>) is allowed in the explorer, for example PRAGMA table_info(people).");
         }
         if (FORBIDDEN.matcher(withoutTrailingSemicolon).find()) {
             throw new IllegalArgumentException(READ_ONLY_MESSAGE);

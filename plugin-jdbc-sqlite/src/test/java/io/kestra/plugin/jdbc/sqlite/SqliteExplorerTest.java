@@ -28,6 +28,8 @@ class SqliteExplorerTest {
         database = dir.resolve("explorer.sqlite");
         try (var connection = DriverManager.getConnection("jdbc:sqlite:" + database); var statement = connection.createStatement()) {
             statement.execute("CREATE TABLE people (id INTEGER, name TEXT)");
+            statement.execute("CREATE TABLE t (a INTEGER, b INTEGER)");
+            statement.execute("CREATE TABLE tt (a INTEGER, b INTEGER)");
             statement.execute("INSERT INTO people VALUES (1, 'a'), (2, 'b'), (3, 'c')");
             statement.execute("CREATE VIEW adults AS SELECT * FROM people WHERE id > 1");
         }
@@ -49,7 +51,7 @@ class SqliteExplorerTest {
         var catalog = JacksonMapper.ofJson().readTree(response.body());
 
         assertThat(new SqliteCatalogEndpoint().name(), is("sqlite-catalog"));
-        assertThat(catalog.get("tables").size(), is(2));
+        assertThat(catalog.get("tables").size(), is(4));
         assertThat(catalog.get("tables").get(1).get("name").asText(), is("people"));
         assertThat(catalog.get("tables").get(1).get("columns").get(1).get("name").asText(), is("name"));
     }
@@ -175,7 +177,7 @@ class SqliteExplorerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"PRAGMA table_info(people)", "PRAGMA table_info('people')", "PRAGMA table_info(\"people\")", "pragma table_info( people );"})
+    @ValueSource(strings = {"PRAGMA table_info(people)", "PRAGMA table_info('people')", "PRAGMA table_info(\"people\")", "pragma table_info( people );", "PRAGMA table_info(t)", "PRAGMA table_info(tt)", "pragma table_info( t );"})
     @SuppressWarnings("unchecked")
     void tableInfoAcceptsQuotedAndUnquotedIdentifiers(String sql) throws Exception {
         assertThat((List<Object>) run(new SqliteQueryEndpoint(), Map.of("sql", sql)).get("rows"), hasSize(2));
@@ -184,6 +186,7 @@ class SqliteExplorerTest {
     @ParameterizedTest
     @ValueSource(strings = {"PRAGMA table_info(people, other)", "PRAGMA table_info(people); PRAGMA user_version", "PRAGMA table_info"})
     void otherPragmaFormsAreRefused(String sql) {
-        assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", sql)));
+        var exception = assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", sql)));
+        assertThat(exception.getMessage(), anyOf(containsString("PRAGMA table_info(<table>)"), containsString("single read-only")));
     }
 }
