@@ -124,4 +124,37 @@ class SqliteExplorerTest {
 
         assertThat(Duration.ofNanos(System.nanoTime() - startedAt).toSeconds(), lessThan(20L));
     }
+
+    @Test
+    void hugeOffsetIsCapped() throws Exception {
+        var result = run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT 1 AS one", "offset", 2147483647));
+
+        assertThat(((java.util.List<?>) result.get("rows")).size(), is(0));
+    }
+
+    @Test
+    void divisionInErrorsIsNotMangled() {
+        var exception = assertThrows(
+            IllegalArgumentException.class,
+            () -> run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT a/b FROM missing_table"))
+        );
+
+        assertThat(exception.getMessage(), not(containsString("<path>")));
+    }
+
+    @Test
+    void worksWhenNoDriverIsRegisteredWithDriverManager() throws Exception {
+        var registered = java.util.Collections.list(java.sql.DriverManager.getDrivers());
+        for (var driver : registered) {
+            java.sql.DriverManager.deregisterDriver(driver);
+        }
+        try {
+            var result = run(new SqliteQueryEndpoint(), Map.of("sql", "SELECT 1 AS one"));
+            assertThat(((java.util.List<?>) result.get("rows")).size(), is(1));
+        } finally {
+            for (var driver : registered) {
+                java.sql.DriverManager.registerDriver(driver);
+            }
+        }
+    }
 }

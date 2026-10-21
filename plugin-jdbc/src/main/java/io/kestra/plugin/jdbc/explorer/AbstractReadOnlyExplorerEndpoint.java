@@ -8,7 +8,12 @@ import io.kestra.core.serializers.JacksonMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.util.Comparator;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
@@ -40,7 +45,11 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
     public static final long MAX_FILE_BYTES = 256L * 1024 * 1024;
     private static final Duration FILE_TTL = Duration.ofMinutes(10);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
-    private static final Pattern PATH_PATTERN = Pattern.compile("(?:[A-Za-z]:)?[\\\\/][^\\s'\"():;,]+");
+    public static final int MAX_OFFSET = 1_000_000;
+    private static final long MAX_CACHE_BYTES = 1024L * 1024 * 1024;
+    private static final Duration IN_USE_WINDOW = Duration.ofSeconds(60);
+    // Absolute paths only: preceded by the start, a space, a quote, a parenthesis or `=`, so `a/b` and `1/0` are kept.
+    private static final Pattern PATH_PATTERN = Pattern.compile("(?<![^\\s'\"(=])(?:/[^\\s'\"():;,]+|[A-Za-z]:\\\\[^\\s'\"():;,]+)");
 
     // The core calls handle() on the webserver IO thread with no timeout, so statements are cancelled from here.
     private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -98,12 +107,13 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
 
         var directory = Path.of(System.getProperty("java.io.tmpdir"), "kestra-jdbc-explorer");
         Files.createDirectories(directory);
-        purgeExpired(directory);
 
         var target = directory.resolve(fileKey(context.executionId(), context.taskRunId(), databaseUri.toString()));
-        if (Files.exists(target)) {
-            Files.setLastModifiedTime(target, java.nio.file.attribute.FileTime.from(java.time.Instant.now()));
+        try {
+            Files.setLastModifiedTime(target, FileTime.from(Instant.now()));
             return target;
+        } catch (NoSuchFileException notCached) {
+            // Not downloaded yet, or purged by a concurrent request: download it.
         }
 
         var partial = Files.createTempFile(directory, "download-", ".partial");
@@ -113,6 +123,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         } finally {
             Files.deleteIfExists(partial);
         }
+        evict(directory, target);
         return target;
     }
 
@@ -131,16 +142,34 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         }
     }
 
-    private static void purgeExpired(Path directory) {
-        var limit = System.currentTimeMillis() - FILE_TTL.toMillis();
-        try (var files = Files.list(directory)) {
-            for (var file : files.toList()) {
-                if (Files.getLastModifiedTime(file).toMillis() < limit) {
+    // Drops expired files, then the oldest ones until the cache fits, never the file about to be used or one used a minute ago.
+    private static void evict(Path directory, Path keep) {
+        try (var stream = Files.list(directory)) {
+            var files = new ArrayList<>(stream.filter(f -> !f.equals(keep) && !f.getFileName().toString().endsWith(".partial")).toList());
+            files.sort(Comparator.comparingLong(AbstractReadOnlyExplorerEndpoint::modified));
+            var total = Files.size(keep);
+            for (var file : files) {
+                total += Files.size(file);
+            }
+            var now = System.currentTimeMillis();
+            for (var file : files) {
+                var age = now - modified(file);
+                var expired = age > FILE_TTL.toMillis();
+                if ((expired || total > MAX_CACHE_BYTES) && age > IN_USE_WINDOW.toMillis()) {
+                    total -= Files.size(file);
                     Files.deleteIfExists(file);
                 }
             }
-        } catch (IOException ignored) {
-            // Best effort: a file that cannot be removed now is retried on the next request.
+        } catch (IOException | UncheckedIOException ignored) {
+            // Best effort: whatever is left is retried on the next download.
+        }
+    }
+
+    private static long modified(Path file) {
+        try {
+            return Files.getLastModifiedTime(file).toMillis();
+        } catch (IOException e) {
+            return Long.MAX_VALUE;
         }
     }
 
@@ -185,7 +214,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
             throw new IllegalArgumentException("The request body must contain a `sql` property.");
         }
         var limit = Math.min(MAX_LIMIT, Math.max(1, number(body.get("limit"), DEFAULT_LIMIT)));
-        var offset = Math.max(0, number(body.get("offset"), 0));
+        var offset = Math.min(MAX_OFFSET, Math.max(0, number(body.get("offset"), 0)));
 
         engine.validate(connection, statement);
 

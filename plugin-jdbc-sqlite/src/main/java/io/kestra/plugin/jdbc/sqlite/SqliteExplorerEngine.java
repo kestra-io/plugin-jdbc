@@ -1,11 +1,11 @@
 package io.kestra.plugin.jdbc.sqlite;
 
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
-import io.kestra.plugin.jdbc.explorer.SqlText;
+
+import org.sqlite.JDBC;
 
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Locale;
 import java.util.Properties;
@@ -40,7 +40,8 @@ final class SqliteExplorerEngine implements ExplorerEngine {
     public Connection openReadOnly(Path file) throws SQLException {
         var properties = new Properties();
         properties.setProperty("open_mode", "1");
-        var connection = DriverManager.getConnection("jdbc:sqlite:file:" + file.toAbsolutePath() + "?mode=ro", properties);
+        // Drivers of a plugin jar are not registered with DriverManager, so the driver is called directly.
+        var connection = new JDBC().connect("jdbc:sqlite:file:" + file.toAbsolutePath() + "?mode=ro", properties);
         try (var statement = connection.createStatement()) {
             statement.execute("PRAGMA query_only=ON");
         } catch (SQLException e) {
@@ -52,7 +53,7 @@ final class SqliteExplorerEngine implements ExplorerEngine {
 
     @Override
     public void validate(Connection connection, String sql) {
-        var code = SqlText.stripLiteralsAndComments(sql).trim();
+        var code = stripLiteralsAndComments(sql).trim();
         var withoutTrailingSemicolon = code.endsWith(";") ? code.substring(0, code.length() - 1) : code;
         if (withoutTrailingSemicolon.isBlank() || withoutTrailingSemicolon.contains(";")) {
             throw new IllegalArgumentException(READ_ONLY_MESSAGE);
@@ -77,5 +78,41 @@ final class SqliteExplorerEngine implements ExplorerEngine {
             FROM sqlite_master m, pragma_table_info(m.name) p
             WHERE m.type IN ('table', 'view') AND m.name NOT LIKE 'sqlite_%'
             ORDER BY m.name, p.cid""";
+    }
+
+    // Blanks string literals, quoted identifiers and comments so that keyword checks only see SQL code.
+    private static String stripLiteralsAndComments(String sql) {
+        var out = new StringBuilder(sql.length());
+        var i = 0;
+        while (i < sql.length()) {
+            var c = sql.charAt(i);
+            if (c == '-' && i + 1 < sql.length() && sql.charAt(i + 1) == '-') {
+                var end = sql.indexOf('\n', i);
+                i = end < 0 ? sql.length() : end;
+                out.append(' ');
+            } else if (c == '/' && i + 1 < sql.length() && sql.charAt(i + 1) == '*') {
+                var end = sql.indexOf("*/", i + 2);
+                i = end < 0 ? sql.length() : end + 2;
+                out.append(' ');
+            } else if (c == '\'' || c == '"' || c == '`') {
+                var j = i + 1;
+                while (j < sql.length()) {
+                    if (sql.charAt(j) == c) {
+                        if (j + 1 < sql.length() && sql.charAt(j + 1) == c) {
+                            j += 2;
+                            continue;
+                        }
+                        break;
+                    }
+                    j++;
+                }
+                i = Math.min(sql.length(), j + 1);
+                out.append(" \"\" ");
+            } else {
+                out.append(c);
+                i++;
+            }
+        }
+        return out.toString();
     }
 }

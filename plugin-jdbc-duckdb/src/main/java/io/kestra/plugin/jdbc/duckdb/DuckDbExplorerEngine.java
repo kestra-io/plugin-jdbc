@@ -2,9 +2,11 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
 
+import org.duckdb.DuckDBDriver;
+
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.util.Properties;
 import java.sql.SQLException;
 
 /**
@@ -26,7 +28,8 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
 
     @Override
     public Connection openReadOnly(Path file) throws SQLException {
-        var connection = DriverManager.getConnection("jdbc:duckdb:");
+        // Drivers of a plugin jar are not registered with DriverManager, so the driver is called directly.
+        var connection = new DuckDBDriver().connect("jdbc:duckdb:", new Properties());
         try (var statement = connection.createStatement()) {
             statement.execute("ATTACH '" + file.toAbsolutePath().toString().replace("'", "''") + "' AS explorer (READ_ONLY)");
             statement.execute("USE explorer");
