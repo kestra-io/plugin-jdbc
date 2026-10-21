@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
 import java.time.temporal.TemporalAccessor;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -14,10 +14,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-/**
- * Collects per-column statistics row by row, from the rows already read for the task output (no second query).
- * Collection stops after {@code sampleRows} rows; the caller keeps storing rows.
- */
+// Per-column statistics collected row by row from the rows already read; collection stops after sampleRows rows.
 public final class ColumnStatsCollector {
     static final int MAX_MIN_MAX_STRING_LENGTH = 256;
     private static final int MEDIAN_RESERVOIR_SIZE = 10_000;
@@ -201,7 +198,7 @@ public final class ColumnStatsCollector {
         }
     }
 
-    /** Small HyperLogLog (precision 12, about 1.6% error) so distinct counts stay approximate and bounded in memory. */
+    // Small HyperLogLog (precision 12, about 1.6% error): distinct counts stay approximate and bounded in memory.
     static final class HyperLogLog {
         private static final int PRECISION = 12;
         private static final int REGISTERS = 1 << PRECISION;

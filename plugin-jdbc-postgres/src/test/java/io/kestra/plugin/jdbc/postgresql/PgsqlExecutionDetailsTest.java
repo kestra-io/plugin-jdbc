@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.postgresql;
 
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.plugin.jdbc.SqlTableExtractor;
@@ -76,7 +77,7 @@ class PgsqlExecutionDetailsTest {
             .url(Property.ofValue(url))
             .outputStatement(Property.ofValue(true))
             .sql(Property.ofValue("SELECT 1 AS one"))
-            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.FETCH))
+            .fetchType(Property.ofValue(FetchType.FETCH))
             .build()
             .run(runContextFactory.of(Map.of()));
 

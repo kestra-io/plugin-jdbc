@@ -4,9 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// The host loads one federated container per sub-plugin group (io.kestra.plugin.jdbc.<package>) and asks it
-// for `./<SimpleClassName>/<slot>`, so one build is made per group: JDBC_UI_GROUP selects the package and
-// the classes come from jdbc-types.json. Gradle runs this once per sub-plugin module.
+// The host asks one container per group for `./<SimpleClassName>/<slot>`, so Gradle builds once per group (JDBC_UI_GROUP).
 const group = process.env.JDBC_UI_GROUP;
 const classes = (types as Record<string, string[]>)[group ?? ""];
 if (!group) {
@@ -45,8 +43,7 @@ const exposes = Object.fromEntries(
     ]),
 );
 
-// The SDK names the federated container after the package.json found in the working directory,
-// so it is built from a throwaway package.json carrying the group name.
+// The SDK names the container after the working directory's package.json, hence a throwaway one.
 const root = process.cwd();
 const nameDir = mkdtempSync(join(tmpdir(), "jdbc-ui-"));
 writeFileSync(join(nameDir, "package.json"), JSON.stringify({ name: plugin }));

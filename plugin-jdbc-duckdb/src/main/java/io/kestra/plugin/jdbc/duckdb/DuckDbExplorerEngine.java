@@ -2,20 +2,22 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.plugin.jdbc.explorer.AbstractReadOnlyExplorerEndpoint;
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
-
 import org.duckdb.DuckDBDriver;
 
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Properties;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Properties;
+import java.util.regex.Pattern;
 
 // Attaches the file READ_ONLY to a fresh in-memory database, then locks the configuration.
 final class DuckDbExplorerEngine implements ExplorerEngine {
     static final DuckDbExplorerEngine INSTANCE = new DuckDbExplorerEngine();
 
+    private static final Pattern FIXED_SIZE_TYPE = Pattern.compile(
+        "BOOLEAN|U?(TINY|SMALL|BIG|HUGE)?INT(EGER)?|FLOAT|DOUBLE|DECIMAL.*|DATE|TIME.*|TIMESTAMP.*|INTERVAL|UUID"
+    );
     private static final String READ_ONLY_MESSAGE = "Only a single read-only SELECT statement is allowed in the explorer.";
 
     private DuckDbExplorerEngine() {
@@ -65,27 +67,26 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
         }
     }
 
-    // Text columns are cut inside the query so a huge value is never materialized in the webserver JVM.
+    // Everything but fixed-size types is cut inside the query so a huge value is never materialized in the webserver JVM.
     @Override
     public String boundCells(Connection connection, String sql) throws SQLException {
         var semicolon = AbstractReadOnlyExplorerEndpoint.lastTopLevelSemicolon(sql);
         var inner = semicolon < 0 ? sql : sql.substring(0, semicolon) + " " + sql.substring(semicolon + 1);
 
         var projections = new ArrayList<String>();
-        var names = new HashSet<String>();
+        var aliases = new ArrayList<String>();
         try (var statement = connection.createStatement();
              var rs = statement.executeQuery("SELECT column_name, column_type FROM (DESCRIBE " + inner + "\n)")) {
             while (rs.next()) {
-                var name = rs.getString(1);
-                if (!names.add(name)) {
-                    throw new IllegalArgumentException("Column names must be unique in the explorer, use aliases.");
-                }
-                var quoted = "\"" + name.replace("\"", "\"\"") + "\"";
-                var isText = "VARCHAR".equals(rs.getString(2)) || "JSON".equals(rs.getString(2));
-                projections.add(isText ? "left(CAST(" + quoted + " AS VARCHAR), 257) AS " + quoted : quoted);
+                // Positional aliases keep joins with duplicate column names working.
+                var positional = "c" + aliases.size();
+                aliases.add(positional);
+                var label = "\"" + rs.getString(1).replace("\"", "\"\"") + "\"";
+                var fixedSize = FIXED_SIZE_TYPE.matcher(rs.getString(2)).matches();
+                projections.add((fixedSize ? positional : "left(CAST(" + positional + " AS VARCHAR), 257)") + " AS " + label);
             }
         }
-        return "SELECT " + String.join(", ", projections) + " FROM (\n" + inner + "\n) q";
+        return "SELECT " + String.join(", ", projections) + " FROM (\n" + inner + "\n) AS q(" + String.join(", ", aliases) + ")";
     }
 
     @Override

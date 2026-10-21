@@ -219,6 +219,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             }
 
             var durationNanos = System.nanoTime() - startedAt;
+            emitAssets(runContext, config.sql(), executor.rowsAffected());
             var statement = runContext.render(this.outputStatement).as(Boolean.class).orElse(false) ? truncatedStatement(config.sql()) : null;
             var details = JdbcExecutionSupport.details(
                 runContext,
@@ -252,6 +253,20 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     // The INSERT is generated from column names or written by the flow author, with `?` placeholders instead of values.
     private static String truncatedStatement(String sql) {
         return sql == null ? null : JdbcExecutionSupport.truncate(sql);
+    }
+
+    // Runs after the commit and outside the retry scope, so an asset failure can never re-run the insert.
+    private void emitAssets(RunContext runContext, String statement, Long rowsAffected) throws Exception {
+        var declaration = getAssets();
+        var rEnableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
+        if (!rEnableAuto) {
+            return;
+        }
+        try (var connection = connection(runContext)) {
+            JdbcAssets.emit(runContext, declaration, connection, statement, rowsAffected);
+        } catch (SQLException e) {
+            JdbcAssets.onFailure(runContext, declaration, e);
+        }
     }
 
     private BatchConfig buildConfig(RunContext runContext) throws Exception {
@@ -667,7 +682,6 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 }
 
                 tables = JdbcExecutionSupport.tables(connection, List.of(config.sql()));
-                JdbcAssets.emit(runContext, getAssets(), connection, config.sql(), rowsAffected());
             } catch (Exception e) {
                 if (rollbackOnFailure) {
                     try {

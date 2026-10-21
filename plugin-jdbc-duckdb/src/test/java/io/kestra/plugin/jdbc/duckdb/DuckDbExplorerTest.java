@@ -213,9 +213,26 @@ class DuckDbExplorerTest {
     }
 
     @Test
-    void duplicateColumnNamesAreRefusedWithAHint() {
-        var exception = assertThrows(IllegalArgumentException.class, () -> run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT 1 AS a, 2 AS a")));
+    @SuppressWarnings("unchecked")
+    void joinsWithDuplicateColumnNamesWork() throws Exception {
+        var result = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM people a JOIN people b ON a.id = b.id ORDER BY a.id"));
 
-        assertThat(exception.getMessage(), containsString("use aliases"));
+        assertThat(((List<?>) result.get("columns")).size(), is(4));
+        assertThat(((List<?>) result.get("rows")).size(), is(5));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void hugeBlobsListsAndStructsAreCut() throws Exception {
+        var result = run(new DuckDbQueryEndpoint(), Map.of(
+            "sql",
+            "SELECT repeat('x', 200000000)::BLOB AS b, list_value(repeat('y', 100000000)) AS l, {'k': repeat('z', 100000000)} AS s, 1 AS one"
+        ));
+
+        var row = ((List<List<Object>>) result.get("rows")).getFirst();
+        assertThat(((String) row.get(0)).length(), lessThanOrEqualTo(260));
+        assertThat(((String) row.get(1)).length(), lessThanOrEqualTo(260));
+        assertThat(((String) row.get(2)).length(), lessThanOrEqualTo(260));
+        assertThat(row.get(3), is(1));
     }
 }

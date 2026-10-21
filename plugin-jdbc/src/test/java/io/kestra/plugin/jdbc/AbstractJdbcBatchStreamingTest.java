@@ -1,7 +1,9 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.assets.AssetsDeclaration;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.AssetFailureBehavior;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
@@ -173,11 +175,61 @@ class AbstractJdbcBatchStreamingTest {
         }
     }
 
+    @Test
+    void assetFailureAfterCommitNeverReRunsTheInsert() throws Exception {
+        String dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (Connection setup = DriverManager.getConnection(dbUrl); Statement statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE asset_batch (id INT)");
+        }
+
+        Path ionFile = Files.createTempFile("asset_batch_", ".ion");
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(ionFile))) {
+            for (int i = 0; i < 10; i++) {
+                FileSerde.write(output, Map.of("id", i));
+            }
+        }
+        URI uri;
+        try (InputStream input = Files.newInputStream(ionFile)) {
+            uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), input);
+        }
+        Files.delete(ionFile);
+
+        AtomicInteger connections = new AtomicInteger();
+        StreamingBatch task = StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO asset_batch (id) VALUES (?)"))
+            .columns(Property.ofValue(List.of("id")))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
+            .resumeOnRetry(Property.ofValue(false))
+            .assets(new AssetsDeclaration(Property.ofValue(true), null, null, Property.ofValue(AssetFailureBehavior.FAIL)))
+            .onConnection(() -> {
+                // the first connection runs the insert, the second one is opened for the asset step
+                if (connections.incrementAndGet() == 2) {
+                    throw new SQLException("connection lost", "08006");
+                }
+            })
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of(Map.of())));
+
+        assertThat(connections.get(), is(2));
+        try (Connection check = DriverManager.getConnection(dbUrl);
+             Statement statement = check.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM asset_batch")) {
+            rs.next();
+            assertThat(rs.getInt(1), is(10));
+        }
+    }
+
     @SuperBuilder
     @NoArgsConstructor
     public static class StreamingBatch extends AbstractJdbcBatch {
         private transient Runnable onExecuteBatch;
         private transient Runnable onRollback;
+        private transient ThrowingRunnable onConnection;
 
         @Override
         protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -200,6 +252,9 @@ class AbstractJdbcBatchStreamingTest {
 
         @Override
         public Connection connection(RunContext runContext) throws Exception {
+            if (onConnection != null) {
+                onConnection.run();
+            }
             Connection connection = super.connection(runContext);
             return proxy(Connection.class, connection, (method, args) -> {
                 if (method.getName().equals("rollback") && onRollback != null) {
@@ -217,6 +272,11 @@ class AbstractJdbcBatchStreamingTest {
                 }
                 return result;
             });
+        }
+
+        @FunctionalInterface
+        public interface ThrowingRunnable {
+            void run() throws SQLException;
         }
 
         @FunctionalInterface

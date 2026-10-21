@@ -3,8 +3,8 @@ package io.kestra.plugin.jdbc;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.assets.Asset;
 import io.kestra.core.models.assets.AssetIdentifier;
-import io.kestra.core.models.assets.Custom;
 import io.kestra.core.models.assets.AssetsDeclaration;
+import io.kestra.core.models.assets.Custom;
 import io.kestra.core.models.tasks.AssetFailureBehavior;
 import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.AssetEmit;
@@ -19,8 +19,8 @@ import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -63,7 +63,7 @@ final class JdbcAssets {
         }
     }
 
-    private static void onFailure(RunContext runContext, AssetsDeclaration declaration, Exception e) throws IllegalVariableEvaluationException {
+    static void onFailure(RunContext runContext, AssetsDeclaration declaration, Exception e) throws IllegalVariableEvaluationException {
         var rAssetFailureBehavior = declaration == null
             ? null
             : runContext.render(declaration.getAssetFailureBehavior()).as(AssetFailureBehavior.class).orElse(null);

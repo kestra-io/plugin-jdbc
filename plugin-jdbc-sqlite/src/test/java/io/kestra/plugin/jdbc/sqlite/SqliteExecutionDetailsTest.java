@@ -22,6 +22,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
@@ -119,7 +120,7 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("SELECT id FROM lite_types"))
             .build();
 
-        var exception = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+        var exception = assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
         assertThat(exception.getMessage(), containsString("columnStatsSampleRows"));
     }
 

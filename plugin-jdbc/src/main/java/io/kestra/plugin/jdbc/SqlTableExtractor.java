@@ -36,7 +36,6 @@ public final class SqlTableExtractor {
     );
     private static final Pattern URL_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://.*");
     private static final Pattern TYPE_PREFIX = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*:(?!//)");
-    private static final Pattern URL_PARTS = Pattern.compile("^([a-zA-Z][a-zA-Z0-9+.-]*://)(?:[^/@?#]*@)?([^?#]*)");
 
     private SqlTableExtractor() {
     }
@@ -177,9 +176,22 @@ public final class SqlTableExtractor {
         return List.copyOf(found.values());
     }
 
+    // Everything up to the last `@` is dropped, so passwords containing `/`, `?`, `#` or `@` cannot survive; then query and fragment.
     static String safeUrl(String url) {
-        var matcher = URL_PARTS.matcher(url);
-        return matcher.find() ? matcher.group(1) + matcher.group(2) : "";
+        var schemeEnd = url.indexOf("://");
+        var rest = url.substring(schemeEnd + 3);
+        rest = rest.substring(rest.lastIndexOf('@') + 1);
+        var cut = indexOfAny(rest, '?', '#');
+        return url.substring(0, schemeEnd + 3) + (cut < 0 ? rest : rest.substring(0, cut));
+    }
+
+    private static int indexOfAny(String text, char first, char second) {
+        for (var i = 0; i < text.length(); i++) {
+            if (text.charAt(i) == first || text.charAt(i) == second) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public static String statementKind(String sql) {

@@ -273,4 +273,15 @@ class SqlTableExtractorTest {
         assertThat(SqlTableExtractor.extract("ATTACH 'postgres:dbname=x' AS pg", Dialect.DUCKDB), is(empty()));
         assertThat(SqlTableExtractor.extract("ATTACH 'https://user:pw@host/db.duckdb' AS r", Dialect.DUCKDB).getFirst().getName(), is("https://host/db.duckdb"));
     }
+
+    @Test
+    void safeUrlDropsPasswordsWhateverTheyContain() {
+        assertThat(SqlTableExtractor.safeUrl("https://user:wJalr/K7MDENG@host/f.csv"), is("https://host/f.csv"));
+        assertThat(SqlTableExtractor.safeUrl("https://u:p@ss@host/f"), is("https://host/f"));
+        assertThat(SqlTableExtractor.safeUrl("https://u:p?q@host/f"), is("https://host/f"));
+        assertThat(SqlTableExtractor.safeUrl("https://u:p%40ss@host/f"), is("https://host/f"));
+        assertThat(SqlTableExtractor.safeUrl("https://u:p#x@host/f"), is("https://host/f"));
+        assertThat(SqlTableExtractor.safeUrl("s3://bucket/key?X-Amz-Signature=abc&X-Amz-Credential=def"), is("s3://bucket/key"));
+        assertThat(SqlTableExtractor.safeUrl("https://host/f.csv?password=a@b"), is("https://b"));
+    }
 }

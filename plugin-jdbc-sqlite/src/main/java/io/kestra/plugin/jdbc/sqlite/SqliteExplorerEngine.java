@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc.sqlite;
 
 import io.kestra.plugin.jdbc.explorer.AbstractReadOnlyExplorerEndpoint;
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
-
 import org.sqlite.JDBC;
 
 import java.nio.file.Path;
