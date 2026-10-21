@@ -165,4 +165,26 @@ class DuckDbExplorerTest {
             }
         }
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void describeAndSummarizeAreAllowedAsSubqueries() throws Exception {
+        var describe = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM (DESCRIBE people)"));
+        var summarize = run(new DuckDbQueryEndpoint(), Map.of("sql", "SELECT * FROM (SUMMARIZE SELECT id FROM (SELECT * FROM people) q)"));
+
+        assertThat((java.util.List<Object>) describe.get("rows"), hasSize(2));
+        assertThat((java.util.List<Object>) summarize.get("rows"), hasSize(1));
+    }
+
+    // The statements the explorer UI sends for its column cards (see ui/src/lib/explorer.ts).
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SELECT count(*) AS total FROM (SELECT * FROM people) q",
+        "SELECT * FROM (SUMMARIZE SELECT \"id\" FROM (SELECT * FROM people) q)",
+        "SELECT CAST(floor(CASE WHEN s.mx = s.mn THEN 0 ELSE (v.x - s.mn) * 10.0 / (s.mx - s.mn) END) AS INTEGER) AS bucket, count(*) AS n FROM (SELECT CAST(\"id\" AS DOUBLE) AS x FROM (SELECT * FROM people) q) v, (SELECT min(x) AS mn, max(x) AS mx FROM (SELECT CAST(\"id\" AS DOUBLE) AS x FROM (SELECT * FROM people) q)) s WHERE v.x IS NOT NULL GROUP BY bucket ORDER BY bucket",
+        "SELECT \"name\" AS value, count(*) AS n FROM (SELECT * FROM people) q WHERE \"name\" IS NOT NULL GROUP BY \"name\" ORDER BY n DESC LIMIT 3"
+    })
+    void columnExplorerStatementsRun(String sql) throws Exception {
+        assertThat(run(new DuckDbQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
+    }
 }

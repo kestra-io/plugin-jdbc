@@ -161,4 +161,16 @@ class SqliteExplorerTest {
             }
         }
     }
+
+    // The statements the explorer UI sends for its column cards (see ui/src/lib/explorer.ts).
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "SELECT count(*) AS total FROM (SELECT * FROM people) q",
+        "SELECT count(*) AS count, count(\"id\") AS non_null, count(DISTINCT \"id\") AS distinct_values, min(\"id\") AS min, max(\"id\") AS max, avg(\"id\") AS avg FROM (SELECT * FROM people) q",
+        "SELECT CAST(CASE WHEN s.mx = s.mn THEN 0 ELSE (v.x - s.mn) * 10.0 / (s.mx - s.mn) END AS INTEGER) AS bucket, count(*) AS n FROM (SELECT CAST(\"id\" AS REAL) AS x FROM (SELECT * FROM people) q) v, (SELECT min(x) AS mn, max(x) AS mx FROM (SELECT CAST(\"id\" AS REAL) AS x FROM (SELECT * FROM people) q)) s WHERE v.x IS NOT NULL GROUP BY bucket ORDER BY bucket",
+        "SELECT \"name\" AS value, count(*) AS n FROM (SELECT * FROM people) q WHERE \"name\" IS NOT NULL GROUP BY \"name\" ORDER BY n DESC LIMIT 3"
+    })
+    void columnExplorerStatementsRun(String sql) throws Exception {
+        assertThat(run(new SqliteQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
+    }
 }
