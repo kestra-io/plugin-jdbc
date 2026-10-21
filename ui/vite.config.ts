@@ -9,7 +9,12 @@ import { join } from "node:path";
 // the classes come from jdbc-types.json. Gradle runs this once per sub-plugin module.
 const group = process.env.JDBC_UI_GROUP;
 const classes = (types as Record<string, string[]>)[group ?? ""];
-if (!group || !classes) {
+if (!group) {
+    // generic `npm run build` (e.g. kestra-plugin-shadowjar): Gradle builds each sub-plugin UI itself
+    console.log("JDBC_UI_GROUP not set, skipping: Gradle builds one UI per sub-plugin module");
+    process.exit(0);
+}
+if (!classes) {
     throw new Error(`Set JDBC_UI_GROUP to one of: ${Object.keys(types).join(", ")}`);
 }
 const plugin = `io.kestra.plugin.jdbc.${group}`;
