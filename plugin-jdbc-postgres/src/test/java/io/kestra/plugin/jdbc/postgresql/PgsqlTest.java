@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.*;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Stream;
@@ -73,6 +74,64 @@ public class PgsqlTest extends AbstractRdbmsTest {
         assertThat(runOutput.getRow(), notNullValue());
         assertThat(runOutput.getRow().get("voidvalue"), nullValue());
         assertThat(runOutput.getRow().get("stringvalue"), is("someString"));
+    }
+
+    private static final String JSON_VALUES_SQL = """
+        select '[1,2,3]'::json as json_array,
+               '[1,2,3]'::jsonb as jsonb_array,
+               '42'::json as json_scalar,
+               '"quoted value"'::jsonb as jsonb_string,
+               'null'::jsonb as jsonb_null,
+               '{"values":[[1,2],[3,4]]}'::jsonb as jsonb_nested
+        """;
+
+    @Test
+    void selectJsonArraysAndScalars() throws Exception {
+        var runContext = runContextFactory.of(ImmutableMap.of());
+
+        var task = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .sql(Property.ofValue(JSON_VALUES_SQL))
+            .build();
+
+        var runOutput = task.run(runContext);
+
+        checkJsonValues(runOutput.getRow());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void selectJsonArraysAndScalarsToFile() throws Exception {
+        var runContext = runContextFactory.of(ImmutableMap.of());
+
+        var task = Query.builder()
+            .url(Property.ofValue(TestUtils.url()))
+            .username(Property.ofValue(TestUtils.username()))
+            .password(Property.ofValue(TestUtils.password()))
+            .fetchType(Property.ofValue(STORE))
+            .sql(Property.ofValue(JSON_VALUES_SQL))
+            .build();
+
+        var runOutput = task.run(runContext);
+
+        try (var inputStream = new BufferedInputStream(this.storageInterface.get(TenantService.MAIN_TENANT, null, runOutput.getUri()))) {
+            var rows = FileSerde.readAll(inputStream).collectList().block();
+            assertThat(rows, hasSize(1));
+            checkJsonValues((Map<String, Object>) rows.get(0));
+        }
+    }
+
+    private void checkJsonValues(Map<String, Object> row) {
+        assertThat(row.get("json_array"), is(List.of(1, 2, 3)));
+        assertThat(row.get("jsonb_array"), is(List.of(1, 2, 3)));
+        assertThat(row.get("json_scalar"), is(42));
+        assertThat(row.get("jsonb_string"), is("quoted value"));
+        assertThat(row.containsKey("jsonb_null"), is(true));
+        assertThat(row.get("jsonb_null"), nullValue());
+        assertThat(row.get("jsonb_nested"), is(Map.of("values", List.of(List.of(1, 2), List.of(3, 4)))));
     }
 
     private void checkRow(Map<String, Object> row, int concertId) throws DecoderException {
