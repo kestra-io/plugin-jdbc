@@ -295,7 +295,6 @@ public class CopyTest {
                 .sql(Property.ofValue("SELECT * FROM non_existent_table_for_copyout_test"))
                 .build();
 
-        // Expect a standard Exception (like SQLException) instead of RuntimeException
         Exception ex = assertThrows(
                 Exception.class,
                 () -> copyOut.run(runContext)
