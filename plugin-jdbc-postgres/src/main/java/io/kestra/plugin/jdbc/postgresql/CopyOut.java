@@ -224,8 +224,7 @@ public class CopyOut extends AbstractCopy implements RunnableTask<CopyOut.Output
             UnaryOperator<InputStream> inputWrapper) throws Exception {
         try (PipedInputStream input = new PipedInputStream(65536);
                 PipedOutputStream output = new PipedOutputStream(input);
-                ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-
+                ExecutorService executor = Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon().name("postgres-copyout-", 0).factory())) {
             Future<Long> copyFuture = executor.submit(() -> {
                 try {
                     return copyManager.copyOut(sql, output);
