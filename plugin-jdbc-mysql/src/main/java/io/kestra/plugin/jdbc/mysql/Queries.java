@@ -106,6 +106,16 @@ public class Queries extends AbstractJdbcQueries implements MySqlConnectionInter
     protected transient Path workingDirectory;
 
     @Override
+    protected boolean backslashEscapesInLiterals() {
+        return true;
+    }
+
+    @Override
+    protected boolean hashLineComments() {
+        return true;
+    }
+
+    @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new MysqlCellConverter(zoneId);
     }

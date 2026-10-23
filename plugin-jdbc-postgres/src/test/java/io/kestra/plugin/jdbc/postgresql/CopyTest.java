@@ -282,4 +282,24 @@ public class CopyTest {
             RETURNING payload
             """.formatted(tableName, json);
     }
+
+    @Test
+    void copyOut_invalidSqlShouldFailCleanly() {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+
+        CopyOut copyOut = CopyOut.builder()
+                .url(Property.ofValue(TestUtils.url()))
+                .username(Property.ofValue(TestUtils.username()))
+                .password(Property.ofValue(TestUtils.password()))
+                .format(Property.ofValue(AbstractCopy.Format.CSV))
+                .sql(Property.ofValue("SELECT * FROM non_existent_table_for_copyout_test"))
+                .build();
+
+        Exception ex = assertThrows(
+                Exception.class,
+                () -> copyOut.run(runContext)
+        );
+        
+        assertThat(ex.getMessage(), containsString("non_existent_table_for_copyout_test"));
+    }
 }

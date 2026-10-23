@@ -9,6 +9,7 @@ import org.postgresql.util.PGInterval;
 import org.postgresql.util.PGobject;
 import org.postgresql.util.HStoreConverter;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -49,7 +50,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
             case "interval":
                 PGInterval interval = (PGInterval) data;
                 // Returns an iso 8601 duration format
-                return getISO8601Interval(interval.getYears(), interval.getMonths(), interval.getDays(), interval.getHours(), interval.getMinutes(), (int) interval.getSeconds());
+                return getISO8601Interval(interval.getYears(), interval.getMonths(), interval.getDays(), interval.getHours(), interval.getMinutes(), interval.getSeconds());
             case "hstore":
                 // Convert hstore to a Map<String, String>
                 Map<String, String> hstoreMap = HStoreConverter.fromString(rs.getString(columnIndex));
@@ -75,7 +76,7 @@ public class PostgresCellConverter extends AbstractCellConverter {
                 case "json":
                 case "jsonb":
                     try {
-                        return JacksonMapper.toMap(o.getValue());
+                        return JacksonMapper.toObject(o.getValue());
                     } catch (JsonProcessingException e) {
                         throw new IllegalArgumentException("Invalid data type [" + type + "] with value [" + o.getValue() + "]");
                     }
@@ -89,8 +90,9 @@ public class PostgresCellConverter extends AbstractCellConverter {
         return super.convert(columnIndex, rs);
     }
 
-    private String getISO8601Interval(int years, int months, int days, int hours, int minutes, int seconds) {
-        return "P" + years + "Y" + months + "M" + days + "DT" + hours + "H" + minutes + "M" + seconds + "S";
+    private String getISO8601Interval(int years, int months, int days, int hours, int minutes, double seconds) {
+        String formattedSeconds = BigDecimal.valueOf(seconds).stripTrailingZeros().toPlainString();
+        return "P" + years + "Y" + months + "M" + days + "DT" + hours + "H" + minutes + "M" + formattedSeconds + "S";
     }
 
     @Override

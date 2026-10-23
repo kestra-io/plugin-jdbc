@@ -102,6 +102,16 @@ public class Queries extends AbstractJdbcQueries implements MariaDbConnectionInt
     protected transient Path workingDirectory;
 
     @Override
+    protected boolean backslashEscapesInLiterals() {
+        return true;
+    }
+
+    @Override
+    protected boolean hashLineComments() {
+        return true;
+    }
+
+    @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new MariaDbCellConverter(zoneId);
     }
