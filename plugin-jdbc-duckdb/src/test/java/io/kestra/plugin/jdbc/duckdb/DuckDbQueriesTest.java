@@ -26,6 +26,7 @@ import java.net.URL;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -76,6 +77,86 @@ class DuckDbQueriesTest {
         assertThat("employee selected", runOutput.getOutputs().getFirst().getRows().size(), is(1));
         assertThat("employee name with age > 30", runOutput.getOutputs().getFirst().getRows().getFirst().get("name"), is("Bryan"));
         assertThat("laptops size", runOutput.getOutputs().getLast().getRows().size(), is(2));
+    }
+
+    @Test
+    void namedParametersDoNotCorruptQuotedIdentifiers() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .fetchType(Property.ofValue(FETCH))
+            .parameters(Property.ofValue(Map.of("expected", 42)))
+            .sql(Property.ofValue("""
+                CREATE OR REPLACE TABLE "INGESTION:TOPIC_ENV" AS SELECT 42 AS v;
+                SELECT v FROM "INGESTION:TOPIC_ENV" WHERE v = :expected;
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs(), hasSize(1));
+        assertThat(runOutput.getOutputs().getFirst().getRows(), hasSize(1));
+        assertThat(runOutput.getOutputs().getFirst().getRows().getFirst().get("v"), is(42));
+    }
+
+    @Test
+    void namedParametersIgnoreStringsCommentsAndCastsAndCanRepeat() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Query task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .parameters(Property.ofValue(Map.of("value", 21)))
+            .sql(Property.ofValue("""
+                SELECT
+                    :value + :value AS total,
+                    ':ignored' AS literal,
+                    'it''s :ignored' AS escaped_literal,
+                    /* :block_comment */
+                    42::INTEGER AS cast_value
+                    -- :line_comment
+                """))
+            .build();
+
+        Query.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow().get("total"), is(42));
+        assertThat(runOutput.getRow().get("literal"), is(":ignored"));
+        assertThat(runOutput.getRow().get("escaped_literal"), is("it's :ignored"));
+        assertThat(runOutput.getRow().get("cast_value"), is(42));
+    }
+
+    @Test
+    void namedParameterBindingCompatibility() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+        Map<String, Object> parameters = new HashMap<>();
+        parameters.put("configured", 7);
+        parameters.put("explicitly_null", null);
+        parameters.put("unused", 99);
+
+        Query.Output parameterizedOutput = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .parameters(Property.ofValue(parameters))
+            .sql(Property.ofValue("""
+                SELECT
+                    :configured AS configured,
+                    :explicitly_null IS NULL AS explicit_null,
+                    :missing IS NULL AS missing
+                """))
+            .build()
+            .run(runContext);
+
+        assertThat(parameterizedOutput.getRow().get("configured"), is(7));
+        assertThat(parameterizedOutput.getRow().get("explicit_null"), is(true));
+        assertThat(parameterizedOutput.getRow().get("missing"), is(true));
+
+        Query.Output emptyParametersOutput = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .parameters(Property.ofValue(Map.of()))
+            .sql(Property.ofValue("SELECT ':not_a_parameter' AS literal"))
+            .build()
+            .run(runContext);
+
+        assertThat(emptyParametersOutput.getRow().get("literal"), is(":not_a_parameter"));
     }
 
     @Test
