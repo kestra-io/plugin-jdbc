@@ -97,6 +97,11 @@ public class Queries extends AbstractJdbcQueries implements SnowflakeInterface {
     }
 
     @Override
+    protected boolean backslashEscapesInLiterals() {
+        return true;
+    }
+
+    @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new SnowflakeCellConverter(zoneId);
     }
