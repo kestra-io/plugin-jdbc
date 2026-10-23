@@ -57,8 +57,8 @@ const { t } = useI18n({
             guardSqlite:
                 "First keyword allowlist, mode=ro with query_only, ATTACH and load_extension refused, 1,000 rows per page, 30 s timeout.",
             count: "Count",
-            describe: "DESCRIBE",
-            summarize: "SUMMARIZE",
+            describe: "Describe",
+            summarize: "Summarize",
             tableInfo: "Table info",
         },
     },
