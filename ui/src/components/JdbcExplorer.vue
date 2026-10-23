@@ -65,7 +65,7 @@ const { t } = useI18n({
     },
 });
 
-const props = defineProps<KnownSlotProps["topology-task-modal"]>();
+const props = defineProps<KnownSlotProps["execution-artifact"]>();
 const emit = defineEmits<{ close: [] }>();
 
 const engine = computed(() => engineOf(props.taskType));

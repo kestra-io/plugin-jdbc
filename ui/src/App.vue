@@ -9,6 +9,6 @@ import { SLOTS } from "@kestra-io/artifact-sdk";
     <div style="padding: 1rem; font-family: sans-serif">
         <JdbcTopologyDetails v-bind="SLOTS['topology-details'].defaultProps" />
         <JdbcTaskModal v-bind="SLOTS['topology-task-modal'].defaultProps" />
-        <JdbcExplorer v-bind="{ ...SLOTS['topology-task-modal'].defaultProps, taskType: 'io.kestra.plugin.jdbc.duckdb.Query' }" />
+        <JdbcExplorer v-bind="{ ...SLOTS['execution-artifact'].defaultProps, taskType: 'io.kestra.plugin.jdbc.duckdb.Query' }" />
     </div>
 </template>
