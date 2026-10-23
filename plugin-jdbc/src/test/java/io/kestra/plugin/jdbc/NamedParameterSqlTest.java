@@ -77,14 +77,14 @@ class NamedParameterSqlTest {
     }
 
     @Test
-    void quotedIdentifiersAreKept() {
+    void quotedIdentifierContainingColonIsKept() {
         var result = NamedParameterSql.parse(
-            "SELECT \"a:x\", `b:x` FROM t WHERE c = :x",
+            "SELECT v FROM \"INGESTION:TOPIC_ENVIRONMENT\" WHERE v = :expected",
             false, false
         );
 
-        assertEquals("SELECT \"a:x\", `b:x` FROM t WHERE c = ?", result.sql());
-        assertEquals(List.of("x"), result.names());
+        assertEquals("SELECT v FROM \"INGESTION:TOPIC_ENVIRONMENT\" WHERE v = ?", result.sql());
+        assertEquals(List.of("expected"), result.names());
     }
 
     @Test

@@ -79,6 +79,26 @@ class DuckDbQueriesTest {
     }
 
     @Test
+    void namedParametersDoNotCorruptQuotedIdentifiers() throws Exception {
+        RunContext runContext = runContextFactory.of(Map.of());
+
+        Queries task = Queries.builder()
+            .fetchType(Property.ofValue(FETCH))
+            .parameters(Property.ofValue(Map.of("expected", 42)))
+            .sql(Property.ofValue("""
+                CREATE OR REPLACE TABLE "INGESTION:TOPIC_ENVIRONMENT" AS SELECT 42 AS v;
+                SELECT v FROM "INGESTION:TOPIC_ENVIRONMENT" WHERE v = :expected;
+                """))
+            .build();
+
+        Queries.Output runOutput = task.run(runContext);
+
+        assertThat(runOutput.getOutputs(), hasSize(1));
+        assertThat(runOutput.getOutputs().getFirst().getRows(), hasSize(1));
+        assertThat(runOutput.getOutputs().getFirst().getRows().getFirst().get("v"), is(42));
+    }
+
+    @Test
     void queriesContinueWhenCommunityExtensionInstallFails() throws Exception {
         RunContext runContext = runContextFactory.of(Map.of());
 
