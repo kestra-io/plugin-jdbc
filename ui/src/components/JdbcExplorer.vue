@@ -96,8 +96,15 @@ const stats = ref<Record<string, ColumnStats | undefined>>({});
 const expanded = ref<string | undefined>();
 let generation = 0;
 
-const call = <T,>(operation: "catalog" | "query", body: Record<string, unknown>) =>
-    post<T>(
+// The host's fetchEndpoint carries the session auth a raw fetch lacks (the core answers 403 to it).
+const call = async <T,>(operation: "catalog" | "query", body: Record<string, unknown>): Promise<T> => {
+    if (props.fetchEndpoint) {
+        const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+        const out = (await props.fetchEndpoint(`${engine.value}-${operation}`, params, { taskRunId: taskRun.value?.id })) as any;
+        if (out?.error) throw new Error(String(out.error));
+        return out as T;
+    }
+    return post<T>(
         endpointPath({
             tenant: tenant.value,
             taskType: taskType.value!,
@@ -108,6 +115,7 @@ const call = <T,>(operation: "catalog" | "query", body: Record<string, unknown>)
         }),
         body,
     );
+};
 
 const query = (statement: string, limit = MAX_LIMIT, from = 0) => call<QueryResult>("query", { sql: statement, limit, offset: from });
 
@@ -328,75 +336,134 @@ const typeClass = (type: string) => columnKind(type);
 </template>
 
 <style scoped>
+/* Tokens follow the explorer mockup. Host variables are not guaranteed in this slot, so the palette is local. */
 .xp {
+    --xp-surface: #ffffff;
+    --xp-canvas: #f1f2f7;
+    --xp-border: #dcdee8;
+    --xp-text: #1b1d2a;
+    --xp-dim: #5d6178;
+    --xp-accent: #8405ff;
+    --xp-accent-soft: #efe3ff;
+    --xp-ok: #17874f;
+    --xp-ok-bg: #dff5e8;
+    --xp-warn: #a8630a;
+    --xp-warn-bg: #fdecd0;
+    container-type: inline-size;
     display: flex;
     flex-direction: column;
-    gap: var(--ks-spacing-3);
-    padding: var(--ks-spacing-3);
+    gap: 16px;
+    padding: 20px;
+    background: var(--xp-surface);
+    color: var(--xp-text);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+:global(html.dark) .xp,
+:global(.dark) .xp {
+    --xp-surface: #151722;
+    --xp-canvas: #10121a;
+    --xp-border: #2a2d3c;
+    --xp-text: #f2f3f8;
+    --xp-dim: #a3a7bd;
+    --xp-accent: #a45cff;
+    --xp-accent-soft: #2b1d45;
+    --xp-ok: #46d28b;
+    --xp-ok-bg: #12301f;
+    --xp-warn: #f5b25c;
+    --xp-warn-bg: #3a2810;
+}
+
+.xp button {
+    font: inherit;
+}
+
+.xp button:focus-visible,
+.xp textarea:focus-visible {
+    outline: 2px solid var(--xp-accent);
+    outline-offset: 1px;
 }
 
 .xp__header {
     display: flex;
     align-items: center;
-    gap: var(--ks-spacing-2);
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .xp__title {
     margin: 0;
-    font-size: var(--ks-font-size-md);
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
 }
 
 .xp__pill {
-    padding: 0 var(--ks-spacing-2);
-    border-radius: 999px;
-    font-size: var(--ks-font-size-xs);
-    color: var(--ks-content-success, #1f9d55);
-    border: 1px solid currentColor;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--xp-ok-bg);
+    color: var(--xp-ok);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.xp__pill::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
 }
 
 .xp__close {
     margin-left: auto;
     border: 0;
     background: none;
-    font-size: 1.25rem;
+    font-size: 20px;
+    line-height: 1;
     cursor: pointer;
-    color: var(--ks-text-secondary);
+    color: var(--xp-dim);
 }
 
 .xp__grid {
     display: grid;
-    grid-template-columns: 200px 1fr 260px;
-    gap: var(--ks-spacing-3);
+    grid-template-columns: minmax(0, 200px) minmax(0, 1fr) minmax(0, 260px);
+    gap: 20px;
 }
 
-@media (max-width: 900px) {
+@container (max-width: 820px) {
     .xp__grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
 .xp__col {
     display: flex;
     flex-direction: column;
-    gap: var(--ks-spacing-2);
+    gap: 8px;
     min-width: 0;
 }
 
 .xp__label {
     margin: 0;
-    font-size: var(--ks-font-size-xs);
+    font-size: 12px;
     font-weight: 600;
-    color: var(--ks-text-secondary);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--xp-dim);
 }
 
 .xp__mono {
-    font-family: var(--ks-font-family-mono, monospace);
+    font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+    font-size: 12.5px;
 }
 
 .xp__dim {
-    color: var(--ks-text-secondary);
-    font-size: var(--ks-font-size-xs);
+    color: var(--xp-dim);
+    font-size: 12px;
 }
 
 .xp__note,
@@ -413,58 +480,103 @@ const typeClass = (type: string) => columnKind(type);
 .xp__table {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    gap: 8px;
     width: 100%;
-    padding: var(--ks-spacing-1) var(--ks-spacing-2);
+    padding: 6px 8px;
     border: 0;
-    border-radius: var(--ks-border-radius);
+    border-radius: 6px;
     background: none;
     cursor: pointer;
     color: inherit;
+    text-align: left;
 }
 
-.xp__table--selected {
-    background: var(--ks-background-hover, rgba(127, 127, 127, 0.15));
+.xp__table:hover {
+    background: var(--xp-canvas);
+}
+
+.xp__table--selected,
+.xp__table--selected:hover {
+    background: var(--xp-accent-soft);
+    color: var(--xp-accent);
+    font-weight: 600;
 }
 
 .xp__editor {
     width: 100%;
+    box-sizing: border-box;
     resize: vertical;
-    padding: var(--ks-spacing-2);
-    border: 1px solid var(--ks-border-primary);
-    border-radius: var(--ks-border-radius);
-    background: transparent;
-    color: inherit;
+    padding: 10px 12px;
+    line-height: 1.5;
+    border: 1px solid var(--xp-border);
+    border-radius: 6px;
+    background: var(--xp-canvas);
+    color: var(--xp-text);
 }
 
 .xp__bar,
 .xp__pager {
     display: flex;
     align-items: center;
-    gap: var(--ks-spacing-2);
+    gap: 10px;
+}
+
+.xp__pager {
+    justify-content: space-between;
+    margin-top: 8px;
+}
+
+.xp__pager button {
+    padding: 3px 10px;
+    border: 1px solid var(--xp-border);
+    border-radius: 6px;
+    background: var(--xp-canvas);
+    color: var(--xp-text);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.xp__pager button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.xp__run {
+    padding: 5px 16px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--xp-accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 12.5px;
+    cursor: pointer;
 }
 
 .xp__chips {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--ks-spacing-1);
+    gap: 6px;
 }
 
 .xp__chip {
-    padding: 0 var(--ks-spacing-2);
-    border: 1px solid var(--ks-border-primary);
-    border-radius: 999px;
-    background: none;
+    padding: 3px 9px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--xp-accent-soft);
+    color: var(--xp-accent);
+    font-size: 11.5px;
+    font-weight: 600;
     cursor: pointer;
-    color: inherit;
-    font-size: var(--ks-font-size-xs);
 }
 
 .xp__error {
     margin: 0;
-    padding: var(--ks-spacing-2);
-    border: 1px solid var(--ks-border-warning, #d97706);
-    border-radius: var(--ks-border-radius);
-    color: var(--ks-content-warning, #d97706);
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--xp-warn-bg);
+    color: var(--xp-warn);
+    font-size: 12.5px;
     white-space: pre-wrap;
 }
 
@@ -475,82 +587,127 @@ const typeClass = (type: string) => columnKind(type);
 .xp__gridtable {
     border-collapse: collapse;
     width: 100%;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
 }
 
-.xp__gridtable th,
+.xp__gridtable th {
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--xp-border);
+    text-align: left;
+    font-weight: 500;
+    color: var(--xp-dim);
+    white-space: nowrap;
+}
+
 .xp__gridtable td {
-    padding: var(--ks-spacing-1) var(--ks-spacing-2);
-    border-bottom: 1px solid var(--ks-border-primary);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--xp-border);
     text-align: left;
     white-space: nowrap;
 }
 
+.xp__gridtable tr:last-child td {
+    border-bottom: 0;
+}
+
 .xp__gridtable td.xp__num {
-    text-align: right;
+    text-align: left;
 }
 
 .xp__card {
     display: flex;
     flex-direction: column;
-    gap: var(--ks-spacing-1);
-    padding: var(--ks-spacing-2);
-    border: 1px solid var(--ks-border-primary);
-    border-radius: var(--ks-border-radius);
-    background: none;
+    gap: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid var(--xp-border);
+    border-radius: 6px;
+    background: var(--xp-canvas);
     cursor: pointer;
     color: inherit;
     text-align: left;
+}
+
+.xp__card[aria-expanded="true"] {
+    border-color: var(--xp-accent);
 }
 
 .xp__cardhead,
 .xp__cardfoot,
 .xp__top {
     display: flex;
-    align-items: center;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.xp__cardfoot {
     justify-content: space-between;
-    gap: var(--ks-spacing-2);
+    flex-wrap: wrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.xp__cardhead .xp__dim {
+    margin-left: auto;
 }
 
 .xp__grow {
-    flex: 1;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
 }
 
 .xp__tag {
-    padding: 0 var(--ks-spacing-1);
-    border-radius: var(--ks-border-radius);
-    border: 1px solid var(--ks-border-primary);
-    font-size: 0.7rem;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--xp-accent-soft);
+    color: var(--xp-accent);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
 }
 
 .xp__bars {
     display: flex;
     align-items: flex-end;
     gap: 2px;
-    height: 28px;
+    height: 34px;
 }
 
 .xp__bars i {
     flex: 1;
-    background: var(--ks-content-link, #6366f1);
+    border-radius: 2px 2px 0 0;
+    background: var(--xp-accent);
+    opacity: 0.75;
 }
 
 .xp__detail {
     display: flex;
     flex-direction: column;
-    gap: var(--ks-spacing-1);
+    gap: 3px;
+    font-size: 11.5px;
+    color: var(--xp-dim);
+}
+
+.xp__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 70px 36px;
+    align-items: center;
+    gap: 6px;
 }
 
 .xp__topbar {
-    flex: 1;
     height: 6px;
     border-radius: 3px;
-    background: var(--ks-border-primary);
+    background: var(--xp-border);
+    overflow: hidden;
 }
 
 .xp__topbar i {
     display: block;
     height: 100%;
-    border-radius: 3px;
-    background: var(--ks-content-link, #6366f1);
+    background: var(--xp-accent);
 }
 </style>

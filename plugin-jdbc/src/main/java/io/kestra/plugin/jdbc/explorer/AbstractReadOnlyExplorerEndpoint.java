@@ -95,7 +95,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
             try (var connection = engine.openReadOnly(file)) {
                 var result = operation == Operation.CATALOG
                     ? catalog(connection)
-                    : query(connection, context.body());
+                    : query(connection, inputs(context));
                 return PluginEndpointResponse.ofBytes(capped(result), "application/json");
             }
         } catch (IllegalArgumentException e) {
@@ -307,7 +307,29 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
     }
 
     private static int number(Object value, int fallback) {
-        return value instanceof Number number ? number.intValue() : fallback;
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        try {
+            return value instanceof String text ? Integer.parseInt(text.trim()) : fallback;
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    // The host's fetchEndpoint sends the inputs as query parameters, a direct call sends a JSON body.
+    private static Map<String, Object> inputs(PluginEndpointContext context) {
+        var inputs = new java.util.HashMap<String, Object>();
+        for (var name : List.of("sql", "limit", "offset")) {
+            var value = context.param(name);
+            if (value != null) {
+                inputs.put(name, value);
+            }
+        }
+        if (context.body() != null) {
+            inputs.putAll(context.body());
+        }
+        return inputs;
     }
 
     // Rows are dropped from the end until the JSON fits.
