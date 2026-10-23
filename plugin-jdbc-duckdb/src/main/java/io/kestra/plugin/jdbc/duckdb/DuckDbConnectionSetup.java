@@ -117,11 +117,11 @@ final class DuckDbConnectionSetup {
         }
     }
 
-    private static String bundledResourcePath(String extension, String platform) {
+    static String bundledResourcePath(String extension, String platform) {
         return BUNDLED_EXTENSIONS_ROOT + "/" + bundledDuckDbVersion() + "/" + platform + "/" + extension + ".duckdb_extension";
     }
 
-    private static String bundledDuckDbVersion() {
+    static String bundledDuckDbVersion() {
         return BUNDLED_EXTENSION_PROPERTIES.getProperty("duckdb.version", "");
     }
 
@@ -155,7 +155,7 @@ final class DuckDbConnectionSetup {
         return extractedExtension;
     }
 
-    private static String bundledPlatform() {
+    static String bundledPlatform() {
         String osName = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
         if (!osName.contains("linux")) {
             return null;
