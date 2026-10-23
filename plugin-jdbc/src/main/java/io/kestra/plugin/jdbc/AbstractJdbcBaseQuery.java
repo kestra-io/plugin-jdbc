@@ -128,7 +128,9 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     @Schema(
         title = "Named parameter bindings for SQL query",
-        description = "Map of parameter names to values. Use :name placeholders rendered then bound as prepared-statement parameters; supports nulls and typed values"
+        description = """
+            Map of parameter names to values, bound to `:name` placeholders as prepared-statement parameters; supports nulls and typed values. \
+            Colons in literals, quoted identifiers, comments and `::` casts are left as is; a `:name` missing from this map is bound to NULL with a warning."""
     )
     @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
@@ -258,184 +260,48 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
                                                  final Connection conn,
                                                  final String sql) throws SQLException, IllegalVariableEvaluationException {
 
-        // Inject named parameters (ex: ':param')
-        Map<String, Object> namedParamsRendered = runContext.render(this.getParameters()).asMap(String.class, Object.class);
-
-        if (namedParamsRendered.isEmpty()) {
+        if (this.getParameters() == null) {
             return createPreparedStatement(conn, sql);
         }
 
-        NamedParameterSql parsedSql = parseNamedParameters(sql);
-        PreparedStatement stmt = createPreparedStatement(conn, parsedSql.sql());
+        // Inject named parameters (ex: ':param')
+        var rParameters = runContext.render(this.getParameters()).asMap(String.class, Object.class);
 
-        for (int i = 0; i < parsedSql.parameterNames().size(); i++) {
-            stmt.setObject(i + 1, namedParamsRendered.get(parsedSql.parameterNames().get(i)));
+        // casts, literals and comments are skipped, see NamedParameterSql
+        var prepared = NamedParameterSql.parse(sql, this.backslashEscapesInLiterals(), this.hashLineComments());
+
+        var stmt = createPreparedStatement(conn, prepared.sql());
+
+        var names = prepared.names();
+        var undeclared = new LinkedHashSet<String>();
+        for (var i = 0; i < names.size(); i++) {
+            var name = names.get(i);
+            if (!rParameters.containsKey(name)) {
+                undeclared.add(name);
+            }
+            stmt.setObject(i + 1, rParameters.get(name));
+        }
+
+        if (!undeclared.isEmpty()) {
+            runContext.logger().warn("Named parameters {} have no value in `parameters` after rendering (null or not declared) and are bound to NULL", undeclared);
         }
 
         return stmt;
     }
 
     /**
-     * Replaces named parameters in ordinary SQL text while preserving constructs where a colon
-     * is data or syntax: quoted strings and identifiers, PostgreSQL dollar-quoted strings and
-     * casts, and line and block comments. This is deliberately a lexical scanner rather than a
-     * full dialect-specific parser.
+     * Whether a backslash escapes the next character inside a quoted SQL literal ({@code 'it\'s'}).
+     * Standard SQL only doubles the quote; MySQL, MariaDB, ClickHouse and Snowflake opt in.
      */
-    static NamedParameterSql parseNamedParameters(String sql) {
-        StringBuilder preparedSql = new StringBuilder(sql.length());
-        List<String> parameterNames = new ArrayList<>();
-
-        int index = 0;
-        while (index < sql.length()) {
-            char current = sql.charAt(index);
-
-            if (current == '$') {
-                int delimiterEnd = findDollarQuoteDelimiterEnd(sql, index);
-                if (delimiterEnd != -1) {
-                    index = copyDollarQuoted(sql, preparedSql, index, delimiterEnd);
-                    continue;
-                }
-            }
-
-            if (current == '\'' || current == '"' || current == '`') {
-                index = copyQuoted(sql, preparedSql, index, current);
-            } else if (current == '[') {
-                index = copyBracketQuoted(sql, preparedSql, index);
-            } else if (current == '-' && hasNext(sql, index, '-')) {
-                index = copyLineComment(sql, preparedSql, index);
-            } else if (current == '/' && hasNext(sql, index, '*')) {
-                index = copyBlockComment(sql, preparedSql, index);
-            } else if (current == ':' && hasNext(sql, index, ':')) {
-                preparedSql.append("::");
-                index += 2;
-            } else if (current == ':' && index + 1 < sql.length() && isParameterNameCharacter(sql.charAt(index + 1))) {
-                int nameEnd = index + 2;
-                while (nameEnd < sql.length() && isParameterNameCharacter(sql.charAt(nameEnd))) {
-                    nameEnd++;
-                }
-
-                parameterNames.add(sql.substring(index + 1, nameEnd));
-                preparedSql.append('?');
-                index = nameEnd;
-            } else {
-                preparedSql.append(current);
-                index++;
-            }
-        }
-
-        return new NamedParameterSql(preparedSql.toString(), List.copyOf(parameterNames));
+    protected boolean backslashEscapesInLiterals() {
+        return false;
     }
 
-    private static int findDollarQuoteDelimiterEnd(String sql, int start) {
-        int index = start + 1;
-        while (index < sql.length() && isDollarQuoteTagCharacter(sql.charAt(index))) {
-            index++;
-        }
-        return index < sql.length() && sql.charAt(index) == '$' ? index + 1 : -1;
-    }
-
-    private static boolean isDollarQuoteTagCharacter(char character) {
-        return Character.isLetterOrDigit(character) || character == '_';
-    }
-
-    private static int copyDollarQuoted(String sql, StringBuilder preparedSql, int start, int delimiterEnd) {
-        String delimiter = sql.substring(start, delimiterEnd);
-        int closingStart = sql.indexOf(delimiter, delimiterEnd);
-        int end = closingStart == -1 ? sql.length() : closingStart + delimiter.length();
-        preparedSql.append(sql, start, end);
-        return end;
-    }
-
-    private static boolean hasNext(String sql, int index, char expected) {
-        return index + 1 < sql.length() && sql.charAt(index + 1) == expected;
-    }
-
-    private static boolean isParameterNameCharacter(char character) {
-        return character >= 'A' && character <= 'Z'
-            || character >= 'a' && character <= 'z'
-            || character >= '0' && character <= '9'
-            || character == '_';
-    }
-
-    private static int copyQuoted(String sql, StringBuilder preparedSql, int start, char quote) {
-        preparedSql.append(quote);
-        int index = start + 1;
-
-        while (index < sql.length()) {
-            char current = sql.charAt(index);
-            preparedSql.append(current);
-            index++;
-
-            if (current == quote) {
-                if (index < sql.length() && sql.charAt(index) == quote) {
-                    preparedSql.append(quote);
-                    index++;
-                } else {
-                    break;
-                }
-            }
-        }
-
-        return index;
-    }
-
-    private static int copyBracketQuoted(String sql, StringBuilder preparedSql, int start) {
-        preparedSql.append('[');
-        int index = start + 1;
-
-        while (index < sql.length()) {
-            char current = sql.charAt(index);
-            preparedSql.append(current);
-            index++;
-
-            if (current == ']') {
-                if (index < sql.length() && sql.charAt(index) == ']') {
-                    preparedSql.append(']');
-                    index++;
-                } else {
-                    break;
-                }
-            }
-        }
-
-        return index;
-    }
-
-    private static int copyLineComment(String sql, StringBuilder preparedSql, int start) {
-        int index = start;
-        while (index < sql.length() && sql.charAt(index) != '\r' && sql.charAt(index) != '\n') {
-            preparedSql.append(sql.charAt(index));
-            index++;
-        }
-        return index;
-    }
-
-    private static int copyBlockComment(String sql, StringBuilder preparedSql, int start) {
-        int depth = 0;
-        int index = start;
-
-        while (index < sql.length()) {
-            if (index + 1 < sql.length() && sql.charAt(index) == '/' && sql.charAt(index + 1) == '*') {
-                preparedSql.append("/*");
-                depth++;
-                index += 2;
-            } else if (index + 1 < sql.length() && sql.charAt(index) == '*' && sql.charAt(index + 1) == '/') {
-                preparedSql.append("*/");
-                depth--;
-                index += 2;
-                if (depth == 0) {
-                    break;
-                }
-            } else {
-                preparedSql.append(sql.charAt(index));
-                index++;
-            }
-        }
-
-        return index;
-    }
-
-    record NamedParameterSql(String sql, List<String> parameterNames) {
+    /**
+     * Whether {@code #} starts a line comment, as in MySQL, MariaDB and ClickHouse.
+     */
+    protected boolean hashLineComments() {
+        return false;
     }
 
     protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {

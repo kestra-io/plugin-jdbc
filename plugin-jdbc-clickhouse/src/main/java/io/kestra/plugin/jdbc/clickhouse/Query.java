@@ -110,6 +110,16 @@ import java.time.ZoneId;
 public class Query extends AbstractJdbcQuery implements ClickhouseConnectionInterface {
 
     @Override
+    protected boolean backslashEscapesInLiterals() {
+        return true;
+    }
+
+    @Override
+    protected boolean hashLineComments() {
+        return true;
+    }
+
+    @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new ClickHouseCellConverter(zoneId);
     }

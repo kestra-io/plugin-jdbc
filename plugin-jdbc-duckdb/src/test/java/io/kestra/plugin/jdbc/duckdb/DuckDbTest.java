@@ -5,6 +5,7 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.storages.StorageInterface;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.core.utils.IdUtils;
@@ -111,6 +112,67 @@ class DuckDbTest {
         assertThat(runOutput.getRow(), notNullValue());
 
         assertThat(runOutput.getRow().get("t_integer"), is(2147483647));
+    }
+
+    @Test
+    void parametersLeaveCastsUntouched() throws Exception {
+        // #1079: '::INTEGER' must not become a placeholder
+        var runContext = runContextFactory.of(ImmutableMap.of());
+
+        var task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .parameters(Property.ofValue(Map.of("x", 7)))
+            .sql(Property.ofValue("SELECT '7'::INTEGER AS casted, :x AS bound"))
+            .build();
+
+        var runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("casted"), is(7));
+        assertThat(runOutput.getRow().get("bound"), is(7));
+    }
+
+    @Test
+    void nullParameterFromYamlIsBound() throws Exception {
+        // rendering drops null-valued entries, so :x must still be replaced
+        var runContext = runContextFactory.of(ImmutableMap.of());
+
+        var task = JacksonMapper.ofYaml().readValue(
+            """
+            id: duckdb_null_parameter
+            type: io.kestra.plugin.jdbc.duckdb.Query
+            fetchType: FETCH_ONE
+            sql: SELECT :x IS NULL AS n, :y AS y
+            parameters:
+              x: null
+              y: 1
+            """,
+            Query.class
+        );
+
+        var runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("n"), is(true));
+        assertThat(runOutput.getRow().get("y"), is(1));
+    }
+
+    @Test
+    void parametersLeaveStringLiteralsUntouched() throws Exception {
+        var runContext = runContextFactory.of(ImmutableMap.of());
+
+        var task = Query.builder()
+            .fetchType(Property.ofValue(FETCH_ONE))
+            .parameters(Property.ofValue(Map.of("label", "morning")))
+            .sql(Property.ofValue("SELECT '10:30' AS at, :label AS label, :label AS again"))
+            .build();
+
+        var runOutput = task.run(runContext);
+
+        assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getRow().get("at"), is("10:30"));
+        assertThat(runOutput.getRow().get("label"), is("morning"));
+        assertThat(runOutput.getRow().get("again"), is("morning"));
     }
 
     @Test
