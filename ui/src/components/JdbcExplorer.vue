@@ -20,6 +20,7 @@ import {
     summarySql,
     toColumnStats,
 } from "../lib/explorer";
+import { formatBytes } from "../lib/details";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -46,6 +47,7 @@ const { t } = useI18n({
             max: "max",
             avg: "avg",
             view: "view",
+            unsupported: "No explorer for task type {type}.",
             noDatabase: "This task run has no database file: set outputDbFile to true on the task.",
             hintDuckdb: "Click a table or view to preview it. Then try DESCRIBE or SUMMARIZE.",
             hintSqlite: "SQLite has no DESCRIBE or SUMMARIZE: try Table info (PRAGMA table_info).",
@@ -68,7 +70,9 @@ const { t } = useI18n({
 const props = defineProps<KnownSlotProps["execution-artifact"]>();
 const emit = defineEmits<{ close: [] }>();
 
-const engine = computed(() => engineOf(props.taskType));
+// The host leaves taskType undefined in the execution-artifact slot, the task carries its type.
+const taskType = computed(() => props.taskType ?? (props.task as { type?: string } | undefined)?.type);
+const engine = computed(() => engineOf(taskType.value));
 const engineLabel = computed(() => (engine.value === "duckdb" ? "DuckDB" : "SQLite"));
 const tenant = computed(() => props.tenant ?? window.localStorage?.getItem("selectedTenant") ?? "main");
 const taskRun = computed(() => {
@@ -96,7 +100,7 @@ const call = <T,>(operation: "catalog" | "query", body: Record<string, unknown>)
     post<T>(
         endpointPath({
             tenant: tenant.value,
-            taskType: props.taskType,
+            taskType: taskType.value!,
             engine: engine.value!,
             operation,
             executionId: props.execution!.id as string,
@@ -192,7 +196,8 @@ const typeClass = (type: string) => columnKind(type);
 </script>
 
 <template>
-    <div v-if="engine" class="xp" role="dialog" :aria-label="t('title', { engine: engineLabel })">
+    <p v-if="!engine" class="xp__empty">{{ t("unsupported", { type: taskType ?? "unknown" }) }}</p>
+    <div v-else class="xp" role="dialog" :aria-label="t('title', { engine: engineLabel })">
         <header class="xp__header">
             <h3 class="xp__title">{{ t("title", { engine: engineLabel }) }}</h3>
             <span class="xp__pill">{{ t("readOnly") }}</span>
