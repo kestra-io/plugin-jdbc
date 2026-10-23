@@ -73,3 +73,9 @@ export function summaryRows(opts: {
 export function safeHref(value: unknown): string | undefined {
     return typeof value === "string" && /^https?:\/\//i.test(value) ? value : undefined;
 }
+
+// Internal storage files go through the execution file route (same origin, session auth).
+export function fileHref(value: unknown, tenant: string, executionId?: string): string | undefined {
+    if (typeof value !== "string" || !value.startsWith("kestra://") || !executionId) return safeHref(value);
+    return `/api/v1/${encodeURIComponent(tenant)}/executions/${encodeURIComponent(executionId)}/file?path=${encodeURIComponent(value)}`;
+}

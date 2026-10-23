@@ -3,7 +3,7 @@ import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { KsTopologyDetails } from "@kestra-io/design-system";
-import { DASH, formatBytes, formatDuration, formatNumber, safeHref } from "../lib/details";
+import { DASH, fileHref, formatBytes, formatDuration, formatNumber } from "../lib/details";
 
 const { t } = useI18n({
     inheritLocale: true,
@@ -42,6 +42,9 @@ const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
     return list?.filter((tr: any) => tr.taskId === props.task?.id).at(-1);
 });
+
+const tenant = computed(() => props.tenant ?? window.localStorage?.getItem("selectedTenant") ?? "main");
+const href = (uri: string) => fileHref(uri, tenant.value, props.execution?.id as string | undefined);
 
 const outputs = ref<Record<string, any> | null>(null);
 
@@ -147,7 +150,7 @@ const files = computed(() =>
                 <h4 class="jdbc-modal__title">{{ t("files") }}</h4>
                 <div v-for="file in files" :key="file.key" class="jdbc-modal__kv">
                     <span>{{ file.label }}</span>
-                    <a v-if="safeHref(file.uri)" class="jdbc-modal__link" :href="safeHref(file.uri)" target="_blank" rel="noopener noreferrer">{{ t("download") }} ↗</a>
+                    <a v-if="href(file.uri)" class="jdbc-modal__link" :href="href(file.uri)" target="_blank" rel="noopener noreferrer">{{ t("download") }} ↗</a>
                     <code v-else class="jdbc-modal__mono">{{ file.uri }}</code>
                 </div>
             </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { databaseFromUrl, safeHref, summaryRows } from "../src/lib/details";
+import { databaseFromUrl, fileHref, safeHref, summaryRows } from "../src/lib/details";
 
 const labels = {
     database: "Database",
@@ -57,5 +57,17 @@ describe("safeHref", () => {
         expect(safeHref("https://example.com/a")).toBe("https://example.com/a");
         expect(safeHref("javascript:alert(1)")).toBeUndefined();
         expect(safeHref("kestra:///file.ion")).toBeUndefined();
+    });
+});
+
+describe("fileHref", () => {
+    it("routes kestra:// files through the execution file endpoint", () => {
+        expect(fileHref("kestra:///a/b.ion", "main", "E1")).toBe("/api/v1/main/executions/E1/file?path=kestra%3A%2F%2F%2Fa%2Fb.ion");
+    });
+
+    it("keeps http(s) and drops anything else", () => {
+        expect(fileHref("https://example.com/a", "main", "E1")).toBe("https://example.com/a");
+        expect(fileHref("javascript:alert(1)", "main", "E1")).toBeUndefined();
+        expect(fileHref("kestra:///a/b.ion", "main", undefined)).toBeUndefined();
     });
 });
