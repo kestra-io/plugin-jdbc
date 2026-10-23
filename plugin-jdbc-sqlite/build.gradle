@@ -12,6 +12,11 @@ jar {
     }
 }
 
+test {
+    // base64 of "s3cr3t-value", read by the default secret service to test statement masking
+    environment "SECRET_JDBC_MASK_TEST", "czNjcjN0LXZhbHVl"
+}
+
 dependencies {
     jdbcDriver 'org.xerial:sqlite-jdbc:3.53.4.0'
     implementation project(':plugin-jdbc')

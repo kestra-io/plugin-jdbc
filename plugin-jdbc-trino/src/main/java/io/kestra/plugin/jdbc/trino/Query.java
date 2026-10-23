@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc.trino;
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.runners.RunContext;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
@@ -63,6 +64,23 @@ import java.time.ZoneId;
             type = Counter.TYPE,
             unit = "rows",
             description = "The number of fetched rows."
+        ),
+        @Metric(
+            name = "duration",
+            type = Timer.TYPE,
+            description = "The duration of the SQL execution, including reading the result rows."
+        ),
+        @Metric(
+            name = "rows.affected",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of rows affected, as reported by the JDBC driver."
+        ),
+        @Metric(
+            name = "bytes",
+            type = Counter.TYPE,
+            unit = "bytes",
+            description = "The size of the stored result file."
         )
     }
 )

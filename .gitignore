@@ -24,3 +24,7 @@ plugin-jdbc-sqlite/*.sqlite
 plugin-jdbc-duckdb/*.db
 .factorypath
 bin/
+
+node_modules/
+plugin-jdbc*/src/main/resources/plugin-ui/
+/src/main/resources/plugin-ui/
