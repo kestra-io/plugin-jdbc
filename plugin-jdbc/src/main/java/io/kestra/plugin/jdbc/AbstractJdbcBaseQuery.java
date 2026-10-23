@@ -129,12 +129,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Schema(
         title = "Named parameter bindings for SQL query",
         description = """
-            Map of parameter names to values. Each `:name` placeholder in the SQL is replaced by a `?` marker \
-            and the value is bound as a prepared-statement parameter; supports nulls and typed values. \
-            Colons inside quoted literals, quoted identifiers, dollar-quoted bodies (`$$ ... $$`), PostgreSQL `E'...'` strings \
-            and comments, and `::` casts such as `'7'::INTEGER`, are left as written. Oracle `q'[...]'` literals are not recognized: \
-            double the quote (`''`) inside a standard literal instead. A `:name` that is absent from this map is bound to NULL \
-            and logged as a warning."""
+            Map of parameter names to values, bound to `:name` placeholders as prepared-statement parameters; supports nulls and typed values. \
+            Colons in literals, quoted identifiers, comments and `::` casts are left as is; a `:name` missing from this map is bound to NULL with a warning."""
     )
     @PluginProperty(group = "advanced")
     protected Property<Map<String, Object>> parameters;
