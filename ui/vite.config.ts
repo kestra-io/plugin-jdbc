@@ -40,20 +40,18 @@ const exposes = Object.fromEntries(
                 slotName: "topology-task-modal" as const,
                 path: "./src/components/JdbcTaskModal.vue",
             },
-            {
-                slotName: "execution-artifact/details" as const,
-                path: "./src/components/JdbcTaskModal.vue",
-                additionalProperties: { title: "Query details" },
-            },
-            ...(explorable
-                ? [
-                      {
-                          slotName: "execution-artifact/explorer" as const,
-                          path: "./src/components/JdbcExplorer.vue",
-                          additionalProperties: { title: "Explorer" },
-                      },
-                  ]
-                : []),
+            // The SDK accepts a single `execution-artifact` per task type: the explorer where there is one, else the details.
+            explorable
+                ? {
+                      slotName: "execution-artifact" as const,
+                      path: "./src/components/JdbcExplorer.vue",
+                      additionalProperties: { title: "Explorer" },
+                  }
+                : {
+                      slotName: "execution-artifact" as const,
+                      path: "./src/components/JdbcTaskModal.vue",
+                      additionalProperties: { title: "Query details" },
+                  },
         ],
     ]),
 );
