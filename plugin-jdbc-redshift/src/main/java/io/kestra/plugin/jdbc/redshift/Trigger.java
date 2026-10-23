@@ -58,6 +58,22 @@ import java.sql.SQLException;
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements RedshiftConnectionInterface{
+    private Property<Boolean> iamAuth;
+
+    private Property<String> accessKeyId;
+
+    private Property<String> secretKeyId;
+
+    private Property<String> sessionToken;
+
+    private Property<String> region;
+
+    private Property<String> dbUser;
+
+    private Property<Boolean> autoCreate;
+
+    private Property<String> workgroupName;
+
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
         var query = Query.builder()
@@ -66,6 +82,14 @@ public class Trigger extends AbstractJdbcTrigger implements RedshiftConnectionIn
             .url(this.getUrl())
             .username(this.getUsername())
             .password(this.getPassword())
+            .iamAuth(this.getIamAuth())
+            .accessKeyId(this.getAccessKeyId())
+            .secretKeyId(this.getSecretKeyId())
+            .sessionToken(this.getSessionToken())
+            .region(this.getRegion())
+            .dbUser(this.getDbUser())
+            .autoCreate(this.getAutoCreate())
+            .workgroupName(this.getWorkgroupName())
             .timeZoneId(this.getTimeZoneId())
             .sql(this.getSql())
             .afterSQL(this.getAfterSQL())
