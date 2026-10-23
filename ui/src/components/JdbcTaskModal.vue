@@ -176,20 +176,6 @@ const files = computed(() =>
     color: var(--jm-text);
 }
 
-:global(html.dark) .jdbc-modal,
-:global(.dark) .jdbc-modal {
-    --jm-canvas: #10121a;
-    --jm-border: #2a2d3c;
-    --jm-text: #f2f3f8;
-    --jm-dim: #a3a7bd;
-    --jm-accent: #a45cff;
-    --jm-accent-soft: #2b1d45;
-    --jm-ok: #46d28b;
-    --jm-ok-bg: #12301f;
-    --jm-warn: #f5b25c;
-    --jm-warn-bg: #3a2810;
-}
-
 .jdbc-modal__section {
     margin: 20px 16px 0;
 }
@@ -304,5 +290,21 @@ const files = computed(() =>
     font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
     font-size: 12px;
     white-space: pre-wrap;
+}
+</style>
+
+<style>
+/* Unscoped on purpose: the host theme class lives on html, outside this component. */
+html.dark .jdbc-modal {
+    --jm-canvas: #10121a;
+    --jm-border: #2a2d3c;
+    --jm-text: #f2f3f8;
+    --jm-dim: #a3a7bd;
+    --jm-accent: #a45cff;
+    --jm-accent-soft: #2b1d45;
+    --jm-ok: #46d28b;
+    --jm-ok-bg: #12301f;
+    --jm-warn: #f5b25c;
+    --jm-warn-bg: #3a2810;
 }
 </style>

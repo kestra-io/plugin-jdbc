@@ -54,10 +54,10 @@ describe("samples", () => {
         expect(sql).toContain('SELECT * FROM (SUMMARIZE "people")');
     });
 
-    it("offers table info for SQLite and flags the refusal examples", () => {
+    it("offers table info for SQLite and no write or file samples", () => {
         const list = samples("sqlite", "it's");
         expect(list.find((s) => s.key === "tableInfo")?.sql).toBe("PRAGMA table_info('it''s')");
-        expect(list.filter((s) => s.refused).map((s) => s.key)).toEqual(["write", "attach"]);
+        expect(list.map((s) => s.key)).toEqual(["tableInfo", "count"]);
     });
 });
 

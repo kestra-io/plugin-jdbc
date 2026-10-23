@@ -69,14 +69,13 @@ export function columnKind(type: string): ColumnKind {
     return "text";
 }
 
-export type Sample = { key: string; sql: string; refused?: boolean };
+export const previewSql = (table: string) => `SELECT * FROM ${quoteIdentifier(table)} LIMIT 100`;
+
+export type Sample = { key: string; sql: string };
 
 export function samples(engine: Engine, table?: string): Sample[] {
     const t = table ? quoteIdentifier(table) : "my_table";
-    const common: Sample[] = [
-        { key: "preview", sql: `SELECT * FROM ${t} LIMIT 100` },
-        { key: "count", sql: `SELECT count(*) AS total FROM ${t}` },
-    ];
+    const count: Sample = { key: "count", sql: `SELECT count(*) AS total FROM ${t}` };
     const specific: Sample[] =
         engine === "duckdb"
             ? [
@@ -84,13 +83,7 @@ export function samples(engine: Engine, table?: string): Sample[] {
                   { key: "summarize", sql: `SELECT * FROM (SUMMARIZE ${t})` },
               ]
             : [{ key: "tableInfo", sql: `PRAGMA table_info(${table ? `'${table.replace(/'/g, "''")}'` : "'my_table'"})` }];
-    const refusals: Sample[] = [
-        { key: "write", sql: `INSERT INTO ${t} DEFAULT VALUES`, refused: true },
-        engine === "duckdb"
-            ? { key: "fileRead", sql: "SELECT * FROM read_csv('/etc/passwd')", refused: true }
-            : { key: "attach", sql: "ATTACH DATABASE '/tmp/other.db' AS other", refused: true },
-    ];
-    return [...common.slice(0, 1), ...specific, ...common.slice(1), ...refusals];
+    return [...specific, count];
 }
 
 const source = (sql: string) => `(${stripTrailingSemicolon(sql)}) q`;

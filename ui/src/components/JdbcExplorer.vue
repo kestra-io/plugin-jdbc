@@ -14,6 +14,7 @@ import {
     formatCell,
     histogramSql,
     pageLabel,
+    previewSql,
     post,
     quoteIdentifier,
     samples,
@@ -55,20 +56,15 @@ const { t } = useI18n({
                 "One statement checked with json_serialize_sql, file attached READ_ONLY, external access off, settings locked, 1,000 rows per page, 30 s timeout.",
             guardSqlite:
                 "First keyword allowlist, mode=ro with query_only, ATTACH and load_extension refused, 1,000 rows per page, 30 s timeout.",
-            preview: "Preview",
             count: "Count",
             describe: "DESCRIBE",
             summarize: "SUMMARIZE",
             tableInfo: "Table info",
-            write: "Try a write",
-            fileRead: "Try a file read",
-            attach: "Try ATTACH",
         },
     },
 });
 
 const props = defineProps<KnownSlotProps["execution-artifact"]>();
-const emit = defineEmits<{ close: [] }>();
 
 // The host leaves taskType undefined in the execution-artifact slot, the task carries its type.
 const taskType = computed(() => props.taskType ?? (props.task as { type?: string } | undefined)?.type);
@@ -139,7 +135,7 @@ watch(() => props.execution?.id, (id) => id && load(), { immediate: true });
 
 function select(table: string) {
     selected.value = table;
-    sql.value = samples(engine.value!, table)[0].sql;
+    sql.value = previewSql(table);
     run(0);
 }
 
@@ -213,7 +209,6 @@ const typeClass = (type: string) => columnKind(type);
                 {{ task?.id }} · {{ fileName }}
                 <template v-if="typeof outputs?.databaseSize === 'number'"> · {{ formatBytes(outputs.databaseSize) }}</template>
             </span>
-            <button class="xp__close" type="button" aria-label="Close" @click="emit('close')">×</button>
         </header>
 
         <p v-if="outputs && !hasDatabase" class="xp__empty">{{ t("noDatabase") }}</p>
@@ -360,21 +355,6 @@ const typeClass = (type: string) => columnKind(type);
     line-height: 1.5;
 }
 
-:global(html.dark) .xp,
-:global(.dark) .xp {
-    --xp-surface: #151722;
-    --xp-canvas: #10121a;
-    --xp-border: #2a2d3c;
-    --xp-text: #f2f3f8;
-    --xp-dim: #a3a7bd;
-    --xp-accent: #a45cff;
-    --xp-accent-soft: #2b1d45;
-    --xp-ok: #46d28b;
-    --xp-ok-bg: #12301f;
-    --xp-warn: #f5b25c;
-    --xp-warn-bg: #3a2810;
-}
-
 .xp button {
     font: inherit;
 }
@@ -416,16 +396,6 @@ const typeClass = (type: string) => columnKind(type);
     height: 7px;
     border-radius: 50%;
     background: currentColor;
-}
-
-.xp__close {
-    margin-left: auto;
-    border: 0;
-    background: none;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    color: var(--xp-dim);
 }
 
 .xp__grid {
@@ -709,5 +679,22 @@ const typeClass = (type: string) => columnKind(type);
     display: block;
     height: 100%;
     background: var(--xp-accent);
+}
+</style>
+
+<style>
+/* Unscoped on purpose: the host theme class lives on html, outside this component. */
+html.dark .xp {
+    --xp-surface: #151722;
+    --xp-canvas: #10121a;
+    --xp-border: #2a2d3c;
+    --xp-text: #f2f3f8;
+    --xp-dim: #a3a7bd;
+    --xp-accent: #a45cff;
+    --xp-accent-soft: #2b1d45;
+    --xp-ok: #46d28b;
+    --xp-ok-bg: #12301f;
+    --xp-warn: #f5b25c;
+    --xp-warn-bg: #3a2810;
 }
 </style>
