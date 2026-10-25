@@ -12,8 +12,18 @@ jar {
     }
 }
 
+configurations.configureEach {
+    // The driver builds no async AWS client, so the Netty one is dead weight
+    exclude group: 'software.amazon.awssdk', module: 'netty-nio-client'
+}
+
 dependencies {
     jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.2.9'
+    // The driver declares these optional, its IAM authentication needs them at runtime
+    implementation 'software.amazon.awssdk:redshift'
+    implementation 'software.amazon.awssdk:redshiftserverless'
+    implementation 'software.amazon.awssdk:sts'
+    implementation 'software.amazon.awssdk:apache-client'
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')

@@ -54,16 +54,44 @@ import java.sql.SQLException;
                     sql: "SELECT * FROM my_table"
                     fetchType: FETCH
                 """
+        ),
+        @Example(
+            title = "Watch a provisioned Redshift cluster with IAM authentication instead of a database password.",
+            full = true,
+            code = """
+                id: redshift_trigger_iam
+                namespace: company.team
+
+                tasks:
+                  - id: log
+                    type: io.kestra.plugin.core.log.Log
+                    message: "Found {{ trigger.size }} new rows"
+
+                triggers:
+                  - id: watch
+                    type: io.kestra.plugin.jdbc.redshift.Trigger
+                    interval: "PT5M"
+                    url: jdbc:redshift://my-cluster.abc123xyz789.eu-central-1.redshift.amazonaws.com:5439/dev
+                    accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+                    secretKeyId: "{{ secret('AWS_SECRET_ACCESS_KEY') }}"
+                    region: eu-central-1
+                    dbUser: kestra
+                    sql: "SELECT * FROM orders WHERE processed = false"
+                    fetchType: FETCH
+                """
         )
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements RedshiftConnectionInterface{
     private Property<Boolean> iamAuth;
 
+    @ToString.Exclude
     private Property<String> accessKeyId;
 
+    @ToString.Exclude
     private Property<String> secretKeyId;
 
+    @ToString.Exclude
     private Property<String> sessionToken;
 
     private Property<String> region;

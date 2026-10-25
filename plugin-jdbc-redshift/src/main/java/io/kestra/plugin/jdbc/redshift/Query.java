@@ -99,10 +99,13 @@ import java.time.ZoneId;
 public class Query extends AbstractJdbcQuery implements RedshiftConnectionInterface {
     private Property<Boolean> iamAuth;
 
+    @ToString.Exclude
     private Property<String> accessKeyId;
 
+    @ToString.Exclude
     private Property<String> secretKeyId;
 
+    @ToString.Exclude
     private Property<String> sessionToken;
 
     private Property<String> region;
