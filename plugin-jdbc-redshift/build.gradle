@@ -18,7 +18,7 @@ configurations.configureEach {
 }
 
 dependencies {
-    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.2.9'
+    jdbcDriver 'com.amazon.redshift:redshift-jdbc42:2.3.0'
     // The driver declares these optional, its IAM authentication needs them at runtime
     implementation 'software.amazon.awssdk:redshift'
     implementation 'software.amazon.awssdk:redshiftserverless'
