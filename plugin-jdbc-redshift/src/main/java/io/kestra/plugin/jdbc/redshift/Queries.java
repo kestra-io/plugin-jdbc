@@ -6,6 +6,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
@@ -47,6 +48,26 @@ import java.time.ZoneId;
                        sql: SELECT count(*) FROM employee; SELECT count(*) FROM laptop;
                        fetchType: FETCH_ONE
                    """
+        ),
+        @Example(
+            title = "Run several queries on Redshift Serverless with temporary AWS credentials instead of a database password.",
+            full = true,
+            code = """
+                   id: redshift_queries_iam
+                   namespace: company.team
+
+                   tasks:
+                     - id: queries
+                       type: io.kestra.plugin.jdbc.redshift.Queries
+                       url: jdbc:redshift://my-workgroup.123456789012.eu-central-1.redshift-serverless.amazonaws.com:5439/dev
+                       accessKeyId: "{{ secret('AWS_ACCESS_KEY_ID') }}"
+                       secretKeyId: "{{ secret('AWS_SECRET_ACCESS_KEY') }}"
+                       sessionToken: "{{ secret('AWS_SESSION_TOKEN') }}"
+                       workgroupName: my-workgroup
+                       region: eu-central-1
+                       sql: SELECT count(*) FROM orders; SELECT max(created_at) FROM orders;
+                       fetchType: FETCH_ONE
+                   """
         )
     },
     metrics = {
@@ -59,6 +80,25 @@ import java.time.ZoneId;
     }
 )
 public class Queries extends AbstractJdbcQueries implements RedshiftConnectionInterface {
+    private Property<Boolean> iamAuth;
+
+    @ToString.Exclude
+    private Property<String> accessKeyId;
+
+    @ToString.Exclude
+    private Property<String> secretKeyId;
+
+    @ToString.Exclude
+    private Property<String> sessionToken;
+
+    private Property<String> region;
+
+    private Property<String> dbUser;
+
+    private Property<Boolean> autoCreate;
+
+    private Property<String> workgroupName;
+
     @Override
     protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
         return new RedshiftCellConverter(zoneId);
