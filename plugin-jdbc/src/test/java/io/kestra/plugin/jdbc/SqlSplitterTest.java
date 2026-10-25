@@ -456,4 +456,64 @@ class SqlSplitterTest {
         assertEquals(1, queries.length);
         assertEquals(sql.trim(), queries[0]);
     }
+
+    @Test
+    void postgresDollarQuotedFunctionFollowedByStatement() {
+        String function = """
+            CREATE OR REPLACE FUNCTION answer() RETURNS int AS $$
+            BEGIN
+              RETURN 42;
+            END;
+            $$ LANGUAGE plpgsql""";
+        String sql = function + ";\nSELECT answer();";
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals(function, queries[0]);
+        assertEquals("SELECT answer()", queries[1]);
+    }
+
+    @Test
+    void postgresTaggedDollarQuotedProcedureFollowedByStatement() {
+        String procedure = "CREATE PROCEDURE p() LANGUAGE plpgsql AS $body$ BEGIN INSERT INTO t VALUES (1); END; $body$";
+        String sql = procedure + "; CALL p();";
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals(procedure, queries[0]);
+        assertEquals("CALL p()", queries[1]);
+    }
+
+    @Test
+    void transactionStatementsAreSplit() {
+        String sql = "BEGIN; INSERT INTO t VALUES (1); COMMIT; SELECT count(*) FROM t;";
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(4, queries.length);
+        assertEquals("BEGIN", queries[0]);
+        assertEquals("INSERT INTO t VALUES (1)", queries[1]);
+        assertEquals("COMMIT", queries[2]);
+        assertEquals("SELECT count(*) FROM t", queries[3]);
+    }
+
+    @Test
+    void beginTransactionWithModesIsSplit() {
+        String sql = """
+            BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+            UPDATE t SET v = 1;
+            begin work;
+            COMMIT;
+            """;
+
+        String[] queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(4, queries.length);
+        assertEquals("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE", queries[0]);
+        assertEquals("UPDATE t SET v = 1", queries[1]);
+        assertEquals("begin work", queries[2]);
+        assertEquals("COMMIT", queries[3]);
+    }
 }

@@ -3,8 +3,14 @@ package io.kestra.plugin.jdbc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class SqlSplitter {
+
+    private static final Pattern TRANSACTION_BEGIN = Pattern.compile(
+        "\\s*BEGIN(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|NOT|DEFERRABLE)\\b[^;]*)?\\s*;",
+        Pattern.CASE_INSENSITIVE
+    );
 
     public static String[] getQueries(String sql) {
         List<String> statements = new ArrayList<>();
@@ -270,6 +276,12 @@ public class SqlSplitter {
                             doDollarBlock = true;
                         }
 
+                        // Postgres CREATE FUNCTION / PROCEDURE: the body is the dollar-quoted string, so the
+                        // statement ends at the next top-level ';' instead of waiting for a PL/SQL "END ...;".
+                        if (plsqlDdlDepth > 0) {
+                            plsqlDdlDepth--;
+                        }
+
                         inDollarQuote = true;
                         dollarTag = candidate;
                         current.append(candidate);
@@ -300,6 +312,11 @@ public class SqlSplitter {
                     }
 
                     if (c == ';') {
+                        // "BEGIN;" / "BEGIN TRANSACTION ...;" / "BEGIN WORK;" starts a transaction, not a BEGIN...END block.
+                        if (beginDepth == 1 && plsqlDdlDepth == 0 && TRANSACTION_BEGIN.matcher(current).matches()) {
+                            beginDepth = 0;
+                        }
+
                         // Close PL/SQL DDL unit on final "END ...;"
                         if (plsqlDdlDepth > 0 && sawEndToken) {
                             plsqlDdlDepth = Math.max(0, plsqlDdlDepth - 1);
