@@ -1,6 +1,5 @@
 package io.kestra.plugin.jdbc.redshift;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
@@ -82,7 +81,7 @@ public interface RedshiftConnectionInterface extends JdbcConnectionInterface {
     @Override
     default Properties connectionProperties(RunContext runContext) throws Exception {
         var props = JdbcConnectionInterface.super.connectionProperties(runContext);
-        var rAccessKeyId = render(runContext, this.getAccessKeyId());
+        var rAccessKeyId = runContext.render(this.getAccessKeyId()).as(String.class).orElse(null);
         var rIamAuth = runContext.render(this.getIamAuth()).as(Boolean.class).orElse(false);
         if (rAccessKeyId == null && !rIamAuth) {
             return props;
@@ -104,38 +103,27 @@ public interface RedshiftConnectionInterface extends JdbcConnectionInterface {
         props.remove("password");
 
         if (rAccessKeyId != null) {
-            var rSecretKeyId = render(runContext, this.getSecretKeyId());
-            if (rSecretKeyId == null) {
-                throw new IllegalArgumentException("`secretKeyId` is required when `accessKeyId` is set.");
-            }
+            var rSecretKeyId = runContext.render(this.getSecretKeyId()).as(String.class)
+                .orElseThrow(() -> new IllegalArgumentException("`secretKeyId` is required when `accessKeyId` is set."));
             props.setProperty("AccessKeyID", rAccessKeyId);
             props.setProperty("SecretAccessKey", rSecretKeyId);
-            putIfPresent(props, "SessionToken", render(runContext, this.getSessionToken()));
+            runContext.render(this.getSessionToken()).as(String.class).ifPresent(rSessionToken -> props.setProperty("SessionToken", rSessionToken));
         }
-        putIfPresent(props, "Region", render(runContext, this.getRegion()));
+        runContext.render(this.getRegion()).as(String.class).ifPresent(rRegion -> props.setProperty("Region", rRegion));
 
-        var rWorkgroupName = render(runContext, this.getWorkgroupName());
+        var rWorkgroupName = runContext.render(this.getWorkgroupName()).as(String.class).orElse(null);
         if (rWorkgroupName != null) {
             props.setProperty("isServerless", "true");
             props.setProperty("serverlessWorkGroup", rWorkgroupName);
         } else {
-            var rDbUser = render(runContext, this.getDbUser());
-            putIfPresent(props, "DbUser", rDbUser != null ? rDbUser : username);
+            var rDbUser = runContext.render(this.getDbUser()).as(String.class).orElse(username);
+            if (rDbUser != null) {
+                props.setProperty("DbUser", rDbUser);
+            }
             runContext.render(this.getAutoCreate()).as(Boolean.class)
                 .ifPresent(rAutoCreate -> props.setProperty("AutoCreate", rAutoCreate.toString()));
         }
 
         return props;
-    }
-
-    private static String render(RunContext runContext, Property<String> property) throws IllegalVariableEvaluationException {
-        var rValue = runContext.render(property).as(String.class).orElse(null);
-        return rValue == null || rValue.isBlank() ? null : rValue;
-    }
-
-    private static void putIfPresent(Properties props, String key, String value) {
-        if (value != null) {
-            props.setProperty(key, value);
-        }
     }
 }
