@@ -8,7 +8,7 @@ def duckdbCommunityExtensionVersion = providers.provider {
     if (driver == null) {
         throw new GradleException("Cannot bundle DuckDB community extensions: org.duckdb:duckdb_jdbc is not on the runtime classpath.")
     }
-    "v" + driver.version.tokenize(".").take(3).join(".")
+    "v${driver.version.tokenize(".").take(3).join(".")}"
 }
 def bundledDuckDbExtensionsDir = layout.buildDirectory.dir("generated/duckdb-community-extensions")
 def bundledDuckDbExtensions = [
