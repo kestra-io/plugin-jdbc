@@ -80,9 +80,9 @@ class DuckDbQueriesTest {
 
     @Test
     void namedParametersDoNotCorruptQuotedIdentifiers() throws Exception {
-        RunContext runContext = runContextFactory.of(Map.of());
+        var runContext = runContextFactory.of(Map.of());
 
-        Queries task = Queries.builder()
+        var task = Queries.builder()
             .fetchType(Property.ofValue(FETCH))
             .parameters(Property.ofValue(Map.of("expected", 42)))
             .sql(Property.ofValue("""
@@ -91,7 +91,7 @@ class DuckDbQueriesTest {
                 """))
             .build();
 
-        Queries.Output runOutput = task.run(runContext);
+        var runOutput = task.run(runContext);
 
         assertThat(runOutput.getOutputs(), hasSize(1));
         assertThat(runOutput.getOutputs().getFirst().getRows(), hasSize(1));
