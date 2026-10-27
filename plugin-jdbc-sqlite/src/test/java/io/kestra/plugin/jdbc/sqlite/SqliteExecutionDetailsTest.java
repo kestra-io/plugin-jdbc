@@ -151,6 +151,25 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
     }
 
     @Test
+    void statementMasksNamespacedSecretsAndTheirBase64Form() throws Exception {
+        var runContext = runContextFactory.of(Map.of("flow", Map.of(
+            "id", "secret_flow",
+            "namespace", "io.kestra.tests",
+            "tenantId", TenantService.MAIN_TENANT
+        )));
+
+        var output = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .outputStatement(Property.ofValue(true))
+            .sql(Property.ofExpression("SELECT '{{ secret('JDBC_MASK_TEST', namespace='io.kestra.tests') }}' AS token, 'czNjcjN0LXZhbHVl' AS encoded"))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .build()
+            .run(runContext);
+
+        assertThat(output.getStatement(), is("SELECT '***' AS token, '***' AS encoded"));
+    }
+
+    @Test
     void queriesExposeStatementsFileAndTotals() throws Exception {
         var runContext = runContextFactory.of(ImmutableMap.of());
 

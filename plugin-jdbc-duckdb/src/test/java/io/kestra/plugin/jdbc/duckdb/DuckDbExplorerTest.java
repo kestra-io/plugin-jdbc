@@ -230,7 +230,7 @@ class DuckDbExplorerTest {
         ));
 
         var row = ((List<List<Object>>) result.get("rows")).getFirst();
-        assertThat(((String) row.get(0)).length(), lessThanOrEqualTo(260));
+        assertThat(((String) row.getFirst()).length(), lessThanOrEqualTo(260));
         assertThat(((String) row.get(1)).length(), lessThanOrEqualTo(260));
         assertThat(((String) row.get(2)).length(), lessThanOrEqualTo(260));
         assertThat(row.get(3), is(1));
@@ -251,5 +251,16 @@ class DuckDbExplorerTest {
 
         var row = ((List<List<Object>>) result.get("rows")).getFirst();
         assertThat(((String) row.getFirst()).length(), lessThanOrEqualTo(260));
+    }
+
+    @Test
+    void filesThatAreNotDuckDbAreRefusedBeforeTheEngineOpensThem() throws Exception {
+        var fake = dir.resolve("fake.duckdb");
+        java.nio.file.Files.writeString(fake, "this is not a database, only text of some length");
+
+        var response = new DuckDbQueryEndpoint().handle(ExplorerTestContext.of(fake, Map.of("sql", "SELECT 1")));
+        var result = JacksonMapper.ofJson().readValue(response.body(), Map.class);
+
+        assertThat((String) result.get("error"), containsString("not a DuckDB database"));
     }
 }

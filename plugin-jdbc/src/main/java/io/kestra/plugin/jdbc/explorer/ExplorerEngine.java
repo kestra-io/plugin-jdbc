@@ -1,5 +1,6 @@
 package io.kestra.plugin.jdbc.explorer;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,6 +13,9 @@ public interface ExplorerEngine {
 
     // Opens the exported file so that nothing can be written, and locks the connection settings.
     Connection openReadOnly(Path file) throws SQLException;
+
+    // Cheap magic header check run before the native parser of the engine sees an untrusted file.
+    void checkFile(Path file) throws IOException;
 
     // Refuses anything that is not a single read statement, with a message that says what is allowed.
     void validate(Connection connection, String sql) throws SQLException;

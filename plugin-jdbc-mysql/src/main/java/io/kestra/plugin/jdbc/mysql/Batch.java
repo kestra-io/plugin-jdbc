@@ -111,7 +111,7 @@ import java.util.Properties;
         @Metric(
             name = "duration",
             type = Timer.TYPE,
-            description = "The duration of the SQL execution, including reading the result rows."
+            description = "The duration of the batch execution, including input handling and retries."
         ),
         @Metric(
             name = "rows.affected",

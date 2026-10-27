@@ -1,6 +1,7 @@
 package io.kestra.plugin.jdbc;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -124,17 +125,43 @@ public final class SqlTableExtractor {
         )
         private final Kind kind;
 
+        // Quoted identifiers keep their case, unquoted ones are folded by the database. Not part of the output.
+        @Getter(AccessLevel.NONE)
+        private final boolean quotedName;
+        @Getter(AccessLevel.NONE)
+        private final boolean quotedSchema;
+        @Getter(AccessLevel.NONE)
+        private final boolean quotedDatabase;
+
         public TableReference withConfidence(Confidence confidence) {
-            return new TableReference(name, schema, database, access, confidence, kind);
+            return new TableReference(name, schema, database, access, confidence, kind, quotedName, quotedSchema, quotedDatabase);
         }
 
-        private TableReference(String name, String schema, String database, Access access, Confidence confidence, Kind kind) {
+        private TableReference(
+            String name, String schema, String database, Access access, Confidence confidence, Kind kind,
+            boolean quotedName, boolean quotedSchema, boolean quotedDatabase
+        ) {
             this.name = name;
             this.schema = schema;
             this.database = database;
             this.access = access;
             this.confidence = confidence;
             this.kind = kind;
+            this.quotedName = quotedName;
+            this.quotedSchema = quotedSchema;
+            this.quotedDatabase = quotedDatabase;
+        }
+
+        boolean isQuotedName() {
+            return quotedName;
+        }
+
+        boolean isQuotedSchema() {
+            return quotedSchema;
+        }
+
+        boolean isQuotedDatabase() {
+            return quotedDatabase;
         }
 
         private String key() {
@@ -294,6 +321,7 @@ public final class SqlTableExtractor {
         private final Deque<Boolean> functionParens = new ArrayDeque<>();
         private int index;
         private boolean inMerge;
+        private boolean inDelete;
 
         private Walker(List<Token> tokens, Dialect dialect, Set<String> cteNames, LinkedHashMap<String, TableReference> found) {
             this.tokens = tokens;
@@ -318,6 +346,7 @@ public final class SqlTableExtractor {
                 }
                 if (token.isSymbol(";")) {
                     inMerge = false;
+                    inDelete = false;
                     continue;
                 }
                 if (token.type() == TokenType.WORD) {
@@ -356,11 +385,12 @@ public final class SqlTableExtractor {
                 case "merge" -> {
                     inMerge = true;
                 }
+                case "delete" -> inDelete = true;
                 case "using" -> {
-                    if (inMerge) {
+                    if (inMerge || inDelete) {
                         var next = peek(1);
                         if (next != null && !next.isSymbol("(")) {
-                            readTableList(index + 1, Access.READ, false);
+                            readTableList(index + 1, Access.READ, inDelete);
                         }
                     }
                 }
@@ -416,7 +446,7 @@ public final class SqlTableExtractor {
             }
             var reference = readQualifiedName(cursor, true);
             if (reference != null) {
-                add(reference.parts, Access.CREATE, temporary ? Confidence.LOW : null, null);
+                add(reference, Access.CREATE, temporary ? Confidence.LOW : null, null);
             }
         }
 
@@ -440,7 +470,7 @@ public final class SqlTableExtractor {
                 if (reference == null) {
                     return;
                 }
-                add(reference.parts, access, null, null);
+                add(reference, access, null, null);
                 cursor = reference.next;
                 if (!allowList) {
                     return;
@@ -474,11 +504,12 @@ public final class SqlTableExtractor {
             ).contains(word);
         }
 
-        private record QualifiedName(List<String> parts, int next) {
+        private record QualifiedName(List<String> parts, List<Boolean> quoted, int next) {
         }
 
         private QualifiedName readQualifiedName(int start, boolean target) {
             var parts = new ArrayList<String>();
+            var quoted = new ArrayList<Boolean>();
             var cursor = start;
             while (cursor < tokens.size()) {
                 var token = tokens.get(cursor);
@@ -487,10 +518,13 @@ public final class SqlTableExtractor {
                         return null;
                     }
                     parts.add(token.text);
+                    quoted.add(false);
                 } else if (token.type() == TokenType.QUOTED) {
                     parts.add(token.text);
+                    quoted.add(true);
                 } else if (token.type() == TokenType.VARIABLE && parts.isEmpty() && token.text.startsWith("#")) {
                     parts.add(token.text);
+                    quoted.add(false);
                 } else {
                     break;
                 }
@@ -500,6 +534,7 @@ public final class SqlTableExtractor {
                     if (tokens.get(cursor).isSymbol(".")) {
                         // SQL Server `db..table`: the schema is omitted.
                         parts.add(null);
+                        quoted.add(false);
                         cursor++;
                     }
                     continue;
@@ -511,13 +546,15 @@ public final class SqlTableExtractor {
             if (parts.isEmpty() || isFunctionCall) {
                 return null;
             }
-            return new QualifiedName(parts, cursor);
+            return new QualifiedName(parts, quoted, cursor);
         }
 
-        private void add(List<String> rawParts, Access access, Confidence forced, Kind kind) {
-            var parts = new ArrayList<>(rawParts);
+        private void add(QualifiedName qualified, Access access, Confidence forced, Kind kind) {
+            var parts = new ArrayList<>(qualified.parts);
+            var quoted = new ArrayList<>(qualified.quoted);
             while (parts.size() > 3) {
                 parts.removeFirst();
+                quoted.removeFirst();
             }
             var name = parts.getLast();
             if (name == null) {
@@ -525,6 +562,8 @@ public final class SqlTableExtractor {
             }
             var schema = parts.size() >= 2 ? parts.get(parts.size() - 2) : null;
             var database = parts.size() == 3 ? parts.getFirst() : null;
+            var quotedSchema = parts.size() >= 2 && quoted.get(parts.size() - 2);
+            var quotedDatabase = parts.size() == 3 && quoted.getFirst();
             var confidence = forced != null ? forced : Confidence.MEDIUM;
 
             if (schema == null && database == null && cteNames.contains(name.toLowerCase(Locale.ROOT)) && access == Access.READ) {
@@ -540,6 +579,9 @@ public final class SqlTableExtractor {
                 .access(access)
                 .confidence(confidence)
                 .kind(dialect.detectFiles ? (kind == null ? Kind.TABLE : kind) : null)
+                .quotedName(quoted.getLast())
+                .quotedSchema(quotedSchema)
+                .quotedDatabase(quotedDatabase)
                 .build();
             found.putIfAbsent(reference.key(), reference);
         }

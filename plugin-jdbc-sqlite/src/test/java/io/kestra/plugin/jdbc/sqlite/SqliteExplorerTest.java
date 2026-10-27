@@ -94,9 +94,30 @@ class SqliteExplorerTest {
         "PRAGMA query_only = OFF",
         "SELECT * FROM people; DROP TABLE people",
         "WITH t AS (SELECT 1) INSERT INTO people SELECT * FROM t",
+        "EXPLAIN PRAGMA query_only=OFF",
+        "EXPLAIN QUERY PLAN PRAGMA temp_store_directory='/tmp'",
+        "EXPLAIN INSERT INTO people VALUES (9, 'z')",
+        "EXPLAIN",
     })
     void writesAndUnsafeStatementsAreRefused(String sql) {
         assertThrows(IllegalArgumentException.class, () -> run(new SqliteQueryEndpoint(), Map.of("sql", sql)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"EXPLAIN SELECT * FROM people", "explain query plan SELECT * FROM people", "EXPLAIN WITH t AS (SELECT 1) SELECT * FROM t"})
+    void explainOverReadStatementsIsAllowed(String sql) throws Exception {
+        assertThat(run(new SqliteQueryEndpoint(), Map.of("sql", sql)).get("columns"), notNullValue());
+    }
+
+    @Test
+    void filesThatAreNotSqliteAreRefusedBeforeTheDriverOpensThem() throws Exception {
+        var fake = dir.resolve("fake.sqlite");
+        java.nio.file.Files.writeString(fake, "this is not a database, only text of some length");
+
+        var response = new SqliteQueryEndpoint().handle(ExplorerTestContext.of(fake, Map.of("sql", "SELECT 1")));
+        var result = JacksonMapper.ofJson().readValue(response.body(), Map.class);
+
+        assertThat((String) result.get("error"), containsString("not a SQLite database"));
     }
 
     @Test

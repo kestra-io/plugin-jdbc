@@ -13,6 +13,7 @@ import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 
 @KestraTest(startRunner = true, startScheduler = true)
 class SqliteTriggerTest extends AbstractJdbcTriggerTest {
@@ -23,6 +24,12 @@ class SqliteTriggerTest extends AbstractJdbcTriggerTest {
 
         var rows = (List<Map<String, Object>>) execution.getTrigger().getVariables().get("rows");
         assertThat(rows.size(), is(3));
+
+        // Execution details are for tasks: a trigger poll must not add fields to `trigger.*`.
+        var variables = execution.getTrigger().getVariables();
+        for (var detail : List.of("rowsAffected", "durationMs", "warnings", "tables", "tablesTruncated", "statement", "columnStats", "bytes")) {
+            assertThat(detail, variables.get(detail), nullValue());
+        }
     }
 
     @Override

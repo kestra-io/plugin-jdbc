@@ -40,7 +40,7 @@ public final class ColumnStatsCollector {
                 jdbcTypes.put(label, null);
                 continue;
             }
-            jdbcTypes.put(label, jdbcTypeName(type));
+            jdbcTypes.put(label, JdbcExecutionSupport.jdbcTypeName(type));
             columns.computeIfAbsent(label, ColumnAccumulator::new);
         }
     }
@@ -62,19 +62,6 @@ public final class ColumnStatsCollector {
         var results = new ArrayList<Map<String, Object>>();
         columns.forEach((label, accumulator) -> results.add(accumulator.toMap(jdbcTypes.get(label))));
         return results;
-    }
-
-    private static String jdbcTypeName(int type) {
-        for (var field : Types.class.getFields()) {
-            try {
-                if (field.getType() == int.class && field.getInt(null) == type) {
-                    return field.getName();
-                }
-            } catch (IllegalAccessException ignored) {
-                // Constants of java.sql.Types are public, so this cannot happen.
-            }
-        }
-        return String.valueOf(type);
     }
 
     private static final class ColumnAccumulator {

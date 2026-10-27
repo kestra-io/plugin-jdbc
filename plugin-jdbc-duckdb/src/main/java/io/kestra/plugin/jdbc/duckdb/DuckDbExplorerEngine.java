@@ -4,6 +4,9 @@ import io.kestra.plugin.jdbc.explorer.AbstractReadOnlyExplorerEndpoint;
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
 import org.duckdb.DuckDBDriver;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,6 +30,17 @@ final class DuckDbExplorerEngine implements ExplorerEngine {
     @Override
     public String name() {
         return "duckdb";
+    }
+
+    // A DuckDB file starts with an 8 bytes checksum, then the `DUCK` magic.
+    @Override
+    public void checkFile(Path file) throws IOException {
+        try (var input = Files.newInputStream(file)) {
+            var header = input.readNBytes(12);
+            if (header.length < 12 || !"DUCK".equals(new String(header, 8, 4, StandardCharsets.US_ASCII))) {
+                throw new IllegalArgumentException("The exported file is not a DuckDB database.");
+            }
+        }
     }
 
     @Override

@@ -179,6 +179,14 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     @Getter(AccessLevel.NONE)
     protected transient Map<String, Object> additionalVars = new HashMap<>();
 
+    // Set by tasks that render the SQL themselves before calling run(), so the `secret()` calls can still be masked.
+    @Getter(AccessLevel.NONE)
+    protected transient Property<String> maskingTemplate;
+
+    protected Property<String> secretTemplate() {
+        return maskingTemplate != null ? maskingTemplate : this.sql;
+    }
+
     private static final List<String> MULTI_STATEMENT_DRIVERS = List.of(
         "redshift",
         "snowflake",
@@ -588,15 +596,14 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
         // Lets the engine specific outputs that rebuild an Output carry the execution details over.
         public void copyExecutionDetailsTo(OutputBuilder<?, ?> builder) {
-            builder
-                .rowsAffected(rowsAffected)
-                .bytes(bytes)
-                .durationMs(durationMs)
-                .warnings(warnings)
-                .tables(tables)
-                .tablesTruncated(tablesTruncated)
-                .statement(statement)
-                .columnStats(columnStats);
+            applyDetails(builder, details());
+        }
+
+        private JdbcExecutionSupport.Details details() {
+            return new JdbcExecutionSupport.Details(
+                rowsAffected, bytes, durationMs, warnings,
+                new JdbcExecutionSupport.TableSummary(tables, Boolean.TRUE.equals(tablesTruncated)), statement, columnStats
+            );
         }
 
         static void applyDetails(OutputBuilder<?, ?> builder, JdbcExecutionSupport.Details details) {

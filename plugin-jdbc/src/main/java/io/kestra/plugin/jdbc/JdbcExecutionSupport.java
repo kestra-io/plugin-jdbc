@@ -17,17 +17,22 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 // Helpers shared by the JDBC tasks to build the post-execution outputs.
@@ -35,9 +40,25 @@ final class JdbcExecutionSupport {
     static final int MAX_TABLES = 50;
     static final int MAX_METADATA_LOOKUPS = 10;
     static final int MAX_STATEMENT_BYTES = 64 * 1024;
-    private static final Pattern SECRET_CALL = Pattern.compile("secret\\(\\s*['\"]([^'\"]+)['\"]\\s*\\)");
+    private static final Pattern SECRET_CALL = Pattern.compile("secret\\(\\s*['\"][^'\"]+['\"]\\s*(?:,[^()]*)?\\)");
+
+    // Triggers poll often and publish their output as `trigger.*`, so they skip the execution details.
+    private static final ThreadLocal<Boolean> TRIGGER_RUN = new ThreadLocal<>();
 
     private JdbcExecutionSupport() {
+    }
+
+    static <T> T asTrigger(Callable<T> run) throws Exception {
+        TRIGGER_RUN.set(Boolean.TRUE);
+        try {
+            return run.call();
+        } finally {
+            TRIGGER_RUN.remove();
+        }
+    }
+
+    static boolean isTriggerRun() {
+        return TRIGGER_RUN.get() != null;
     }
 
     record TableSummary(List<TableReference> tables, boolean truncated) {
@@ -102,25 +123,50 @@ final class JdbcExecutionSupport {
     }
 
     // Secrets are resolved from the `secret()` calls of the unrendered template, then masked in the rendered SQL.
-    static String maskedStatement(RunContext runContext, Property<String> template, String rendered) throws IllegalVariableEvaluationException {
+    static String maskedStatement(RunContext runContext, Property<String> template, String rendered) {
         if (rendered == null) {
             return null;
         }
-        var masked = rendered;
+        var values = new ArrayList<String>();
         if (template != null) {
             var matcher = SECRET_CALL.matcher(String.valueOf(template));
-            var seen = new HashSet<String>();
+            var calls = new HashSet<String>();
             while (matcher.find()) {
-                if (!seen.add(matcher.group(1))) {
+                if (!calls.add(matcher.group())) {
                     continue;
                 }
-                var value = runContext.render("{{ secret('" + matcher.group(1).replace("'", "") + "') }}");
-                if (value != null && !value.isEmpty()) {
-                    masked = masked.replace(value, "***");
+                try {
+                    values.add(runContext.render("{{ " + matcher.group() + " }}"));
+                } catch (IllegalVariableEvaluationException | RuntimeException e) {
+                    // A secret that cannot be resolved cannot be in the rendered statement either.
                 }
             }
         }
-        return truncate(masked);
+        return truncate(mask(rendered, values));
+    }
+
+    // Like the core log masking, longer values are replaced first (`pass` must not leave `***word`) and base64 forms are masked too.
+    static String mask(String text, Collection<String> secrets) {
+        var candidates = new TreeSet<String>(Comparator.comparingInt(String::length).reversed().thenComparing(Comparator.naturalOrder()));
+        for (var secret : secrets) {
+            if (secret != null && !secret.isEmpty()) {
+                candidates.add(secret);
+                candidates.add(Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)));
+            }
+        }
+        var masked = text;
+        for (var candidate : candidates) {
+            masked = masked.replace(candidate, "***");
+        }
+        return masked;
+    }
+
+    static String jdbcTypeName(int type) {
+        try {
+            return JDBCType.valueOf(type).getName();
+        } catch (IllegalArgumentException e) {
+            return String.valueOf(type);
+        }
     }
 
     static String truncate(String statement) {

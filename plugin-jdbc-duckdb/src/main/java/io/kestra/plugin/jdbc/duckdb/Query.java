@@ -329,10 +329,12 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         // Restored below so a retry re-renders the original SQL instead of replaying this attempt's rendered value.
         var originalSql = this.sql;
         this.sql = Property.ofValue(sql);
+        this.maskingTemplate = originalSql;
         try {
             run = super.run(runContext);
         } finally {
             this.sql = originalSql;
+            this.maskingTemplate = null;
             DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
         }
 

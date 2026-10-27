@@ -292,10 +292,12 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         // Pass the already-rendered SQL on so the guard checks exactly what DuckDB executes; restored below so a retry re-renders.
         var originalSql = this.sql;
         this.sql = Property.ofValue(rSql);
+        this.maskingTemplate = originalSql;
         try {
             run = super.run(runContext);
         } finally {
             this.sql = originalSql;
+            this.maskingTemplate = null;
             DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
         }
 

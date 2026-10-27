@@ -286,4 +286,60 @@ class SqlTableExtractorTest {
         assertThat(SqlTableExtractor.safeUrl("https://host/f.csv?token=abc@SECRET"), is("https://***"));
         assertThat(SqlTableExtractor.safeUrl("https://host/f.csv#frag@x"), is("https://***"));
     }
+
+    @Test
+    void deleteUsingReadsTheJoinedTable() {
+        var tables = SqlTableExtractor.extract("DELETE FROM orders o USING customers u WHERE o.customer_id = u.id", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("WRITE:orders", "READ:customers"));
+    }
+
+    @Test
+    void oracleQuotedSchemasDualAndSchemaQualifiedWrites() {
+        var tables = SqlTableExtractor.extract(
+            "INSERT INTO hr.emp_archive SELECT e.* FROM \"HR\".\"EMPLOYEES\" e JOIN hr.departments d ON d.department_id = e.department_id",
+            Dialect.ANSI
+        );
+
+        assertThat(summary(tables), contains("WRITE:hr.emp_archive", "READ:HR.EMPLOYEES", "READ:hr.departments"));
+    }
+
+    @Test
+    void oracleMergeHasTargetAndSource() {
+        var tables = SqlTableExtractor.extract(
+            "MERGE INTO hr.totals t USING (SELECT dept, sum(sal) AS s FROM hr.emp GROUP BY dept) src ON (t.dept = src.dept) "
+                + "WHEN MATCHED THEN UPDATE SET t.s = src.s",
+            Dialect.ANSI
+        );
+
+        assertThat(summary(tables), contains("WRITE:hr.totals", "READ:hr.emp"));
+    }
+
+    @Test
+    void trinoCatalogSchemaTableNames() {
+        var tables = SqlTableExtractor.extract(
+            "INSERT INTO hive.analytics.daily SELECT o.day, count(*) FROM tpch.sf1.orders o JOIN hive.sales.items i ON i.id = o.id GROUP BY 1",
+            Dialect.ANSI
+        );
+
+        assertThat(summary(tables), contains("WRITE:hive.analytics.daily", "READ:tpch.sf1.orders", "READ:hive.sales.items"));
+    }
+
+    @Test
+    void trinoCreateTableAsSelect() {
+        var tables = SqlTableExtractor.extract("CREATE TABLE IF NOT EXISTS hive.default.copy AS SELECT * FROM hive.default.src", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("CREATE:hive.default.copy", "READ:hive.default.src"));
+    }
+
+    @Test
+    void urlUserInfoIsNeverKept() {
+        var tables = SqlTableExtractor.extract("SELECT * FROM read_csv('https://user:pass@example.com/data.csv?token=abc')", Dialect.DUCKDB);
+
+        assertThat(tables, hasSize(1));
+        assertThat(tables.getFirst().getKind(), is(Kind.URL));
+        assertThat(tables.getFirst().getName().contains("pass"), is(false));
+        assertThat(tables.getFirst().getName().contains("user"), is(false));
+        assertThat(tables.getFirst().getName().contains("token"), is(false));
+    }
 }

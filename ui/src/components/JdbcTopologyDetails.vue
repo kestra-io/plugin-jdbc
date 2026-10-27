@@ -38,9 +38,10 @@ async function loadOutputs() {
     }
 }
 
+// Outputs are only complete once the task run ends, so a state change reloads them too.
 watch(
-    () => props.execution?.id,
-    (id) => {
+    () => [props.execution?.id, taskRun.value?.state?.current],
+    ([id]) => {
         if (id) loadOutputs();
     },
     { immediate: true },

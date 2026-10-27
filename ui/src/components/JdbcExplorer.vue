@@ -7,15 +7,14 @@ import {
     type ColumnStats,
     type QueryResult,
     MAX_LIMIT,
+    EndpointError,
     columnKind,
     countSql,
-    endpointPath,
     engineOf,
     formatCell,
     histogramSql,
     pageLabel,
     previewSql,
-    post,
     quoteIdentifier,
     samples,
     summarySql,
@@ -69,7 +68,6 @@ const props = defineProps<KnownSlotProps["execution-artifact"]>();
 const taskType = computed(() => props.taskType ?? (props.task as { type?: string } | undefined)?.type);
 const engine = computed(() => engineOf(taskType.value));
 const engineLabel = computed(() => (engine.value === "duckdb" ? "DuckDB" : "SQLite"));
-const tenant = computed(() => props.tenant ?? window.localStorage?.getItem("selectedTenant") ?? "main");
 const taskRun = computed(() => {
     const list = props.execution?.taskRunList as any[] | undefined;
     return list?.filter((tr: any) => tr.taskId === props.task?.id).at(-1);
@@ -91,24 +89,13 @@ const stats = ref<Record<string, ColumnStats | undefined>>({});
 let generation = 0;
 
 // The host's fetchEndpoint carries the session auth a raw fetch lacks (the core answers 403 to it).
+// The core never surfaces an endpoint exception, so refusals and SQL errors come back as `{ "error": "..." }`.
 const call = async <T,>(operation: "catalog" | "query", body: Record<string, unknown>): Promise<T> => {
-    if (props.fetchEndpoint) {
-        const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
-        const out = (await props.fetchEndpoint(`${engine.value}-${operation}`, params, { taskRunId: taskRun.value?.id })) as any;
-        if (out?.error) throw new Error(String(out.error));
-        return out as T;
-    }
-    return post<T>(
-        endpointPath({
-            tenant: tenant.value,
-            taskType: taskType.value!,
-            engine: engine.value!,
-            operation,
-            executionId: props.execution!.id as string,
-            taskRunId: taskRun.value?.id,
-        }),
-        body,
-    );
+    if (!props.fetchEndpoint) throw new EndpointError("The host does not expose plugin endpoints.");
+    const params = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)]));
+    const out = (await props.fetchEndpoint(`${engine.value}-${operation}`, params, { taskRunId: taskRun.value?.id })) as any;
+    if (out?.error) throw new EndpointError(String(out.error));
+    return out as T;
 };
 
 const query = (statement: string, limit = MAX_LIMIT, from = 0) => call<QueryResult>("query", { sql: statement, limit, offset: from });
@@ -129,7 +116,8 @@ async function load() {
     }
 }
 
-watch(() => props.execution?.id, (id) => id && load(), { immediate: true });
+// Outputs are only complete once the task run ends, so a state change reloads them too.
+watch(() => [props.execution?.id, taskRun.value?.state?.current], ([id]) => id && load(), { immediate: true });
 
 function select(table: string) {
     selected.value = table;

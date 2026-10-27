@@ -4,9 +4,13 @@ import io.kestra.plugin.jdbc.explorer.AbstractReadOnlyExplorerEndpoint;
 import io.kestra.plugin.jdbc.explorer.ExplorerEngine;
 import org.sqlite.JDBC;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
@@ -22,6 +26,9 @@ final class SqliteExplorerEngine implements ExplorerEngine {
         "\\b(attach|detach|load_extension|vacuum|insert|update|delete|create|drop|alter|reindex|analyze|savepoint|release|begin|commit|rollback)\\b",
         Pattern.CASE_INSENSITIVE
     );
+    // A pragma behind EXPLAIN still applies at prepare time, so only EXPLAIN over a read statement is accepted.
+    private static final Pattern EXPLAIN_READ = Pattern.compile("^\\s*explain(?:\\s+query\\s+plan)?\\s+(?:select|with)\\b.*", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final byte[] MAGIC = "SQLite format 3\0".getBytes(StandardCharsets.US_ASCII);
     private static final Pattern PRAGMA_TABLE_INFO = Pattern.compile("^\\s*pragma\\s+table_info\\s*\\(\\s*(?:\"\"|[A-Za-z_][A-Za-z0-9_]*)\\s*\\)\\s*;?\\s*$", Pattern.CASE_INSENSITIVE);
 
     private SqliteExplorerEngine() {
@@ -42,11 +49,22 @@ final class SqliteExplorerEngine implements ExplorerEngine {
         var connection = new JDBC().connect("jdbc:sqlite:file:" + file.toAbsolutePath() + "?mode=ro", properties);
         try (var statement = connection.createStatement()) {
             statement.execute("PRAGMA query_only=ON");
+            // Views and triggers stored in an untrusted file must not call application-defined functions.
+            statement.execute("PRAGMA trusted_schema=OFF");
         } catch (SQLException e) {
             connection.close();
             throw e;
         }
         return connection;
+    }
+
+    @Override
+    public void checkFile(Path file) throws IOException {
+        try (var input = Files.newInputStream(file)) {
+            if (!Arrays.equals(input.readNBytes(MAGIC.length), MAGIC)) {
+                throw new IllegalArgumentException("The exported file is not a SQLite database.");
+            }
+        }
     }
 
     @Override
@@ -60,6 +78,9 @@ final class SqliteExplorerEngine implements ExplorerEngine {
         var first = withoutTrailingSemicolon.split("\\s+", 2)[0].toLowerCase(Locale.ROOT);
         if (!FIRST_KEYWORDS.contains(first)) {
             throw new IllegalArgumentException(READ_ONLY_MESSAGE);
+        }
+        if (first.equals("explain") && !EXPLAIN_READ.matcher(code).matches()) {
+            throw new IllegalArgumentException("Only EXPLAIN [QUERY PLAN] over a SELECT or WITH statement is allowed in the explorer.");
         }
         if (first.equals("pragma") && !PRAGMA_TABLE_INFO.matcher(code).matches()) {
             throw new IllegalArgumentException("Only PRAGMA table_info(<table>) is allowed in the explorer, for example PRAGMA table_info(people).");

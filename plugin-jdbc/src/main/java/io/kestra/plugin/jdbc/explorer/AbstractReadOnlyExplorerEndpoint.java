@@ -24,13 +24,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -41,29 +42,42 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
     public static final int DEFAULT_LIMIT = 100;
     public static final int MAX_CELL_LENGTH = 256;
     public static final int MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
+    // Rough JSON cost of a cell on top of its text: quotes, separator and escaping.
+    private static final int CELL_OVERHEAD_BYTES = 4;
     public static final long MAX_FILE_BYTES = 256L * 1024 * 1024;
     private static final Duration FILE_TTL = Duration.ofMinutes(10);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
     public static final int MAX_OFFSET = 1_000_000;
     private static final long MAX_CACHE_BYTES = 1024L * 1024 * 1024;
-    private static final Duration IN_USE_WINDOW = Duration.ofSeconds(60);
     // Absolute paths only, so `a/b` and `1/0` are kept.
     private static final Pattern PATH_PATTERN = Pattern.compile("(?<![^\\s'\"(=])(?:/[^\\s'\"():;,]+|[A-Za-z]:\\\\[^\\s'\"():;,]+)");
-
-    // The core gives handle() no timeout, so statements are cancelled from here.
-    private static final ScheduledExecutorService WATCHDOG = Executors.newSingleThreadScheduledExecutor(runnable -> {
-        var thread = new Thread(runnable, "jdbc-explorer-watchdog");
-        thread.setDaemon(true);
-        return thread;
-    });
 
     public enum Operation {
         CATALOG,
         QUERY
     }
 
+    // Every plugin jar bundles its own copy of this class in its own classloader, so the limits are kept in the
+    // system properties, which are shared by all of them. Only JDK types are stored, so the cast is classloader safe.
+    private static final String SLOTS_KEY = "io.kestra.plugin.jdbc.explorer.slots";
+    private static final String WATCHDOG_KEY = "io.kestra.plugin.jdbc.explorer.watchdog";
+
     // Each request opens its own native engine, so parallel requests are bounded to protect the webserver.
-    private static final Semaphore SLOTS = new Semaphore(3);
+    private static final Semaphore SLOTS = (Semaphore) System.getProperties().computeIfAbsent(SLOTS_KEY, k -> new Semaphore(3));
+
+    // The core gives handle() no timeout, so statements are cancelled from here. The thread is a daemon and
+    // exits when idle, so nothing has to shut it down.
+    private static final ScheduledExecutorService WATCHDOG = (ScheduledExecutorService) System.getProperties().computeIfAbsent(WATCHDOG_KEY, k -> {
+        var executor = new ScheduledThreadPoolExecutor(1, runnable -> {
+            var thread = new Thread(runnable, "jdbc-explorer-watchdog");
+            thread.setDaemon(true);
+            return thread;
+        });
+        executor.setKeepAliveTime(30, TimeUnit.SECONDS);
+        executor.allowCoreThreadTimeOut(true);
+        executor.setRemoveOnCancelPolicy(true);
+        return executor;
+    });
 
     private final ExplorerEngine engine;
     private final Operation operation;
@@ -92,6 +106,12 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
                 return error("The explorer is busy, retry in a moment.");
             }
             file = databaseFile(context);
+            try {
+                engine.checkFile(file);
+            } catch (IllegalArgumentException e) {
+                Files.deleteIfExists(file);
+                throw e;
+            }
             try (var connection = engine.openReadOnly(file)) {
                 var result = operation == Operation.CATALOG
                     ? catalog(connection)
@@ -139,6 +159,8 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
             // Not downloaded yet, or purged by a concurrent request: download it.
         }
 
+        // Room is made before downloading: the cache never holds more than its cap plus the file being written.
+        evict(directory, target, MAX_FILE_BYTES);
         var partial = Files.createTempFile(directory, "download-", ".partial");
         try (InputStream input = context.storage().getFile(URI.create(databaseUri.toString()))) {
             copyCapped(input, partial);
@@ -146,7 +168,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         } finally {
             Files.deleteIfExists(partial);
         }
-        evict(directory, target);
+        evict(directory, target, 0);
         return target;
     }
 
@@ -165,20 +187,21 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         }
     }
 
-    // Drops expired files, then the oldest until the cache fits, sparing files used in the last minute.
-    private static void evict(Path directory, Path keep) {
+    // Drops expired files, then the oldest until the cache plus `reserve` bytes fits. Files already opened by a
+    // running request stay readable on POSIX systems, and a purged file is simply downloaded again.
+    private static void evict(Path directory, Path keep, long reserve) {
         try (var stream = Files.list(directory)) {
-            var files = new ArrayList<>(stream.filter(f -> !f.equals(keep) && !f.getFileName().toString().endsWith(".partial")).toList());
+            var files = new ArrayList<>(stream.filter(f -> !f.equals(keep)).toList());
             files.sort(Comparator.comparingLong(AbstractReadOnlyExplorerEndpoint::modified));
-            var total = Files.size(keep);
+            var total = reserve + (Files.exists(keep) ? Files.size(keep) : 0);
             for (var file : files) {
                 total += Files.size(file);
             }
             var now = System.currentTimeMillis();
             for (var file : files) {
-                var age = now - modified(file);
-                var expired = age > FILE_TTL.toMillis();
-                if ((expired || total > MAX_CACHE_BYTES) && age > IN_USE_WINDOW.toMillis()) {
+                var expired = now - modified(file) > FILE_TTL.toMillis();
+                var inProgress = file.getFileName().toString().endsWith(".partial");
+                if (expired || (total > MAX_CACHE_BYTES && !inProgress)) {
                     total -= Files.size(file);
                     Files.deleteIfExists(file);
                 }
@@ -207,10 +230,20 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
 
     private Map<String, Object> catalog(Connection connection) throws SQLException {
         var tables = new LinkedHashMap<String, Map<String, Object>>();
+        var bytes = 0L;
+        var truncated = false;
         try (var statement = connection.createStatement()) {
             var watchdog = watch(statement);
             try (var rs = statement.executeQuery(engine.catalogSql())) {
                 while (rs.next()) {
+                    // The response is bounded while it is built, not after: a huge schema must not fill the heap.
+                    var name = String.valueOf(cell(rs, 4));
+                    var type = String.valueOf(cell(rs, 5));
+                    bytes += name.length() + type.length() + CELL_OVERHEAD_BYTES;
+                    if (bytes > MAX_RESPONSE_BYTES) {
+                        truncated = true;
+                        break;
+                    }
                     var key = rs.getString(1) + "." + rs.getString(2);
                     var table = tables.computeIfAbsent(key, k -> {
                         var created = new LinkedHashMap<String, Object>();
@@ -222,13 +255,16 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
                     });
                     @SuppressWarnings("unchecked")
                     var columns = (List<Map<String, Object>>) table.get("columns");
-                    columns.add(Map.of("name", String.valueOf(cell(rs, 4)), "type", String.valueOf(cell(rs, 5))));
+                    columns.add(Map.of("name", name, "type", type));
                 }
             } finally {
                 watchdog.cancel(false);
             }
         }
-        return Map.of("tables", new ArrayList<>(tables.values()));
+        var result = new LinkedHashMap<String, Object>();
+        result.put("tables", new ArrayList<>(tables.values()));
+        result.put("truncated", truncated);
+        return result;
     }
 
     private Map<String, Object> query(Connection connection, Map<String, Object> body) throws SQLException {
@@ -246,6 +282,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
         var columns = new ArrayList<Map<String, Object>>();
         var rows = new ArrayList<List<Object>>();
         var hasMore = false;
+        var bytes = 0L;
 
         try (var stmt = connection.createStatement()) {
             stmt.setMaxRows(offset + limit + 1);
@@ -266,7 +303,14 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
                     }
                     var row = new ArrayList<Object>(columns.size());
                     for (var i = 1; i <= columns.size(); i++) {
-                        row.add(cell(rs, i));
+                        var value = cell(rs, i);
+                        bytes += size(value);
+                        row.add(value);
+                    }
+                    // Wide rows are cut here, before they are all held in memory.
+                    if (bytes > MAX_RESPONSE_BYTES && !rows.isEmpty()) {
+                        hasMore = true;
+                        break;
                     }
                     rows.add(row);
                 }
@@ -291,6 +335,10 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
                 // The statement already finished or the driver cannot cancel it.
             }
         }, timeout().toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private static long size(Object value) {
+        return CELL_OVERHEAD_BYTES + (value instanceof String text ? text.length() : 8);
     }
 
     private static Object cell(ResultSet rs, int index) {
@@ -319,7 +367,7 @@ public abstract class AbstractReadOnlyExplorerEndpoint implements PluginEndpoint
 
     // The host's fetchEndpoint sends the inputs as query parameters, a direct call sends a JSON body.
     private static Map<String, Object> inputs(PluginEndpointContext context) {
-        var inputs = new java.util.HashMap<String, Object>();
+        var inputs = new HashMap<String, Object>();
         for (var name : List.of("sql", "limit", "offset")) {
             var value = context.param(name);
             if (value != null) {

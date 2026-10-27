@@ -21,40 +21,7 @@ export function engineOf(taskType?: string): Engine | undefined {
     return undefined;
 }
 
-export function endpointPath(opts: {
-    tenant: string;
-    taskType: string;
-    engine: Engine;
-    operation: "catalog" | "query";
-    executionId: string;
-    taskRunId: string;
-}): string {
-    const { tenant, taskType, engine, operation, executionId, taskRunId } = opts;
-    return `/api/v1/${enc(tenant)}/plugins/${enc(taskType)}/endpoints/${engine}-${operation}/${enc(executionId)}/${enc(taskRunId)}`;
-}
-
-const enc = encodeURIComponent;
-
 export class EndpointError extends Error {}
-
-// The core never surfaces an endpoint exception, so refusals and SQL errors come back as `{ "error": "..." }`.
-export async function post<T>(path: string, body: Record<string, unknown>): Promise<T> {
-    const response = await fetch(path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify(body),
-    });
-    let payload: any;
-    try {
-        payload = await response.json();
-    } catch {
-        throw new EndpointError(`The explorer endpoint answered ${response.status}.`);
-    }
-    if (payload?.error) throw new EndpointError(String(payload.error));
-    if (!response.ok) throw new EndpointError(payload?.message ?? `The explorer endpoint answered ${response.status}.`);
-    return payload as T;
-}
 
 export const quoteIdentifier = (name: string) => `"${name.replace(/"/g, '""')}"`;
 

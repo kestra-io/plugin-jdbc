@@ -2,40 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
     bucketCounts,
     columnKind,
-    endpointPath,
     engineOf,
     formatCell,
     histogramSql,
     pageLabel,
-    post,
     samples,
     summarySql,
     toColumnStats,
 } from "../src/lib/explorer";
 
-describe("engine and endpoint", () => {
+describe("engine", () => {
     it("derives the engine from the task type", () => {
         expect(engineOf("io.kestra.plugin.jdbc.duckdb.Query")).toBe("duckdb");
         expect(engineOf("io.kestra.plugin.jdbc.sqlite.Queries")).toBe("sqlite");
         expect(engineOf("io.kestra.plugin.jdbc.postgresql.Query")).toBeUndefined();
-    });
-
-    it("builds the core endpoint path", () => {
-        expect(
-            endpointPath({ tenant: "main", taskType: "io.kestra.plugin.jdbc.duckdb.Query", engine: "duckdb", operation: "query", executionId: "e1", taskRunId: "t1" }),
-        ).toBe("/api/v1/main/plugins/io.kestra.plugin.jdbc.duckdb.Query/endpoints/duckdb-query/e1/t1");
-    });
-});
-
-describe("post", () => {
-    it("shows the endpoint error as is", async () => {
-        globalThis.fetch = (async () => new Response(JSON.stringify({ error: "Only a single read-only SELECT statement is allowed in the explorer." }), { status: 200 })) as any;
-        await expect(post("/x", {})).rejects.toThrow("Only a single read-only SELECT statement is allowed in the explorer.");
-    });
-
-    it("returns the payload on success", async () => {
-        globalThis.fetch = (async () => new Response(JSON.stringify({ rows: [] }), { status: 200 })) as any;
-        await expect(post("/x", {})).resolves.toEqual({ rows: [] });
     });
 });
 

@@ -39,12 +39,12 @@ class JdbcAssetsTest {
             true
         );
 
-        assertThat(emit.inputs().stream().map(i -> i.id()).toList(), containsInAnyOrder(endsWith(".orders"), endsWith(".customers")));
+        assertThat(emit.inputs().stream().map(i -> i.id()).toList(), containsInAnyOrder(endsWith(".ORDERS"), endsWith(".CUSTOMERS")));
         assertThat(emit.outputs(), hasSize(1));
         var output = emit.outputs().getFirst();
         assertThat(output.getType(), is(JdbcAssets.TABLE_TYPE));
-        assertThat(output.getId(), endsWith(".daily"));
-        assertThat(output.getMetadata().get("name"), is("daily"));
+        assertThat(output.getId(), endsWith(".DAILY"));
+        assertThat(output.getMetadata().get("name"), is("DAILY"));
         assertThat(output.getMetadata().get("lastStatementKind"), is("INSERT"));
         assertThat(output.getMetadata().get("rowsAffected"), is(1L));
         @SuppressWarnings("unchecked")
@@ -58,8 +58,8 @@ class JdbcAssetsTest {
     void createTableAsReadsSourceAndCreatesTarget() throws Exception {
         var emit = JdbcAssets.build(connection, "CREATE TABLE copy_of_orders AS SELECT * FROM orders", 0L, true);
 
-        assertThat(emit.outputs().getFirst().getId(), endsWith(".copy_of_orders"));
-        assertThat(emit.inputs().getFirst().id(), endsWith(".orders"));
+        assertThat(emit.outputs().getFirst().getId(), endsWith(".COPY_OF_ORDERS"));
+        assertThat(emit.inputs().getFirst().id(), endsWith(".ORDERS"));
     }
 
     @Test
@@ -71,8 +71,8 @@ class JdbcAssetsTest {
             true
         );
 
-        assertThat(emit.outputs().getFirst().getId(), endsWith(".daily"));
-        assertThat(emit.inputs().getFirst().id(), endsWith(".orders"));
+        assertThat(emit.outputs().getFirst().getId(), endsWith(".DAILY"));
+        assertThat(emit.inputs().getFirst().id(), endsWith(".ORDERS"));
     }
 
     @Test
@@ -94,5 +94,54 @@ class JdbcAssetsTest {
     @Test
     void dropEmitsNothing() throws Exception {
         assertThat(JdbcAssets.build(connection, "DROP TABLE IF EXISTS gone", null, true), nullValue());
+    }
+
+    @Test
+    void sameTableGetsTheSameIdWhateverTheSpelling() throws Exception {
+        var ids = List.of("SELECT * FROM orders", "SELECT * FROM ORDERS", "SELECT * FROM public.orders", "SELECT * FROM \"ORDERS\"").stream()
+            .map(sql -> {
+                try {
+                    return JdbcAssets.build(connection, sql, null, true).inputs().getFirst().id();
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            })
+            .collect(java.util.stream.Collectors.toSet());
+
+        assertThat(ids, hasSize(1));
+        assertThat(ids.iterator().next(), endsWith(".PUBLIC.ORDERS"));
+    }
+
+    @Test
+    void quotedNamesKeepTheirCase() throws Exception {
+        var emit = JdbcAssets.build(connection, "SELECT * FROM \"orders\"", null, true);
+
+        assertThat(emit.inputs().getFirst().id(), endsWith(".PUBLIC.orders"));
+    }
+
+    @Test
+    void temporaryTablesAreNotAssets() throws Exception {
+        assertThat(JdbcAssets.build(connection, "CREATE TEMP TABLE scratch AS SELECT * FROM orders", 0L, false), nullValue());
+
+        var emit = JdbcAssets.build(connection, "CREATE TEMPORARY TABLE scratch AS SELECT * FROM orders", 0L, true);
+        assertThat(emit.outputs(), is(empty()));
+        assertThat(emit.inputs(), hasSize(1));
+    }
+
+    @Test
+    void severalStatementsGiveOneEmitWithoutTemporaryTables() throws Exception {
+        var emit = JdbcAssets.build(
+            connection,
+            List.of(
+                new JdbcAssets.ExecutedStatement("CREATE TEMP TABLE scratch AS SELECT * FROM orders", 0L),
+                new JdbcAssets.ExecutedStatement("INSERT INTO daily (total) SELECT sum(amount) FROM scratch", 1L),
+                new JdbcAssets.ExecutedStatement("INSERT INTO daily (total) SELECT count(*) FROM customers", 2L)
+            ),
+            true
+        );
+
+        assertThat(emit.outputs().stream().map(o -> o.getId()).toList(), contains(endsWith(".PUBLIC.DAILY")));
+        assertThat(emit.outputs().getFirst().getMetadata().get("rowsAffected"), is(2L));
+        assertThat(emit.inputs().stream().map(i -> i.id()).toList(), containsInAnyOrder(endsWith(".PUBLIC.ORDERS"), endsWith(".PUBLIC.CUSTOMERS")));
     }
 }

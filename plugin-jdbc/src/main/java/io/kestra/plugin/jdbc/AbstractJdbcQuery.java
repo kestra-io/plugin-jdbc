@@ -150,11 +150,13 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
             JdbcAssets.emit(runContext, getAssets(), conn, rSql, rowsAffected);
 
-            var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, this.sql, rSql) : null;
-            var details = JdbcExecutionSupport.details(
-                runContext, JdbcExecutionSupport.tables(conn, List.of(rSql)), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
-            );
-            AbstractJdbcBaseQuery.Output.applyDetails(output, details);
+            if (!JdbcExecutionSupport.isTriggerRun()) {
+                var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
+                var details = JdbcExecutionSupport.details(
+                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql)), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
+                );
+                AbstractJdbcBaseQuery.Output.applyDetails(output, details);
+            }
 
             return output.build();
         } catch (Exception e) {

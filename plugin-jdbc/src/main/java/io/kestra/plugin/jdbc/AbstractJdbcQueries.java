@@ -142,7 +142,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             emitAssets(runContext, queries, stats, this.runningConnection);
 
-            var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, this.sql, rSql) : null;
+            var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
             var columnStatsUri = collector == null || stats.statementLog.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, collector.results());
             var rowsAffected = affectedRows.isEmpty() ? null : affectedRows.stream().mapToLong(Long::longValue).sum();
             var details = JdbcExecutionSupport.details(
@@ -358,10 +358,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
     private void emitAssets(RunContext runContext, String[] queries, RunStats stats, Connection conn)
         throws IllegalVariableEvaluationException {
+        var statements = new ArrayList<JdbcAssets.ExecutedStatement>(queries.length);
         for (var i = 0; i < queries.length; i++) {
             var rowsAffected = i < stats.statementLog.size() ? (Long) stats.statementLog.get(i).get("rowsAffected") : null;
-            JdbcAssets.emit(runContext, getAssets(), conn, queries[i], rowsAffected);
+            statements.add(new JdbcAssets.ExecutedStatement(queries[i], rowsAffected));
         }
+        JdbcAssets.emit(runContext, getAssets(), conn, statements);
     }
 
     @Override
@@ -467,15 +469,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         URI statements;
 
         public void copyExecutionDetailsTo(MultiQueryOutputBuilder<?, ?> builder) {
+            applyDetails(builder, new JdbcExecutionSupport.Details(
+                rowsAffected, bytes, durationMs, warnings,
+                new JdbcExecutionSupport.TableSummary(tables, Boolean.TRUE.equals(tablesTruncated)), statement, columnStats
+            ));
             builder
-                .rowsAffected(rowsAffected)
-                .bytes(bytes)
-                .durationMs(durationMs)
-                .warnings(warnings)
-                .tables(tables)
-                .tablesTruncated(tablesTruncated)
-                .statement(statement)
-                .columnStats(columnStats)
                 .statementCount(statementCount)
                 .statements(statements);
         }
