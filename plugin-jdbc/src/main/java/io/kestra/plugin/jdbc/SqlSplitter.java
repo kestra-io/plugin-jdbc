@@ -36,7 +36,7 @@ public class SqlSplitter {
         StringBuilder token = new StringBuilder();
 
         // A transaction BEGIN ends at the statement's first top-level ';', so only check it there.
-        boolean sawStatementSemicolon = false;
+        var sawStatementSemicolon = false;
 
         boolean doDollarBlock = false;
         String lastTokenUpper = null;
