@@ -18,7 +18,6 @@ if (!classes) {
 const plugin = `io.kestra.plugin.jdbc.${group}`;
 
 // topology-details: 2 rows without execution, 4 rows with one (node base 56px + ~31px per row).
-const explorable = group === "duckdb" || group === "sqlite";
 const exposes = Object.fromEntries(
     classes.map((type) => [
         type,
@@ -45,15 +44,6 @@ const exposes = Object.fromEntries(
                 path: "./src/components/JdbcTaskModal.vue",
                 additionalProperties: { title: "Query details" },
             },
-            ...(explorable
-                ? [
-                      {
-                          slotName: "execution-artifact/explorer" as const,
-                          path: "./src/components/JdbcExplorer.vue",
-                          additionalProperties: { title: "Explorer" },
-                      },
-                  ]
-                : []),
         ],
     ]),
 );
