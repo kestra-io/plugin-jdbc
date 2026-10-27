@@ -2,7 +2,10 @@ package io.kestra.plugin.jdbc;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class SqlSplitterTest {
 
@@ -551,6 +554,15 @@ class SqlSplitterTest {
         assertEquals("INSERT INTO t VALUES (1)", queries[1]);
         assertEquals("COMMIT", queries[2]);
         assertEquals("SELECT 2", queries[3]);
+    }
+
+    @Test
+    void largeBlockAfterLeadingBlockCommentStaysLinear() {
+        var sql = "/* header */\nBEGIN\n" + "  SELECT 1;\n".repeat(20_000) + "END;";
+
+        var queries = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> SqlSplitter.getQueries(sql));
+
+        assertEquals(1, queries.length);
     }
 
     @Test

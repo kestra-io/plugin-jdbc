@@ -35,6 +35,9 @@ public class SqlSplitter {
         boolean sawEndToken = false;
         StringBuilder token = new StringBuilder();
 
+        // A transaction BEGIN ends at the statement's first top-level ';', so only check it there.
+        boolean sawStatementSemicolon = false;
+
         boolean doDollarBlock = false;
         String lastTokenUpper = null;
 
@@ -313,9 +316,10 @@ public class SqlSplitter {
 
                     if (c == ';') {
                         // "BEGIN;" / "BEGIN TRANSACTION ...;" / "BEGIN WORK;" starts a transaction, not a BEGIN...END block.
-                        if (beginDepth == 1 && plsqlDdlDepth == 0 && TRANSACTION_BEGIN.matcher(current).matches()) {
+                        if (!sawStatementSemicolon && beginDepth == 1 && plsqlDdlDepth == 0 && TRANSACTION_BEGIN.matcher(current).matches()) {
                             beginDepth = 0;
                         }
+                        sawStatementSemicolon = true;
 
                         // Close PL/SQL DDL unit on final "END ...;"
                         if (plsqlDdlDepth > 0 && sawEndToken) {
@@ -325,6 +329,7 @@ public class SqlSplitter {
                             if (plsqlDdlDepth == 0 && beginDepth == 0) {
                                 statements.add(current.toString().trim());
                                 current.setLength(0);
+                                sawStatementSemicolon = false;
                                 doDollarBlock = false;
                                 inDeclareSection = false; // reset oracle declare state
                                 continue;
@@ -338,6 +343,7 @@ public class SqlSplitter {
                             if (beginDepth == 0) {
                                 statements.add(current.toString().trim());
                                 current.setLength(0);
+                                sawStatementSemicolon = false;
                                 doDollarBlock = false;
                                 inDeclareSection = false; // reset oracle declare state
                                 continue;
@@ -364,6 +370,7 @@ public class SqlSplitter {
                     }
                 }
                 current.setLength(0);
+                sawStatementSemicolon = false;
                 doDollarBlock = false;
             }
         }
