@@ -8,8 +8,9 @@ import java.util.regex.Pattern;
 public class SqlSplitter {
 
     private static final Pattern TRANSACTION_BEGIN = Pattern.compile(
-        "\\s*BEGIN(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|NOT|DEFERRABLE)\\b[^;]*)?\\s*;",
-        Pattern.CASE_INSENSITIVE
+        "(?:\\s*(?:--[^\\n]*\\n|/\\*.*?\\*/))*\\s*BEGIN"
+            + "(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|DEFERRABLE|NOT\\s+DEFERRABLE|DEFERRED|IMMEDIATE|EXCLUSIVE)\\b[^;]*)?\\s*;",
+        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 
     public static String[] getQueries(String sql) {
@@ -276,8 +277,7 @@ public class SqlSplitter {
                             doDollarBlock = true;
                         }
 
-                        // Postgres CREATE FUNCTION / PROCEDURE: the body is the dollar-quoted string, so the
-                        // statement ends at the next top-level ';' instead of waiting for a PL/SQL "END ...;".
+                        // Postgres function body is the dollar-quoted string: end at the next top-level ';'
                         if (plsqlDdlDepth > 0) {
                             plsqlDdlDepth--;
                         }

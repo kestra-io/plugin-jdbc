@@ -459,15 +459,15 @@ class SqlSplitterTest {
 
     @Test
     void postgresDollarQuotedFunctionFollowedByStatement() {
-        String function = """
+        var function = """
             CREATE OR REPLACE FUNCTION answer() RETURNS int AS $$
             BEGIN
               RETURN 42;
             END;
             $$ LANGUAGE plpgsql""";
-        String sql = function + ";\nSELECT answer();";
+        var sql = function + ";\nSELECT answer();";
 
-        String[] queries = SqlSplitter.getQueries(sql);
+        var queries = SqlSplitter.getQueries(sql);
 
         assertEquals(2, queries.length);
         assertEquals(function, queries[0]);
@@ -476,10 +476,10 @@ class SqlSplitterTest {
 
     @Test
     void postgresTaggedDollarQuotedProcedureFollowedByStatement() {
-        String procedure = "CREATE PROCEDURE p() LANGUAGE plpgsql AS $body$ BEGIN INSERT INTO t VALUES (1); END; $body$";
-        String sql = procedure + "; CALL p();";
+        var procedure = "CREATE PROCEDURE p() LANGUAGE plpgsql AS $body$ BEGIN INSERT INTO t VALUES (1); END; $body$";
+        var sql = procedure + "; CALL p();";
 
-        String[] queries = SqlSplitter.getQueries(sql);
+        var queries = SqlSplitter.getQueries(sql);
 
         assertEquals(2, queries.length);
         assertEquals(procedure, queries[0]);
@@ -488,9 +488,9 @@ class SqlSplitterTest {
 
     @Test
     void transactionStatementsAreSplit() {
-        String sql = "BEGIN; INSERT INTO t VALUES (1); COMMIT; SELECT count(*) FROM t;";
+        var sql = "BEGIN; INSERT INTO t VALUES (1); COMMIT; SELECT count(*) FROM t;";
 
-        String[] queries = SqlSplitter.getQueries(sql);
+        var queries = SqlSplitter.getQueries(sql);
 
         assertEquals(4, queries.length);
         assertEquals("BEGIN", queries[0]);
@@ -501,19 +501,70 @@ class SqlSplitterTest {
 
     @Test
     void beginTransactionWithModesIsSplit() {
-        String sql = """
+        var sql = """
             BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
             UPDATE t SET v = 1;
             begin work;
             COMMIT;
+            BEGIN NOT DEFERRABLE;
+            COMMIT;
             """;
 
-        String[] queries = SqlSplitter.getQueries(sql);
+        var queries = SqlSplitter.getQueries(sql);
 
-        assertEquals(4, queries.length);
+        assertEquals(6, queries.length);
         assertEquals("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE", queries[0]);
         assertEquals("UPDATE t SET v = 1", queries[1]);
         assertEquals("begin work", queries[2]);
         assertEquals("COMMIT", queries[3]);
+        assertEquals("BEGIN NOT DEFERRABLE", queries[4]);
+        assertEquals("COMMIT", queries[5]);
+    }
+
+    @Test
+    void sqliteTransactionModesAreSplit() {
+        var sql = "BEGIN IMMEDIATE; INSERT INTO t VALUES (1); COMMIT; BEGIN DEFERRED TRANSACTION; COMMIT; BEGIN EXCLUSIVE; COMMIT; SELECT 2;";
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(8, queries.length);
+        assertEquals("BEGIN IMMEDIATE", queries[0]);
+        assertEquals("BEGIN DEFERRED TRANSACTION", queries[3]);
+        assertEquals("BEGIN EXCLUSIVE", queries[5]);
+        assertEquals("SELECT 2", queries[7]);
+    }
+
+    @Test
+    void transactionBeginAfterLeadingCommentIsSplit() {
+        var sql = """
+            -- open tx
+            /* block; comment */ BEGIN;
+            INSERT INTO t VALUES (1);
+            COMMIT;
+            SELECT 2;
+            """;
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(4, queries.length);
+        assertEquals("-- open tx\n/* block; comment */ BEGIN", queries[0]);
+        assertEquals("INSERT INTO t VALUES (1)", queries[1]);
+        assertEquals("COMMIT", queries[2]);
+        assertEquals("SELECT 2", queries[3]);
+    }
+
+    @Test
+    void mariadbBeginNotAtomicBlockSingleStatement() {
+        var sql = """
+            BEGIN NOT ATOMIC
+              SELECT 1;
+              SELECT 2;
+            END;
+            """;
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
     }
 }
