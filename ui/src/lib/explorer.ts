@@ -135,12 +135,13 @@ export function bucketCounts(rows: unknown[][]): number[] {
 export type ColumnStats = {
     count?: number;
     nullPercent?: number;
+    nonNull?: number;
     distinct?: number;
     min?: unknown;
     max?: unknown;
     avg?: unknown;
     bars: number[];
-    top: { value: string; percent: number }[];
+    top: { value: string; percent: number; other?: boolean }[];
 };
 
 // Maps the first summary row (by column label, per engine) and the histogram rows to what a card shows.
@@ -162,22 +163,30 @@ export function toColumnStats(
         nullPercent = count > 0 ? ((count - Number(row.non_null)) / count) * 100 : 0;
         distinct = row.distinct_values === undefined ? undefined : Number(row.distinct_values);
     }
-    const total = count - (nullPercent ? (count * nullPercent) / 100 : 0);
+    const total = Math.round(count - (nullPercent ? (count * nullPercent) / 100 : 0));
+    // DuckDB's distinct count is an estimate and can exceed the row count: never show more distinct than non-null values.
+    if (distinct !== undefined && !Number.isNaN(total)) distinct = Math.min(distinct, total);
+    const top: ColumnStats["top"] =
+        kind === "text" && histogram
+            ? histogram.rows.map(([value, n]) => ({
+                  value: String(value),
+                  percent: total > 0 ? Math.round((Number(n) / total) * 100) : 0,
+              }))
+            : [];
+    const other = 100 - top.reduce((sum, t) => sum + t.percent, 0);
+    if (top.length && distinct !== undefined && distinct > top.length && other > 0) {
+        top.push({ value: "other", percent: other, other: true });
+    }
     return {
         count: Number.isNaN(count) ? undefined : count,
         nullPercent,
+        nonNull: Number.isNaN(total) ? undefined : total,
         distinct,
         min: row.min,
         max: row.max,
         avg: row.avg,
         bars: kind === "text" || !histogram ? [] : bucketCounts(histogram.rows),
-        top:
-            kind === "text" && histogram
-                ? histogram.rows.map(([value, n]) => ({
-                      value: String(value),
-                      percent: total > 0 ? Math.round((Number(n) / total) * 100) : 0,
-                  }))
-                : [],
+        top,
     };
 }
 

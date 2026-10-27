@@ -104,7 +104,18 @@ describe("stats queries", () => {
             { columns: [], rows: [["a", 4]], hasMore: false, durationMs: 1 },
         );
         expect(lite.nullPercent).toBe(50);
-        expect(lite.top).toEqual([{ value: "a", percent: 80 }]);
+        expect(lite.top).toEqual([{ value: "a", percent: 80 }, { value: "other", percent: 20, other: true }]);
+    });
+
+    it("never reports more distinct values than non-null rows", () => {
+        const stats = toColumnStats(
+            "duckdb",
+            "numeric",
+            { columns: [{ name: "count", type: "" }, { name: "null_percentage", type: "" }, { name: "approx_unique", type: "" }], rows: [[10, "0.00", 11]], hasMore: false, durationMs: 1 },
+            undefined,
+        );
+        expect(stats.distinct).toBe(10);
+        expect(stats.nonNull).toBe(10);
     });
 });
 

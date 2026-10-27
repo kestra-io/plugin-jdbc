@@ -42,8 +42,7 @@ const { t } = useI18n({
             rows: "Rows {range}",
             columnExplorer: "Column explorer ({rows} rows)",
             nulls: "{percent}% null",
-            distinct: "distinct {n}",
-            values: "{n} values",
+            distinct: "{n} distinct of {total}",
             min: "min",
             max: "max",
             avg: "avg",
@@ -89,7 +88,6 @@ const status = ref(t("ready"));
 const offset = ref(0);
 const total = ref<number | undefined>();
 const stats = ref<Record<string, ColumnStats | undefined>>({});
-const expanded = ref<string | undefined>();
 let generation = 0;
 
 // The host's fetchEndpoint carries the session auth a raw fetch lacks (the core answers 403 to it).
@@ -161,7 +159,6 @@ async function run(from = 0) {
 async function loadStats(current: number) {
     stats.value = {};
     total.value = undefined;
-    expanded.value = undefined;
     const columns = result.value?.columns ?? [];
     try {
         total.value = Number((await query(countSql(sql.value), 1)).rows[0]?.[0]);
@@ -192,10 +189,12 @@ const sampleList = computed(() => (engine.value ? samples(engine.value, selected
 
 function barHeights(bars: number[]) {
     const max = Math.max(1, ...bars);
-    return bars.map((n) => Math.max(2, Math.round((n / max) * 28)));
+    // Empty buckets stay at 0 so they read as "no data", not as a small value.
+    return bars.map((n) => (n === 0 ? 0 : Math.max(3, Math.round((n / max) * 28))));
 }
 
 const fmt = (value: unknown) => (value === undefined || value === null ? "-" : String(value));
+const fmtAvg = (value: unknown) => (Number.isFinite(Number(value)) ? String(Math.round(Number(value) * 100) / 100) : fmt(value));
 const typeClass = (type: string) => columnKind(type);
 </script>
 
@@ -290,41 +289,33 @@ const typeClass = (type: string) => columnKind(type);
 
             <aside class="xp__col">
                 <h4 class="xp__label">{{ t("columnExplorer", { rows: total === undefined ? "-" : total.toLocaleString("en-US") }) }}</h4>
-                <button
-                    v-for="column in result?.columns ?? []"
-                    :key="column.name"
-                    type="button"
-                    class="xp__card"
-                    :aria-expanded="expanded === column.name"
-                    @click="expanded = expanded === column.name ? undefined : column.name"
-                >
-                    <span class="xp__cardhead">
+                <div v-for="column in result?.columns ?? []" :key="column.name" class="xp__card">
+                    <div class="xp__cardhead">
                         <span class="xp__tag xp__mono" :class="`xp__tag--${typeClass(column.type)}`">{{ column.type.toLowerCase() }}</span>
                         <span class="xp__mono xp__grow">{{ column.name }}</span>
                         <span class="xp__dim">{{ t("nulls", { percent: Math.round(stats[column.name]?.nullPercent ?? 0) }) }}</span>
-                    </span>
-                    <span v-if="stats[column.name]?.bars.length" class="xp__bars" aria-hidden="true">
-                        <i v-for="(h, i) in barHeights(stats[column.name]!.bars)" :key="i" :style="{ height: `${h}px` }" />
-                    </span>
-                    <span class="xp__cardfoot xp__dim">
-                        <span>{{ t("distinct", { n: fmt(stats[column.name]?.distinct) }) }}</span>
-                        <span>{{ t("values", { n: fmt(stats[column.name]?.count) }) }}</span>
-                    </span>
-                    <span v-if="expanded === column.name && stats[column.name]" class="xp__detail">
-                        <template v-if="stats[column.name]!.top.length">
-                            <span v-for="top in stats[column.name]!.top" :key="top.value" class="xp__top">
-                                <span class="xp__mono">{{ top.value }}</span>
+                    </div>
+                    <template v-if="stats[column.name]">
+                        <div v-if="stats[column.name]!.bars.length" class="xp__bars" aria-hidden="true">
+                            <i v-for="(h, i) in barHeights(stats[column.name]!.bars)" :key="i" :style="{ height: `${h}px` }" />
+                        </div>
+                        <div v-if="stats[column.name]!.bars.length" class="xp__axis xp__dim">
+                            <span>{{ t("min") }} {{ fmt(stats[column.name]!.min) }}</span>
+                            <span v-if="stats[column.name]!.avg !== undefined && stats[column.name]!.avg !== null">{{ t("avg") }} {{ fmtAvg(stats[column.name]!.avg) }}</span>
+                            <span>{{ t("max") }} {{ fmt(stats[column.name]!.max) }}</span>
+                        </div>
+                        <div v-if="stats[column.name]!.top.length" class="xp__tops">
+                            <div v-for="top in stats[column.name]!.top" :key="top.value" class="xp__top" :class="{ 'xp__top--other': top.other }">
+                                <span class="xp__mono xp__topname" :title="top.value">{{ top.value }}</span>
                                 <span class="xp__topbar"><i :style="{ width: `${top.percent}%` }" /></span>
                                 <span class="xp__dim">{{ top.percent }}%</span>
-                            </span>
-                        </template>
-                        <template v-else>
-                            <span>{{ t("min") }} {{ fmt(stats[column.name]!.min) }}</span>
-                            <span>{{ t("max") }} {{ fmt(stats[column.name]!.max) }}</span>
-                            <span v-if="stats[column.name]!.avg !== undefined">{{ t("avg") }} {{ fmt(stats[column.name]!.avg) }}</span>
-                        </template>
-                    </span>
-                </button>
+                            </div>
+                        </div>
+                        <div class="xp__cardfoot xp__dim">
+                            {{ t("distinct", { n: fmt(stats[column.name]!.distinct), total: fmt(stats[column.name]!.nonNull) }) }}
+                        </div>
+                    </template>
+                </div>
             </aside>
         </div>
     </div>
@@ -595,13 +586,8 @@ const typeClass = (type: string) => columnKind(type);
     border: 1px solid var(--xp-border);
     border-radius: 6px;
     background: var(--xp-canvas);
-    cursor: pointer;
     color: inherit;
     text-align: left;
-}
-
-.xp__card[aria-expanded="true"] {
-    border-color: var(--xp-accent);
 }
 
 .xp__cardhead,
@@ -613,9 +599,29 @@ const typeClass = (type: string) => columnKind(type);
 }
 
 .xp__cardfoot {
-    justify-content: space-between;
-    flex-wrap: wrap;
+    font-size: 11.5px;
     font-variant-numeric: tabular-nums;
+}
+
+.xp__axis {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.xp__axis span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.xp__tops {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
 }
 
 .xp__cardhead .xp__dim {
@@ -643,7 +649,8 @@ const typeClass = (type: string) => columnKind(type);
     display: flex;
     align-items: flex-end;
     gap: 2px;
-    height: 34px;
+    height: 30px;
+    border-bottom: 1px solid var(--xp-border);
 }
 
 .xp__bars i {
@@ -653,19 +660,30 @@ const typeClass = (type: string) => columnKind(type);
     opacity: 0.75;
 }
 
-.xp__detail {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
+.xp__top {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 36px;
     font-size: 11.5px;
+    align-items: center;
+    gap: 6px;
+}
+
+.xp__topname {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.xp__top--other {
     color: var(--xp-dim);
 }
 
-.xp__top {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 70px 36px;
-    align-items: center;
-    gap: 6px;
+.xp__top--other .xp__topbar i {
+    background: var(--xp-dim);
+}
+
+.xp__top .xp__dim {
+    text-align: right;
 }
 
 .xp__topbar {
