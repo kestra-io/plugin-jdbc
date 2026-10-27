@@ -30,11 +30,7 @@ import java.util.logging.Logger;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-/**
- * Runs each concrete trigger and its Query against an in-memory JDBC connection. Only the
- * driver boundary is replaced: no warehouse, credentials, Docker, runner or scheduler is needed.
- * Vendor SQL dialects, wire protocols and TLS still belong in integration tests.
- */
+// Runs vendor triggers against H2 through a test driver; vendor dialects stay in integration tests.
 public abstract class AbstractJdbcTriggerEvaluationTest {
     @Inject
     protected RunContextFactory runContextFactory;
@@ -101,6 +97,8 @@ public abstract class AbstractJdbcTriggerEvaluationTest {
     protected void defaultFetchExposesAllRows() throws Exception {
         var execution = evaluate(configuredTrigger().build()).orElseThrow();
 
+        assertThat(driver.lastInfo.getProperty("user"), is("test-user"));
+        assertThat(driver.lastInfo.getProperty("password"), is("test-password"));
         assertThat(execution.getTrigger().getId(), is("watch"));
         assertThat(((Number) execution.getTrigger().getVariables().get("size")).longValue(), is(2L));
         assertThat(execution.getTrigger().getVariables().get("rows"), is(expectedRows()));
@@ -139,6 +137,7 @@ public abstract class AbstractJdbcTriggerEvaluationTest {
     private static class TestDriver implements Driver {
         private final String url;
         private final String h2Url;
+        private Properties lastInfo;
 
         private TestDriver(String url, String h2Url) {
             this.url = url;
@@ -150,6 +149,8 @@ public abstract class AbstractJdbcTriggerEvaluationTest {
             if (!acceptsURL(url)) {
                 return null;
             }
+            lastInfo = new Properties();
+            lastInfo.putAll(info);
             return DriverManager.getConnection(h2Url);
         }
 
