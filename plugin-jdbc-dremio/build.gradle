@@ -19,3 +19,8 @@ dependencies {
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
+
+tasks.named('test') {
+    // The legacy driver bundles SLF4J classes; prefer Kestra's API on the test classpath.
+    classpath = classpath.filter { it.name.startsWith('slf4j-api-') } + classpath
+}

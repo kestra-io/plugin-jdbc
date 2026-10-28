@@ -46,9 +46,14 @@ public abstract class AbstractJdbcTriggerEvaluationTest {
         var id = UUID.randomUUID().toString();
         var h2Url = "jdbc:h2:mem:" + id + ";DATABASE_TO_LOWER=TRUE";
         database = DriverManager.getConnection(h2Url);
-        // Match the plugin's scheme validation, but never a real vendor driver's URL syntax.
-        driver = new TestDriver(scheme + "-trigger-test:" + id, h2Url);
+        // Accept both the configured URL and the scheme-normalized URL used by some queries.
+        driver = new TestDriver(scheme + "-trigger-test://" + id + "/test", h2Url);
         DriverManager.registerDriver(driver);
+        // Keep the test adapter ahead of vendor drivers, including ones loaded by earlier tests.
+        for (var registered : DriverManager.drivers().filter(candidate -> candidate != driver).toList()) {
+            DriverManager.deregisterDriver(registered);
+            DriverManager.registerDriver(registered);
+        }
         try (var statement = database.createStatement()) {
             statement.execute("CREATE TABLE trigger_items (id INTEGER PRIMARY KEY, name VARCHAR(32))");
             statement.execute("INSERT INTO trigger_items VALUES (1, 'first'), (2, 'second')");
@@ -156,7 +161,7 @@ public abstract class AbstractJdbcTriggerEvaluationTest {
 
         @Override
         public boolean acceptsURL(String url) {
-            return this.url.equals(url);
+            return this.url.equals(url) || this.url.replace("-trigger-test", "").equals(url);
         }
 
         @Override
