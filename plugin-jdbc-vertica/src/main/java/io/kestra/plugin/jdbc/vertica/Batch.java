@@ -5,6 +5,7 @@ import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.plugin.jdbc.AbstractCellConverter;
 import io.kestra.plugin.jdbc.AbstractJdbcBatch;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -104,6 +105,17 @@ import java.time.ZoneId;
             type = Counter.TYPE,
             unit = "queries",
             description = "The number of batch queries executed."
+        ),
+        @Metric(
+            name = "duration",
+            type = Timer.TYPE,
+            description = "The duration of the batch execution, including input handling and retries."
+        ),
+        @Metric(
+            name = "rows.affected",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of rows affected, as reported by the JDBC driver."
         )
     }
 )

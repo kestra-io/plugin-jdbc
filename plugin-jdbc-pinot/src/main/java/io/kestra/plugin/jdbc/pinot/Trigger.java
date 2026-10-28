@@ -74,6 +74,7 @@ public class Trigger extends AbstractJdbcTrigger implements PinotConnectionInter
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
+            .skipExecutionDetails(true)
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

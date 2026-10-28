@@ -195,6 +195,13 @@ Infrastructure dependencies (Docker Compose services):
 - `io.kestra.plugin.jdbc.vertica.Query`
 - `io.kestra.plugin.jdbc.vertica.Trigger`
 
+### Shared helpers in `plugin-jdbc`
+
+- `SqlTableExtractor`: tokenizer based detection of the tables read or written by a statement (`tables` output and assets).
+- `ColumnStatsCollector`: per-column statistics computed while rows are read (`columnStats` output).
+- `JdbcAssets`: builds table assets and lineage emitted by the Query, Queries and Batch tasks.
+- `ui/`: Vue details view (topology and task modal) for every Query, Queries and Batch type, built by Gradle once per sub-plugin module (one federated container per `io.kestra.plugin.jdbc.<package>`) into that module's `plugin-ui/` resources.
+
 ### Project Structure
 
 ```

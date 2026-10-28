@@ -116,6 +116,16 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     private Property<String> table;
 
     @Schema(
+        title = "Expose the executed SQL statement in the outputs",
+        description = """
+            When `true`, the INSERT statement is exposed in the `statement` output, truncated to 64 KiB.
+            Disabled by default so that SQL text never leaks into outputs unless requested"""
+    )
+    @Builder.Default
+    @PluginProperty(group = "advanced")
+    private Property<Boolean> outputStatement = Property.ofValue(false);
+
+    @Schema(
         title = "Maximum number of retries for transient failures",
         description = "Retries are attempted only for transient failures such as temporary I/O and recoverable SQL errors."
     )
@@ -191,6 +201,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         BatchConfig config = buildConfig(runContext);
 
         BatchExecutor executor = new BatchExecutor(config, runContext, converter, logger);
+        var startedAt = System.nanoTime();
 
         try {
             logger.debug("Starting prepared statement: {}", config.sql());
@@ -207,7 +218,20 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 throw mapBatchFailure(e, converter);
             }
 
-            Output output = executor.output();
+            var durationNanos = System.nanoTime() - startedAt;
+            emitAssets(runContext, config.sql(), executor.rowsAffected());
+            var statement = runContext.render(this.outputStatement).as(Boolean.class).orElse(false) ? truncatedStatement(config.sql()) : null;
+            var details = JdbcExecutionSupport.details(
+                runContext,
+                executor.tables(),
+                statement,
+                executor.rowsAffected(),
+                null,
+                durationNanos,
+                executor.warnings,
+                null
+            );
+            Output output = executor.output(details);
 
             runContext.metric(Counter.of("records", output.getRowCount()));
             runContext.metric(Counter.of("updated", output.getUpdatedCount()));
@@ -223,6 +247,31 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             executor.cleanup();
             this.runningStatement = null;
             this.runningConnection = null;
+        }
+    }
+
+    // The INSERT is generated from column names or written by the flow author, with `?` placeholders instead of values.
+    private static String truncatedStatement(String sql) {
+        return sql == null ? null : JdbcExecutionSupport.truncate(sql);
+    }
+
+    // Runs after the commit and outside the retry scope, so an asset failure can never re-run the insert.
+    private void emitAssets(RunContext runContext, String statement, Long rowsAffected) throws Exception {
+        var declaration = getAssets();
+        if (!JdbcAssets.isEnableAuto(runContext, declaration)) {
+            return;
+        }
+        Connection connection;
+        try {
+            connection = connection(runContext);
+        } catch (Exception e) {
+            JdbcAssets.onFailure(runContext, declaration, e);
+            return;
+        }
+        try (connection) {
+            JdbcAssets.emit(runContext, declaration, connection, statement, rowsAffected, null);
+        } catch (SQLException e) {
+            JdbcAssets.onFailure(runContext, declaration, e);
         }
     }
 
@@ -463,8 +512,48 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         @Schema(title = "Total rows read")
         private final Long rowCount;
 
-        @Schema(title = "Rows inserted or updated")
+        @Schema(
+            title = "Rows inserted or updated",
+            description = "Kept for compatibility, prefer `rowsAffected`"
+        )
         private final Integer updatedCount;
+
+        @Schema(
+            title = "Number of rows affected by the batch",
+            description = "Sum of the update counts reported by the JDBC driver for every executed batch"
+        )
+        private final Long rowsAffected;
+
+        @Schema(
+            title = "Batch execution duration in milliseconds",
+            description = "Includes input handling and retries"
+        )
+        private final Long durationMs;
+
+        @Schema(
+            title = "Number of SQL warnings raised by the batch",
+            description = "Count of the `SQLWarning` chain reported by the driver across all executed batches"
+        )
+        private final Integer warnings;
+
+        @Schema(
+            title = "Tables written by the statement",
+            description = """
+                Detected from the SQL text, so this is a best effort.
+                Limited to 50 entries, see `tablesTruncated`"""
+        )
+        private final List<SqlTableExtractor.TableReference> tables;
+
+        @Schema(
+            title = "Whether the `tables` list was cut at 50 entries"
+        )
+        private final Boolean tablesTruncated;
+
+        @Schema(
+            title = "Executed SQL statement",
+            description = "Only populated when `outputStatement` is true; truncated to 64 KiB"
+        )
+        private final String statement;
     }
 
     private record PreparedInput(InputHandling effectiveHandling, StreamSupplier streamSupplier, Path localPath) {
@@ -532,6 +621,10 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         private long rowCount;
         private int updatedCount;
         private long queryCount;
+        private int warnings;
+        private long affected;
+        private boolean affectedUnknown;
+        private JdbcExecutionSupport.TableSummary tables;
 
         private PreparedInput preparedInput;
 
@@ -593,6 +686,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 if (!buffer.isEmpty()) {
                     flush(ps, meta, buffer, connection, supportsTx);
                 }
+
+                tables = JdbcExecutionSupport.tables(connection, List.of(config.sql()), null);
             } catch (Exception e) {
                 if (rollbackOnFailure) {
                     try {
@@ -626,7 +721,16 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
             rowCount += size;
             updatedCount += Arrays.stream(updated).sum();
+            for (var count : updated) {
+                if (count < 0) {
+                    affectedUnknown = true;
+                } else {
+                    affected += count;
+                }
+            }
             queryCount++;
+            warnings += JdbcExecutionSupport.countWarnings(ps);
+            ps.clearWarnings();
         }
 
         void cleanup() {
@@ -641,10 +745,25 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             }
         }
 
-        Output output() {
+        // SUCCESS_NO_INFO entries mean the driver does not know the count, so the total is unknown.
+        Long rowsAffected() {
+            return affectedUnknown ? null : affected;
+        }
+
+        JdbcExecutionSupport.TableSummary tables() {
+            return tables == null ? JdbcExecutionSupport.tables(null, List.of(config.sql()), null) : tables;
+        }
+
+        Output output(JdbcExecutionSupport.Details details) {
             return Output.builder()
                 .rowCount(rowCount)
                 .updatedCount(updatedCount)
+                .rowsAffected(details.rowsAffected())
+                .durationMs(details.durationMs())
+                .warnings(details.warnings())
+                .tables(details.tables().tables())
+                .tablesTruncated(details.tables().truncated() ? Boolean.TRUE : null)
+                .statement(details.statement())
                 .build();
         }
 

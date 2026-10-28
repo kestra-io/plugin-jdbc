@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.net.URI;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +75,12 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
             Output.OutputBuilder<?, ?> output = AbstractJdbcBaseQuery.Output.builder();
             long size = 0L;
+            Long rowsAffected = null;
+            Long bytes = null;
+            URI columnStatsUri = null;
+            var warnings = 0;
+            var durationNanos = 0L;
+            var startedAt = System.nanoTime();
 
             try (Statement stmt = this.getParameters() == null ? this.createStatement(this.runningConnection) : this.prepareStatement(runContext, this.runningConnection, rSql)) {
                 this.runningStatement = stmt;
@@ -83,6 +90,8 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                 }
 
                 logger.debug("Starting query: {}", rSql);
+
+                var collector = columnStatsCollector(runContext, fetchType);
 
                 boolean isResult = switch (stmt) {
                     case PreparedStatement preparedStatement -> {
@@ -108,29 +117,46 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                             case STORE -> {
                                 File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                                 try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                                    size = fetchToFile(stmt, rs, fileOutput, cellConverter, conn);
+                                    size = fetchToFile(stmt, rs, fileOutput, cellConverter, conn, collector);
                                 }
+                                bytes = tempFile.length();
                                 output
                                     .uri(runContext.storage().putFile(tempFile))
                                     .size(size);
                             }
                             case FETCH -> {
                                 List<Map<String, Object>> maps = new ArrayList<>();
-                                size = fetchResults(stmt, rs, maps, cellConverter, conn);
+                                size = fetchResults(stmt, rs, maps, cellConverter, conn, collector);
                                 output
                                     .rows(maps)
                                     .size(size);
                             }
                         }
                     }
+                    if (collector != null) {
+                        columnStatsUri = JdbcExecutionSupport.storeIon(runContext, collector.results());
+                    }
+                } else {
+                    rowsAffected = JdbcExecutionSupport.updateCount(stmt);
                 }
+
+                durationNanos = System.nanoTime() - startedAt;
+                warnings = JdbcExecutionSupport.countWarnings(stmt);
             }
 
             executeAfterSQL(runContext, conn, logger, supportsTx);
 
             runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
 
-            upsertAsset(runContext, conn, rSql);
+            JdbcAssets.emit(runContext, getAssets(), conn, rSql, rowsAffected, this.sqlSyntax());
+
+            if (!this.skipExecutionDetails) {
+                var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
+                var details = JdbcExecutionSupport.details(
+                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql), this.sqlSyntax()), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
+                );
+                AbstractJdbcBaseQuery.Output.applyDetails(output, details);
+            }
 
             return output.build();
         } catch (Exception e) {

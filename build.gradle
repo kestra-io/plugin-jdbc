@@ -6,6 +6,7 @@ plugins {
     id "idea"
     id 'jacoco-report-aggregation'
     id "com.gradleup.shadow" version "9.6.1" apply(false)
+    id 'com.github.node-gradle.node' version '7.1.0' apply(false)
     id 'signing'
     id 'net.researchgate.release' version '3.2.0'
     id "com.vanniktech.maven.publish" version "0.37.0"
@@ -287,3 +288,41 @@ idea {
     }
 }
 
+/**********************************************************************************************************************\
+ * Plugin UI
+ * The host loads one federated container per sub-plugin group, so the same ui/ sources are built once per
+ * sub-plugin module (JDBC_UI_GROUP = its package) into that module's own plugin-ui/ resources.
+ **********************************************************************************************************************/
+apply plugin: 'com.github.node-gradle.node'
+
+def uiDir = file('ui')
+def uiGroups = new groovy.json.JsonSlurper().parse(file('ui/jdbc-types.json')).keySet()
+
+tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
+    args = ['ci', '--fetch-retries=5', '--fetch-retry-mintimeout=5000', '--fetch-retry-maxtimeout=60000']
+    workingDir = uiDir
+    inputs.files(file('ui/package.json'), file('ui/package-lock.json'))
+    outputs.dir(file('ui/node_modules'))
+}
+
+subprojects { subproject ->
+    def pkgDir = subproject.file('src/main/java/io/kestra/plugin/jdbc')
+    def group = pkgDir.exists() ? pkgDir.list().find { uiGroups.contains(it) } : null
+    if (group != null) {
+        subproject.apply plugin: 'com.github.node-gradle.node'
+        def outputDir = subproject.layout.projectDirectory.dir('src/main/resources/plugin-ui')
+
+        subproject.tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
+            dependsOn rootProject.tasks.named('npmInstallUI')
+            args = ['run', 'build', '--', '--outDir', outputDir.asFile.absolutePath, '--emptyOutDir']
+            workingDir = uiDir
+            environment = ['JDBC_UI_GROUP': group]
+            inputs.dir(uiDir.toPath().resolve('src'))
+            inputs.files(rootProject.file('ui/vite.config.ts'), rootProject.file('ui/jdbc-types.json'), rootProject.file('ui/package-lock.json'))
+            inputs.property('group', group)
+            outputs.dir(outputDir)
+        }
+        subproject.tasks.named('processResources') { dependsOn 'buildUI' }
+        subproject.tasks.matching { it.name == 'sourcesJar' }.configureEach { dependsOn 'buildUI' }
+    }
+}
