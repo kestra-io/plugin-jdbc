@@ -295,6 +295,34 @@ class SqlTableExtractorTest {
     }
 
     @Test
+    void deleteUsingWithoutAliasReadsTheJoinedTable() {
+        var tables = SqlTableExtractor.extract("DELETE FROM orders USING u WHERE orders.customer_id = u.id", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("WRITE:orders", "READ:u"));
+    }
+
+    @Test
+    void deleteUsingSeveralTablesReadsAllOfThem() {
+        var tables = SqlTableExtractor.extract("DELETE FROM orders o USING u, v WHERE o.a = u.id AND o.b = v.id", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("WRITE:orders", "READ:u", "READ:v"));
+    }
+
+    @Test
+    void updateFromReadsTheJoinedTable() {
+        var tables = SqlTableExtractor.extract("UPDATE orders o SET status = u.status FROM u WHERE o.id = u.id", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("WRITE:orders", "READ:u"));
+    }
+
+    @Test
+    void mergeUsingStillReadsTheSourceAfterADelete() {
+        var tables = SqlTableExtractor.extract("DELETE FROM old_rows; MERGE INTO t USING u ON t.id = u.id WHEN MATCHED THEN UPDATE SET v = u.v", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("WRITE:old_rows", "WRITE:t", "READ:u"));
+    }
+
+    @Test
     void oracleQuotedSchemasDualAndSchemaQualifiedWrites() {
         var tables = SqlTableExtractor.extract(
             "INSERT INTO hr.emp_archive SELECT e.* FROM \"HR\".\"EMPLOYEES\" e JOIN hr.departments d ON d.department_id = e.department_id",

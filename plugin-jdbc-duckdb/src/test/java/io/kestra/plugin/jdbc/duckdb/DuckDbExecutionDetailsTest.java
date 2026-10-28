@@ -4,6 +4,9 @@ import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.core.secret.SecretService;
+import io.micronaut.test.annotation.MockBean;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -16,6 +19,36 @@ import static org.hamcrest.Matchers.*;
 class DuckDbExecutionDetailsTest {
     @Inject
     private RunContextFactory runContextFactory;
+
+    // Resolves the secret without an environment variable, so the module build is left untouched.
+    @MockBean(SecretService.class)
+    SecretService<?> secretService() {
+        return new SecretService<>() {
+            @Override
+            public String findSecret(String tenantId, String namespace, String key) {
+                return "s3cr3t-value";
+            }
+        };
+    }
+
+    @Test
+    void statementMasksSecretsRenderedByTheDuckDbTask() throws Exception {
+        var runContext = runContextFactory.of(Map.of("flow", Map.of(
+            "id", "secret_flow",
+            "namespace", "io.kestra.tests",
+            "tenantId", TenantService.MAIN_TENANT
+        )));
+
+        var output = Query.builder()
+            .outputStatement(Property.ofValue(true))
+            .sql(Property.ofExpression("SELECT '{{ secret('DUCKDB_MASK_TEST') }}' AS token"))
+            .fetchType(Property.ofValue(FetchType.FETCH_ONE))
+            .build()
+            .run(runContext);
+
+        assertThat(output.getRow().get("token"), is("s3cr3t-value"));
+        assertThat(output.getStatement(), is("SELECT '***' AS token"));
+    }
 
     @Test
     void queriesExposeDetailsAndTableKinds() throws Exception {
