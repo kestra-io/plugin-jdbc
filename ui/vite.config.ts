@@ -39,11 +39,6 @@ const exposes = Object.fromEntries(
                 slotName: "topology-task-modal" as const,
                 path: "./src/components/JdbcTaskModal.vue",
             },
-            {
-                slotName: "execution-artifact/details" as const,
-                path: "./src/components/JdbcTaskModal.vue",
-                additionalProperties: { title: "Query details" },
-            },
         ],
     ]),
 );
