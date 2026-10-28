@@ -1,5 +1,7 @@
 package io.kestra.plugin.jdbc;
 
+import io.kestra.plugin.jdbc.SqlTokenizer.Token;
+import io.kestra.plugin.jdbc.SqlTokenizer.TokenType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -171,26 +173,8 @@ public final class SqlTableExtractor {
         }
     }
 
-    private enum TokenType {
-        WORD,
-        QUOTED,
-        STRING,
-        SYMBOL,
-        VARIABLE
-    }
-
-    private record Token(TokenType type, String text) {
-        boolean isWord(String word) {
-            return type == TokenType.WORD && text.equalsIgnoreCase(word);
-        }
-
-        boolean isSymbol(String symbol) {
-            return type == TokenType.SYMBOL && text.equals(symbol);
-        }
-
-        String lower() {
-            return text.toLowerCase(Locale.ROOT);
-        }
+    // Statement kind and tables of one statement, from a single tokenization.
+    public record Analysis(String kind, List<TableReference> tables) {
     }
 
     public static List<TableReference> extract(String sql, Dialect dialect) {
@@ -198,15 +182,30 @@ public final class SqlTableExtractor {
     }
 
     public static List<TableReference> extract(String sql, Dialect dialect, Syntax syntax) {
+        return analyze(sql, dialect, syntax).tables();
+    }
+
+    public static Analysis analyze(String sql, Dialect dialect, Syntax syntax) {
         if (sql == null || sql.isBlank()) {
-            return List.of();
+            return new Analysis("OTHER", List.of());
         }
 
-        var tokens = tokenize(sql, dialect, syntax);
+        var tokens = codeTokens(sql, dialect, syntax);
         var cteNames = collectCteNames(tokens);
         var found = new LinkedHashMap<String, TableReference>();
         new Walker(tokens, dialect, cteNames, found).walk();
-        return List.copyOf(found.values());
+        return new Analysis(statementKind(tokens), List.copyOf(found.values()));
+    }
+
+    // Comments, dollar-quoted bodies, numbers and double-quoted strings never matter to the walk.
+    private static List<Token> codeTokens(String sql, Dialect dialect, Syntax syntax) {
+        var options = new SqlTokenizer.Options(syntax.backslashEscapes(), syntax.hashLineComments(), dialect == Dialect.MYSQL, dialect == Dialect.SQLSERVER);
+        return SqlTokenizer.tokenize(sql, options).stream()
+            .filter(token -> switch (token.type()) {
+                case WORD, VARIABLE, QUOTED, STRING, SYMBOL -> true;
+                default -> false;
+            })
+            .toList();
     }
 
     // The user-info ends at the last `@`; when a `?` or `#` comes before it the split is ambiguous, so nothing is kept.
@@ -237,7 +236,10 @@ public final class SqlTableExtractor {
         if (sql == null || sql.isBlank()) {
             return "OTHER";
         }
-        var tokens = tokenize(sql, Dialect.ANSI, Syntax.of(Dialect.ANSI));
+        return statementKind(codeTokens(sql, Dialect.ANSI, Syntax.of(Dialect.ANSI)));
+    }
+
+    private static String statementKind(List<Token> tokens) {
         var depth = 0;
         var first = true;
         for (var token : tokens) {
@@ -427,7 +429,7 @@ public final class SqlTableExtractor {
                             next = peek(4);
                         }
                         if (next != null && next.type() == TokenType.STRING) {
-                            addFile(next.text, true);
+                            addFile(next.text(), true);
                         }
                     }
                 }
@@ -462,13 +464,13 @@ public final class SqlTableExtractor {
             while (cursor < tokens.size()) {
                 var token = tokens.get(cursor);
                 if (dialect.detectFiles && token.type() == TokenType.STRING && access == Access.READ) {
-                    addFile(token.text, false);
+                    addFile(token.text(), false);
                     return;
                 }
                 if (token.type() == TokenType.WORD && FILE_READERS.contains(token.lower()) && peekIs(cursor + 1, "(")) {
                     var argument = tokenAt(cursor + 2);
                     if (dialect.detectFiles && argument != null && argument.type() == TokenType.STRING) {
-                        addFile(argument.text, false);
+                        addFile(argument.text(), false);
                     }
                     return;
                 }
@@ -523,13 +525,13 @@ public final class SqlTableExtractor {
                     if (parts.isEmpty() && NON_TABLE_WORDS.contains(token.lower())) {
                         return null;
                     }
-                    parts.add(token.text);
+                    parts.add(token.text());
                     quoted.add(false);
                 } else if (token.type() == TokenType.QUOTED) {
-                    parts.add(token.text);
+                    parts.add(token.text());
                     quoted.add(true);
-                } else if (token.type() == TokenType.VARIABLE && parts.isEmpty() && token.text.startsWith("#")) {
-                    parts.add(token.text);
+                } else if (token.type() == TokenType.VARIABLE && parts.isEmpty() && token.text().startsWith("#")) {
+                    parts.add(token.text());
                     quoted.add(false);
                 } else {
                     break;
@@ -639,115 +641,5 @@ public final class SqlTableExtractor {
             }
             return false;
         }
-    }
-
-    private static List<Token> tokenize(String sql, Dialect dialect, Syntax syntax) {
-        var tokens = new ArrayList<Token>();
-        var length = sql.length();
-        var i = 0;
-
-        while (i < length) {
-            var c = sql.charAt(i);
-            var next = i + 1 < length ? sql.charAt(i + 1) : '\0';
-
-            if (Character.isWhitespace(c)) {
-                i++;
-            } else if (c == '-' && next == '-') {
-                i = skipLine(sql, i);
-            } else if (c == '#' && syntax.hashLineComments()) {
-                i = skipLine(sql, i);
-            } else if (c == '/' && next == '*') {
-                var end = sql.indexOf("*/", i + 2);
-                i = end < 0 ? length : end + 2;
-            } else if (c == '$' && isDollarQuoteStart(sql, i)) {
-                var endTag = sql.indexOf('$', i + 1);
-                var tag = sql.substring(i, endTag + 1);
-                var close = sql.indexOf(tag, endTag + 1);
-                i = close < 0 ? length : close + tag.length();
-            } else if (c == '\'') {
-                var escapes = syntax.backslashEscapes() || (i > 0 && (sql.charAt(i - 1) == 'E' || sql.charAt(i - 1) == 'e'));
-                var end = scanQuoted(sql, i, '\'', escapes);
-                tokens.add(new Token(TokenType.STRING, unquote(sql, i, end, '\'')));
-                i = end;
-            } else if (c == '"' && dialect == Dialect.MYSQL) {
-                i = scanQuoted(sql, i, '"', true);
-            } else if (c == '"') {
-                var end = scanQuoted(sql, i, '"', false);
-                tokens.add(new Token(TokenType.QUOTED, unquote(sql, i, end, '"')));
-                i = end;
-            } else if (c == '`') {
-                var end = scanQuoted(sql, i, '`', false);
-                tokens.add(new Token(TokenType.QUOTED, unquote(sql, i, end, '`')));
-                i = end;
-            } else if (c == '[' && dialect == Dialect.SQLSERVER) {
-                var end = sql.indexOf(']', i + 1);
-                end = end < 0 ? length : end + 1;
-                tokens.add(new Token(TokenType.QUOTED, sql.substring(i + 1, Math.max(i + 1, end - 1))));
-                i = end;
-            } else if (Character.isLetter(c) || c == '_' || c == '#' || c == '@') {
-                var start = i;
-                i++;
-                while (i < length && isWordChar(sql.charAt(i))) {
-                    i++;
-                }
-                var text = sql.substring(start, i);
-                tokens.add(new Token(c == '#' || c == '@' ? TokenType.VARIABLE : TokenType.WORD, text));
-            } else if (Character.isDigit(c)) {
-                i++;
-                while (i < length && (Character.isLetterOrDigit(sql.charAt(i)) || sql.charAt(i) == '.')) {
-                    i++;
-                }
-            } else {
-                tokens.add(new Token(TokenType.SYMBOL, String.valueOf(c)));
-                i++;
-            }
-        }
-        return tokens;
-    }
-
-    private static boolean isWordChar(char c) {
-        return Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '#';
-    }
-
-    private static boolean isDollarQuoteStart(String sql, int start) {
-        var end = start + 1;
-        while (end < sql.length() && (Character.isLetterOrDigit(sql.charAt(end)) || sql.charAt(end) == '_')) {
-            end++;
-        }
-        var isTag = end < sql.length() && sql.charAt(end) == '$';
-        var isPositionalParam = end > start + 1 && Character.isDigit(sql.charAt(start + 1));
-        return isTag && !isPositionalParam && (start == 0 || !isWordChar(sql.charAt(start - 1)));
-    }
-
-    private static int skipLine(String sql, int start) {
-        var end = sql.indexOf('\n', start);
-        return end < 0 ? sql.length() : end + 1;
-    }
-
-    // Returns the index right after the closing quote; doubled quotes are escapes.
-    private static int scanQuoted(String sql, int start, char quote, boolean backslashEscapes) {
-        var i = start + 1;
-        while (i < sql.length()) {
-            var c = sql.charAt(i);
-            if (backslashEscapes && c == '\\') {
-                i += 2;
-                continue;
-            }
-            if (c == quote) {
-                if (i + 1 < sql.length() && sql.charAt(i + 1) == quote) {
-                    i += 2;
-                    continue;
-                }
-                return i + 1;
-            }
-            i++;
-        }
-        return sql.length();
-    }
-
-    private static String unquote(String sql, int start, int end, char quote) {
-        var closed = end - 1 > start && sql.charAt(end - 1) == quote;
-        var inner = sql.substring(start + 1, closed ? end - 1 : end);
-        return inner.replace("" + quote + quote, String.valueOf(quote));
     }
 }

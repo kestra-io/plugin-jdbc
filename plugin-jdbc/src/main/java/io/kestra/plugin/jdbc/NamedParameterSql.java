@@ -31,113 +31,34 @@ record NamedParameterSql(String sql, List<String> names) {
             return new NamedParameterSql(sql, Collections.emptyList());
         }
 
+        var tokens = SqlTokenizer.tokenize(sql, new SqlTokenizer.Options(backslashEscapes, hashLineComments, false, false));
         var len = sql.length();
         var out = new StringBuilder(len);
         var names = new ArrayList<String>();
 
-        var i = 0;
-        while (i < len) {
-            var c = sql.charAt(i);
-            var next = i + 1 < len ? sql.charAt(i + 1) : '\0';
-
-            if (c == '\'' || c == '"' || c == '`') {
-                var end = closingQuote(sql, i, c, backslashEscapes || isEscapeStringPrefix(sql, i));
-                out.append(sql, i, end);
-                i = end;
-            } else if (c == '$') {
-                var end = closingDollarQuote(sql, i);
-                out.append(sql, i, Math.max(end, i + 1));
-                i = Math.max(end, i + 1);
-            } else if ((c == '-' && next == '-') || (c == '#' && hashLineComments)) {
-                var end = sql.indexOf('\n', i);
-                end = end < 0 ? len : end;
-                out.append(sql, i, end);
-                i = end;
-            } else if (c == '/' && next == '*') {
-                var end = sql.indexOf("*/", i + 2);
-                end = end < 0 ? len : end + 2;
-                out.append(sql, i, end);
-                i = end;
-            } else if (c == ':' && next == ':') {
-                out.append("::");
-                i += 2;
-            } else if (c == ':' && isIdentifierStart(next) && (i == 0 || !isIdentifierPart(sql.charAt(i - 1)))) {
-                var end = i + 1;
-                while (end < len && isIdentifierPart(sql.charAt(end))) {
-                    end++;
-                }
-                out.append('?');
-                names.add(sql.substring(i + 1, end));
-                i = end;
-            } else {
-                out.append(c);
-                i++;
-            }
-        }
-
-        return new NamedParameterSql(out.toString(), Collections.unmodifiableList(names));
-    }
-
-    /**
-     * Index just past the closing quote, treating a doubled quote ({@code ''}) and, when enabled,
-     * a backslash-escaped character ({@code \'}) as part of the literal. An unterminated quote
-     * runs to the end of the SQL.
-     */
-    private static int closingQuote(String sql, int start, char quote, boolean backslashEscapes) {
-        var len = sql.length();
-        var i = start + 1;
-        while (i < len) {
-            var c = sql.charAt(i);
-            if (backslashEscapes && c == '\\') {
-                i += 2;
+        // Literals, comments and quoted identifiers are tokens of their own, so only bare colons are looked at.
+        var copied = 0;
+        var skipUntil = 0;
+        for (var token : tokens) {
+            var i = token.start();
+            if (token.type() != SqlTokenizer.TokenType.SYMBOL || token.text().charAt(0) != ':' || i < skipUntil || i < copied) {
                 continue;
             }
-            if (c == quote) {
-                if (i + 1 < len && sql.charAt(i + 1) == quote) {
-                    i += 2;
-                    continue;
+            var next = i + 1 < len ? sql.charAt(i + 1) : '\0';
+            if (next == ':') {
+                skipUntil = i + 2;
+            } else if (SqlTokenizer.isIdentifierStart(next) && (i == 0 || !SqlTokenizer.isIdentifierPart(sql.charAt(i - 1)))) {
+                var end = i + 1;
+                while (end < len && SqlTokenizer.isIdentifierPart(sql.charAt(end))) {
+                    end++;
                 }
-                return i + 1;
+                out.append(sql, copied, i).append('?');
+                names.add(sql.substring(i + 1, end));
+                copied = end;
             }
-            i++;
         }
-        return len;
-    }
+        out.append(sql, copied, len);
 
-    /**
-     * Whether the quote at {@code quoteIndex} opens a PostgreSQL escape string ({@code E'..'}),
-     * in which a backslash escapes the next character.
-     */
-    private static boolean isEscapeStringPrefix(String sql, int quoteIndex) {
-        if (quoteIndex == 0 || sql.charAt(quoteIndex) != '\'') {
-            return false;
-        }
-        var prefix = sql.charAt(quoteIndex - 1);
-        return (prefix == 'E' || prefix == 'e') && (quoteIndex == 1 || !isIdentifierPart(sql.charAt(quoteIndex - 2)));
-    }
-
-    /**
-     * Index just past the closing tag of a dollar-quoted body ({@code $$..$$}, {@code $tag$..$tag$})
-     * opening at {@code start}, or -1 when the dollar does not open one or the body never closes.
-     */
-    private static int closingDollarQuote(String sql, int start) {
-        var tagEnd = start + 1;
-        while (tagEnd < sql.length() && isIdentifierPart(sql.charAt(tagEnd))) {
-            tagEnd++;
-        }
-        if (tagEnd >= sql.length() || sql.charAt(tagEnd) != '$' || (tagEnd > start + 1 && Character.isDigit(sql.charAt(start + 1)))) {
-            return -1;
-        }
-        var tag = sql.substring(start, tagEnd + 1);
-        var close = sql.indexOf(tag, tagEnd + 1);
-        return close < 0 ? -1 : close + tag.length();
-    }
-
-    private static boolean isIdentifierStart(char c) {
-        return Character.isLetter(c) || c == '_';
-    }
-
-    private static boolean isIdentifierPart(char c) {
-        return Character.isLetterOrDigit(c) || c == '_';
+        return new NamedParameterSql(out.toString(), Collections.unmodifiableList(names));
     }
 }

@@ -107,8 +107,9 @@ final class JdbcAssets {
         var read = new LinkedHashSet<String>();
 
         for (var executed : statements) {
-            var kind = SqlTableExtractor.statementKind(executed.sql());
-            for (var reference : SqlTableExtractor.extract(executed.sql(), dialect, rSyntax)) {
+            var analysis = SqlTableExtractor.analyze(executed.sql(), dialect, rSyntax);
+            var kind = analysis.kind();
+            for (var reference : analysis.tables()) {
                 if (reference.getAccess() == Access.CREATE && reference.getConfidence() == Confidence.LOW) {
                     // Temporary tables only live for the session, so neither they nor their later reads are assets.
                     temporaryTables.add(reference.getName().toLowerCase(Locale.ROOT));

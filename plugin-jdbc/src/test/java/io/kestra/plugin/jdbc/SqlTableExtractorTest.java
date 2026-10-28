@@ -390,4 +390,49 @@ class SqlTableExtractorTest {
 
         assertThat(tables.stream().map(SqlTableExtractor.TableReference::getName).toList(), contains("a", "b"));
     }
+
+    @Test
+    void unterminatedDollarQuoteDoesNotHideTheRestOfTheStatement() {
+        var tables = SqlTableExtractor.extract("SELECT $$ FROM orders", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("READ:orders"));
+    }
+
+    @Test
+    void terminatedDollarQuoteStillHidesItsBody() {
+        var tables = SqlTableExtractor.extract("SELECT $$ FROM hidden $$ FROM orders", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("READ:orders"));
+    }
+
+    @Test
+    void escapeStringPrefixGluedToAWordIsNotAnEscapeString() {
+        // ONE'..' is a plain literal, so the backslash does not escape the quote and the literal ends before FROM
+        var tables = SqlTableExtractor.extract("SELECT ONE'a\\' FROM orders", Dialect.ANSI);
+
+        assertThat(summary(tables), contains("READ:orders"));
+    }
+
+    @Test
+    void backslashDoesNotEscapeInsideBackticks() {
+        var tables = SqlTableExtractor.extract("SELECT `a\\` FROM orders", Dialect.MYSQL);
+
+        assertThat(summary(tables), contains("READ:orders"));
+    }
+
+    @Test
+    void backslashEscapesInDoubleQuotesFollowTheSyntax() {
+        var syntax = new SqlTableExtractor.Syntax(true, false);
+        var tables = SqlTableExtractor.extract("SELECT * FROM \"a\\\"b\"", Dialect.ANSI, syntax);
+
+        assertThat(summary(tables), contains("READ:a\\\"b"));
+    }
+
+    @Test
+    void analyzeReturnsKindAndTablesFromOneTokenization() {
+        var analysis = SqlTableExtractor.analyze("INSERT INTO t SELECT * FROM s", Dialect.ANSI, SqlTableExtractor.Syntax.of(Dialect.ANSI));
+
+        assertThat(analysis.kind(), is("INSERT"));
+        assertThat(summary(analysis.tables()), contains("WRITE:t", "READ:s"));
+    }
 }
