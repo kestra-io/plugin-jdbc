@@ -13,7 +13,6 @@ const { t } = useI18n({
         en: {
             table: "Table",
             access: "Access",
-            confidence: "Confidence",
             tables: "Tables",
             tablesNote: "Detected from the SQL text, not a full parser. CTEs and dialect-specific syntax can be missed.",
             tablesTruncated: "The list is truncated to 50 tables.",
@@ -46,7 +45,6 @@ const tableName = (table: any) =>
                         <tr>
                             <th>{{ t("table") }}</th>
                             <th>{{ t("access") }}</th>
-                            <th>{{ t("confidence") }}</th>
                             <th v-if="tables.some((table) => table.kind)" />
                         </tr>
                     </thead>
@@ -54,7 +52,6 @@ const tableName = (table: any) =>
                         <tr v-for="(table, index) in tables" :key="index">
                             <td class="jdbc-modal__mono">{{ tableName(table) }}</td>
                             <td><span class="jdbc-modal__pill" :class="accessClass(table.access)">{{ table.access ?? DASH }}</span></td>
-                            <td>{{ table.confidence ? table.confidence.charAt(0) + table.confidence.slice(1).toLowerCase() : DASH }}</td>
                             <td v-if="tables.some((other) => other.kind)" class="jdbc-modal__dim">{{ table.kind ?? "" }}</td>
                         </tr>
                     </tbody>
