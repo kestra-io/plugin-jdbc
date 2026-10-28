@@ -3,9 +3,13 @@ package io.kestra.plugin.jdbc.mysql;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.storages.StorageInterface;
+import io.kestra.core.tenant.TenantService;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -17,6 +21,31 @@ class MysqlExecutionDetailsTest {
 
     @Inject
     private RunContextFactory runContextFactory;
+
+    @Inject
+    private StorageInterface storageInterface;
+
+    @Test
+    void everyStatementOfAScriptIsCounted() throws Exception {
+        var output = Queries.builder()
+            .url(Property.ofValue(URL)).username(Property.ofValue("root")).password(Property.ofValue("mysql_passwd"))
+            .sql(Property.ofValue("""
+                DROP TABLE IF EXISTS exec_count;
+                CREATE TABLE exec_count (id int, v varchar(20));
+                INSERT INTO exec_count VALUES (1, 'a'), (2, 'b'), (3, 'c');
+                """))
+            .build()
+            .run(runContextFactory.of(Map.of()));
+
+        assertThat(output.getStatementCount(), is(3L));
+
+        var statements = new ArrayList<Map<String, Object>>();
+        try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getStatements())) {
+            FileSerde.read(input, row -> statements.add((Map<String, Object>) row));
+        }
+        assertThat(statements.stream().map(s -> s.get("kind")).toList(), contains("DROP", "CREATE", "INSERT"));
+        assertThat(((Number) statements.get(2).get("rowsAffected")).longValue(), is(3L));
+    }
 
     @Test
     void backtickedTablesAndRowsAffected() throws Exception {

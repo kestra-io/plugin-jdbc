@@ -124,7 +124,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         stats
                     );
                     stats.warnings += JdbcExecutionSupport.countWarnings(stmt);
-                    stats.recordStatement(query, affectedRows.subList(affectedBefore, affectedRows.size()), System.nanoTime() - statementStartedAt);
+                    if (shouldBatchQueries) {
+                        stats.recordBatch(getQueries(rSql), System.nanoTime() - statementStartedAt);
+                    } else {
+                        stats.recordStatement(query, affectedRows.subList(affectedBefore, affectedRows.size()), System.nanoTime() - statementStartedAt);
+                    }
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
@@ -298,6 +302,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
                 totalSize += size;
                 outputList.add(output.build());
+                stats.batchResults.add(null);
             } else {
                 var updateCount = JdbcExecutionSupport.updateCount(stmt);
                 // No result set and no update count: end of results
@@ -305,6 +310,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     break;
                 }
                 affectedRows.add(updateCount);
+                stats.batchResults.add(updateCount);
             }
 
             // Move to the next result
@@ -375,6 +381,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     // Accumulates the figures that are only known while the statements run.
     private static final class RunStats {
         private final List<Map<String, Object>> statementLog = new ArrayList<>();
+        // One entry per result (null for a result set) of a script sent as a single batched execute().
+        private final List<Long> batchResults = new ArrayList<>();
         private long bytes;
         private boolean stored;
         private int warnings;
@@ -382,6 +390,21 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         void addStoredBytes(long size) {
             bytes += size;
             stored = true;
+        }
+
+        // A batched script is one execute() call, so log one record per result instead of one for the whole script.
+        // Each statement yields one result, which lets us pair the split statements with the results by position.
+        void recordBatch(String[] statements, long durationNanos) {
+            var pairable = statements.length == batchResults.size();
+            for (var i = 0; i < batchResults.size(); i++) {
+                var entry = new LinkedHashMap<String, Object>();
+                entry.put("index", statementLog.size());
+                entry.put("kind", pairable ? SqlTableExtractor.statementKind(statements[i]) : null);
+                entry.put("rowsAffected", batchResults.get(i));
+                // The driver does not report a duration per statement of a batch, so only a single statement has one.
+                entry.put("durationMs", batchResults.size() == 1 ? Duration.ofNanos(durationNanos).toMillis() : null);
+                statementLog.add(entry);
+            }
         }
 
         void recordStatement(String query, List<Long> affected, long durationNanos) {
