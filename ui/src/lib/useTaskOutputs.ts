@@ -16,11 +16,18 @@ export function useTaskOutputs(props: SlotProps) {
         if (!taskRunId) return;
         try {
             const result = await props.fetchOutputs?.({ taskRunId });
+            // A slow response for a previous task run must not overwrite the current one.
+            if (taskRun.value?.id !== taskRunId) return;
             if (result && Object.keys(result).length > 0) fetched.value = result;
         } catch {
             /* best-effort */
         }
     }
+
+    // A retry or another execution must not keep showing the previous task run outputs.
+    watch(() => taskRun.value?.id, () => {
+        fetched.value = null;
+    });
 
     // Outputs are only complete once the task run ends, so a state change reloads them too.
     watch(() => [taskRun.value?.id, taskRun.value?.state?.current], load, { immediate: true });

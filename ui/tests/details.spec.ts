@@ -83,6 +83,13 @@ describe("apiRoot", () => {
         expect(fileHref("kestra:///a.ion", "main", "E1")).toBe("/kestra/api/v1/main/executions/E1/file?path=kestra%3A%2F%2F%2Fa.ion");
     });
 
+    it("ignores VITE_APP_API_URL, which comes from the plugin build and not the host", () => {
+        vi.stubEnv("VITE_APP_API_URL", "https://evil.example");
+        vi.stubGlobal("window", { KESTRA_BASE_PATH: "/kestra" });
+        expect(apiRoot()).toBe("/kestra");
+        vi.unstubAllEnvs();
+    });
+
     it("is empty at the root", () => {
         vi.stubGlobal("window", { KESTRA_BASE_PATH: "/" });
         expect(apiRoot()).toBe("");

@@ -74,11 +74,10 @@ export function safeHref(value: unknown): string | undefined {
     return typeof value === "string" && /^https?:\/\//i.test(value) ? value : undefined;
 }
 
-// Same root as the host API client, so the file route also works behind a base path or a remote API URL.
+// The host sets KESTRA_BASE_PATH, so the file route also works behind a base path.
 export function apiRoot(): string {
-    const apiUrl = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_APP_API_URL ?? "";
     const basePath = typeof window === "undefined" ? "" : ((window as { KESTRA_BASE_PATH?: string }).KESTRA_BASE_PATH ?? "");
-    return `${apiUrl}${basePath}`.trim().replace(/\/$/, "");
+    return basePath.trim().replace(/\/$/, "");
 }
 
 // Internal storage files go through the execution file route (same origin, session auth).
