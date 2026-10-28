@@ -27,8 +27,9 @@ const { t } = useI18n({
     },
 });
 
-// The tables, statement and files sections are also registered on their own as execution artifacts.
-const props = defineProps<KnownSlotProps["topology-task-modal"]>();
+// Shared by the topology modal and the Artifacts tab, which only needs this subset of props.
+defineOptions({ inheritAttrs: false });
+const props = defineProps<KnownSlotProps["execution-artifact"]>();
 const { taskRun, outputs: data } = useTaskOutputs(props);
 
 const executionRows = computed(() => {
