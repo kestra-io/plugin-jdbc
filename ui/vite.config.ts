@@ -28,7 +28,6 @@ const exposes = Object.fromEntries(
                 additionalProperties: {
                     height: 120,
                     heightWithExecution: 185,
-                    customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
             },
             {
