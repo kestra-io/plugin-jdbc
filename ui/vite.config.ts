@@ -36,6 +36,11 @@ const exposes = Object.fromEntries(
                 path: "./src/components/JdbcTopologyDetails.vue",
             },
             {
+                slotName: "execution-artifact" as const,
+                path: "./src/components/JdbcTaskModal.vue",
+                additionalProperties: { title: "Execution details" },
+            },
+            {
                 slotName: "topology-task-modal" as const,
                 path: "./src/components/JdbcTaskModal.vue",
             },

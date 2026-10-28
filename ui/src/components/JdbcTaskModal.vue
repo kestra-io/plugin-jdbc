@@ -37,7 +37,9 @@ const { t } = useI18n({
     },
 });
 
-const props = defineProps<KnownSlotProps["topology-task-modal"]>();
+// Shared by the topology modal and the Artifacts tab, which only needs this subset of props.
+defineOptions({ inheritAttrs: false });
+const props = defineProps<KnownSlotProps["execution-artifact"]>();
 
 const { taskRun, outputs: data } = useTaskOutputs(props);
 
