@@ -3,6 +3,7 @@ package io.kestra.plugin.jdbc;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
@@ -578,5 +579,21 @@ class SqlSplitterTest {
 
         assertEquals(1, queries.length);
         assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void oracleBlockStartingWithTransactionKeywordIdentifierSingleStatement() {
+        var sqls = List.of(
+            "BEGIN work.do_it(1); other.call(2); END;",
+            "BEGIN transaction.log_it(1); x(2); END;",
+            "BEGIN read.fetch_all; END;",
+            "BEGIN work := 1; END;"
+        );
+
+        for (var sql : sqls) {
+            var queries = SqlSplitter.getQueries(sql);
+
+            assertEquals(1, queries.length, sql);
+        }
     }
 }
