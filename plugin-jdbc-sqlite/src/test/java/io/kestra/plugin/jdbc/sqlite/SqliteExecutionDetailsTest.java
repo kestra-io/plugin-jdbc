@@ -56,7 +56,7 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
             output.getTables().stream().map(t -> t.getAccess() + ":" + t.getName()).toList(),
             containsInAnyOrder("WRITE:lite_types", "READ:lite_types")
         );
-        assertThat(output.getTables().getFirst().getConfidence(), is(SqlTableExtractor.Confidence.HIGH));
+        assertThat(output.getTables().getFirst().getConfidence(), is(SqlTableExtractor.Confidence.MEDIUM));
 
         Query.builder()
             .url(Property.ofValue(getUrl()))

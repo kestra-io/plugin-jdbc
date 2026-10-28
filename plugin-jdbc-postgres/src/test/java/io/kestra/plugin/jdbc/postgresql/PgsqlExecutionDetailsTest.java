@@ -54,7 +54,7 @@ class PgsqlExecutionDetailsTest {
             output.getTables().stream().map(t -> t.getAccess() + ":" + t.getName()).toList(),
             containsInAnyOrder("WRITE:exec_daily", "READ:exec_orders", "READ:exec_customers")
         );
-        assertThat(output.getTables().getFirst().getConfidence(), is(SqlTableExtractor.Confidence.HIGH));
+        assertThat(output.getTables().getFirst().getConfidence(), is(SqlTableExtractor.Confidence.MEDIUM));
     }
 
     @Test

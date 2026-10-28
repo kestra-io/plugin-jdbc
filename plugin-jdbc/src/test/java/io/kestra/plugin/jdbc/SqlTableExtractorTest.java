@@ -342,4 +342,24 @@ class SqlTableExtractorTest {
         assertThat(tables.getFirst().getName().contains("user"), is(false));
         assertThat(tables.getFirst().getName().contains("token"), is(false));
     }
+
+    @Test
+    void backslashEscapeHookKeepsTheTableAfterAnEscapedQuote() {
+        var sql = "SELECT 'a\\'b' FROM t";
+
+        assertThat(SqlTableExtractor.extract(sql, Dialect.ANSI), is(empty()));
+
+        var tables = SqlTableExtractor.extract(sql, Dialect.ANSI, new SqlTableExtractor.Syntax(true, false));
+        assertThat(tables, hasSize(1));
+        assertThat(tables.getFirst().getName(), is("t"));
+    }
+
+    @Test
+    void hashLineCommentHookSkipsTheCommentedTable() {
+        var sql = "SELECT 1 FROM a # FROM hidden\n, b";
+
+        var tables = SqlTableExtractor.extract(sql, Dialect.ANSI, new SqlTableExtractor.Syntax(false, true));
+
+        assertThat(tables.stream().map(SqlTableExtractor.TableReference::getName).toList(), contains("a", "b"));
+    }
 }

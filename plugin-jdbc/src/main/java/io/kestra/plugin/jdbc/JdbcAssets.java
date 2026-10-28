@@ -12,6 +12,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Access;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Confidence;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Kind;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
 import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
 
 import java.sql.Connection;
@@ -29,6 +30,7 @@ import java.util.function.UnaryOperator;
 // Builds the table assets and their lineage for a SQL statement.
 final class JdbcAssets {
     static final String TABLE_TYPE = "io.kestra.plugin.ee.assets.Table";
+    static final int MAX_COLUMN_LOOKUPS = 10;
     private static final Set<String> SYSTEM_SCHEMAS = Set.of(
         "information_schema", "pg_catalog", "pg_toast", "sys", "sysibm", "syscat", "sysstat", "mysql",
         "performance_schema", "system", "sysdiagrams", "pg_temp"
@@ -40,19 +42,22 @@ final class JdbcAssets {
     record ExecutedStatement(String sql, Long rowsAffected) {
     }
 
-    static void emit(RunContext runContext, AssetsDeclaration declaration, Connection connection, String statement, Long rowsAffected)
+    static void emit(RunContext runContext, AssetsDeclaration declaration, Connection connection, String statement, Long rowsAffected, Syntax syntax)
         throws IllegalVariableEvaluationException {
-        emit(runContext, declaration, connection, List.of(new ExecutedStatement(statement, rowsAffected)));
+        emit(runContext, declaration, connection, List.of(new ExecutedStatement(statement, rowsAffected)), syntax);
     }
 
     // One emit per task run, so the database lookups are made once whatever the number of statements.
-    static void emit(RunContext runContext, AssetsDeclaration declaration, Connection connection, List<ExecutedStatement> statements)
+    static void emit(RunContext runContext, AssetsDeclaration declaration, Connection connection, List<ExecutedStatement> statements, Syntax syntax)
         throws IllegalVariableEvaluationException {
-        var rEnableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
+        // Without `enableAuto` the assets are dropped by the platform, so skip the parsing and the metadata lookups.
+        if (!isEnableAuto(runContext, declaration)) {
+            return;
+        }
 
         AssetEmit emit;
         try {
-            emit = build(connection, statements, rEnableAuto);
+            emit = build(connection, statements, syntax);
         } catch (SQLException | RuntimeException e) {
             onFailure(runContext, declaration, e);
             return;
@@ -71,6 +76,10 @@ final class JdbcAssets {
         }
     }
 
+    static boolean isEnableAuto(RunContext runContext, AssetsDeclaration declaration) throws IllegalVariableEvaluationException {
+        return declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
+    }
+
     static void onFailure(RunContext runContext, AssetsDeclaration declaration, Exception e) throws IllegalVariableEvaluationException {
         var rAssetFailureBehavior = declaration == null
             ? null
@@ -82,15 +91,16 @@ final class JdbcAssets {
     }
 
     // Returns null when the statement touches no table worth an asset.
-    static AssetEmit build(Connection connection, String statement, Long rowsAffected, boolean enableAuto) throws SQLException {
-        return build(connection, List.of(new ExecutedStatement(statement, rowsAffected)), enableAuto);
+    static AssetEmit build(Connection connection, String statement, Long rowsAffected) throws SQLException {
+        return build(connection, List.of(new ExecutedStatement(statement, rowsAffected)), null);
     }
 
     private record Written(TableReference reference, String kind, Long rowsAffected) {
     }
 
-    static AssetEmit build(Connection connection, List<ExecutedStatement> statements, boolean enableAuto) throws SQLException {
+    static AssetEmit build(Connection connection, List<ExecutedStatement> statements, Syntax syntax) throws SQLException {
         var dialect = JdbcExecutionSupport.dialectOf(connection);
+        var rSyntax = syntax == null ? Syntax.of(dialect) : syntax;
         Naming naming = null;
         var temporaryTables = new HashSet<String>();
         var written = new LinkedHashMap<String, Written>();
@@ -98,7 +108,7 @@ final class JdbcAssets {
 
         for (var executed : statements) {
             var kind = SqlTableExtractor.statementKind(executed.sql());
-            for (var reference : SqlTableExtractor.extract(executed.sql(), dialect)) {
+            for (var reference : SqlTableExtractor.extract(executed.sql(), dialect, rSyntax)) {
                 if (reference.getAccess() == Access.CREATE && reference.getConfidence() == Confidence.LOW) {
                     // Temporary tables only live for the session, so neither they nor their later reads are assets.
                     temporaryTables.add(reference.getName().toLowerCase(Locale.ROOT));
@@ -112,14 +122,11 @@ final class JdbcAssets {
                 if (!isWrite && reference.getAccess() != Access.READ) {
                     continue;
                 }
-                if (!enableAuto && !isCreate) {
-                    continue;
-                }
                 naming = naming == null ? Naming.of(connection) : naming;
                 var id = naming.assetId(reference);
                 if (isWrite) {
                     written.put(id, new Written(reference, kind, executed.rowsAffected()));
-                } else if (enableAuto) {
+                } else {
                     read.add(id);
                 }
             }
@@ -131,10 +138,11 @@ final class JdbcAssets {
 
         var outputs = new ArrayList<Asset>();
         for (var entry : written.entrySet()) {
+            var withColumns = outputs.size() < MAX_COLUMN_LOOKUPS;
             outputs.add(Custom.builder()
                 .id(entry.getKey())
                 .type(TABLE_TYPE)
-                .metadata(metadata(connection, entry.getValue().reference(), naming, entry.getValue().kind(), entry.getValue().rowsAffected(), enableAuto))
+                .metadata(metadata(connection, entry.getValue().reference(), naming, entry.getValue().kind(), entry.getValue().rowsAffected(), withColumns))
                 .build());
         }
         var inputs = new ArrayList<AssetIdentifier>();
@@ -149,7 +157,7 @@ final class JdbcAssets {
 
     // The id is built from what the database resolves, not from how the SQL is written, so lineage links up:
     // a missing schema is the current one and unquoted names are folded the way the database folds them.
-    private record Naming(String system, String database, String schema, UnaryOperator<String> fold) {
+    private record Naming(String system, String database, String schema, boolean catalogOnly, String escape, UnaryOperator<String> fold) {
         static Naming of(Connection connection) throws SQLException {
             var metaData = connection.getMetaData();
             UnaryOperator<String> fold;
@@ -166,17 +174,33 @@ final class JdbcAssets {
             } catch (SQLException | RuntimeException | AbstractMethodError ignored) {
                 // Drivers without schema support yield ids without one.
             }
-            return new Naming(metaData.getDatabaseProductName(), AbstractJdbcBaseQuery.getDatabaseName(connection), schema, fold);
+            // MySQL and MariaDB have no schemas: the `db` of `db.t` is the database, and there is no default schema.
+            var catalogOnly = !metaData.supportsSchemasInDataManipulation() && metaData.supportsCatalogsInDataManipulation();
+            var escape = metaData.getSearchStringEscape();
+            return new Naming(
+                metaData.getDatabaseProductName(),
+                AbstractJdbcBaseQuery.getDatabaseName(connection),
+                catalogOnly ? null : schema,
+                catalogOnly,
+                escape == null ? "" : escape,
+                fold
+            );
         }
 
         String database(TableReference reference) {
-            if (reference.getDatabase() == null) {
+            var fromSchema = catalogOnly && reference.getSchema() != null;
+            var qualifier = fromSchema ? reference.getSchema() : reference.getDatabase();
+            if (qualifier == null) {
                 return database;
             }
-            return reference.isQuotedDatabase() ? reference.getDatabase() : fold.apply(reference.getDatabase());
+            var quoted = fromSchema ? reference.isQuotedSchema() : reference.isQuotedDatabase();
+            return quoted ? qualifier : fold.apply(qualifier);
         }
 
         String schema(TableReference reference) {
+            if (catalogOnly) {
+                return null;
+            }
             if (reference.getSchema() != null) {
                 return reference.isQuotedSchema() ? reference.getSchema() : fold.apply(reference.getSchema());
             }
@@ -185,6 +209,14 @@ final class JdbcAssets {
 
         String name(TableReference reference) {
             return reference.isQuotedName() ? reference.getName() : fold.apply(reference.getName());
+        }
+
+        // `_` and `%` are LIKE wildcards in the metadata patterns, so a table named `a_b` must not match `axb`.
+        String escapePattern(String value) {
+            if (value == null || escape.isEmpty()) {
+                return value;
+            }
+            return value.replace(escape, escape + escape).replace("_", escape + "_").replace("%", escape + "%");
         }
 
         String assetId(TableReference reference) {
@@ -234,7 +266,7 @@ final class JdbcAssets {
             metadata.put("rowsAffected", rowsAffected);
         }
         if (withColumns) {
-            var columns = columns(connection, reference);
+            var columns = columns(connection, reference, naming);
             if (!columns.isEmpty()) {
                 metadata.put("columns", columns);
             }
@@ -243,27 +275,22 @@ final class JdbcAssets {
     }
 
     // Best effort: drivers without metadata support just yield no columns.
-    private static List<LinkedHashMap<String, Object>> columns(Connection connection, TableReference reference) {
-        try {
-            var metaData = connection.getMetaData();
-            for (var name : List.of(reference.getName(), reference.getName().toUpperCase(Locale.ROOT), reference.getName().toLowerCase(Locale.ROOT))) {
-                var columns = new ArrayList<LinkedHashMap<String, Object>>();
-                try (var rs = metaData.getColumns(reference.getDatabase(), reference.getSchema(), name, null)) {
-                    while (rs.next()) {
-                        var column = new LinkedHashMap<String, Object>();
-                        column.put("name", rs.getString("COLUMN_NAME"));
-                        column.put("jdbcType", JdbcExecutionSupport.jdbcTypeName(rs.getInt("DATA_TYPE")));
-                        column.put("nullable", rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls);
-                        columns.add(column);
-                    }
-                }
-                if (!columns.isEmpty()) {
-                    return columns;
-                }
+    private static List<LinkedHashMap<String, Object>> columns(Connection connection, TableReference reference, Naming naming) {
+        var catalog = naming.catalogOnly() || reference.getDatabase() != null ? naming.database(reference) : null;
+        var columns = new ArrayList<LinkedHashMap<String, Object>>();
+        try (var rs = connection.getMetaData().getColumns(
+            catalog, naming.escapePattern(naming.schema(reference)), naming.escapePattern(naming.name(reference)), null
+        )) {
+            while (rs.next()) {
+                var column = new LinkedHashMap<String, Object>();
+                column.put("name", rs.getString("COLUMN_NAME"));
+                column.put("jdbcType", JdbcExecutionSupport.jdbcTypeName(rs.getInt("DATA_TYPE")));
+                column.put("nullable", rs.getInt("NULLABLE") != DatabaseMetaData.columnNoNulls);
+                columns.add(column);
             }
         } catch (SQLException | RuntimeException e) {
             return List.of();
         }
-        return List.of();
+        return columns;
     }
 }

@@ -148,12 +148,12 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
 
             runContext.metric(Counter.of("fetch.size", size, this.tags(runContext)));
 
-            JdbcAssets.emit(runContext, getAssets(), conn, rSql, rowsAffected);
+            JdbcAssets.emit(runContext, getAssets(), conn, rSql, rowsAffected, this.sqlSyntax());
 
-            if (!JdbcExecutionSupport.isTriggerRun()) {
+            if (!this.skipExecutionDetails) {
                 var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
                 var details = JdbcExecutionSupport.details(
-                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql)), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
+                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql), this.sqlSyntax()), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
                 );
                 AbstractJdbcBaseQuery.Output.applyDetails(output, details);
             }

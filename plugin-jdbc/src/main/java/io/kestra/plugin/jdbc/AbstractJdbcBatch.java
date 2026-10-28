@@ -258,12 +258,18 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     // Runs after the commit and outside the retry scope, so an asset failure can never re-run the insert.
     private void emitAssets(RunContext runContext, String statement, Long rowsAffected) throws Exception {
         var declaration = getAssets();
-        var rEnableAuto = declaration != null && runContext.render(declaration.getEnableAuto()).as(Boolean.class).orElse(false);
-        if (!rEnableAuto) {
+        if (!JdbcAssets.isEnableAuto(runContext, declaration)) {
             return;
         }
-        try (var connection = connection(runContext)) {
-            JdbcAssets.emit(runContext, declaration, connection, statement, rowsAffected);
+        Connection connection;
+        try {
+            connection = connection(runContext);
+        } catch (Exception e) {
+            JdbcAssets.onFailure(runContext, declaration, e);
+            return;
+        }
+        try (connection) {
+            JdbcAssets.emit(runContext, declaration, connection, statement, rowsAffected, null);
         } catch (SQLException e) {
             JdbcAssets.onFailure(runContext, declaration, e);
         }
@@ -533,7 +539,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         @Schema(
             title = "Tables written by the statement",
             description = """
-                Detected from the SQL text, so this is a best effort. The first 10 tables found through the JDBC metadata have a `HIGH` confidence.
+                Detected from the SQL text, so this is a best effort.
                 Limited to 50 entries, see `tablesTruncated`"""
         )
         private final List<SqlTableExtractor.TableReference> tables;
@@ -681,7 +687,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                     flush(ps, meta, buffer, connection, supportsTx);
                 }
 
-                tables = JdbcExecutionSupport.tables(connection, List.of(config.sql()));
+                tables = JdbcExecutionSupport.tables(connection, List.of(config.sql()), null);
             } catch (Exception e) {
                 if (rollbackOnFailure) {
                     try {
@@ -745,7 +751,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         }
 
         JdbcExecutionSupport.TableSummary tables() {
-            return tables == null ? JdbcExecutionSupport.tables(null, List.of(config.sql())) : tables;
+            return tables == null ? JdbcExecutionSupport.tables(null, List.of(config.sql()), null) : tables;
         }
 
         Output output(JdbcExecutionSupport.Details details) {

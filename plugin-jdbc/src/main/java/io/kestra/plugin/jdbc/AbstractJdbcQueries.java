@@ -58,8 +58,6 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         List<Output> outputList = new LinkedList<>();
         List<Long> affectedRows = new ArrayList<>();
         var stats = new RunStats();
-        var startedAt = System.nanoTime();
-
         // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
         boolean supportsTx = false;
@@ -92,6 +90,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             String[] queries = shouldBatchQueries
                 ? new String[]{rSql}
                 : getQueries(rSql);
+
+            var startedAt = System.nanoTime();
 
             for (String query : queries) {
                 var statementStartedAt = System.nanoTime();
@@ -143,11 +143,11 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             emitAssets(runContext, queries, stats, this.runningConnection);
 
             var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
-            var columnStatsUri = collector == null || stats.statementLog.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, collector.results());
+            var columnStatsUri = collector == null || stats.statementLog.isEmpty() || collector.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, collector.results());
             var rowsAffected = affectedRows.isEmpty() ? null : affectedRows.stream().mapToLong(Long::longValue).sum();
             var details = JdbcExecutionSupport.details(
                 runContext,
-                JdbcExecutionSupport.tables(this.runningConnection, Arrays.asList(queries)),
+                JdbcExecutionSupport.tables(this.runningConnection, Arrays.asList(queries), this.sqlSyntax()),
                 statement,
                 rowsAffected,
                 stats.stored ? stats.bytes : null,
@@ -363,7 +363,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             var rowsAffected = i < stats.statementLog.size() ? (Long) stats.statementLog.get(i).get("rowsAffected") : null;
             statements.add(new JdbcAssets.ExecutedStatement(queries[i], rowsAffected));
         }
-        JdbcAssets.emit(runContext, getAssets(), conn, statements);
+        JdbcAssets.emit(runContext, getAssets(), conn, statements, this.sqlSyntax());
     }
 
     @Override
@@ -435,7 +435,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             title = "Tables read or written by the statements",
             description = """
                 Detected from the SQL text, so this is a best effort: CTEs, temporary tables and dialect specific syntax can lower the `confidence` or be missed.
-                The first 10 tables found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
+                Limited to 50 entries, see `tablesTruncated`"""
         )
         List<SqlTableExtractor.TableReference> tables;
 

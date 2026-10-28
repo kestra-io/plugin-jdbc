@@ -11,6 +11,7 @@ import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.Rethrow;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -173,11 +174,15 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     )
     @Builder.Default
     @PluginProperty(group = "processing")
-    protected Property<Integer> columnStatsSampleRows = Property.ofValue(100_000);
+    protected Property<@Min(1) Integer> columnStatsSampleRows = Property.ofValue(100_000);
 
     @Builder.Default
     @Getter(AccessLevel.NONE)
     protected transient Map<String, Object> additionalVars = new HashMap<>();
+
+    // Set by the triggers: they poll often and publish their output as `trigger.*`, so they skip the execution details.
+    @Getter(AccessLevel.NONE)
+    protected transient boolean skipExecutionDetails;
 
     // Set by tasks that render the SQL themselves before calling run(), so the `secret()` calls can still be masked.
     @Getter(AccessLevel.NONE)
@@ -372,6 +377,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
      */
     protected boolean hashLineComments() {
         return false;
+    }
+
+    protected SqlTableExtractor.Syntax sqlSyntax() {
+        return new SqlTableExtractor.Syntax(this.backslashEscapesInLiterals(), this.hashLineComments());
     }
 
     protected PreparedStatement createPreparedStatement(final Connection conn, final String sql) throws SQLException {
@@ -573,7 +582,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             title = "Tables read or written by the statement",
             description = """
                 Detected from the SQL text, so this is a best effort: CTEs, temporary tables and dialect specific syntax can lower the `confidence` or be missed.
-                The first 10 tables found through the JDBC metadata have a `HIGH` confidence. Limited to 50 entries, see `tablesTruncated`"""
+                Limited to 50 entries, see `tablesTruncated`"""
         )
         private final List<SqlTableExtractor.TableReference> tables;
 

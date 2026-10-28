@@ -6,8 +6,8 @@ import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.jdbc.SqlTableExtractor.Confidence;
 import io.kestra.plugin.jdbc.SqlTableExtractor.Dialect;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
 import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
 
 import java.io.BufferedOutputStream;
@@ -16,7 +16,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -29,36 +28,17 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 // Helpers shared by the JDBC tasks to build the post-execution outputs.
 final class JdbcExecutionSupport {
     static final int MAX_TABLES = 50;
-    static final int MAX_METADATA_LOOKUPS = 10;
     static final int MAX_STATEMENT_BYTES = 64 * 1024;
     private static final Pattern SECRET_CALL = Pattern.compile("secret\\(\\s*['\"][^'\"]+['\"]\\s*(?:,[^()]*)?\\)");
 
-    // Triggers poll often and publish their output as `trigger.*`, so they skip the execution details.
-    private static final ThreadLocal<Boolean> TRIGGER_RUN = new ThreadLocal<>();
-
     private JdbcExecutionSupport() {
-    }
-
-    static <T> T asTrigger(Callable<T> run) throws Exception {
-        TRIGGER_RUN.set(Boolean.TRUE);
-        try {
-            return run.call();
-        } finally {
-            TRIGGER_RUN.remove();
-        }
-    }
-
-    static boolean isTriggerRun() {
-        return TRIGGER_RUN.get() != null;
     }
 
     record TableSummary(List<TableReference> tables, boolean truncated) {
@@ -177,12 +157,13 @@ final class JdbcExecutionSupport {
         return new String(bytes, 0, MAX_STATEMENT_BYTES, StandardCharsets.UTF_8);
     }
 
-    static TableSummary tables(Connection connection, Collection<String> statements) {
+    static TableSummary tables(Connection connection, Collection<String> statements, Syntax syntax) {
         var dialect = connection == null ? Dialect.ANSI : dialectOf(connection);
+        var rSyntax = syntax == null ? Syntax.of(dialect) : syntax;
         var unique = new ArrayList<TableReference>();
         var keys = new HashSet<String>();
         for (var statement : statements) {
-            for (var reference : SqlTableExtractor.extract(statement, dialect)) {
+            for (var reference : SqlTableExtractor.extract(statement, dialect, rSyntax)) {
                 var key = reference.getAccess() + "|" + reference.getDatabase() + "|" + reference.getSchema() + "|" + reference.getName() + "|" + reference.getKind();
                 if (keys.add(key)) {
                     unique.add(reference);
@@ -191,8 +172,7 @@ final class JdbcExecutionSupport {
         }
 
         var truncated = unique.size() > MAX_TABLES;
-        var capped = truncated ? new ArrayList<>(unique.subList(0, MAX_TABLES)) : unique;
-        return new TableSummary(List.copyOf(validate(connection, capped)), truncated);
+        return new TableSummary(List.copyOf(truncated ? unique.subList(0, MAX_TABLES) : unique), truncated);
     }
 
     static Dialect dialectOf(Connection connection) {
@@ -200,43 +180,6 @@ final class JdbcExecutionSupport {
             return Dialect.of(connection.getMetaData());
         } catch (SQLException | RuntimeException e) {
             return Dialect.ANSI;
-        }
-    }
-
-    // Best effort and bounded: drivers such as Pinot, Druid or Arrow Flight have no metadata, and others are slow.
-    private static List<TableReference> validate(Connection connection, List<TableReference> references) {
-        if (connection == null) {
-            return references;
-        }
-        var validated = new ArrayList<TableReference>(references.size());
-        var lookups = 0;
-        try {
-            var metaData = connection.getMetaData();
-            for (var reference : references) {
-                var isCandidate = reference.getConfidence() == Confidence.MEDIUM
-                    && (reference.getKind() == null || reference.getKind() == SqlTableExtractor.Kind.TABLE);
-                if (isCandidate && lookups < MAX_METADATA_LOOKUPS && exists(metaData, reference)) {
-                    validated.add(reference.withConfidence(Confidence.HIGH));
-                } else {
-                    validated.add(reference);
-                }
-                lookups += isCandidate ? 1 : 0;
-            }
-            return validated;
-        } catch (SQLException | RuntimeException e) {
-            return references;
-        }
-    }
-
-    private static boolean exists(DatabaseMetaData metaData, TableReference reference) throws SQLException {
-        var name = reference.getName();
-        if (metaData.storesUpperCaseIdentifiers()) {
-            name = name.toUpperCase(Locale.ROOT);
-        } else if (metaData.storesLowerCaseIdentifiers()) {
-            name = name.toLowerCase(Locale.ROOT);
-        }
-        try (var tables = metaData.getTables(reference.getDatabase(), reference.getSchema(), name, null)) {
-            return tables.next();
         }
     }
 }

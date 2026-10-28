@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { databaseFromUrl, fileHref, safeHref, summaryRows } from "../src/lib/details";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { apiRoot, databaseFromUrl, fileHref, safeHref, summaryRows } from "../src/lib/details";
 
 const labels = {
     database: "Database",
@@ -69,5 +69,22 @@ describe("fileHref", () => {
         expect(fileHref("https://example.com/a", "main", "E1")).toBe("https://example.com/a");
         expect(fileHref("javascript:alert(1)", "main", "E1")).toBeUndefined();
         expect(fileHref("kestra:///a/b.ion", "main", undefined)).toBeUndefined();
+    });
+});
+
+describe("apiRoot", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("prefixes the file route with the base path, without a trailing slash", () => {
+        vi.stubGlobal("window", { KESTRA_BASE_PATH: "/kestra/" });
+        expect(apiRoot()).toBe("/kestra");
+        expect(fileHref("kestra:///a.ion", "main", "E1")).toBe("/kestra/api/v1/main/executions/E1/file?path=kestra%3A%2F%2F%2Fa.ion");
+    });
+
+    it("is empty at the root", () => {
+        vi.stubGlobal("window", { KESTRA_BASE_PATH: "/" });
+        expect(apiRoot()).toBe("");
     });
 });

@@ -76,6 +76,7 @@ public class Trigger extends AbstractJdbcTrigger implements SqliteQueryInterface
             .store(this.isStore())
             .fetchOne(this.isFetchOne())
             .fetchType(Property.ofValue(this.renderFetchType(runContext)))
+            .skipExecutionDetails(true)
             .fetchSize(this.getFetchSize())
             .additionalVars(this.additionalVars)
             .parameters(this.getParameters())

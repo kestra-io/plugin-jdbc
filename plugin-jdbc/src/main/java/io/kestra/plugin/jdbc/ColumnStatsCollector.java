@@ -18,6 +18,9 @@ import java.util.Set;
 public final class ColumnStatsCollector {
     static final int MAX_MIN_MAX_STRING_LENGTH = 256;
     private static final int MEDIAN_RESERVOIR_SIZE = 10_000;
+    // Split across the columns so a wide result cannot hold columns x MEDIAN_RESERVOIR_SIZE values.
+    private static final int TOTAL_RESERVOIR_BUDGET = 500_000;
+    private static final int MIN_RESERVOIR_SIZE = 100;
     private static final Set<Integer> SKIPPED_TYPES = Set.of(
         Types.BLOB, Types.CLOB, Types.NCLOB, Types.BINARY, Types.VARBINARY, Types.LONGVARBINARY,
         Types.ARRAY, Types.STRUCT, Types.SQLXML, Types.JAVA_OBJECT, Types.REF, Types.DATALINK
@@ -26,6 +29,7 @@ public final class ColumnStatsCollector {
     private final long sampleRows;
     private final Map<String, ColumnAccumulator> columns = new LinkedHashMap<>();
     private final Map<String, String> jdbcTypes = new LinkedHashMap<>();
+    private int reservoirSize = MEDIAN_RESERVOIR_SIZE;
     private long seenRows;
 
     public ColumnStatsCollector(long sampleRows) {
@@ -41,8 +45,17 @@ public final class ColumnStatsCollector {
                 continue;
             }
             jdbcTypes.put(label, JdbcExecutionSupport.jdbcTypeName(type));
-            columns.computeIfAbsent(label, ColumnAccumulator::new);
+            columns.computeIfAbsent(label, this::newAccumulator);
         }
+        reservoirSize = Math.clamp(TOTAL_RESERVOIR_BUDGET / Math.max(1, jdbcTypes.size()), MIN_RESERVOIR_SIZE, MEDIAN_RESERVOIR_SIZE);
+    }
+
+    public boolean isEmpty() {
+        return columns.isEmpty();
+    }
+
+    private ColumnAccumulator newAccumulator(String label) {
+        return new ColumnAccumulator(label, reservoirSize);
     }
 
     public void accept(Map<String, Object> row) {
@@ -54,7 +67,7 @@ public final class ColumnStatsCollector {
             if (jdbcTypes.containsKey(label) && jdbcTypes.get(label) == null) {
                 return;
             }
-            columns.computeIfAbsent(label, ColumnAccumulator::new).add(value);
+            columns.computeIfAbsent(label, this::newAccumulator).add(value);
         });
     }
 
@@ -66,6 +79,7 @@ public final class ColumnStatsCollector {
 
     private static final class ColumnAccumulator {
         private final String column;
+        private final int reservoirSize;
         private final HyperLogLog distinct = new HyperLogLog();
         private final List<Comparable<Object>> reservoir = new ArrayList<>();
         private final Random random = new Random(42);
@@ -80,8 +94,9 @@ public final class ColumnStatsCollector {
         private Integer minLen;
         private Integer maxLen;
 
-        private ColumnAccumulator(String column) {
+        private ColumnAccumulator(String column, int reservoirSize) {
             this.column = column;
+            this.reservoirSize = reservoirSize;
         }
 
         @SuppressWarnings("unchecked")
@@ -138,12 +153,12 @@ public final class ColumnStatsCollector {
         }
 
         private void sample(Comparable<Object> value) {
-            if (reservoir.size() < MEDIAN_RESERVOIR_SIZE) {
+            if (reservoir.size() < reservoirSize) {
                 reservoir.add(value);
                 return;
             }
             var slot = random.nextLong(nonNulls);
-            if (slot < MEDIAN_RESERVOIR_SIZE) {
+            if (slot < reservoirSize) {
                 reservoir.set((int) slot, value);
             }
         }

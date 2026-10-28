@@ -132,7 +132,7 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
 
         String rSql = runContext.render(this.sql).as(String.class).orElseThrow();
 
-        var run = JdbcExecutionSupport.asTrigger(() -> runQuery(runContext));
+        var run = runQuery(runContext);
 
         logger.debug("Found '{}' rows from '{}'", run.getSize(), rSql);
 

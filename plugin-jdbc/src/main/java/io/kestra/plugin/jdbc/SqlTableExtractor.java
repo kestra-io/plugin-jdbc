@@ -49,7 +49,6 @@ public final class SqlTableExtractor {
     }
 
     public enum Confidence {
-        HIGH,
         MEDIUM,
         LOW
     }
@@ -95,6 +94,13 @@ public final class SqlTableExtractor {
         }
     }
 
+    // Literal and comment rules come from the task, which knows its database better than the product name does.
+    public record Syntax(boolean backslashEscapes, boolean hashLineComments) {
+        static Syntax of(Dialect dialect) {
+            return new Syntax(dialect.backslashEscapes, dialect == Dialect.MYSQL);
+        }
+    }
+
     @Getter
     @Builder
     public static class TableReference {
@@ -115,7 +121,7 @@ public final class SqlTableExtractor {
 
         @Schema(
             title = "How reliable the detection is",
-            description = "HIGH when the table was found through the JDBC metadata, MEDIUM when detected from the SQL text, LOW for temporary tables and ambiguous names."
+            description = "MEDIUM when detected from the SQL text, LOW for temporary tables and ambiguous names."
         )
         private final Confidence confidence;
 
@@ -132,10 +138,6 @@ public final class SqlTableExtractor {
         private final boolean quotedSchema;
         @Getter(AccessLevel.NONE)
         private final boolean quotedDatabase;
-
-        public TableReference withConfidence(Confidence confidence) {
-            return new TableReference(name, schema, database, access, confidence, kind, quotedName, quotedSchema, quotedDatabase);
-        }
 
         private TableReference(
             String name, String schema, String database, Access access, Confidence confidence, Kind kind,
@@ -192,11 +194,15 @@ public final class SqlTableExtractor {
     }
 
     public static List<TableReference> extract(String sql, Dialect dialect) {
+        return extract(sql, dialect, Syntax.of(dialect));
+    }
+
+    public static List<TableReference> extract(String sql, Dialect dialect, Syntax syntax) {
         if (sql == null || sql.isBlank()) {
             return List.of();
         }
 
-        var tokens = tokenize(sql, dialect);
+        var tokens = tokenize(sql, dialect, syntax);
         var cteNames = collectCteNames(tokens);
         var found = new LinkedHashMap<String, TableReference>();
         new Walker(tokens, dialect, cteNames, found).walk();
@@ -231,7 +237,7 @@ public final class SqlTableExtractor {
         if (sql == null || sql.isBlank()) {
             return "OTHER";
         }
-        var tokens = tokenize(sql, Dialect.ANSI);
+        var tokens = tokenize(sql, Dialect.ANSI, Syntax.of(Dialect.ANSI));
         var depth = 0;
         var first = true;
         for (var token : tokens) {
@@ -635,7 +641,7 @@ public final class SqlTableExtractor {
         }
     }
 
-    private static List<Token> tokenize(String sql, Dialect dialect) {
+    private static List<Token> tokenize(String sql, Dialect dialect, Syntax syntax) {
         var tokens = new ArrayList<Token>();
         var length = sql.length();
         var i = 0;
@@ -648,7 +654,7 @@ public final class SqlTableExtractor {
                 i++;
             } else if (c == '-' && next == '-') {
                 i = skipLine(sql, i);
-            } else if (c == '#' && dialect == Dialect.MYSQL) {
+            } else if (c == '#' && syntax.hashLineComments()) {
                 i = skipLine(sql, i);
             } else if (c == '/' && next == '*') {
                 var end = sql.indexOf("*/", i + 2);
@@ -659,7 +665,7 @@ public final class SqlTableExtractor {
                 var close = sql.indexOf(tag, endTag + 1);
                 i = close < 0 ? length : close + tag.length();
             } else if (c == '\'') {
-                var escapes = dialect.backslashEscapes || (i > 0 && (sql.charAt(i - 1) == 'E' || sql.charAt(i - 1) == 'e'));
+                var escapes = syntax.backslashEscapes() || (i > 0 && (sql.charAt(i - 1) == 'E' || sql.charAt(i - 1) == 'e'));
                 var end = scanQuoted(sql, i, '\'', escapes);
                 tokens.add(new Token(TokenType.STRING, unquote(sql, i, end, '\'')));
                 i = end;
