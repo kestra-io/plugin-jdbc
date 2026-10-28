@@ -190,7 +190,31 @@ public final class SqlTableExtractor {
             return new Analysis("OTHER", List.of());
         }
 
+        return analyzeTokens(codeTokens(sql, dialect, syntax), dialect);
+    }
+
+    // A script sent to the database as one call (MySQL, MariaDB, Redshift) still holds several statements:
+    // each one gets its own kind and tables, so the last statement is not mistaken for the first.
+    public static List<Analysis> analyzeStatements(String sql, Dialect dialect, Syntax syntax) {
+        if (sql == null || sql.isBlank()) {
+            return List.of();
+        }
+
         var tokens = codeTokens(sql, dialect, syntax);
+        var analyses = new ArrayList<Analysis>();
+        var start = 0;
+        for (var i = 0; i <= tokens.size(); i++) {
+            if (i == tokens.size() || tokens.get(i).isSymbol(";")) {
+                if (i > start) {
+                    analyses.add(analyzeTokens(tokens.subList(start, i), dialect));
+                }
+                start = i + 1;
+            }
+        }
+        return analyses;
+    }
+
+    private static Analysis analyzeTokens(List<Token> tokens, Dialect dialect) {
         var cteNames = collectCteNames(tokens);
         var found = new LinkedHashMap<String, TableReference>();
         new Walker(tokens, dialect, cteNames, found).walk();

@@ -435,4 +435,16 @@ class SqlTableExtractorTest {
         assertThat(analysis.kind(), is("INSERT"));
         assertThat(summary(analysis.tables()), contains("WRITE:t", "READ:s"));
     }
+
+    @Test
+    void analyzeStatementsSplitsAScriptAtTopLevelSemicolons() {
+        var analyses = SqlTableExtractor.analyzeStatements(
+            "DROP TABLE IF EXISTS t; INSERT INTO t SELECT * FROM s; UPDATE t SET a = ';'; ;",
+            Dialect.ANSI,
+            SqlTableExtractor.Syntax.of(Dialect.ANSI)
+        );
+
+        assertThat(analyses.stream().map(SqlTableExtractor.Analysis::kind).toList(), contains("DROP", "INSERT", "UPDATE"));
+        assertThat(summary(analyses.get(1).tables()), contains("WRITE:t", "READ:s"));
+    }
 }

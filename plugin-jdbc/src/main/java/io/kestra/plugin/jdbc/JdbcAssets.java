@@ -107,28 +107,32 @@ final class JdbcAssets {
         var read = new LinkedHashSet<String>();
 
         for (var executed : statements) {
-            var analysis = SqlTableExtractor.analyze(executed.sql(), dialect, rSyntax);
-            var kind = analysis.kind();
-            for (var reference : analysis.tables()) {
-                if (reference.getAccess() == Access.CREATE && reference.getConfidence() == Confidence.LOW) {
-                    // Temporary tables only live for the session, so neither they nor their later reads are assets.
-                    temporaryTables.add(reference.getName().toLowerCase(Locale.ROOT));
-                    continue;
-                }
-                if (!isAssetCandidate(reference) || (reference.getSchema() == null && temporaryTables.contains(reference.getName().toLowerCase(Locale.ROOT)))) {
-                    continue;
-                }
-                var isCreate = reference.getAccess() == Access.CREATE;
-                var isWrite = isCreate || reference.getAccess() == Access.WRITE;
-                if (!isWrite && reference.getAccess() != Access.READ) {
-                    continue;
-                }
-                naming = naming == null ? Naming.of(connection) : naming;
-                var id = naming.assetId(reference);
-                if (isWrite) {
-                    written.put(id, new Written(reference, kind, executed.rowsAffected()));
-                } else {
-                    read.add(id);
+            var analyses = SqlTableExtractor.analyzeStatements(executed.sql(), dialect, rSyntax);
+            // The row count belongs to the call, so it only means something when the call held one statement.
+            var rowsAffected = analyses.size() == 1 ? executed.rowsAffected() : null;
+            for (var analysis : analyses) {
+                var kind = analysis.kind();
+                for (var reference : analysis.tables()) {
+                    if (reference.getAccess() == Access.CREATE && reference.getConfidence() == Confidence.LOW) {
+                        // Temporary tables only live for the session, so neither they nor their later reads are assets.
+                        temporaryTables.add(reference.getName().toLowerCase(Locale.ROOT));
+                        continue;
+                    }
+                    if (!isAssetCandidate(reference) || (reference.getSchema() == null && temporaryTables.contains(reference.getName().toLowerCase(Locale.ROOT)))) {
+                        continue;
+                    }
+                    var isCreate = reference.getAccess() == Access.CREATE;
+                    var isWrite = isCreate || reference.getAccess() == Access.WRITE;
+                    if (!isWrite && reference.getAccess() != Access.READ) {
+                        continue;
+                    }
+                    naming = naming == null ? Naming.of(connection) : naming;
+                    var id = naming.assetId(reference);
+                    if (isWrite) {
+                        written.put(id, new Written(reference, kind, rowsAffected));
+                    } else {
+                        read.add(id);
+                    }
                 }
             }
         }

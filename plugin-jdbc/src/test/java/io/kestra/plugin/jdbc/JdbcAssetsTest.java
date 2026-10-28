@@ -139,6 +139,22 @@ class JdbcAssetsTest {
     }
 
     @Test
+    void aScriptSentAsOneCallKeepsTheKindOfItsLastStatement() throws Exception {
+        var emit = JdbcAssets.build(
+            connection,
+            "DROP TABLE IF EXISTS daily; INSERT INTO daily (total) VALUES (1); UPDATE daily SET total = 2",
+            3L
+        );
+
+        assertThat(emit.outputs(), hasSize(1));
+        var metadata = emit.outputs().getFirst().getMetadata();
+        assertThat(metadata.get("lastStatementKind"), is("UPDATE"));
+        // one call, several statements: the count is not attributed to any of them
+        assertThat(metadata.get("rowsAffected"), is(nullValue()));
+        assertThat(columnNames(emit.outputs().getFirst()), contains("TOTAL"));
+    }
+
+    @Test
     void unqualifiedTableOnlyGetsTheColumnsOfTheCurrentSchema() throws Exception {
         var emit = JdbcAssets.build(connection, "INSERT INTO dup (b) VALUES (1)", 1L);
 
