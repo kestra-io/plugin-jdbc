@@ -2,7 +2,11 @@ package io.kestra.plugin.jdbc;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 class SqlSplitterTest {
 
@@ -455,5 +459,144 @@ class SqlSplitterTest {
 
         assertEquals(1, queries.length);
         assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void postgresDollarQuotedFunctionFollowedByStatement() {
+        var function = """
+            CREATE OR REPLACE FUNCTION answer() RETURNS int AS $$
+            BEGIN
+              RETURN 42;
+            END;
+            $$ LANGUAGE plpgsql""";
+        var sql = function + ";\nSELECT answer();";
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals(function, queries[0]);
+        assertEquals("SELECT answer()", queries[1]);
+    }
+
+    @Test
+    void postgresTaggedDollarQuotedProcedureFollowedByStatement() {
+        var procedure = "CREATE PROCEDURE p() LANGUAGE plpgsql AS $body$ BEGIN INSERT INTO t VALUES (1); END; $body$";
+        var sql = procedure + "; CALL p();";
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(2, queries.length);
+        assertEquals(procedure, queries[0]);
+        assertEquals("CALL p()", queries[1]);
+    }
+
+    @Test
+    void transactionStatementsAreSplit() {
+        var sql = "BEGIN; INSERT INTO t VALUES (1); COMMIT; SELECT count(*) FROM t;";
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(4, queries.length);
+        assertEquals("BEGIN", queries[0]);
+        assertEquals("INSERT INTO t VALUES (1)", queries[1]);
+        assertEquals("COMMIT", queries[2]);
+        assertEquals("SELECT count(*) FROM t", queries[3]);
+    }
+
+    @Test
+    void beginTransactionWithModesIsSplit() {
+        var sql = """
+            BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+            UPDATE t SET v = 1;
+            begin work;
+            COMMIT;
+            BEGIN NOT DEFERRABLE;
+            COMMIT;
+            """;
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(6, queries.length);
+        assertEquals("BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE", queries[0]);
+        assertEquals("UPDATE t SET v = 1", queries[1]);
+        assertEquals("begin work", queries[2]);
+        assertEquals("COMMIT", queries[3]);
+        assertEquals("BEGIN NOT DEFERRABLE", queries[4]);
+        assertEquals("COMMIT", queries[5]);
+    }
+
+    @Test
+    void sqliteTransactionModesAreSplit() {
+        var sql = "BEGIN IMMEDIATE; INSERT INTO t VALUES (1); COMMIT; BEGIN DEFERRED TRANSACTION; COMMIT; BEGIN EXCLUSIVE; COMMIT; SELECT 2;";
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(8, queries.length);
+        assertEquals("BEGIN IMMEDIATE", queries[0]);
+        assertEquals("BEGIN DEFERRED TRANSACTION", queries[3]);
+        assertEquals("BEGIN EXCLUSIVE", queries[5]);
+        assertEquals("SELECT 2", queries[7]);
+    }
+
+    @Test
+    void transactionBeginAfterLeadingCommentIsSplit() {
+        var sql = """
+            -- open tx
+            /* block; comment */ BEGIN;
+            INSERT INTO t VALUES (1);
+            COMMIT;
+            SELECT 2;
+            """;
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(4, queries.length);
+        assertEquals("-- open tx\n/* block; comment */ BEGIN", queries[0]);
+        assertEquals("INSERT INTO t VALUES (1)", queries[1]);
+        assertEquals("COMMIT", queries[2]);
+        assertEquals("SELECT 2", queries[3]);
+    }
+
+    @Test
+    void largeBlockAfterLeadingBlockCommentStaysLinear() {
+        var sql = "/* header */\nBEGIN\n" + "  SELECT 1;\n".repeat(20_000) + "END;";
+
+        var queries = assertTimeoutPreemptively(Duration.ofSeconds(5), () -> SqlSplitter.getQueries(sql));
+
+        assertEquals(1, queries.length);
+    }
+
+    @Test
+    void mariadbBeginNotAtomicBlockSingleStatement() {
+        var sql = """
+            BEGIN NOT ATOMIC
+              SELECT 1;
+              SELECT 2;
+            END;
+            """;
+
+        var queries = SqlSplitter.getQueries(sql);
+
+        assertEquals(1, queries.length);
+        assertEquals(sql.trim(), queries[0]);
+    }
+
+    @Test
+    void oracleBlockStartingWithTransactionKeywordIdentifierSingleStatement() {
+        var sqls = List.of(
+            "BEGIN work.do_it(1); other.call(2); END;",
+            "BEGIN transaction.log_it(1); x(2); END;",
+            "BEGIN read.fetch_all; END;",
+            "BEGIN work := 1; END;",
+            "BEGIN work (1); other(2); END;",
+            "BEGIN work .do_it(1); other(2); END;",
+            "BEGIN read\n(x); other(2); END;"
+        );
+
+        for (var sql : sqls) {
+            var queries = SqlSplitter.getQueries(sql);
+
+            assertEquals(1, queries.length, sql);
+        }
     }
 }

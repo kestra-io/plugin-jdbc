@@ -3,8 +3,15 @@ package io.kestra.plugin.jdbc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 public class SqlSplitter {
+
+    private static final Pattern TRANSACTION_BEGIN = Pattern.compile(
+        "(?:\\s*(?:--[^\\n]*\\n|/\\*.*?\\*/))*\\s*BEGIN"
+            + "(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|DEFERRABLE|NOT\\s+DEFERRABLE|DEFERRED|IMMEDIATE|EXCLUSIVE)(?=\\s|;)(?!\\s*[(.])(?:(?!:=)[^;])*)?\\s*;",
+        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
+    );
 
     public static String[] getQueries(String sql) {
         List<String> statements = new ArrayList<>();
@@ -27,6 +34,9 @@ public class SqlSplitter {
         int beginDepth = 0;
         boolean sawEndToken = false;
         StringBuilder token = new StringBuilder();
+
+        // A transaction BEGIN ends at the statement's first top-level ';', so only check it there.
+        var sawStatementSemicolon = false;
 
         boolean doDollarBlock = false;
         String lastTokenUpper = null;
@@ -270,6 +280,11 @@ public class SqlSplitter {
                             doDollarBlock = true;
                         }
 
+                        // Postgres function body is the dollar-quoted string: end at the next top-level ';'
+                        if (plsqlDdlDepth > 0) {
+                            plsqlDdlDepth--;
+                        }
+
                         inDollarQuote = true;
                         dollarTag = candidate;
                         current.append(candidate);
@@ -300,6 +315,12 @@ public class SqlSplitter {
                     }
 
                     if (c == ';') {
+                        // "BEGIN;" / "BEGIN TRANSACTION ...;" / "BEGIN WORK;" starts a transaction, not a BEGIN...END block.
+                        if (!sawStatementSemicolon && beginDepth == 1 && plsqlDdlDepth == 0 && TRANSACTION_BEGIN.matcher(current).matches()) {
+                            beginDepth = 0;
+                        }
+                        sawStatementSemicolon = true;
+
                         // Close PL/SQL DDL unit on final "END ...;"
                         if (plsqlDdlDepth > 0 && sawEndToken) {
                             plsqlDdlDepth = Math.max(0, plsqlDdlDepth - 1);
@@ -308,6 +329,7 @@ public class SqlSplitter {
                             if (plsqlDdlDepth == 0 && beginDepth == 0) {
                                 statements.add(current.toString().trim());
                                 current.setLength(0);
+                                sawStatementSemicolon = false;
                                 doDollarBlock = false;
                                 inDeclareSection = false; // reset oracle declare state
                                 continue;
@@ -321,6 +343,7 @@ public class SqlSplitter {
                             if (beginDepth == 0) {
                                 statements.add(current.toString().trim());
                                 current.setLength(0);
+                                sawStatementSemicolon = false;
                                 doDollarBlock = false;
                                 inDeclareSection = false; // reset oracle declare state
                                 continue;
@@ -347,6 +370,7 @@ public class SqlSplitter {
                     }
                 }
                 current.setLength(0);
+                sawStatementSemicolon = false;
                 doDollarBlock = false;
             }
         }
