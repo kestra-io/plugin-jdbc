@@ -1,0 +1,97 @@
+{
+  "access": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "actianvector": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "arrowflight": [
+    "Queries",
+    "Query"
+  ],
+  "as400": [
+    "Queries",
+    "Query"
+  ],
+  "clickhouse": [
+    "BulkInsert",
+    "Queries",
+    "Query"
+  ],
+  "db2": [
+    "Queries",
+    "Query"
+  ],
+  "dremio": [
+    "Queries",
+    "Query"
+  ],
+  "druid": [
+    "Queries",
+    "Query"
+  ],
+  "duckdb": [
+    "Queries",
+    "Query"
+  ],
+  "hana": [
+    "Queries",
+    "Query"
+  ],
+  "mariadb": [
+    "Queries",
+    "Query"
+  ],
+  "mysql": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "oracle": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "pinot": [
+    "Queries",
+    "Query"
+  ],
+  "postgresql": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "redshift": [
+    "Queries",
+    "Query"
+  ],
+  "snowflake": [
+    "Queries",
+    "Query"
+  ],
+  "sqlite": [
+    "Queries",
+    "Query"
+  ],
+  "sqlserver": [
+    "Batch",
+    "Queries",
+    "Query"
+  ],
+  "sybase": [
+    "Queries",
+    "Query"
+  ],
+  "trino": [
+    "Query"
+  ],
+  "vertica": [
+    "Batch",
+    "Queries",
+    "Query"
+  ]
+}

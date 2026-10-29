@@ -6,6 +6,7 @@ import io.kestra.core.models.annotations.Metric;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.runners.PluginUtilsService;
 import io.kestra.core.runners.RunContext;
@@ -114,6 +115,23 @@ import java.util.Map;
             type = Counter.TYPE,
             unit = "rows",
             description = "The number of fetched rows."
+        ),
+        @Metric(
+            name = "duration",
+            type = Timer.TYPE,
+            description = "The duration of the SQL execution, including reading the result rows."
+        ),
+        @Metric(
+            name = "rows.affected",
+            type = Counter.TYPE,
+            unit = "rows",
+            description = "The number of rows affected, as reported by the JDBC driver."
+        ),
+        @Metric(
+            name = "bytes",
+            type = Counter.TYPE,
+            unit = "bytes",
+            description = "The size of the stored result file."
         )
     }
 )
@@ -274,10 +292,12 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         // Pass the already-rendered SQL on so the guard checks exactly what DuckDB executes; restored below so a retry re-renders.
         var originalSql = this.sql;
         this.sql = Property.ofValue(rSql);
+        this.maskingTemplate = originalSql;
         try {
             run = super.run(runContext);
         } finally {
             this.sql = originalSql;
+            this.maskingTemplate = null;
             DuckDbQueryUtils.warnOnProcessDirectoryWrites(runContext, processDir, processSnapshot);
         }
 
@@ -299,12 +319,13 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
             dbUri = runContext.storage().putFile(new File(this.databaseFile.toUri()));
         }
 
-        return Output.builder()
+        var output = Output.builder()
             .outputs(run.getOutputs())
             .affectedRows(run.getAffectedRows())
             .outputFiles(uploaded)
-            .databaseUri(dbUri)
-            .build();
+            .databaseUri(dbUri);
+        run.copyExecutionDetailsTo(output);
+        return output.build();
     }
 
     @SuperBuilder

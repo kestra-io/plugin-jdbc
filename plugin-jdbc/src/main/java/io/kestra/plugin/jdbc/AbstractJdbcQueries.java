@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.queues.QueueException;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import lombok.*;
@@ -17,8 +16,12 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.URI;
 import java.sql.*;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +57,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         long totalSize = 0L;
         List<Output> outputList = new LinkedList<>();
         List<Long> affectedRows = new ArrayList<>();
-
+        var stats = new RunStats();
         // Create connection in not autocommit mode to enable rollback on error
         Savepoint savepoint = null;
         boolean supportsTx = false;
@@ -82,12 +85,17 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             boolean supportsMulti = supportsMultiStatements(this.runningConnection);
 
             boolean shouldBatchQueries = supportsMulti && useTransactions;
+            var collector = columnStatsCollector(runContext, fetchType);
 
             String[] queries = shouldBatchQueries
                 ? new String[]{rSql}
                 : getQueries(rSql);
 
+            var startedAt = System.nanoTime();
+
             for (String query : queries) {
+                var statementStartedAt = System.nanoTime();
+                var affectedBefore = affectedRows.size();
                 // Create statement, execute
                 try (PreparedStatement stmt = prepareStatement(runContext, this.runningConnection, query)) {
                     this.runningStatement = stmt;
@@ -111,8 +119,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         affectedRows,
                         fetchType,
                         shouldBatchQueries,
-                        hasResultSet
+                        hasResultSet,
+                        collector,
+                        stats
                     );
+                    stats.warnings += JdbcExecutionSupport.countWarnings(stmt);
+                    if (shouldBatchQueries) {
+                        stats.recordBatch(getQueries(rSql), System.nanoTime() - statementStartedAt);
+                    } else {
+                        stats.recordStatement(query, affectedRows.subList(affectedBefore, affectedRows.size()), System.nanoTime() - statementStartedAt);
+                    }
 
                     // if the task has been killed, avoid processing the next query
                     if (Thread.currentThread().isInterrupted()) {
@@ -125,11 +141,33 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             if (useTransactions) {
                 this.runningConnection.commit();
             }
+            var durationNanos = System.nanoTime() - startedAt;
             runContext.metric(Counter.of("fetch.size", totalSize, this.tags(runContext)));
 
-            upsertAssets(runContext, queries, this.runningConnection);
+            emitAssets(runContext, queries, stats, this.runningConnection);
 
-            return MultiQueryOutput.builder().outputs(outputList).affectedRows(affectedRows).build();
+            var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
+            var columnStatsUri = collector == null || stats.statementLog.isEmpty() || collector.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, collector.results());
+            var rowsAffected = affectedRows.isEmpty() ? null : affectedRows.stream().mapToLong(Long::longValue).sum();
+            var details = JdbcExecutionSupport.details(
+                runContext,
+                JdbcExecutionSupport.tables(this.runningConnection, Arrays.asList(queries), this.sqlSyntax()),
+                statement,
+                rowsAffected,
+                stats.stored ? stats.bytes : null,
+                durationNanos,
+                stats.warnings,
+                columnStatsUri,
+                this.tags(runContext)
+            );
+            var statements = stats.statementLog.isEmpty() ? null : JdbcExecutionSupport.storeIon(runContext, stats.statementLog);
+
+            var output = MultiQueryOutput.builder().outputs(outputList).affectedRows(affectedRows);
+            MultiQueryOutput.applyDetails(output, details);
+            return output
+                .statementCount((long) stats.statementLog.size())
+                .statements(statements)
+                .build();
         } catch (Exception e) {
             if (supportsTx && isTransactional) {
                 rollbackIfTransactional(this.runningConnection, savepoint);
@@ -150,7 +188,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final List<Long> affectedRows,
                                              final FetchType fetchType,
                                              final boolean multiStatements,
-                                             final boolean hasResultSet
+                                             final boolean hasResultSet,
+                                             final ColumnStatsCollector collector,
+                                             final RunStats stats
     ) throws SQLException, IOException {
 
         // ---------------------------------------------------------------------
@@ -164,9 +204,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
             // When SQL is not a SELECT statement skip output creation, only record the update count
             if (rs == null) {
-                int updateCount = stmt.getUpdateCount();
-                if (updateCount != -1) {
-                    affectedRows.add((long) updateCount);
+                var updateCount = JdbcExecutionSupport.updateCount(stmt);
+                if (updateCount != null) {
+                    affectedRows.add(updateCount);
                 }
                 return totalSize;
             }
@@ -185,15 +225,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 case STORE -> {
                     File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                     try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                        size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
+                        size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection, collector);
                     }
+                    stats.addStoredBytes(tempFile.length());
                     output
                         .uri(runContext.storage().putFile(tempFile))
                         .size(size);
                 }
                 case FETCH -> {
                     List<Map<String, Object>> maps = new ArrayList<>();
-                    size = fetchResults(stmt, rs, maps, cellConverter, connection);
+                    size = fetchResults(stmt, rs, maps, cellConverter, connection, collector);
                     output
                         .rows(maps)
                         .size(size);
@@ -240,15 +281,16 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     case STORE -> {
                         File tempFile = runContext.workingDir().createTempFile(".ion").toFile();
                         try (var fileOutput = new BufferedOutputStream(new FileOutputStream(tempFile), FileSerde.BUFFER_SIZE)) {
-                            size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection);
+                            size = fetchToFile(stmt, rs, fileOutput, cellConverter, connection, collector);
                         }
+                        stats.addStoredBytes(tempFile.length());
                         output
                             .uri(runContext.storage().putFile(tempFile))
                             .size(size);
                     }
                     case FETCH -> {
                         List<Map<String, Object>> maps = new ArrayList<>();
-                        size = fetchResults(stmt, rs, maps, cellConverter, connection);
+                        size = fetchResults(stmt, rs, maps, cellConverter, connection, collector);
                         output
                             .rows(maps)
                             .size(size);
@@ -260,13 +302,15 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
                 totalSize += size;
                 outputList.add(output.build());
+                stats.batchResults.add(null);
             } else {
-                int updateCount = stmt.getUpdateCount();
+                var updateCount = JdbcExecutionSupport.updateCount(stmt);
                 // No result set and no update count: end of results
-                if (updateCount == -1) {
+                if (updateCount == null) {
                     break;
                 }
-                affectedRows.add((long) updateCount);
+                affectedRows.add(updateCount);
+                stats.batchResults.add(updateCount);
             }
 
             // Move to the next result
@@ -318,18 +362,59 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         }
     }
 
-    private void upsertAssets(RunContext runContext, String[] queries, Connection conn)
-        throws SQLException, QueueException, IllegalVariableEvaluationException {
-
-        for (String query : queries) {
-            upsertAsset(runContext, conn, query);
+    private void emitAssets(RunContext runContext, String[] queries, RunStats stats, Connection conn)
+        throws IllegalVariableEvaluationException {
+        var statements = new ArrayList<JdbcAssets.ExecutedStatement>(queries.length);
+        for (var i = 0; i < queries.length; i++) {
+            var rowsAffected = i < stats.statementLog.size() ? (Long) stats.statementLog.get(i).get("rowsAffected") : null;
+            statements.add(new JdbcAssets.ExecutedStatement(queries[i], rowsAffected));
         }
+        JdbcAssets.emit(runContext, getAssets(), conn, statements, this.sqlSyntax());
     }
 
     @Override
     public void kill() {
         super.kill(this.runningStatement);
         super.kill(this.runningConnection);
+    }
+
+    // Accumulates the figures that are only known while the statements run.
+    private static final class RunStats {
+        private final List<Map<String, Object>> statementLog = new ArrayList<>();
+        // One entry per result (null for a result set) of a script sent as a single batched execute().
+        private final List<Long> batchResults = new ArrayList<>();
+        private long bytes;
+        private boolean stored;
+        private int warnings;
+
+        void addStoredBytes(long size) {
+            bytes += size;
+            stored = true;
+        }
+
+        // A batched script is one execute() call, so log one record per result instead of one for the whole script.
+        // Each statement yields one result, which lets us pair the split statements with the results by position.
+        void recordBatch(String[] statements, long durationNanos) {
+            var pairable = statements.length == batchResults.size();
+            for (var i = 0; i < batchResults.size(); i++) {
+                var entry = new LinkedHashMap<String, Object>();
+                entry.put("index", statementLog.size());
+                entry.put("kind", pairable ? SqlTableExtractor.statementKind(statements[i]) : null);
+                entry.put("rowsAffected", batchResults.get(i));
+                // The driver does not report a duration per statement of a batch, so only a single statement has one.
+                entry.put("durationMs", batchResults.size() == 1 ? Duration.ofNanos(durationNanos).toMillis() : null);
+                statementLog.add(entry);
+            }
+        }
+
+        void recordStatement(String query, List<Long> affected, long durationNanos) {
+            var entry = new LinkedHashMap<String, Object>();
+            entry.put("index", statementLog.size());
+            entry.put("kind", SqlTableExtractor.statementKind(query));
+            entry.put("rowsAffected", affected.isEmpty() ? null : affected.stream().mapToLong(Long::longValue).sum());
+            entry.put("durationMs", Duration.ofNanos(durationNanos).toMillis());
+            statementLog.add(entry);
+        }
     }
 
     @SuperBuilder
@@ -344,5 +429,88 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 "Queries returning a result set are not included here; their results are in `outputs`."
         )
         List<Long> affectedRows;
+
+        @Schema(
+            title = "Total number of rows affected by all statements",
+            description = "Sum of `affectedRows`. Not set when no statement reported an update count"
+        )
+        Long rowsAffected;
+
+        @Schema(
+            title = "Total size of the stored result files in bytes",
+            description = "Only populated when fetchType is STORE"
+        )
+        Long bytes;
+
+        @Schema(
+            title = "Total execution duration in milliseconds",
+            description = "Includes reading the result rows of every statement"
+        )
+        Long durationMs;
+
+        @Schema(
+            title = "Number of SQL warnings raised by the statements",
+            description = "Count of the `SQLWarning` chains reported by the driver across all statements"
+        )
+        Integer warnings;
+
+        @Schema(
+            title = "Tables read or written by the statements",
+            description = """
+                Detected from the SQL text, so this is a best effort: CTEs, temporary tables and dialect specific syntax can lower the `confidence` or be missed.
+                Limited to 50 entries, see `tablesTruncated`"""
+        )
+        List<SqlTableExtractor.TableReference> tables;
+
+        @Schema(
+            title = "Whether the `tables` list was cut at 50 entries"
+        )
+        Boolean tablesTruncated;
+
+        @Schema(
+            title = "Executed SQL statements",
+            description = "Only populated when `outputStatement` is true. Values of `secret()` calls are replaced by `***` and the text is truncated to 64 KiB"
+        )
+        String statement;
+
+        @Schema(
+            title = "URI of the column statistics file in internal storage",
+            description = "Only populated when `columnStats` is true and fetchType is FETCH or STORE; columns of all result sets are merged by name"
+        )
+        URI columnStats;
+
+        @Schema(
+            title = "Number of executed statements",
+            description = "When the driver runs the whole script in a single batch (transactional Snowflake, Redshift and Sybase scripts), the script counts as one statement"
+        )
+        Long statementCount;
+
+        @Schema(
+            title = "URI of the per-statement details file in internal storage",
+            description = "ION file with one `{index, kind, rowsAffected, durationMs}` entry per executed statement"
+        )
+        URI statements;
+
+        public void copyExecutionDetailsTo(MultiQueryOutputBuilder<?, ?> builder) {
+            applyDetails(builder, new JdbcExecutionSupport.Details(
+                rowsAffected, bytes, durationMs, warnings,
+                new JdbcExecutionSupport.TableSummary(tables, Boolean.TRUE.equals(tablesTruncated)), statement, columnStats
+            ));
+            builder
+                .statementCount(statementCount)
+                .statements(statements);
+        }
+
+        static void applyDetails(MultiQueryOutputBuilder<?, ?> builder, JdbcExecutionSupport.Details details) {
+            builder
+                .rowsAffected(details.rowsAffected())
+                .bytes(details.bytes())
+                .durationMs(details.durationMs())
+                .warnings(details.warnings())
+                .tables(details.tables().tables())
+                .tablesTruncated(details.tables().truncated() ? Boolean.TRUE : null)
+                .statement(details.statement())
+                .columnStats(details.columnStats());
+        }
     }
 }

@@ -273,4 +273,20 @@ class NamedParameterSqlTest {
         assertEquals("SELECT 'oops :x", result.sql());
         assertTrue(result.names().isEmpty());
     }
+
+    @Test
+    void backslashDoesNotEscapeInsideBackticks() {
+        var result = NamedParameterSql.parse("SELECT `a\\` FROM t WHERE c = :x", true, false);
+
+        assertEquals("SELECT `a\\` FROM t WHERE c = ?", result.sql());
+        assertEquals(List.of("x"), result.names());
+    }
+
+    @Test
+    void dollarGluedToAWordIsNotAQuote() {
+        var result = NamedParameterSql.parse("SELECT a$$ :x $$ FROM t", false, false);
+
+        assertEquals("SELECT a$$ ? $$ FROM t", result.sql());
+        assertEquals(List.of("x"), result.names());
+    }
 }

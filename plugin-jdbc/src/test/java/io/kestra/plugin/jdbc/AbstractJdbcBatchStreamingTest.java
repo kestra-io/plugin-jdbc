@@ -1,7 +1,11 @@
 package io.kestra.plugin.jdbc;
 
 import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.assets.AssetsDeclaration;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.AssetFailureBehavior;
+import io.kestra.core.runners.AssetEmit;
+import io.kestra.core.runners.AssetEmitter;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.core.serializers.FileSerde;
@@ -97,6 +101,14 @@ class AbstractJdbcBatchStreamingTest {
 
         assertThat(output.getRowCount(), is((long) ROWS));
         assertThat(output.getUpdatedCount(), is(ROWS));
+        assertThat(output.getRowsAffected(), is((long) ROWS));
+        assertThat(output.getDurationMs(), greaterThanOrEqualTo(0L));
+        assertThat(output.getWarnings(), is(0));
+        assertThat(output.getTables(), hasSize(1));
+        assertThat(output.getTables().getFirst().getName(), is("streaming_batch"));
+        assertThat(output.getTables().getFirst().getAccess(), is(SqlTableExtractor.Access.WRITE));
+        assertThat(output.getTablesTruncated(), nullValue());
+        assertThat(output.getStatement(), nullValue());
         assertThat(bytesReadAtEachFlush, hasSize(ROWS / CHUNK));
         assertThat(bytesRead.get(), is(fileSize));
         // the first chunk must be flushed after reading only a small part of the file, not the whole file
@@ -173,11 +185,166 @@ class AbstractJdbcBatchStreamingTest {
         }
     }
 
+    @Test
+    void assetFailureAfterCommitNeverReRunsTheInsert() throws Exception {
+        String dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (Connection setup = DriverManager.getConnection(dbUrl); Statement statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE asset_batch (id INT)");
+        }
+
+        Path ionFile = Files.createTempFile("asset_batch_", ".ion");
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(ionFile))) {
+            for (int i = 0; i < 10; i++) {
+                FileSerde.write(output, Map.of("id", i));
+            }
+        }
+        URI uri;
+        try (InputStream input = Files.newInputStream(ionFile)) {
+            uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), input);
+        }
+        Files.delete(ionFile);
+
+        AtomicInteger connections = new AtomicInteger();
+        StreamingBatch task = StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO asset_batch (id) VALUES (?)"))
+            .columns(Property.ofValue(List.of("id")))
+            .retryScope(Property.ofValue(AbstractJdbcBatch.RetryScope.ALL))
+            .resumeOnRetry(Property.ofValue(false))
+            .assets(new AssetsDeclaration(Property.ofValue(true), null, null, Property.ofValue(AssetFailureBehavior.FAIL)))
+            .onConnection(() -> {
+                // the first connection runs the insert, the second one is opened for the asset step
+                if (connections.incrementAndGet() == 2) {
+                    throw new SQLException("connection lost", "08006");
+                }
+            })
+            .build();
+
+        assertThrows(IllegalStateException.class, () -> task.run(runContextFactory.of(Map.of())));
+
+        assertThat(connections.get(), is(2));
+        try (Connection check = DriverManager.getConnection(dbUrl);
+             Statement statement = check.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT COUNT(*) FROM asset_batch")) {
+            rs.next();
+            assertThat(rs.getInt(1), is(10));
+        }
+    }
+
+    @Test
+    void emitsTheWrittenTableWhenEnableAutoIsSet() throws Exception {
+        var dbUrl = newTable("emit_batch");
+        var emitter = new RecordingEmitter();
+
+        var output = assetBatch(dbUrl, "emit_batch", new AssetsDeclaration(Property.ofValue(true), null, null, Property.ofValue(AssetFailureBehavior.FAIL)), null)
+            .run(runContextWithEmitter(emitter));
+
+        assertThat(output.getRowsAffected(), is(3L));
+        assertThat(emitter.emitted(), hasSize(1));
+        var asset = emitter.emitted().getFirst().outputs().getFirst();
+        assertThat(asset.getId(), endsWith(".PUBLIC.EMIT_BATCH"));
+        assertThat(asset.getMetadata().get("rowsAffected"), is(3L));
+        assertThat(asset.getMetadata().get("columns"), is(notNullValue()));
+    }
+
+    @Test
+    void emitsNothingAndOpensNoSecondConnectionWithoutEnableAuto() throws Exception {
+        var dbUrl = newTable("no_auto_batch");
+        var emitter = new RecordingEmitter();
+        var connections = new AtomicInteger();
+
+        assetBatch(dbUrl, "no_auto_batch", new AssetsDeclaration(Property.ofValue(false), null, null, null), connections::incrementAndGet)
+            .run(runContextWithEmitter(emitter));
+
+        assertThat(emitter.emitted(), is(empty()));
+        assertThat(connections.get(), is(1));
+    }
+
+    @Test
+    void unexpectedFailureWhileOpeningTheAssetConnectionIsAnAssetFailure() throws Exception {
+        var dbUrl = newTable("runtime_batch");
+        var connections = new AtomicInteger();
+        var declaration = new AssetsDeclaration(Property.ofValue(true), null, null, Property.ofValue(AssetFailureBehavior.FAIL));
+
+        var failing = assetBatch(dbUrl, "runtime_batch", declaration, () -> {
+            if (connections.incrementAndGet() == 2) {
+                throw new IllegalArgumentException("not a SQLException");
+            }
+        });
+        var thrown = assertThrows(IllegalStateException.class, () -> failing.run(runContextFactory.of(Map.of())));
+        assertThat(thrown.getMessage(), startsWith("Unable to emit assets"));
+
+        var warnOnly = new AssetsDeclaration(Property.ofValue(true), null, null, null);
+        var tolerant = assetBatch(dbUrl, "runtime_batch", warnOnly, () -> {
+            if (connections.incrementAndGet() % 2 == 0) {
+                throw new IllegalArgumentException("not a SQLException");
+            }
+        });
+        assertThat(tolerant.run(runContextFactory.of(Map.of())).getRowsAffected(), is(3L));
+    }
+
+    private String newTable(String table) throws Exception {
+        var dbUrl = "jdbc:h2:mem:" + IdUtils.create() + ";DB_CLOSE_DELAY=-1";
+        try (var setup = DriverManager.getConnection(dbUrl); var statement = setup.createStatement()) {
+            statement.execute("CREATE TABLE " + table + " (id INT)");
+        }
+        return dbUrl;
+    }
+
+    private StreamingBatch assetBatch(String dbUrl, String table, AssetsDeclaration assets, StreamingBatch.ThrowingRunnable onConnection) throws Exception {
+        var ionFile = Files.createTempFile("asset_batch_", ".ion");
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(ionFile))) {
+            for (var i = 0; i < 3; i++) {
+                FileSerde.write(output, Map.of("id", i));
+            }
+        }
+        URI uri;
+        try (InputStream input = Files.newInputStream(ionFile)) {
+            uri = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create() + ".ion"), input);
+        }
+        Files.delete(ionFile);
+
+        return StreamingBatch.builder()
+            .id(IdUtils.create())
+            .type(StreamingBatch.class.getName())
+            .url(Property.ofValue(dbUrl))
+            .from(Property.ofValue(uri.toString()))
+            .sql(Property.ofValue("INSERT INTO " + table + " (id) VALUES (?)"))
+            .columns(Property.ofValue(List.of("id")))
+            .assets(assets)
+            .onConnection(onConnection)
+            .build();
+    }
+
+    private RunContext runContextWithEmitter(AssetEmitter emitter) throws Exception {
+        var runContext = spy(runContextFactory.of(Map.of()));
+        doReturn(emitter).when(runContext).assets();
+        return runContext;
+    }
+
+    private static final class RecordingEmitter implements AssetEmitter {
+        private final List<AssetEmit> emitted = new ArrayList<>();
+
+        @Override
+        public void emit(AssetEmit emit) {
+            emitted.add(emit);
+        }
+
+        @Override
+        public List<AssetEmit> emitted() {
+            return emitted;
+        }
+    }
+
     @SuperBuilder
     @NoArgsConstructor
     public static class StreamingBatch extends AbstractJdbcBatch {
         private transient Runnable onExecuteBatch;
         private transient Runnable onRollback;
+        private transient ThrowingRunnable onConnection;
 
         @Override
         protected AbstractCellConverter getCellConverter(ZoneId zoneId) {
@@ -200,6 +367,9 @@ class AbstractJdbcBatchStreamingTest {
 
         @Override
         public Connection connection(RunContext runContext) throws Exception {
+            if (onConnection != null) {
+                onConnection.run();
+            }
             Connection connection = super.connection(runContext);
             return proxy(Connection.class, connection, (method, args) -> {
                 if (method.getName().equals("rollback") && onRollback != null) {
@@ -217,6 +387,11 @@ class AbstractJdbcBatchStreamingTest {
                 }
                 return result;
             });
+        }
+
+        @FunctionalInterface
+        public interface ThrowingRunnable {
+            void run() throws SQLException;
         }
 
         @FunctionalInterface
