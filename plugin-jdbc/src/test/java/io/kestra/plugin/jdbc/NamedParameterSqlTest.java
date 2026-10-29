@@ -88,6 +88,17 @@ class NamedParameterSqlTest {
     }
 
     @Test
+    void quotedIdentifierContainingColonIsKept() {
+        var result = NamedParameterSql.parse(
+            "SELECT v FROM \"INGESTION:TOPIC_ENVIRONMENT\" WHERE v = :expected",
+            false, false
+        );
+
+        assertEquals("SELECT v FROM \"INGESTION:TOPIC_ENVIRONMENT\" WHERE v = ?", result.sql());
+        assertEquals(List.of("expected"), result.names());
+    }
+
+    @Test
     void commentsAreKept() {
         var result = NamedParameterSql.parse(
             """
