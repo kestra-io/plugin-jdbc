@@ -1,22 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.queues.QueueException;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.utils.Rethrow;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
@@ -24,10 +7,24 @@ import java.sql.*;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.enums.MonacoLanguages;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.utils.Rethrow;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @SuperBuilder
 @ToString
@@ -54,9 +51,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Boolean> connectionPooling = Property.ofValue(true);
+    private Property<Boolean> connectionPooling;
 
     @Schema(
         title = "Deprecated, ignored",
@@ -64,9 +60,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Integer> connectionPoolSize = Property.ofValue(10);
+    private Property<Integer> connectionPoolSize;
 
     @Schema(
         title = "SQL statement(s) to execute",
@@ -209,7 +204,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected String[] tags(RunContext runContext) throws IllegalVariableEvaluationException {
         var fetchTypeRendered = this.renderFetchType(runContext);
-        return new String[]{
+        return new String[] {
             "fetch", fetchTypeRendered.equals(FetchType.FETCH) || fetchTypeRendered.equals(FetchType.FETCH_ONE) ? "true" : "false",
             "store", fetchTypeRendered.equals(FetchType.STORE) ? "true" : "false",
         };
@@ -243,7 +238,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return fetchResults(stmt, rs, maps, cellConverter, connection, null);
     }
 
-    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector) throws SQLException {
+    protected long fetchResults(Statement stmt, ResultSet rs, List<Map<String, Object>> maps, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector)
+        throws SQLException {
         return fetch(stmt, rs, withStats(Rethrow.throwConsumer(maps::add), collector, rs), cellConverter, connection);
     }
 
@@ -251,7 +247,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return fetchToFile(stmt, rs, output, cellConverter, connection, null);
     }
 
-    protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector) throws SQLException, IOException {
+    protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector)
+        throws SQLException, IOException {
         return fetch(
             stmt,
             rs,
@@ -266,7 +263,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             return consumer;
         }
         collector.describe(rs.getMetaData());
-        return map -> {
+        return map ->
+        {
             collector.accept(map);
             consumer.accept(map);
         };
@@ -332,8 +330,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     }
 
     protected PreparedStatement prepareStatement(final RunContext runContext,
-                                                 final Connection conn,
-                                                 final String sql) throws SQLException, IllegalVariableEvaluationException {
+        final Connection conn,
+        final String sql) throws SQLException, IllegalVariableEvaluationException {
 
         if (this.getParameters() == null) {
             return createPreparedStatement(conn, sql);
@@ -396,9 +394,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             boolean nativeSupport = MULTI_STATEMENT_DRIVERS.stream()
                 .anyMatch(s -> driver.contains(s) || product.contains(s));
 
-            boolean mysqlCompatible =
-                (driver.contains("mysql") || driver.contains("mariadb"))
-                    && url.contains("allowmultiqueries=true");
+            boolean mysqlCompatible = (driver.contains("mysql") || driver.contains("mariadb"))
+                && url.contains("allowmultiqueries=true");
 
             return nativeSupport || mysqlCompatible;
         } catch (SQLException e) {
@@ -488,8 +485,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
             // Special handling for SQLite which returns a result set with multiple rows
             if (productName.contains("sqlite")) {
-                try (Statement stmt = conn.createStatement();
-                     ResultSet rs = stmt.executeQuery(query)) {
+                try (
+                    Statement stmt = conn.createStatement();
+                    ResultSet rs = stmt.executeQuery(query)
+                ) {
                     if (rs.next()) {
                         // SQLite PRAGMA database_list returns: seq, name, file
                         // We want the "main" database
@@ -500,8 +499,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             }
 
             // Execute the query to get the database name
-            try (Statement stmt = conn.createStatement();
-                 ResultSet rs = stmt.executeQuery(query)) {
+            try (
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(query)
+            ) {
                 if (rs.next()) {
                     String dbName = rs.getString(1);
                     return dbName != null ? dbName : "unknown";

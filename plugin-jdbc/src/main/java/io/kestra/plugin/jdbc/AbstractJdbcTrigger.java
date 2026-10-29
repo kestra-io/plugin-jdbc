@@ -1,29 +1,30 @@
 package io.kestra.plugin.jdbc;
 
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.slf4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.conditions.ConditionContext;
+import io.kestra.core.models.enums.MonacoLanguages;
 import io.kestra.core.models.executions.Execution;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.models.triggers.*;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.utils.PebbleUtil;
+
 import io.swagger.v3.oas.annotations.media.Schema;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import io.kestra.core.models.enums.MonacoLanguages;
-import io.swagger.v3.oas.annotations.media.Schema;
 
 @SuperBuilder
 @ToString
@@ -52,9 +53,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Boolean> connectionPooling = Property.ofValue(true);
+    private Property<Boolean> connectionPooling;
 
     @Schema(
         title = "Deprecated, ignored",
@@ -62,9 +62,8 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Integer> connectionPoolSize = Property.ofValue(10);
+    private Property<Integer> connectionPoolSize;
 
     @NotNull
     @PluginProperty(language = MonacoLanguages.SQL, group = "main")
@@ -77,21 +76,21 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
      * @deprecated use fetchType: STORE instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean store = false;
 
     /**
      * @deprecated use fetchType: FETCH_ONE instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean fetchOne = false;
 
     /**
      * @deprecated use fetchType: FETCH instead
      */
     @Builder.Default
-    @Deprecated(since="0.19.0", forRemoval=true)
+    @Deprecated(since = "0.19.0", forRemoval = true)
     private boolean fetch = false;
 
     @NotNull
@@ -109,10 +108,12 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     @AssertTrue(message = "fetchType NONE is not valid for triggers — the trigger would never fire. Use FETCH, FETCH_ONE, or STORE.")
     @JsonIgnore
     boolean isFetchTypeValid() {
-        if (fetchType == null) return true;
+        if (fetchType == null)
+            return true;
         var expr = fetchType.toString();
         // Skip validation for dynamic Pebble expressions — those can only be checked at render time
-        if (PebbleUtil.containsOpeningBlockDelimiter(expr)) return true;
+        if (PebbleUtil.containsOpeningBlockDelimiter(expr))
+            return true;
         return !FetchType.NONE.name().equalsIgnoreCase(expr);
     }
 
@@ -146,11 +147,11 @@ public abstract class AbstractJdbcTrigger extends AbstractTrigger implements Pol
     }
 
     public FetchType renderFetchType(RunContext runContext) throws IllegalVariableEvaluationException {
-        if(this.fetch) {
+        if (this.fetch) {
             return FetchType.FETCH;
-        } else if(this.fetchOne) {
+        } else if (this.fetchOne) {
             return FetchType.FETCH_ONE;
-        } else if(this.store) {
+        } else if (this.store) {
             return FetchType.STORE;
         }
         var rFetchType = runContext.render(fetchType).as(FetchType.class).orElseThrow();
