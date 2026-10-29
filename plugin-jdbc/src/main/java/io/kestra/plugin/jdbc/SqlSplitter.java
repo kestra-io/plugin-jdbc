@@ -9,7 +9,7 @@ public class SqlSplitter {
 
     private static final Pattern TRANSACTION_BEGIN = Pattern.compile(
         "(?:\\s*(?:--[^\\n]*\\n|/\\*.*?\\*/))*\\s*BEGIN"
-            + "(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|DEFERRABLE|NOT\\s+DEFERRABLE|DEFERRED|IMMEDIATE|EXCLUSIVE)(?=\\s|;)(?:(?!:=)[^;])*)?\\s*;",
+            + "(\\s+(TRANSACTION|TRAN|WORK|ISOLATION|READ|DEFERRABLE|NOT\\s+DEFERRABLE|DEFERRED|IMMEDIATE|EXCLUSIVE)(?=\\s|;)(?!\\s*[(.])(?:(?!:=)[^;])*)?\\s*;",
         Pattern.CASE_INSENSITIVE | Pattern.DOTALL
     );
 

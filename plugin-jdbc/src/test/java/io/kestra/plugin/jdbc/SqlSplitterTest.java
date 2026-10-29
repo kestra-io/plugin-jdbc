@@ -587,7 +587,10 @@ class SqlSplitterTest {
             "BEGIN work.do_it(1); other.call(2); END;",
             "BEGIN transaction.log_it(1); x(2); END;",
             "BEGIN read.fetch_all; END;",
-            "BEGIN work := 1; END;"
+            "BEGIN work := 1; END;",
+            "BEGIN work (1); other(2); END;",
+            "BEGIN work .do_it(1); other(2); END;",
+            "BEGIN read\n(x); other(2); END;"
         );
 
         for (var sql : sqls) {
