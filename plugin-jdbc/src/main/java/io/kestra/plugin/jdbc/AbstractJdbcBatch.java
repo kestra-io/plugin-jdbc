@@ -1,23 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.Task;
-import io.kestra.core.models.tasks.retrys.Exponential;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.utils.RetryUtils;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
-import io.kestra.core.models.enums.MonacoLanguages;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +11,25 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.slf4j.Logger;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.enums.MonacoLanguages;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.Task;
+import io.kestra.core.models.tasks.retrys.Exponential;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.utils.RetryUtils;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.core.utils.Rethrow.throwConsumer;
 
@@ -57,9 +58,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Boolean> connectionPooling = Property.ofValue(true);
+    private Property<Boolean> connectionPooling;
 
     @Schema(
         title = "Deprecated, ignored",
@@ -67,9 +67,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         deprecated = true
     )
     @Deprecated
-    @Builder.Default
     @PluginProperty(group = "advanced")
-    private Property<Integer> connectionPoolSize = Property.ofValue(10);
+    private Property<Integer> connectionPoolSize;
 
     @NotNull
     @Schema(
@@ -210,7 +209,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
             try {
                 RetryUtils.of(buildRetryPolicy(runContext), logger)
-                    .runRetryIf(t -> isRetryable(rRetryScope, t), () -> {
+                    .runRetryIf(t -> isRetryable(rRetryScope, t), () ->
+                    {
                         executor.execute();
                         return null;
                     });
@@ -345,10 +345,12 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
 
         for (Throwable cause = t; cause != null; cause = cause.getCause()) {
 
-            if (cause instanceof SQLIntegrityConstraintViolationException
-                || cause instanceof SQLSyntaxErrorException
-                || cause instanceof SQLDataException
-                || cause instanceof IllegalArgumentException) {
+            if (
+                cause instanceof SQLIntegrityConstraintViolationException
+                    || cause instanceof SQLSyntaxErrorException
+                    || cause instanceof SQLDataException
+                    || cause instanceof IllegalArgumentException
+            ) {
                 return false;
             }
 
@@ -435,8 +437,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
     }
 
     @SuppressWarnings("unchecked")
-    private void addBatch(PreparedStatement ps, ParameterType parameterMetaData, Object row, List<String> columnsToUse, AbstractCellConverter cellConverter, Connection connection
-    ) throws Exception {
+    private void addBatch(PreparedStatement ps, ParameterType parameterMetaData, Object row, List<String> columnsToUse, AbstractCellConverter cellConverter, Connection connection)
+        throws Exception {
         if (row instanceof Map) {
             Map<String, Object> map = (Map<String, Object>) row;
             int index = 0;
@@ -632,8 +634,7 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             BatchConfig config,
             RunContext runContext,
             AbstractCellConverter cellConverter,
-            Logger logger
-        ) {
+            Logger logger) {
             this.config = config;
             this.runContext = runContext;
             this.cellConverter = cellConverter;
@@ -667,15 +668,18 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
                 runningStatement = ps;
 
                 boolean supportsTx = connection.getMetaData().supportsTransactions();
-                if (supportsTx) connection.setAutoCommit(false);
+                if (supportsTx)
+                    connection.setAutoCommit(false);
                 rollbackOnFailure = supportsTx;
 
                 ParameterType meta = ParameterType.of(ps.getParameterMetaData());
                 List<Object> buffer = new ArrayList<>(config.chunk());
                 AtomicLong skip = new AtomicLong(resumeOffset);
 
-                FileSerde.read(inputStream, throwConsumer(row -> {
-                    if (skip.getAndDecrement() > 0) return;
+                FileSerde.read(inputStream, throwConsumer(row ->
+                {
+                    if (skip.getAndDecrement() > 0)
+                        return;
 
                     buffer.add(row);
                     if (buffer.size() >= config.chunk()) {
@@ -713,7 +717,8 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
             }
 
             int[] updated = ps.executeBatch();
-            if (supportsTx) connection.commit();
+            if (supportsTx)
+                connection.commit();
             ps.clearBatch();
 
             int size = rows.size();
@@ -778,5 +783,6 @@ public abstract class AbstractJdbcBatch extends Task implements RunnableTask<Abs
         ALL
     }
 
-    record BatchConfig(URI from, String sql, List<String> columns, int chunk, InputHandling inputHandling, long localBufferMaxBytes, boolean resumeOnRetry) {}
+    record BatchConfig(URI from, String sql, List<String> columns, int chunk, InputHandling inputHandling, long localBufferMaxBytes, boolean resumeOnRetry) {
+    }
 }
