@@ -103,6 +103,11 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                     case Statement statement -> statement.execute(rSql);
                 };
 
+                String engineQueryId = afterStatementExecute(runContext, stmt, isResult);
+                if (engineQueryId != null) {
+                    output.queryId(engineQueryId);
+                }
+
                 if (isResult) {
                     try (ResultSet rs = stmt.getResultSet()) {
                         // Populate result from result set

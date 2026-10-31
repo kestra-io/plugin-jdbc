@@ -42,6 +42,7 @@ public class TrinoTest extends AbstractRdbmsTest {
 
         AbstractJdbcQuery.Output runOutput = task.run(runContext);
         assertThat(runOutput.getRow(), notNullValue());
+        assertThat(runOutput.getQueryId(), notNullValue());
 
         assertThat(runOutput.getRow().get("t_null"), is(nullValue()));
         assertThat(runOutput.getRow().get("t_boolean"), is(true));

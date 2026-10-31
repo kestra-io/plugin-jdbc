@@ -19,6 +19,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest(startRunner = true, startScheduler = true)
@@ -70,6 +71,46 @@ class TrinoTriggerTest extends AbstractJdbcTriggerTest {
 
         var exception = assertThrows(SQLException.class, () -> trigger.runQuery(runContextFactory.of()));
         assertThat(exception.getMessage(), containsString("trigger_after_sql_missing"));
+    }
+
+    @Test
+    void propertiesAreForwardedToTheQuery() throws Exception {
+        try (Connection connection = getConnection(); Statement statement = connection.createStatement()) {
+            statement.execute("DROP TABLE IF EXISTS trigger_events");
+            statement.execute("CREATE TABLE trigger_events (id INTEGER)");
+            statement.execute("INSERT INTO trigger_events VALUES (3), (4)");
+        }
+
+        // A URL conflict must be caught on the trigger's own properties as on the Query ones.
+        var conflicting = Trigger.builder()
+            .id("watch")
+            .type(Trigger.class.getName())
+            .url(Property.ofValue(getUrl() + "?catalog=other"))
+            .username(Property.ofValue(getUsername()))
+            .catalog(Property.ofValue("memory"))
+            .sql(Property.ofValue("SELECT id FROM trigger_events"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> conflicting.runQuery(runContextFactory.of()));
+        assertThat(exception.getMessage(), containsString("catalog"));
+
+        // The typed properties of the trigger reach the query it runs.
+        var trigger = Trigger.builder()
+            .id("watch")
+            .type(Trigger.class.getName())
+            .url(Property.ofValue(getUrl()))
+            .username(Property.ofValue(getUsername()))
+            .source(Property.ofValue("kestra_trigger_test"))
+            .clientTags(Property.ofValue(List.of("kestra", "trigger")))
+            .sql(Property.ofValue("SELECT id FROM trigger_events WHERE id = 4"))
+            .fetchType(Property.ofValue(FetchType.FETCH))
+            .build();
+
+        var output = trigger.runQuery(runContextFactory.of());
+        assertThat(output.getSize(), is(1L));
+        assertThat(output.getRows().getFirst().get("id"), is(4));
+        assertThat(output.getQueryId(), notNullValue());
     }
 
     @Override

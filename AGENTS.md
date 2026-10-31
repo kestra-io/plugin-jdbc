@@ -186,6 +186,7 @@ Infrastructure dependencies (Docker Compose services):
 - `io.kestra.plugin.jdbc.sybase.Trigger`
 **plugin-jdbc-trino:**
 
+- `io.kestra.plugin.jdbc.trino.Queries`
 - `io.kestra.plugin.jdbc.trino.Query`
 - `io.kestra.plugin.jdbc.trino.Trigger`
 **plugin-jdbc-vertica:**

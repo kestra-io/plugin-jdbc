@@ -195,6 +195,22 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
+    /**
+     * Engine hook called for each statement, right after it was executed and before its results are read,
+     * to expose the query as the engine processed it: the returned id is added to the task outputs, and
+     * engines with query monitoring or per-query assets can also record their stats and emit their metrics here.
+     * <p>
+     * Returns the engine query identifier (for example the Trino query id), or `null` when the engine
+     * does not have one. The default implementation is a no-op.
+     * <p>
+     * The `statement` is the statement that was just executed and `hasResultSet` whether it produced a
+     * result set: engines must not call `getResultSet()` here, as drivers like Pinot track the results
+     * state and the engine reads them right after this hook.
+     */
+    protected String afterStatementExecute(RunContext runContext, Statement statement, boolean hasResultSet) throws SQLException {
+        return null;
+    }
+
     protected Statement createStatement(Connection conn) throws SQLException {
         return conn.createStatement(
             ResultSet.TYPE_FORWARD_ONLY,
@@ -603,6 +619,16 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             description = "Only populated when `columnStats` is true and fetchType is FETCH or STORE; file is stored in ION format"
         )
         private final URI columnStats;
+
+        @Schema(
+            title = "Engine query identifier",
+            description = """
+                The identifier of the query on the engine side, as engines that run the statement on a remote \
+                coordinator report it; its detail page in the engine Web UI is addressable with it. \
+                For example the Trino query id, populated by plugins with engine-side query support. \
+                Not set when the engine does not expose a query id"""
+        )
+        private final String queryId;
 
         // Lets the engine specific outputs that rebuild an Output carry the execution details over.
         public void copyExecutionDetailsTo(OutputBuilder<?, ?> builder) {

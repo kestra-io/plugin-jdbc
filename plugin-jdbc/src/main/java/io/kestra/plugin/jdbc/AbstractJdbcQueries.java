@@ -36,8 +36,9 @@ import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
 @NoArgsConstructor
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, JdbcQueriesInterface {
 
-    @Builder.Default
-    protected Property<Boolean> transaction = Property.ofValue(Boolean.TRUE);
+    // No default value on the property: when it is not set, `transactionalByDefault()` decides, so engines
+    // like Trino can default to non-transactional statements without the user having to opt out.
+    protected Property<Boolean> transaction;
 
     // will be used when killing
     @Getter(AccessLevel.NONE)
@@ -46,6 +47,19 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
+    /**
+     * The default of the `transaction` property when it is not set: engines can opt out, as Trino
+     * catalogs like `memory` refuse transactional writes when the statements run in a transaction.
+     */
+    protected boolean transactionalByDefault() {
+        return true;
+    }
+
+    private boolean renderTransactional(RunContext runContext) throws IllegalVariableEvaluationException {
+        return runContext.render(this.transaction).as(Boolean.class, this.additionalVars)
+            .orElse(this.transactionalByDefault());
+    }
+
     protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
     }
 
@@ -53,7 +67,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        final boolean isTransactional = runContext.render(this.transaction).as(Boolean.class).orElseThrow();
+        final boolean isTransactional = this.renderTransactional(runContext);
         long totalSize = 0L;
         List<Output> outputList = new LinkedList<>();
         List<Long> affectedRows = new ArrayList<>();
@@ -109,6 +123,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                     if (!useTransactions && supportsTx && !this.runningConnection.getAutoCommit()) {
                         this.runningConnection.commit();
                     }
+
+                    String engineQueryId = afterStatementExecute(runContext, stmt, hasResultSet);
+
                     totalSize = extractResultsFromResultSet(
                         this.runningConnection,
                         stmt,
@@ -121,13 +138,14 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         shouldBatchQueries,
                         hasResultSet,
                         collector,
-                        stats
+                        stats,
+                        engineQueryId
                     );
                     stats.warnings += JdbcExecutionSupport.countWarnings(stmt);
                     if (shouldBatchQueries) {
-                        stats.recordBatch(getQueries(rSql), System.nanoTime() - statementStartedAt);
+                        stats.recordBatch(getQueries(rSql), System.nanoTime() - statementStartedAt, engineQueryId);
                     } else {
-                        stats.recordStatement(query, affectedRows.subList(affectedBefore, affectedRows.size()), System.nanoTime() - statementStartedAt);
+                        stats.recordStatement(query, affectedRows.subList(affectedBefore, affectedRows.size()), System.nanoTime() - statementStartedAt, engineQueryId);
                     }
 
                     // if the task has been killed, avoid processing the next query
@@ -190,7 +208,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                                              final boolean multiStatements,
                                              final boolean hasResultSet,
                                              final ColumnStatsCollector collector,
-                                             final RunStats stats
+                                             final RunStats stats,
+                                             final String engineQueryId
     ) throws SQLException, IOException {
 
         // ---------------------------------------------------------------------
@@ -211,7 +230,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 return totalSize;
             }
 
-            Output.OutputBuilder<?, ?> output = Output.builder();
+            Output.OutputBuilder<?, ?> output = Output.builder().queryId(engineQueryId);
 
             long size = 0L;
             switch (fetchType) {
@@ -267,7 +286,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         while (true) {
             if (hasResults) {
                 ResultSet rs = stmt.getResultSet();
-                Output.OutputBuilder<?, ?> output = Output.builder();
+                Output.OutputBuilder<?, ?> output = Output.builder().queryId(engineQueryId);
 
                 long size = 0L;
                 switch (fetchType) {
@@ -394,7 +413,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         // A batched script is one execute() call, so log one record per result instead of one for the whole script.
         // Each statement yields one result, which lets us pair the split statements with the results by position.
-        void recordBatch(String[] statements, long durationNanos) {
+        // The engine query id, when the driver reports one, is the one of the whole batched script.
+        void recordBatch(String[] statements, long durationNanos, String engineQueryId) {
             var pairable = statements.length == batchResults.size();
             for (var i = 0; i < batchResults.size(); i++) {
                 var entry = new LinkedHashMap<String, Object>();
@@ -403,16 +423,22 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 entry.put("rowsAffected", batchResults.get(i));
                 // The driver does not report a duration per statement of a batch, so only a single statement has one.
                 entry.put("durationMs", batchResults.size() == 1 ? Duration.ofNanos(durationNanos).toMillis() : null);
+                if (engineQueryId != null) {
+                    entry.put("queryId", engineQueryId);
+                }
                 statementLog.add(entry);
             }
         }
 
-        void recordStatement(String query, List<Long> affected, long durationNanos) {
+        void recordStatement(String query, List<Long> affected, long durationNanos, String engineQueryId) {
             var entry = new LinkedHashMap<String, Object>();
             entry.put("index", statementLog.size());
             entry.put("kind", SqlTableExtractor.statementKind(query));
             entry.put("rowsAffected", affected.isEmpty() ? null : affected.stream().mapToLong(Long::longValue).sum());
             entry.put("durationMs", Duration.ofNanos(durationNanos).toMillis());
+            if (engineQueryId != null) {
+                entry.put("queryId", engineQueryId);
+            }
             statementLog.add(entry);
         }
     }
@@ -487,7 +513,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         @Schema(
             title = "URI of the per-statement details file in internal storage",
-            description = "ION file with one `{index, kind, rowsAffected, durationMs}` entry per executed statement"
+            description = "ION file with one `{index, kind, rowsAffected, durationMs}` entry per executed statement, plus `queryId` for engines that expose the query as the coordinator processed it (e.g. Trino)"
         )
         URI statements;
 
