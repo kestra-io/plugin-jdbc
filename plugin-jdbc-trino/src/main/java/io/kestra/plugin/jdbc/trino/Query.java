@@ -222,8 +222,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
     private Property<List<String>> clientTags;
 
     @PluginProperty(group = "advanced")
-    @Builder.Default
-    private Property<String> source = Property.ofValue("kestra");
+    private Property<String> source;
 
     @PluginProperty(group = "advanced")
     private Property<Map<String, Object>> roles;
@@ -240,6 +239,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
         this.monitor = new TrinoQueryMonitor(
             runContext,
             runContext.render(this.getUrl()).as(String.class).orElse(null),
+            runContext.render(this.getSsl()).as(Boolean.class).orElse(null),
             this.tags(runContext)
         );
     }

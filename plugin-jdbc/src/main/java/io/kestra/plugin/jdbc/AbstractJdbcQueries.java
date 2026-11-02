@@ -227,6 +227,9 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 if (updateCount != null) {
                     affectedRows.add(updateCount);
                 }
+                if (engineQueryId != null) {
+                    outputList.add(Output.builder().queryId(engineQueryId).build());
+                }
                 return totalSize;
             }
 

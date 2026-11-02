@@ -43,7 +43,7 @@ import java.util.function.Consumer;
 @NoArgsConstructor
 @Schema(
     title = "Execute multiple SQL statements using Trino query engine",
-    description = "Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine. Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only; set `transaction: true` to run them in one transaction. The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted. WARNING: Do NOT include a semicolon at the end of your SQL query - it will result in an error. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
+    description = "Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine. Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only; set `transaction: true` to run them in one transaction. The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -60,8 +60,8 @@ import java.util.function.Consumer;
                     url: jdbc:trino://localhost:8080/memory
                     username: "{{ secret('TRINO_USERNAME') }}"
                     sql: |
-                      CREATE TABLE IF NOT EXISTS memory.default.orders_agg AS SELECT 1 AS id
-                      INSERT INTO memory.default.orders_agg VALUES (2)
+                      CREATE TABLE IF NOT EXISTS memory.default.orders_agg AS SELECT 1 AS id;
+                      INSERT INTO memory.default.orders_agg VALUES (2);
                       SELECT COUNT(*) AS rows_count FROM memory.default.orders_agg
                     fetchType: FETCH
 
@@ -80,12 +80,13 @@ import java.util.function.Consumer;
                 tasks:
                   - id: ingest
                     type: io.kestra.plugin.jdbc.trino.Queries
-                    url: jdbc:trino://trino.example.com:8080/memory
+                    url: jdbc:trino://trino.example.com:443/memory
+                    ssl: true
                     accessToken: "{{ secret('TRINO_ACCESS_TOKEN') }}"
                     source: kestra_ingest
                     transaction: false
                     sql: |
-                      DELETE FROM memory.default.orders
+                      DELETE FROM memory.default.orders;
                       INSERT INTO memory.default.orders SELECT * FROM tpch.tiny.orders
                     fetchType: NONE
                 """
@@ -218,8 +219,7 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     private Property<List<String>> clientTags;
 
     @PluginProperty(group = "advanced")
-    @Builder.Default
-    private Property<String> source = Property.ofValue("kestra");
+    private Property<String> source;
 
     @PluginProperty(group = "advanced")
     private Property<Map<String, Object>> roles;
@@ -241,6 +241,7 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
         this.monitor = new TrinoQueryMonitor(
             runContext,
             runContext.render(this.getUrl()).as(String.class).orElse(null),
+            runContext.render(this.getSsl()).as(Boolean.class).orElse(null),
             this.tags(runContext)
         );
     }

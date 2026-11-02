@@ -159,7 +159,7 @@ public interface TrinoConnectionInterface extends JdbcConnectionInterface {
     @PluginProperty(group = "connection", secret = true)
     @Schema(
         title = "The keytab file content holding the user Kerberos keys",
-        description = "Written to the task working directory and passed to the driver as `KerberosKeytabPath`, so the keytab has to be pre-mounted on the worker.")
+        description = "Written to the task working directory and passed to the driver as `KerberosKeytabPath`, so the keytab does not have to be pre-mounted on the worker.")
     Property<String> getKerberosKeytab();
 
     @PluginProperty(group = "connection")
@@ -227,7 +227,7 @@ public interface TrinoConnectionInterface extends JdbcConnectionInterface {
         putString(runContext, provided, properties, "schema", this.getSchema());
 
         var rSsl = runContext.render(this.getSsl()).as(Boolean.class).orElse(null);
-        if (rSsl != null && !rSsl.equals(Boolean.FALSE)) {
+        if (rSsl != null) {
             properties.setProperty("SSL", rSsl.toString());
             provided.add("SSL");
         }
@@ -260,6 +260,9 @@ public interface TrinoConnectionInterface extends JdbcConnectionInterface {
         putMap(runContext, provided, properties, "sessionProperties", this.getSessionProperties());
         putList(runContext, provided, properties, "clientTags", this.getClientTags());
         putString(runContext, provided, properties, "source", this.getSource());
+        if (this.getSource() == null && !urlPropertyKeys(url).contains("source")) {
+            properties.setProperty("source", "kestra");
+        }
         putMap(runContext, provided, properties, "roles", this.getRoles());
         putMap(runContext, provided, properties, "extraCredentials", this.getExtraCredentials());
 

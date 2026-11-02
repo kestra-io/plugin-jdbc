@@ -80,7 +80,7 @@ public class TrinoQueriesTest {
         Query task = Query.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
-            .sql(Property.ofValue("SELECT * FROM memory.default.trino_types WHERE t_integer = 2147483647"))
+            .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders"))
             .fetchType(Property.ofValue(FETCH))
             .build();
 
@@ -125,10 +125,10 @@ public class TrinoQueriesTest {
 
         var queried = output.getOutputs().getFirst().getRows()
             .stream()
-            .filter(row -> String.valueOf(row.get("name")).equals("query_max_execution_time"))
+            .filter(row -> String.valueOf(row.get("Name")).equals("query_max_execution_time"))
             .toList();
         assertThat(queried, hasSize(1));
-        assertThat(queried.getFirst().get("value"), is("10m"));
+        assertThat(queried.getFirst().get("Value"), is("10m"));
     }
 
     @Test
@@ -147,15 +147,64 @@ public class TrinoQueriesTest {
     }
 
     @Test
+    void sourceInUrlRemainsCompatibleAndDefaultsOtherwise() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var fromUrl = Query.builder()
+            .url(Property.ofValue("jdbc:trino://localhost:48080?source=legacy"))
+            .build().connectionProperties(runContext);
+        assertThat(fromUrl.containsKey("source"), is(false));
+
+        var defaultSource = Query.builder().url(Property.ofValue(JDBC_URL)).build()
+            .connectionProperties(runContext);
+        assertThat(defaultSource.getProperty("source"), is("kestra"));
+
+        var conflict = Query.builder()
+            .url(Property.ofValue("jdbc:trino://localhost:48080?source=legacy"))
+            .source(Property.ofValue("explicit"))
+            .build();
+        assertThrows(IllegalArgumentException.class, () -> conflict.connectionProperties(runContext));
+    }
+
+    @Test
+    void typedConnectionPropertiesAreRendered() throws Exception {
+        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var properties = Query.builder()
+            .url(Property.ofValue("jdbc:trino://localhost:48080"))
+            .accessToken(Property.ofValue("token"))
+            .catalog(Property.ofValue("memory"))
+            .schema(Property.ofValue("default"))
+            .ssl(Property.ofValue(false))
+            .sslVerification(Property.ofValue(SslVerification.CA))
+            .kerberosPrincipal(Property.ofValue("user@example.com"))
+            .kerberosRemoteServiceName(Property.ofValue("trino"))
+            .sessionProperties(Property.ofValue(Map.of("query_max_execution_time", "10m")))
+            .clientTags(Property.ofValue(java.util.List.of("kestra", "test")))
+            .roles(Property.ofValue(Map.of("memory", "admin")))
+            .extraCredentials(Property.ofValue(Map.of("key", "value")))
+            .build().connectionProperties(runContext);
+        assertThat(properties.getProperty("accessToken"), is("token"));
+        assertThat(properties.getProperty("catalog"), is("memory"));
+        assertThat(properties.getProperty("schema"), is("default"));
+        assertThat(properties.getProperty("SSL"), is("false"));
+        assertThat(properties.getProperty("SSLVerification"), is("CA"));
+        assertThat(properties.getProperty("KerberosPrincipal"), is("user@example.com"));
+        assertThat(properties.getProperty("KerberosRemoteServiceName"), is("trino"));
+        assertThat(properties.getProperty("sessionProperties"), is("query_max_execution_time:10m"));
+        assertThat(properties.getProperty("clientTags"), is("kestra,test"));
+        assertThat(properties.getProperty("roles"), is("memory:admin"));
+        assertThat(properties.getProperty("extraCredentials"), is("key:value"));
+    }
+
+    @Test
     void queriesRunOutOfTransactionByDefault() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
         Queries task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .sql(Property.ofValue("""
-                DROP TABLE IF EXISTS memory.default.trino_queries_test
-                CREATE TABLE memory.default.trino_queries_test (id INTEGER)
-                INSERT INTO memory.default.trino_queries_test VALUES (1), (2)
+                DROP TABLE IF EXISTS memory.default.trino_queries_test;
+                CREATE TABLE memory.default.trino_queries_test (id INTEGER);
+                INSERT INTO memory.default.trino_queries_test VALUES (1), (2);
                 SELECT COUNT(*) AS rows_count FROM memory.default.trino_queries_test
                 """))
             .fetchType(Property.ofValue(FETCH))
@@ -164,7 +213,9 @@ public class TrinoQueriesTest {
         AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
 
         assertThat(output.getStatementCount(), is(4L));
-        assertThat(output.getOutputs().getLast().getRows().getFirst().get("rows_count"), is(2));
+        assertThat(output.getOutputs(), hasSize(4));
+        output.getOutputs().forEach(item -> assertThat(item.getQueryId(), notNullValue()));
+        assertThat(output.getOutputs().getLast().getRows().getFirst().get("rows_count"), is(2L));
     }
 
     @Test
@@ -175,8 +226,8 @@ public class TrinoQueriesTest {
             .username(Property.ofValue("fake"))
             .transaction(Property.ofValue(true))
             .sql(Property.ofValue("""
-                CREATE TABLE memory.default.trino_queries_tx (id INTEGER)
-                INSERT INTO memory.default.trino_queries_tx VALUES (1)
+                CREATE TABLE memory.default.trino_queries_tx (id INTEGER);
+                INSERT INTO memory.default.trino_queries_tx VALUES (1);
                 SELECT COUNT(*) AS rows_count FROM memory.default.trino_queries_tx
                 """))
             .fetchType(Property.ofValue(FETCH_ONE))

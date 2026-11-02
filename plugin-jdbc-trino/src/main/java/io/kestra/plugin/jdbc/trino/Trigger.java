@@ -123,8 +123,7 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
     private Property<List<String>> clientTags;
 
     @PluginProperty(group = "advanced")
-    @Builder.Default
-    private Property<String> source = Property.ofValue("kestra");
+    private Property<String> source;
 
     @PluginProperty(group = "advanced")
     private Property<Map<String, Object>> roles;
@@ -173,6 +172,9 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
         }
         if (this.getSslKeyStorePassword() != null) {
             query.sslKeyStorePassword(this.getSslKeyStorePassword());
+        }
+        if (this.getSslTrustStorePassword() != null) {
+            query.sslTrustStorePassword(this.getSslTrustStorePassword());
         }
         if (this.getKerberosKeytab() != null) {
             query.kerberosKeytab(this.getKerberosKeytab());

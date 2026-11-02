@@ -35,10 +35,10 @@ public final class TrinoQueryMonitor {
     // Stats are emitted from the task run only (the collector is a passive sink), so no synchronization is needed.
     private boolean emitted;
 
-    public TrinoQueryMonitor(RunContext runContext, String jdbcUrl, String... metricTags) {
+    public TrinoQueryMonitor(RunContext runContext, String jdbcUrl, Boolean ssl, String... metricTags) {
         this.runContext = runContext;
         this.metricTags = metricTags;
-        this.webUiBase = queryUiBase(jdbcUrl);
+        this.webUiBase = queryUiBase(jdbcUrl, ssl);
     }
 
     /** Attaches the stats collector to the driver statement and prepares the monitoring of its query. */
@@ -112,7 +112,7 @@ public final class TrinoQueryMonitor {
      * coordinator serves every query page of a cluster at `host:port/ui/query.html?<query id>`, over TLS
      * when the URL connects with `SSL=true`.
      */
-    private static String queryUiBase(String jdbcUrl) {
+    private static String queryUiBase(String jdbcUrl, Boolean sslProperty) {
         if (jdbcUrl == null || !jdbcUrl.startsWith("jdbc:trino:")) {
             return null;
         }
@@ -124,7 +124,7 @@ public final class TrinoQueryMonitor {
                 return null;
             }
 
-            boolean ssl = serverUri.getRawQuery() != null && java.util.Arrays.stream(serverUri.getRawQuery().split("&"))
+            boolean ssl = sslProperty != null ? sslProperty : serverUri.getRawQuery() != null && java.util.Arrays.stream(serverUri.getRawQuery().split("&"))
                 .anyMatch(pair -> pair.trim().toLowerCase().startsWith("ssl=true"));
 
             return (ssl ? "https" : "http") + "://" + authority + "/ui/";

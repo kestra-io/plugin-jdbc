@@ -77,7 +77,7 @@ tasks:
     url: "jdbc:trino://localhost:{{ outputs.port.value }}"
     fetchType: NONE
     sql: |
-      DROP TABLE IF EXISTS memory.default.test_agg
+      DROP TABLE IF EXISTS memory.default.test_agg;
       CREATE TABLE IF NOT EXISTS memory.default.test_agg AS SELECT COUNT(*) AS rows_count FROM memory.default.test
 
   - id: queries_query
