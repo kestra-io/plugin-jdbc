@@ -211,6 +211,10 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         return null;
     }
 
+    /** Called when a result set is intentionally discarded. */
+    protected void discardResultSet(ResultSet resultSet) throws SQLException {
+    }
+
     protected Statement createStatement(Connection conn) throws SQLException {
         return conn.createStatement(
             ResultSet.TYPE_FORWARD_ONLY,

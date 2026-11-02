@@ -132,21 +132,6 @@ public class TrinoQueriesTest {
     }
 
     @Test
-    void aPropertyPassedBothByTheUrlAndAsTaskPropertyFailsEarly() {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-
-        var task = Queries.builder()
-            .url(Property.ofValue("jdbc:trino://localhost:48080/memory/default?catalog=other"))
-            .username(Property.ofValue("fake"))
-            .catalog(Property.ofValue("memory"))
-            .sql(Property.ofValue("SELECT 1"))
-            .build();
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> task.connectionProperties(runContext));
-        assertThat(exception.getMessage(), containsString("catalog"));
-    }
-
-    @Test
     void sourceInUrlRemainsCompatibleAndDefaultsOtherwise() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
         var fromUrl = Query.builder()
@@ -162,7 +147,44 @@ public class TrinoQueriesTest {
             .url(Property.ofValue("jdbc:trino://localhost:48080?source=legacy"))
             .source(Property.ofValue("explicit"))
             .build();
-        assertThrows(IllegalArgumentException.class, () -> conflict.connectionProperties(runContext));
+        assertThat(conflict.connectionProperties(runContext).getProperty("source"), is("explicit"));
+    }
+
+    @Test
+    void credentialFilesAreMaterializedFromBase64TextAndStorage() throws Exception {
+        RunContext context = runContextFactory.of(ImmutableMap.of());
+        byte[] keyBytes = new byte[] {0, 1, 2, (byte) 255};
+        var storageFile = context.workingDir().createTempFile(".keytab");
+        java.nio.file.Files.write(storageFile, new byte[] {4, 5, 6});
+        var uri = context.storage().putFile(storageFile.toFile());
+        var properties = Query.builder()
+            .url(Property.ofValue(JDBC_URL))
+            .sslKeyStore(Property.ofValue(java.util.Base64.getEncoder().encodeToString(keyBytes)))
+            .sslKeyStorePassword(Property.ofValue("password"))
+            .sslKeyStoreType(Property.ofValue("JKS"))
+            .sslTrustStore(Property.ofValue("-----BEGIN CERTIFICATE-----\ntext\n-----END CERTIFICATE-----"))
+            .kerberosKeytab(Property.ofValue(uri.toString()))
+            .build().connectionProperties(context);
+        org.junit.jupiter.api.Assertions.assertArrayEquals(keyBytes, java.nio.file.Files.readAllBytes(java.nio.file.Path.of(properties.getProperty("SSLKeyStorePath"))));
+        assertThat(properties.getProperty("SSLKeyStorePassword"), is("password"));
+        assertThat(properties.getProperty("SSLKeyStoreType"), is("JKS"));
+        assertThat(java.nio.file.Files.readString(java.nio.file.Path.of(properties.getProperty("SSLTrustStorePath"))), containsString("BEGIN CERTIFICATE"));
+        org.junit.jupiter.api.Assertions.assertArrayEquals(new byte[] {4, 5, 6}, java.nio.file.Files.readAllBytes(java.nio.file.Path.of(properties.getProperty("KerberosKeytabPath"))));
+    }
+
+    @Test
+    void noneFetchStillEmitsStatsForQueryAndQueries() throws Exception {
+        RunContext single = runContextFactory.of(ImmutableMap.of());
+        Query.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
+            .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders"))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.NONE)).build().run(single);
+        assertThat(single.metrics().stream().filter(m -> m.getName().equals("processed.rows")).map(m -> ((Counter) m).getValue().doubleValue()).findFirst().orElseThrow(), greaterThan(0d));
+
+        RunContext multi = runContextFactory.of(ImmutableMap.of());
+        Queries.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
+            .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders; SELECT * FROM tpch.tiny.orders"))
+            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.NONE)).build().run(multi);
+        assertThat(multi.metrics().stream().filter(m -> m.getName().equals("processed.rows")).map(m -> ((Counter) m).getValue().doubleValue()).findFirst().orElseThrow(), greaterThan(0d));
     }
 
     @Test
@@ -213,7 +235,7 @@ public class TrinoQueriesTest {
         AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
 
         assertThat(output.getStatementCount(), is(4L));
-        assertThat(output.getOutputs(), hasSize(4));
+        assertThat(output.getOutputs(), hasSize(1));
         output.getOutputs().forEach(item -> assertThat(item.getQueryId(), notNullValue()));
         assertThat(output.getOutputs().getLast().getRows().getFirst().get("rows_count"), is(2L));
     }

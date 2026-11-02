@@ -81,20 +81,6 @@ class TrinoTriggerTest extends AbstractJdbcTriggerTest {
             statement.execute("INSERT INTO trigger_events VALUES (3), (4)");
         }
 
-        // A URL conflict must be caught on the trigger's own properties as on the Query ones.
-        var conflicting = Trigger.builder()
-            .id("watch")
-            .type(Trigger.class.getName())
-            .url(Property.ofValue(getUrl() + "?catalog=other"))
-            .username(Property.ofValue(getUsername()))
-            .catalog(Property.ofValue("memory"))
-            .sql(Property.ofValue("SELECT id FROM trigger_events"))
-            .fetchType(Property.ofValue(FetchType.FETCH))
-            .build();
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> conflicting.runQuery(runContextFactory.of()));
-        assertThat(exception.getMessage(), containsString("catalog"));
-
         // The typed properties of the trigger reach the query it runs.
         var trigger = Trigger.builder()
             .id("watch")

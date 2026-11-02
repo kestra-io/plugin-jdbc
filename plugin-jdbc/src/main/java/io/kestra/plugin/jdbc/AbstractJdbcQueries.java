@@ -55,8 +55,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         return true;
     }
 
+    public Property<Boolean> getTransaction() {
+        return transaction == null ? Property.ofValue(transactionalByDefault()) : transaction;
+    }
+
     private boolean renderTransactional(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.transaction).as(Boolean.class, this.additionalVars)
+        return runContext.render(this.getTransaction()).as(Boolean.class, this.additionalVars)
             .orElse(this.transactionalByDefault());
     }
 
@@ -227,9 +231,6 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 if (updateCount != null) {
                     affectedRows.add(updateCount);
                 }
-                if (engineQueryId != null) {
-                    outputList.add(Output.builder().queryId(engineQueryId).build());
-                }
                 return totalSize;
             }
 
@@ -261,7 +262,10 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         .rows(maps)
                         .size(size);
                 }
-                case NONE -> runContext.logger().info("fetchType is set to NONE, no output will be returned");
+                case NONE -> {
+                    discardResultSet(rs);
+                    runContext.logger().info("fetchType is set to NONE, no output will be returned");
+                }
                 default ->
                     throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
             }
@@ -317,7 +321,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                             .rows(maps)
                             .size(size);
                     }
-                    case NONE -> { /* logged once before the loop */ }
+                    case NONE -> discardResultSet(rs);
                     default ->
                         throw new IllegalArgumentException("fetchType must be either FETCH, FETCH_ONE, STORE, or NONE");
                 }

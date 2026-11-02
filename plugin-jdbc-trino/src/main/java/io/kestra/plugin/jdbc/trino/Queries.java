@@ -179,7 +179,8 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     @PluginProperty(group = "connection")
     private Property<SslVerification> sslVerification;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
+    @ToString.Exclude
     private Property<String> sslKeyStore;
 
     @PluginProperty(group = "connection", secret = true)
@@ -248,36 +249,22 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
 
     @Override
     protected Statement createStatement(Connection conn) throws SQLException {
-        return attachMonitor(super.createStatement(conn));
+        return monitor.attach(super.createStatement(conn));
     }
 
     @Override
     protected PreparedStatement createPreparedStatement(Connection conn, String sql) throws SQLException {
-        return attachMonitor(super.createPreparedStatement(conn, sql));
-    }
-
-    private <T extends Statement> T attachMonitor(T statement) {
-        if (this.monitor != null) {
-            this.monitor.attach(statement);
-        }
-        return statement;
+        return monitor.attach(super.createPreparedStatement(conn, sql));
     }
 
     @Override
     protected String afterStatementExecute(RunContext runContext, Statement statement, boolean hasResultSet) {
-        if (this.monitor == null) {
-            return null;
-        }
+        return monitor.afterExecute(hasResultSet);
+    }
 
-        if (!hasResultSet) {
-            // The driver completed the statement at this point, so the monitored stats are final.
-            this.monitor.emitAfterExecute();
-        }
-
-        String engineQueryId = this.monitor.engineQueryId();
-        this.monitor.logQuery(engineQueryId);
-
-        return engineQueryId;
+    @Override
+    protected void discardResultSet(ResultSet resultSet) throws SQLException {
+        monitor.discardResults(resultSet);
     }
 
     @Override

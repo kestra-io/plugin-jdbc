@@ -42,13 +42,30 @@ public final class TrinoQueryMonitor {
     }
 
     /** Attaches the stats collector to the driver statement and prepares the monitoring of its query. */
-    public void attach(Statement statement) {
+    public <T extends Statement> T attach(T statement) {
         collector.reset();
         emitted = false;
 
         if (statement instanceof TrinoStatement trinoStatement) {
             trinoStatement.setProgressMonitor(collector);
         }
+        return statement;
+    }
+
+    public String afterExecute(boolean hasResultSet) {
+        if (!hasResultSet) {
+            emitAfterExecute();
+        }
+        String queryId = engineQueryId();
+        logQuery(queryId);
+        return queryId;
+    }
+
+    public void discardResults(ResultSet resultSet) throws SQLException {
+        while (resultSet.next()) {
+            // Drain the result so the driver receives final statistics.
+        }
+        emitFromResultSet(resultSet);
     }
 
     /** The Trino engine query id of the monitored statement, or `null` while no status was received. */

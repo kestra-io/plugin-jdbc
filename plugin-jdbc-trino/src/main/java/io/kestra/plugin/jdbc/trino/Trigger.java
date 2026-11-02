@@ -83,7 +83,8 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
     @PluginProperty(group = "connection")
     private Property<SslVerification> sslVerification;
 
-    @PluginProperty(group = "connection")
+    @PluginProperty(group = "connection", secret = true)
+    @ToString.Exclude
     private Property<String> sslKeyStore;
 
     @PluginProperty(group = "connection", secret = true)

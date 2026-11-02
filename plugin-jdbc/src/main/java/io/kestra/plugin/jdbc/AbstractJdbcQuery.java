@@ -112,6 +112,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                     try (ResultSet rs = stmt.getResultSet()) {
                         // Populate result from result set
                         switch (fetchType) {
+                            case NONE -> discardResultSet(rs);
                             case FETCH_ONE -> {
                                 var result = fetchResult(rs, cellConverter, conn);
                                 size = result == null ? 0L : 1L;
