@@ -1,18 +1,4 @@
-export type Row = { label: string; value: string };
-
 export const DASH = "-";
-
-// Only the database name is kept, so credentials never reach the UI; unrendered templates are ignored.
-export function databaseFromUrl(url?: unknown): string | undefined {
-    if (typeof url !== "string" || url.includes("{{")) return undefined;
-    const sqlServer = /;databaseName=([^;]+)/i.exec(url);
-    if (sqlServer) return sqlServer[1];
-    const withoutQuery = url.split(/[?;]/)[0];
-    const afterHost = /^jdbc:[^:]+:(?:\/\/)?[^/]*\/([^/]+)$/.exec(withoutQuery);
-    if (afterHost) return afterHost[1];
-    const file = /^jdbc:(?:sqlite|duckdb):(.+)$/.exec(withoutQuery);
-    return file ? file[1] : undefined;
-}
 
 export function formatDuration(ms?: number): string {
     if (typeof ms !== "number") return DASH;
@@ -33,40 +19,6 @@ export function formatBytes(bytes?: number): string {
 
 export function formatNumber(value?: number): string {
     return typeof value === "number" ? value.toLocaleString("en-US") : DASH;
-}
-
-export function isQueries(taskType?: string): boolean {
-    return !!taskType && taskType.endsWith(".Queries");
-}
-
-export function summaryRows(opts: {
-    task?: Record<string, any>;
-    taskType?: string;
-    outputs?: Record<string, any> | null;
-    hasExecution: boolean;
-    labels: Record<"database" | "fetchType" | "statements" | "rowsAffected" | "rowsFetched" | "duration", string>;
-}): Row[] {
-    const { task, taskType, outputs, hasExecution, labels } = opts;
-    const fetchType = isQueries(taskType)
-        ? labels.statements
-        : typeof task?.fetchType === "string" && !task.fetchType.includes("{{")
-          ? task.fetchType
-          : "NONE";
-    const rows: Row[] = [
-        { label: labels.database, value: databaseFromUrl(task?.url) ?? DASH },
-        { label: labels.fetchType, value: fetchType },
-    ];
-    if (hasExecution) {
-        const affected = outputs?.rowsAffected as number | undefined;
-        const fetched = outputs?.size as number | undefined;
-        rows.push(
-            affected !== undefined && affected !== null
-                ? { label: labels.rowsAffected, value: formatNumber(affected) }
-                : { label: labels.rowsFetched, value: formatNumber(fetched) },
-        );
-        rows.push({ label: labels.duration, value: formatDuration(outputs?.durationMs as number | undefined) });
-    }
-    return rows;
 }
 
 // Output values are untrusted: only explicit http(s) URLs are ever bound to an href.

@@ -17,32 +17,14 @@ if (!classes) {
 }
 const plugin = `io.kestra.plugin.jdbc.${group}`;
 
-// topology-details: 2 rows without execution, 4 rows with one (node base 56px + ~31px per row).
 const exposes = Object.fromEntries(
     classes.map((type) => [
         type,
         [
             {
-                slotName: "topology-details" as const,
-                path: "./src/components/JdbcTopologyDetails.vue",
-                additionalProperties: {
-                    height: 120,
-                    heightWithExecution: 185,
-                    customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
-                },
-            },
-            {
-                slotName: "topology-task-drawer" as const,
-                path: "./src/components/JdbcTopologyDetails.vue",
-            },
-            {
                 slotName: "execution-artifact/details" as const,
                 path: "./src/components/JdbcTaskModal.vue",
                 additionalProperties: { title: "Execution details" },
-            },
-            {
-                slotName: "topology-task-modal" as const,
-                path: "./src/components/JdbcTaskModal.vue",
             },
         ],
     ]),
