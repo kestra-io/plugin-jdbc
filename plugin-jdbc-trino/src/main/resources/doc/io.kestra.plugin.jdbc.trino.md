@@ -28,7 +28,7 @@ tasks:
 
 The `source` property defaults to `kestra` so the coordinator reports each query with it, visible in `system.runtime.queries` and usable in resource group selectors; `clientTags` refines that routing.
 
-The Trino JDBC driver refuses a connection detail passed both by the URL and as a property (only `ssl` may be overridden): when both are set, the task fails early explaining which property is ambiguous, before any connection is attempted.
+The Trino JDBC driver rejects a connection when the same connection property is provided in both the URL and typed properties (except `ssl`, which may be overridden). The connection error identifies the duplicate, for example: `Connection property catalog is passed both by URL and properties`.
 
 Keystore, truststore, Kerberos keytab and krb5 configuration are declared as *content*: base64-encoded bytes or a `kestra://` internal storage URI. They are materialized in the task working directory and only their path is passed to the driver, so nothing has to be pre-installed on the worker. Keep in mind that authenticating with a password requires TLS (`ssl: true`), as the driver refuses sending a password over plain HTTP.
 
@@ -36,7 +36,7 @@ Keystore, truststore, Kerberos keytab and krb5 configuration are declared as *co
 
 Trino assigns each executed statement an id; the task returns it in the `queryId` of its outputs and logs it with the link to its detail page in the Trino Web UI (`host:port/ui/query.html?<queryId>`). The `Queries` task exposes one per statement: in the `statements` file alongside the duration and affected rows of each statement, and in the queryId of the matching entry of the `outputs` list.
 
-The coordinator stats of each query are also emitted as task metrics: `processed.rows`, `processed.bytes`, `peak.memory.bytes`, `physical.written.bytes`, `cpu.time`, `wall.time` and `queued.time`, which lets you track what a workflow actually costs the engine.
+The coordinator stats of each query are also emitted as task metrics: `processed.rows`, `processed.bytes`, `peak.memory.bytes`, `physical.written.bytes`, `cpu.time`, `wall.time` and `queued.time`, which lets you track what a workflow actually costs the engine. With the default `fetchType: NONE`, result sets are not drained just to collect stats; the metrics use the latest status available when the result set is discarded and may therefore be incomplete. Use `FETCH` or `STORE`, which read the full result set, when you need final query stats.
 
 #### Transactions
 

@@ -11,14 +11,20 @@ import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import jakarta.inject.Inject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
+import static io.kestra.core.models.tasks.common.FetchType.NONE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
@@ -155,21 +161,21 @@ public class TrinoQueriesTest {
         RunContext context = runContextFactory.of(ImmutableMap.of());
         byte[] keyBytes = new byte[] {0, 1, 2, (byte) 255};
         var storageFile = context.workingDir().createTempFile(".keytab");
-        java.nio.file.Files.write(storageFile, new byte[] {4, 5, 6});
+        Files.write(storageFile, new byte[] {4, 5, 6});
         var uri = context.storage().putFile(storageFile.toFile());
         var properties = Query.builder()
             .url(Property.ofValue(JDBC_URL))
-            .sslKeyStore(Property.ofValue(java.util.Base64.getEncoder().encodeToString(keyBytes)))
+            .sslKeyStore(Property.ofValue(Base64.getEncoder().encodeToString(keyBytes)))
             .sslKeyStorePassword(Property.ofValue("password"))
             .sslKeyStoreType(Property.ofValue("JKS"))
             .sslTrustStore(Property.ofValue("-----BEGIN CERTIFICATE-----\ntext\n-----END CERTIFICATE-----"))
             .kerberosKeytab(Property.ofValue(uri.toString()))
             .build().connectionProperties(context);
-        org.junit.jupiter.api.Assertions.assertArrayEquals(keyBytes, java.nio.file.Files.readAllBytes(java.nio.file.Path.of(properties.getProperty("SSLKeyStorePath"))));
+        Assertions.assertArrayEquals(keyBytes, Files.readAllBytes(Path.of(properties.getProperty("SSLKeyStorePath"))));
         assertThat(properties.getProperty("SSLKeyStorePassword"), is("password"));
         assertThat(properties.getProperty("SSLKeyStoreType"), is("JKS"));
-        assertThat(java.nio.file.Files.readString(java.nio.file.Path.of(properties.getProperty("SSLTrustStorePath"))), containsString("BEGIN CERTIFICATE"));
-        org.junit.jupiter.api.Assertions.assertArrayEquals(new byte[] {4, 5, 6}, java.nio.file.Files.readAllBytes(java.nio.file.Path.of(properties.getProperty("KerberosKeytabPath"))));
+        assertThat(Files.readString(Path.of(properties.getProperty("SSLTrustStorePath"))), containsString("BEGIN CERTIFICATE"));
+        Assertions.assertArrayEquals(new byte[] {4, 5, 6}, Files.readAllBytes(Path.of(properties.getProperty("KerberosKeytabPath"))));
     }
 
     @Test
@@ -177,13 +183,13 @@ public class TrinoQueriesTest {
         RunContext single = runContextFactory.of(ImmutableMap.of());
         Query.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders"))
-            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.NONE)).build().run(single);
+            .fetchType(Property.ofValue(NONE)).build().run(single);
         assertThat(single.metrics().stream().filter(m -> m.getName().equals("processed.rows")).map(m -> ((Counter) m).getValue().doubleValue()).findFirst().orElseThrow(), greaterThan(0d));
 
         RunContext multi = runContextFactory.of(ImmutableMap.of());
         Queries.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders; SELECT * FROM tpch.tiny.orders"))
-            .fetchType(Property.ofValue(io.kestra.core.models.tasks.common.FetchType.NONE)).build().run(multi);
+            .fetchType(Property.ofValue(NONE)).build().run(multi);
         assertThat(multi.metrics().stream().filter(m -> m.getName().equals("processed.rows")).map(m -> ((Counter) m).getValue().doubleValue()).findFirst().orElseThrow(), greaterThan(0d));
     }
 
@@ -200,7 +206,7 @@ public class TrinoQueriesTest {
             .kerberosPrincipal(Property.ofValue("user@example.com"))
             .kerberosRemoteServiceName(Property.ofValue("trino"))
             .sessionProperties(Property.ofValue(Map.of("query_max_execution_time", "10m")))
-            .clientTags(Property.ofValue(java.util.List.of("kestra", "test")))
+            .clientTags(Property.ofValue(List.of("kestra", "test")))
             .roles(Property.ofValue(Map.of("memory", "admin")))
             .extraCredentials(Property.ofValue(Map.of("key", "value")))
             .build().connectionProperties(runContext);
@@ -241,8 +247,16 @@ public class TrinoQueriesTest {
     }
 
     @Test
-    void transactionalWritesAreRejectedOnTransactionlessCatalogs() {
+    void transactionalWritesAreRejectedOnTransactionlessCatalogs() throws Exception {
         RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        Queries.builder()
+            .url(Property.ofValue(JDBC_URL))
+            .username(Property.ofValue("fake"))
+            .transaction(Property.ofValue(false))
+            .sql(Property.ofValue("DROP TABLE IF EXISTS memory.default.trino_queries_tx"))
+            .build()
+            .run(runContext);
+
         Queries task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
@@ -255,8 +269,8 @@ public class TrinoQueriesTest {
             .fetchType(Property.ofValue(FETCH_ONE))
             .build();
 
-        // The memory catalog only accepts autocommit writes, so `transaction: true` must fail, and the run
-        // of the task reports it instead of partially applying the statements.
-        assertThrows(RuntimeException.class, () -> task.run(runContext));
+        // The memory catalog only accepts autocommit writes, so `transaction: true` must fail.
+        var exception = assertThrows(RuntimeException.class, () -> task.run(runContext));
+        assertThat(exception.getCause().getMessage(), containsString("does not support transactions"));
     }
 }

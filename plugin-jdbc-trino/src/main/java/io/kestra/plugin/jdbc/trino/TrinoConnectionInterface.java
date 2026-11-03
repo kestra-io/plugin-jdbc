@@ -13,9 +13,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Base64;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -387,17 +385,10 @@ public interface TrinoConnectionInterface extends JdbcConnectionInterface {
     }
 
     /**
-     * Writes the content on the worker filesystem: in the task working directory, so the file shows up in the
-     * task UI, or a system temporary file when the execution has no working directory (trigger poll contexts).
+     * Writes the content in the task working directory, so the file shows up in the task UI.
      */
     private static String materializeFile(RunContext runContext, String filename, byte[] bytes) throws IOException {
-        Path file;
-        var workingDir = runContext.workingDir();
-        if (workingDir != null) {
-            file = workingDir.createTempFile("." + filename);
-        } else {
-            file = Files.createTempFile(filename, null);
-        }
+        Path file = runContext.workingDir().createTempFile("." + filename);
         Files.write(file, bytes);
         return file.toAbsolutePath().toString();
     }

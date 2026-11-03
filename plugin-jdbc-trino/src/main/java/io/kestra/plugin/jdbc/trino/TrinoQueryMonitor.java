@@ -8,6 +8,7 @@ import io.trino.jdbc.TrinoResultSet;
 import io.trino.jdbc.TrinoStatement;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -15,15 +16,15 @@ import java.time.Duration;
 
 /**
  * Follows the Trino query of the statements the surrounding task executes, exposes the engine query id
- * and translates the final driver query stats into task metrics.
+ * and translates the available driver query stats into task metrics.
  *
  * <p>
  * The stats collector is attached to the driver statement before execution (from the task
  * {@code createStatement}/{@code createPreparedStatement} overrides), so the driver reports status
  * updates while the query runs. Results read by the plugin emit from the result set itself via
- * {@link #emitFromResultSet(ResultSet)}, statements with no result set (and SELECTs whose rows were
- * never read) emit from {@link #emitAfterExecute()} when the driver already completed the query.
- * Either way every statement emits its stats once.
+ * {@link #emitFromResultSet(ResultSet)}; statements with no result set emit from
+ * {@link #emitAfterExecute()}. For discarded result sets, {@link #discardResults(ResultSet)} emits
+ * the latest available snapshot without draining rows, so those stats may be incomplete.
  */
 public final class TrinoQueryMonitor {
 
@@ -61,11 +62,9 @@ public final class TrinoQueryMonitor {
         return queryId;
     }
 
-    public void discardResults(ResultSet resultSet) throws SQLException {
-        while (resultSet.next()) {
-            // Drain the result so the driver receives final statistics.
-        }
-        emitFromResultSet(resultSet);
+    /** Emits the latest available stats without draining a discarded result set. */
+    public void discardResults(ResultSet resultSet) {
+        emit(collector.latest());
     }
 
     /** The Trino engine query id of the monitored statement, or `null` while no status was received. */
@@ -141,7 +140,7 @@ public final class TrinoQueryMonitor {
                 return null;
             }
 
-            boolean ssl = sslProperty != null ? sslProperty : serverUri.getRawQuery() != null && java.util.Arrays.stream(serverUri.getRawQuery().split("&"))
+            boolean ssl = sslProperty != null ? sslProperty : serverUri.getRawQuery() != null && Arrays.stream(serverUri.getRawQuery().split("&"))
                 .anyMatch(pair -> pair.trim().toLowerCase().startsWith("ssl=true"));
 
             return (ssl ? "https" : "http") + "://" + authority + "/ui/";

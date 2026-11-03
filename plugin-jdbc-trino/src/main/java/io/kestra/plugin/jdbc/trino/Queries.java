@@ -15,7 +15,6 @@ import io.kestra.plugin.jdbc.AbstractJdbcQueries;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,7 +32,6 @@ import java.sql.Statement;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 
 @SuperBuilder
@@ -43,7 +41,7 @@ import java.util.function.Consumer;
 @NoArgsConstructor
 @Schema(
     title = "Execute multiple SQL statements using Trino query engine",
-    description = "Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine. Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only; set `transaction: true` to run them in one transaction. The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
+    description = "Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine. Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only; set `transaction: true` to run them in one transaction. The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted. With fetchType NONE, result sets are not drained just to collect stats, so emitted stats may be incomplete. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -67,7 +65,7 @@ import java.util.function.Consumer;
 
                   - id: use_results
                     type: io.kestra.plugin.core.debug.Return
-                    format: "{{ outputs.transform.outputs[2].rows[0].rows_count }}"
+                    format: "{{ outputs.transform.outputs[0].rows[0].rows_count }}"
                 """
         ),
         @Example(
@@ -271,9 +269,7 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         var result = super.fetchResult(rs, cellConverter, connection);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return result;
     }
@@ -282,9 +278,7 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> consumer, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         var count = super.fetch(stmt, rs, consumer, cellConverter, connection);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return count;
     }
@@ -293,9 +287,7 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector) throws SQLException, IOException {
         var count = super.fetchToFile(stmt, rs, output, cellConverter, connection, collector);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return count;
     }

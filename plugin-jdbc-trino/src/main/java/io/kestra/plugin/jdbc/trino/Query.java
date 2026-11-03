@@ -15,7 +15,6 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,7 +32,6 @@ import java.sql.Statement;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Consumer;
 
 @SuperBuilder
@@ -43,7 +41,7 @@ import java.util.function.Consumer;
 @NoArgsConstructor
 @Schema(
     title = "Execute a SQL query using Trino query engine",
-    description = "Runs a SQL statement using Trino distributed SQL query engine. Supports querying data lakes, databases, and various data sources. Connection details can be set as typed properties, and the id the coordinator assigned to the query is returned as `queryId` output, with its Trino query stats metrics. WARNING: Do NOT include a semicolon at the end of your SQL query - it will result in an error. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
+    description = "Runs a SQL statement using Trino distributed SQL query engine. Supports querying data lakes, databases, and various data sources. Connection details can be set as typed properties, and the id the coordinator assigned to the query is returned as `queryId` output, with its Trino query stats metrics. With fetchType NONE, the result set is not drained just to collect stats, so emitted stats may be incomplete. WARNING: Do NOT include a semicolon at the end of your SQL query - it will result in an error. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
 )
 @Plugin(
     examples = {
@@ -269,9 +267,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
     protected Map<String, Object> fetchResult(ResultSet rs, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         var result = super.fetchResult(rs, cellConverter, connection);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return result;
     }
@@ -280,9 +276,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> consumer, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         var count = super.fetch(stmt, rs, consumer, cellConverter, connection);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return count;
     }
@@ -291,9 +285,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
     protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector) throws SQLException, IOException {
         var count = super.fetchToFile(stmt, rs, output, cellConverter, connection, collector);
 
-        if (this.monitor != null) {
-            this.monitor.emitFromResultSet(rs);
-        }
+        this.monitor.emitFromResultSet(rs);
 
         return count;
     }

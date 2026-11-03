@@ -9,7 +9,6 @@ import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
-import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -28,7 +27,7 @@ import java.util.Map;
 @NoArgsConstructor
 @Schema(
     title = "Wait for query results on Trino and trigger flow",
-    description = "Periodically polls Trino by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Connection details can be set as typed properties, and the Trino query stats metrics are emitted for each poll. WARNING: Do NOT include a semicolon at the end of your SQL query. Supports parameterized queries and afterSQL. Use fetchType to control result handling."
+    description = "Periodically polls Trino by executing a SQL query at the specified interval (default 60 seconds). Triggers a downstream flow execution when the query returns one or more rows. Connection details can be set as typed properties. WARNING: Do NOT include a semicolon at the end of your SQL query. Supports parameterized queries and afterSQL. Use fetchType to control result handling."
 )
 @Plugin(
     examples = {
