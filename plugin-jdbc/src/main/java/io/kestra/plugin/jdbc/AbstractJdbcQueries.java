@@ -1,17 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,6 +15,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import org.slf4j.Logger;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
 
 @SuperBuilder
@@ -36,8 +38,7 @@ import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
 @NoArgsConstructor
 public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implements RunnableTask<AbstractJdbcQueries.MultiQueryOutput>, JdbcQueriesInterface {
 
-    // No default value on the property: when it is not set, `transactionalByDefault()` decides, so engines
-    // like Trino can default to non-transactional statements without the user having to opt out.
+    // No @Builder.Default, so engines like Trino can default to autocommit through transactionalByDefault().
     protected Property<Boolean> transaction;
 
     // will be used when killing
@@ -47,21 +48,12 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     @Getter(AccessLevel.NONE)
     private transient volatile Connection runningConnection;
 
-    /**
-     * The default of the `transaction` property when it is not set: engines can opt out, as Trino
-     * catalogs like `memory` refuse transactional writes when the statements run in a transaction.
-     */
     protected boolean transactionalByDefault() {
         return true;
     }
 
     public Property<Boolean> getTransaction() {
         return transaction == null ? Property.ofValue(transactionalByDefault()) : transaction;
-    }
-
-    private boolean renderTransactional(RunContext runContext) throws IllegalVariableEvaluationException {
-        return runContext.render(this.getTransaction()).as(Boolean.class, this.additionalVars)
-            .orElse(this.transactionalByDefault());
     }
 
     protected void beforeExecute(RunContext runContext, Connection connection) throws Exception {
@@ -71,7 +63,8 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         Logger logger = runContext.logger();
         AbstractCellConverter cellConverter = getCellConverter(this.zoneId(runContext));
 
-        final boolean isTransactional = this.renderTransactional(runContext);
+        final boolean rTransactional = runContext.render(this.getTransaction()).as(Boolean.class, this.additionalVars)
+            .orElse(this.transactionalByDefault());
         long totalSize = 0L;
         List<Output> outputList = new LinkedList<>();
         List<Long> affectedRows = new ArrayList<>();
@@ -84,7 +77,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             this.runningConnection = this.connection(runContext);
             this.beforeExecute(runContext, this.runningConnection);
             supportsTx = supportsTransactions(this.runningConnection);
-            final boolean useTransactions = supportsTx && isTransactional;
+            final boolean useTransactions = supportsTx && rTransactional;
 
             if (useTransactions) {
                 try {
@@ -106,7 +99,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
             var collector = columnStatsCollector(runContext, fetchType);
 
             String[] queries = shouldBatchQueries
-                ? new String[]{rSql}
+                ? new String[] { rSql }
                 : getQueries(rSql);
 
             var startedAt = System.nanoTime();
@@ -128,7 +121,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                         this.runningConnection.commit();
                     }
 
-                    String engineQueryId = afterStatementExecute(runContext, stmt, hasResultSet);
+                    var engineQueryId = afterStatementExecute(runContext, stmt, hasResultSet);
 
                     totalSize = extractResultsFromResultSet(
                         this.runningConnection,
@@ -191,7 +184,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 .statements(statements)
                 .build();
         } catch (Exception e) {
-            if (supportsTx && isTransactional) {
+            if (supportsTx && rTransactional) {
                 rollbackIfTransactional(this.runningConnection, savepoint);
             }
             throw new RuntimeException(e);
@@ -202,19 +195,18 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     }
 
     private long extractResultsFromResultSet(final Connection connection,
-                                             final PreparedStatement stmt,
-                                             final RunContext runContext,
-                                             final AbstractCellConverter cellConverter,
-                                             long totalSize,
-                                             final List<Output> outputList,
-                                             final List<Long> affectedRows,
-                                             final FetchType fetchType,
-                                             final boolean multiStatements,
-                                             final boolean hasResultSet,
-                                             final ColumnStatsCollector collector,
-                                             final RunStats stats,
-                                             final String engineQueryId
-    ) throws SQLException, IOException {
+        final PreparedStatement stmt,
+        final RunContext runContext,
+        final AbstractCellConverter cellConverter,
+        long totalSize,
+        final List<Output> outputList,
+        final List<Long> affectedRows,
+        final FetchType fetchType,
+        final boolean multiStatements,
+        final boolean hasResultSet,
+        final ColumnStatsCollector collector,
+        final RunStats stats,
+        final String engineQueryId) throws SQLException, IOException {
 
         // ---------------------------------------------------------------------
         // Case 1: single statement execution (split mode)
@@ -234,7 +226,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
                 return totalSize;
             }
 
-            Output.OutputBuilder<?, ?> output = Output.builder().queryId(engineQueryId);
+            var output = Output.builder().queryId(engineQueryId);
 
             long size = 0L;
             switch (fetchType) {
@@ -293,7 +285,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
         while (true) {
             if (hasResults) {
                 ResultSet rs = stmt.getResultSet();
-                Output.OutputBuilder<?, ?> output = Output.builder().queryId(engineQueryId);
+                var output = Output.builder().queryId(engineQueryId);
 
                 long size = 0L;
                 switch (fetchType) {
@@ -347,7 +339,7 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
     }
 
     private static void rollbackIfTransactional(final Connection connection,
-                                                final Savepoint savepoint) throws SQLException {
+        final Savepoint savepoint) throws SQLException {
         if (connection != null) {
             if (savepoint != null) {
                 connection.rollback(savepoint);
@@ -520,15 +512,19 @@ public abstract class AbstractJdbcQueries extends AbstractJdbcBaseQuery implemen
 
         @Schema(
             title = "URI of the per-statement details file in internal storage",
-            description = "ION file with one `{index, kind, rowsAffected, durationMs}` entry per executed statement, plus `queryId` for engines that expose the query as the coordinator processed it (e.g. Trino)"
+            description = """
+                ION file with one `{index, kind, rowsAffected, durationMs}` entry per executed statement,
+                plus `queryId` for engines that expose one (e.g. Trino)."""
         )
         URI statements;
 
         public void copyExecutionDetailsTo(MultiQueryOutputBuilder<?, ?> builder) {
-            applyDetails(builder, new JdbcExecutionSupport.Details(
-                rowsAffected, bytes, durationMs, warnings,
-                new JdbcExecutionSupport.TableSummary(tables, Boolean.TRUE.equals(tablesTruncated)), statement, columnStats
-            ));
+            applyDetails(
+                builder, new JdbcExecutionSupport.Details(
+                    rowsAffected, bytes, durationMs, warnings,
+                    new JdbcExecutionSupport.TableSummary(tables, Boolean.TRUE.equals(tablesTruncated)), statement, columnStats
+                )
+            );
             builder
                 .statementCount(statementCount)
                 .statements(statements);

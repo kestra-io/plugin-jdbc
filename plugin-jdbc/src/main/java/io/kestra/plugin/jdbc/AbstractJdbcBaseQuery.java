@@ -196,16 +196,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
     /**
-     * Engine hook called for each statement, right after it was executed and before its results are read,
-     * to expose the query as the engine processed it: the returned id is added to the task outputs, and
-     * engines with query monitoring or per-query assets can also record their stats and emit their metrics here.
-     * <p>
-     * Returns the engine query identifier (for example the Trino query id), or `null` when the engine
-     * does not have one. The default implementation is a no-op.
-     * <p>
-     * The `statement` is the statement that was just executed and `hasResultSet` whether it produced a
-     * result set: engines must not call `getResultSet()` here, as drivers like Pinot track the results
-     * state and the engine reads them right after this hook.
+     * Called right after each statement executes, before its results are read. Returns the engine query id, or null.
+     * Must not call {@code getResultSet()}, as drivers like Pinot track the result state.
      */
     protected String afterStatementExecute(RunContext runContext, Statement statement, boolean hasResultSet) throws SQLException {
         return null;
@@ -627,10 +619,8 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
         @Schema(
             title = "Engine query identifier",
             description = """
-                The identifier of the query on the engine side, as engines that run the statement on a remote \
-                coordinator report it; its detail page in the engine Web UI is addressable with it. \
-                For example the Trino query id, populated by plugins with engine-side query support. \
-                Not set when the engine does not expose a query id"""
+                The id the engine coordinator assigned to the query, for example the Trino query id.
+                Not set when the engine does not expose one."""
         )
         private final String queryId;
 

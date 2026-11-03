@@ -1,19 +1,5 @@
 package io.kestra.plugin.jdbc.trino;
 
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.executions.AbstractMetricEntry;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.runners.RunContextFactory;
-import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractJdbcQuery;
-import jakarta.inject.Inject;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -21,6 +7,20 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.executions.AbstractMetricEntry;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContextFactory;
+
+import jakarta.inject.Inject;
 
 import static io.kestra.core.models.tasks.common.FetchType.FETCH;
 import static io.kestra.core.models.tasks.common.FetchType.FETCH_ONE;
@@ -48,15 +48,15 @@ public class TrinoQueriesTest {
 
     @Test
     void queryIdIsExposedOnQueryOutputs() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-        Query task = Query.builder()
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Query.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT 42 AS answer"))
             .fetchType(Property.ofValue(FETCH_ONE))
             .build();
 
-        AbstractJdbcQuery.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getQueryId(), notNullValue());
         assertThat(output.getQueryId(), containsString("_"));
@@ -64,61 +64,63 @@ public class TrinoQueriesTest {
 
     @Test
     void queryIdIsExposedOnEveryQueriesOutput() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-        Queries task = Queries.builder()
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT 1 AS a; SELECT 2 AS b"))
             .fetchType(Property.ofValue(FETCH))
             .build();
 
-        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getOutputs(), hasSize(2));
-        assertThat(output.getOutputs().get(0).getQueryId(), notNullValue());
+        assertThat(output.getOutputs().getFirst().getQueryId(), notNullValue());
         assertThat(output.getOutputs().get(1).getQueryId(), notNullValue());
         assertThat(output.getOutputs().get(1).getRows().getFirst().get("b"), is(2));
     }
 
     @Test
     void queryStatsMetricsAreEmitted() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-        Query task = Query.builder()
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Query.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders"))
             .fetchType(Property.ofValue(FETCH))
             .build();
 
-        AbstractJdbcQuery.Output output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getQueryId(), notNullValue());
 
         var metrics = runContext.metrics();
-        assertThat(metrics.stream().map(AbstractMetricEntry::getName).collect(Collectors.toSet()), hasItems(
-            "processed.rows", "processed.bytes", "peak.memory.bytes", "physical.written.bytes",
-            "cpu.time", "wall.time", "queued.time"
-        ));
+        assertThat(
+            metrics.stream().map(AbstractMetricEntry::getName).collect(Collectors.toSet()), hasItems(
+                "processed.rows", "processed.bytes", "peak.memory.bytes", "physical.written.bytes",
+                "cpu.time", "wall.time", "queued.time"
+            )
+        );
 
-        Counter processedRows = metrics.stream()
+        var processedRows = metrics.stream()
             .filter(metric -> metric.getName().equals("processed.rows"))
             .map(metric -> (Counter) metric)
             .findFirst()
-            .orElseThrow();
+            .orElseThrow(() -> new AssertionError("processed.rows metric missing"));
         assertThat(processedRows.getValue().doubleValue(), greaterThan(0d));
 
-        Timer cpuTime = metrics.stream()
+        var cpuTime = metrics.stream()
             .filter(metric -> metric.getName().equals("cpu.time"))
             .map(metric -> (Timer) metric)
             .findFirst()
-            .orElseThrow();
+            .orElseThrow(() -> new AssertionError("cpu.time metric missing"));
         assertThat(cpuTime.getValue(), greaterThan(Duration.ofMillis(0)));
     }
 
     @Test
     void typedSessionAndClientPropertiesReachTheEngine() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-        Queries task = Queries.builder()
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .source(Property.ofValue("kestra_test"))
@@ -127,7 +129,7 @@ public class TrinoQueriesTest {
             .fetchType(Property.ofValue(FETCH))
             .build();
 
-        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+        var output = task.run(runContext);
 
         var queried = output.getOutputs().getFirst().getRows()
             .stream()
@@ -139,7 +141,7 @@ public class TrinoQueriesTest {
 
     @Test
     void sourceInUrlRemainsCompatibleAndDefaultsOtherwise() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var runContext = runContextFactory.of(ImmutableMap.of());
         var fromUrl = Query.builder()
             .url(Property.ofValue("jdbc:trino://localhost:48080?source=legacy"))
             .build().connectionProperties(runContext);
@@ -148,20 +150,28 @@ public class TrinoQueriesTest {
         var defaultSource = Query.builder().url(Property.ofValue(JDBC_URL)).build()
             .connectionProperties(runContext);
         assertThat(defaultSource.getProperty("source"), is("kestra"));
+    }
 
-        var conflict = Query.builder()
-            .url(Property.ofValue("jdbc:trino://localhost:48080?source=legacy"))
+    @Test
+    void propertySetInUrlAndAsTaskPropertyFailsWithFixHint() {
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Query.builder()
+            .url(Property.ofValue("jdbc:trino://localhost:48080/memory?source=legacy"))
+            .username(Property.ofValue("fake"))
             .source(Property.ofValue("explicit"))
+            .sql(Property.ofValue("SELECT 1"))
             .build();
-        assertThat(conflict.connectionProperties(runContext).getProperty("source"), is("explicit"));
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> task.run(runContext));
+        assertThat(exception.getMessage(), is("The `source` connection property is set both in the JDBC URL and as a task property. Remove one of the two."));
     }
 
     @Test
     void credentialFilesAreMaterializedFromBase64TextAndStorage() throws Exception {
-        RunContext context = runContextFactory.of(ImmutableMap.of());
-        byte[] keyBytes = new byte[] {0, 1, 2, (byte) 255};
+        var context = runContextFactory.of(ImmutableMap.of());
+        byte[] keyBytes = new byte[] { 0, 1, 2, (byte) 255 };
         var storageFile = context.workingDir().createTempFile(".keytab");
-        Files.write(storageFile, new byte[] {4, 5, 6});
+        Files.write(storageFile, new byte[] { 4, 5, 6 });
         var uri = context.storage().putFile(storageFile.toFile());
         var properties = Query.builder()
             .url(Property.ofValue(JDBC_URL))
@@ -175,18 +185,18 @@ public class TrinoQueriesTest {
         assertThat(properties.getProperty("SSLKeyStorePassword"), is("password"));
         assertThat(properties.getProperty("SSLKeyStoreType"), is("JKS"));
         assertThat(Files.readString(Path.of(properties.getProperty("SSLTrustStorePath"))), containsString("BEGIN CERTIFICATE"));
-        Assertions.assertArrayEquals(new byte[] {4, 5, 6}, Files.readAllBytes(Path.of(properties.getProperty("KerberosKeytabPath"))));
+        Assertions.assertArrayEquals(new byte[] { 4, 5, 6 }, Files.readAllBytes(Path.of(properties.getProperty("KerberosKeytabPath"))));
     }
 
     @Test
     void noneFetchStillEmitsStatsForQueryAndQueries() throws Exception {
-        RunContext single = runContextFactory.of(ImmutableMap.of());
+        var single = runContextFactory.of(ImmutableMap.of());
         Query.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders"))
             .fetchType(Property.ofValue(NONE)).build().run(single);
         assertThat(single.metrics().stream().anyMatch(m -> m.getName().equals("processed.rows")), is(true));
 
-        RunContext multi = runContextFactory.of(ImmutableMap.of());
+        var multi = runContextFactory.of(ImmutableMap.of());
         Queries.builder().url(Property.ofValue(JDBC_URL)).username(Property.ofValue("fake"))
             .sql(Property.ofValue("SELECT * FROM tpch.tiny.orders; SELECT * FROM tpch.tiny.orders"))
             .fetchType(Property.ofValue(NONE)).build().run(multi);
@@ -195,7 +205,7 @@ public class TrinoQueriesTest {
 
     @Test
     void typedConnectionPropertiesAreRendered() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var runContext = runContextFactory.of(ImmutableMap.of());
         var properties = Query.builder()
             .url(Property.ofValue("jdbc:trino://localhost:48080"))
             .accessToken(Property.ofValue("token"))
@@ -225,8 +235,8 @@ public class TrinoQueriesTest {
 
     @Test
     void queriesRunOutOfTransactionByDefault() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
-        Queries task = Queries.builder()
+        var runContext = runContextFactory.of(ImmutableMap.of());
+        var task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .sql(Property.ofValue("""
@@ -238,7 +248,7 @@ public class TrinoQueriesTest {
             .fetchType(Property.ofValue(FETCH))
             .build();
 
-        AbstractJdbcQueries.MultiQueryOutput output = task.run(runContext);
+        var output = task.run(runContext);
 
         assertThat(output.getStatementCount(), is(4L));
         assertThat(output.getOutputs(), hasSize(1));
@@ -248,7 +258,7 @@ public class TrinoQueriesTest {
 
     @Test
     void transactionalWritesAreRejectedOnTransactionlessCatalogs() throws Exception {
-        RunContext runContext = runContextFactory.of(ImmutableMap.of());
+        var runContext = runContextFactory.of(ImmutableMap.of());
         Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
@@ -257,7 +267,7 @@ public class TrinoQueriesTest {
             .build()
             .run(runContext);
 
-        Queries task = Queries.builder()
+        var task = Queries.builder()
             .url(Property.ofValue(JDBC_URL))
             .username(Property.ofValue("fake"))
             .transaction(Property.ofValue(true))

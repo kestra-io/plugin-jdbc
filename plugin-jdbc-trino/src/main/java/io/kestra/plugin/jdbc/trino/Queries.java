@@ -1,28 +1,5 @@
 package io.kestra.plugin.jdbc.trino;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Metric;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.jdbc.AbstractCellConverter;
-import io.kestra.plugin.jdbc.ColumnStatsCollector;
-import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.trino.jdbc.TrinoDriver;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
-import lombok.experimental.SuperBuilder;
-
-import java.io.IOException;
-import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -34,6 +11,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Metric;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.plugin.jdbc.AbstractCellConverter;
+import io.kestra.plugin.jdbc.AbstractJdbcQueries;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.trino.jdbc.TrinoDriver;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+
 @SuperBuilder
 @ToString
 @EqualsAndHashCode
@@ -41,7 +39,13 @@ import java.util.function.Consumer;
 @NoArgsConstructor
 @Schema(
     title = "Execute multiple SQL statements using Trino query engine",
-    description = "Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine. Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only; set `transaction: true` to run them in one transaction. The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted. With fetchType NONE, result sets are not drained just to collect stats, so emitted stats may be incomplete. Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."
+    description = """
+        Runs one or more SQL statements separated by semicolons using Trino distributed SQL query engine.
+        Statements run without wrapping them in a transaction by default (`transaction: false`), as Trino catalogs like `memory` accept writes in autocommit mode only.
+        Set `transaction: true` to run them in one transaction.
+        The id the coordinator assigned to each query is returned in the `queryId` of the statement outputs and in the `statements` file, and its Trino query stats metrics are emitted.
+        With fetchType NONE, result sets are not drained just to collect stats, so emitted stats may be incomplete.
+        Supports parameterized queries and all fetch modes. Default fetchSize is 10,000 rows."""
 )
 @Plugin(
     examples = {
@@ -70,7 +74,7 @@ import java.util.function.Consumer;
         ),
         @Example(
             full = true,
-            title = "Authenticate with an access token and run the statements out of transaction",
+            title = "Authenticate with an access token and run the statements in autocommit mode",
             code = """
                 id: trino_queries_token
                 namespace: company.team
@@ -82,7 +86,6 @@ import java.util.function.Consumer;
                     ssl: true
                     accessToken: "{{ secret('TRINO_ACCESS_TOKEN') }}"
                     source: kestra_ingest
-                    transaction: false
                     sql: |
                       DELETE FROM memory.default.orders;
                       INSERT INTO memory.default.orders SELECT * FROM tpch.tiny.orders
@@ -157,10 +160,6 @@ import java.util.function.Consumer;
 )
 public class Queries extends AbstractJdbcQueries implements TrinoConnectionInterface {
 
-    // The typed connection properties are declared on `TrinoConnectionInterface`; like the Snowflake plugin,
-    // they are redeclared as Lombok fields here (and on `Query` and `Trigger`) so their builder, getter and
-    // serialization are generated.
-
     @PluginProperty(group = "connection", secret = true)
     @ToString.Exclude
     private Property<String> accessToken;
@@ -228,6 +227,8 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     private Property<Map<String, Object>> extraCredentials;
 
     @Getter(AccessLevel.NONE)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private transient TrinoQueryMonitor monitor;
 
     @Override
@@ -243,11 +244,6 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
             runContext.render(this.getSsl()).as(Boolean.class).orElse(null),
             this.tags(runContext)
         );
-    }
-
-    @Override
-    protected Statement createStatement(Connection conn) throws SQLException {
-        return monitor.attach(super.createStatement(conn));
     }
 
     @Override
@@ -277,15 +273,6 @@ public class Queries extends AbstractJdbcQueries implements TrinoConnectionInter
     @Override
     protected long fetch(Statement stmt, ResultSet rs, Consumer<Map<String, Object>> consumer, AbstractCellConverter cellConverter, Connection connection) throws SQLException {
         var count = super.fetch(stmt, rs, consumer, cellConverter, connection);
-
-        this.monitor.emitFromResultSet(rs);
-
-        return count;
-    }
-
-    @Override
-    protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector) throws SQLException, IOException {
-        var count = super.fetchToFile(stmt, rs, output, cellConverter, connection, collector);
 
         this.monitor.emitFromResultSet(rs);
 

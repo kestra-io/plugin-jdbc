@@ -1,5 +1,10 @@
 package io.kestra.plugin.jdbc.trino;
 
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
+
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
 import io.kestra.core.models.annotations.PluginProperty;
@@ -7,6 +12,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
 import io.kestra.plugin.jdbc.AbstractJdbcTrigger;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.trino.jdbc.TrinoDriver;
 import lombok.EqualsAndHashCode;
@@ -14,11 +20,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
-
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
 
 @SuperBuilder
 @ToString
@@ -61,10 +62,6 @@ import java.util.Map;
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInterface {
-
-    // The typed connection properties are declared on `TrinoConnectionInterface`; like the Snowflake plugin,
-    // they are redeclared as Lombok fields here (and on `Query` and `Queries`) so their builder, getter and
-    // serialization are generated, and they are forwarded to the `Query` this trigger runs.
 
     @PluginProperty(group = "connection", secret = true)
     @ToString.Exclude
@@ -165,23 +162,12 @@ public class Trigger extends AbstractJdbcTrigger implements TrinoConnectionInter
             .sslKeyStore(this.getSslKeyStore())
             .sslKeyStoreType(this.getSslKeyStoreType())
             .sslTrustStore(this.getSslTrustStore())
-            .sslTrustStoreType(this.getSslTrustStoreType());
-
-        if (this.getAccessToken() != null) {
-            query.accessToken(this.getAccessToken());
-        }
-        if (this.getSslKeyStorePassword() != null) {
-            query.sslKeyStorePassword(this.getSslKeyStorePassword());
-        }
-        if (this.getSslTrustStorePassword() != null) {
-            query.sslTrustStorePassword(this.getSslTrustStorePassword());
-        }
-        if (this.getKerberosKeytab() != null) {
-            query.kerberosKeytab(this.getKerberosKeytab());
-        }
-        if (this.getExtraCredentials() != null) {
-            query.extraCredentials(this.getExtraCredentials());
-        }
+            .sslTrustStoreType(this.getSslTrustStoreType())
+            .accessToken(this.getAccessToken())
+            .sslKeyStorePassword(this.getSslKeyStorePassword())
+            .sslTrustStorePassword(this.getSslTrustStorePassword())
+            .kerberosKeytab(this.getKerberosKeytab())
+            .extraCredentials(this.getExtraCredentials());
 
         return query.build().run(runContext);
     }

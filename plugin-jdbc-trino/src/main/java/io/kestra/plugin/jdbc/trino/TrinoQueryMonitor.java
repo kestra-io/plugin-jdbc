@@ -1,12 +1,5 @@
 package io.kestra.plugin.jdbc.trino;
 
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.runners.RunContext;
-import io.trino.jdbc.QueryStats;
-import io.trino.jdbc.TrinoResultSet;
-import io.trino.jdbc.TrinoStatement;
-
 import java.net.URI;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -14,17 +7,17 @@ import java.sql.Statement;
 import java.time.Duration;
 import java.util.Arrays;
 
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.runners.RunContext;
+
+import io.trino.jdbc.QueryStats;
+import io.trino.jdbc.TrinoResultSet;
+import io.trino.jdbc.TrinoStatement;
+
 /**
- * Follows the Trino query of the statements the surrounding task executes, exposes the engine query id
- * and translates the available driver query stats into task metrics.
- *
- * <p>
- * The stats collector is attached to the driver statement before execution (from the task
- * {@code createStatement}/{@code createPreparedStatement} overrides), so the driver reports status
- * updates while the query runs. Results read by the plugin emit from the result set itself via
- * {@link #emitFromResultSet(ResultSet)}; statements with no result set emit from
- * {@link #emitAfterExecute()}. For discarded result sets, {@link #discardResults()} emits
- * the latest available snapshot without draining rows, so those stats may be incomplete.
+ * Exposes the Trino query id of each statement and emits its driver query stats as task metrics, once per statement.
+ * Not thread-safe: used from the task run thread only, the collector is the only part the driver calls.
  */
 public final class TrinoQueryMonitor {
 
@@ -33,7 +26,6 @@ public final class TrinoQueryMonitor {
     private final String webUiBase;
     private final TrinoQueryStatsCollector collector = new TrinoQueryStatsCollector();
 
-    // Stats are emitted from the task run only (the collector is a passive sink), so no synchronization is needed.
     private boolean emitted;
 
     public TrinoQueryMonitor(RunContext runContext, String jdbcUrl, Boolean ssl, String... metricTags) {
@@ -42,7 +34,6 @@ public final class TrinoQueryMonitor {
         this.webUiBase = queryUiBase(jdbcUrl, ssl);
     }
 
-    /** Attaches the stats collector to the driver statement and prepares the monitoring of its query. */
     public <T extends Statement> T attach(T statement) {
         collector.reset();
         emitted = false;
@@ -57,7 +48,7 @@ public final class TrinoQueryMonitor {
         if (!hasResultSet) {
             emitAfterExecute();
         }
-        String queryId = engineQueryId();
+        var queryId = collector.queryId();
         logQuery(queryId);
         return queryId;
     }
@@ -67,17 +58,11 @@ public final class TrinoQueryMonitor {
         emit(collector.latest());
     }
 
-    /** The Trino engine query id of the monitored statement, or `null` while no status was received. */
-    public String engineQueryId() {
-        return collector.queryId();
-    }
-
-    /** Logs the engine query id with the link to its Trino Web UI page. */
-    public void logQuery(String queryId) {
+    private void logQuery(String queryId) {
         if (queryId == null) {
             return;
         }
-        var webUiUrl = webUiBase != null ? webUiBase + "query.html?" + queryId : null;
+        var webUiUrl = webUiBase != null ? "%squery.html?%s".formatted(webUiBase, queryId) : null;
         if (webUiUrl != null) {
             runContext.logger().info("Trino query executed with id `{}`, details in the Trino Web UI at `{}`", queryId, webUiUrl);
         } else {
@@ -85,18 +70,11 @@ public final class TrinoQueryMonitor {
         }
     }
 
-    /**
-     * Emits the query stats of a statement that completed during `Statement.execute()`: the driver consumed
-     * its result rows synchronously, so the collector holds the final status.
-     */
-    public void emitAfterExecute() {
+    // A statement without results completes during execute(), so the collector already holds the final status.
+    private void emitAfterExecute() {
         emit(collector.terminal() != null ? collector.terminal() : collector.latest());
     }
 
-    /**
-     * Emits the query stats once the result set rows were read, when the driver query is complete
-     * (or as complete as the rows read so far, for `FETCH_ONE`).
-     */
     public void emitFromResultSet(ResultSet resultSet) throws SQLException {
         if (resultSet instanceof TrinoResultSet trinoResultSet && !this.emitted) {
             emit(trinoResultSet.getStats());
@@ -140,10 +118,11 @@ public final class TrinoQueryMonitor {
                 return null;
             }
 
-            boolean ssl = sslProperty != null ? sslProperty : serverUri.getRawQuery() != null && Arrays.stream(serverUri.getRawQuery().split("&"))
-                .anyMatch(pair -> pair.trim().toLowerCase().startsWith("ssl=true"));
+            var ssl = sslProperty != null ? sslProperty
+                : serverUri.getRawQuery() != null && Arrays.stream(serverUri.getRawQuery().split("&"))
+                    .anyMatch(pair -> pair.trim().toLowerCase().startsWith("ssl=true"));
 
-            return (ssl ? "https" : "http") + "://" + authority + "/ui/";
+            return "%s://%s/ui/".formatted(ssl ? "https" : "http", authority);
         } catch (RuntimeException unused) {
             return null;
         }

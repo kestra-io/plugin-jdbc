@@ -1,10 +1,20 @@
 Trino tasks run their statements on a Trino coordinator. Support includes querying catalogs such as `tpch`, `tpcds`, `memory` or `hive`, aggregations or transformations pushed down to Trino, and writes to catalogs that accept them.
 
-Every task connects with a JDBC URL such as `jdbc:trino://host:8080/catalog/schema`; everything passed through the URL can also be set as a typed task property instead.
+Every task connects with a JDBC URL such as `jdbc:trino://host:8080/catalog/schema`. The catalog, schema, TLS, authentication, client and session settings can also be set as typed task properties instead.
 
-#### Connection details
+#### Authentication
 
-Connection details can live in the JDBC URL or as typed properties — token or password authentication, default catalog and schema, TLS and client certificates, Kerberos, or session tuning:
+- `username` and `password`: password authentication. The driver refuses to send a password over plain HTTP, so set `ssl: true`.
+- `accessToken`: a JWT, for example issued by an OAuth2/OIDC provider. Browser-based OAuth2 (`externalAuthentication`) is not supported on a headless worker.
+- `sslKeyStore`, `sslKeyStorePassword` and `sslKeyStoreType`: mutual TLS with a client certificate.
+- `kerberosPrincipal`, `kerberosRemoteServiceName`, `kerberosKeytab` and `kerberosConfig`: Kerberos.
+- `sslTrustStore` and `sslVerification`: how the coordinator certificate is validated.
+
+`password`, `accessToken`, `sslKeyStore`, both store passwords, `kerberosKeytab` and `extraCredentials` are secrets: pass them with [`secret()`](https://kestra.io/docs/concepts/secret), and set shared values once with [plugin defaults](https://kestra.io/docs/workflow-components/plugin-defaults).
+
+Keystores, truststores, the keytab and the krb5 configuration are declared as *content*: base64-encoded bytes or a `kestra://` internal storage URI. They are written to the task working directory and only their path is passed to the driver, so nothing has to be pre-installed on the worker.
+
+The driver rejects a property set both in the URL and as a task property (except `ssl`, which overrides the URL). The task then fails with a message naming the property, so remove one of the two.
 
 ```yaml
 id: trino-typed-properties
@@ -26,18 +36,17 @@ tasks:
     fetchType: STORE
 ```
 
-The `source` property defaults to `kestra` so the coordinator reports each query with it, visible in `system.runtime.queries` and usable in resource group selectors; `clientTags` refines that routing.
+#### Tasks
 
-The Trino JDBC driver rejects a connection when the same connection property is provided in both the URL and typed properties (except `ssl`, which may be overridden). The connection error identifies the duplicate, for example: `Connection property catalog is passed both by URL and properties`.
+- `Query` runs one statement. Its `queryId` output is the id the coordinator assigned to it.
+- `Queries` runs several statements separated by semicolons. Each statement's `queryId` is in the `statements` file and in the matching entry of the `outputs` list.
 
-Keystore, truststore, Kerberos keytab and krb5 configuration are declared as *content*: base64-encoded bytes or a `kestra://` internal storage URI. They are materialized in the task working directory and only their path is passed to the driver, so nothing has to be pre-installed on the worker. Keep in mind that authenticating with a password requires TLS (`ssl: true`), as the driver refuses sending a password over plain HTTP.
+Both log the query id with a link to its page in the Trino Web UI (`host:port/ui/query.html?<queryId>`), and emit the coordinator stats of each query as metrics: `processed.rows`, `processed.bytes`, `peak.memory.bytes`, `physical.written.bytes`, `cpu.time`, `wall.time` and `queued.time`. With the default `fetchType: NONE`, result sets are not read just to collect stats, so these metrics use the latest status available and may be incomplete. Use `FETCH` or `STORE` when you need the final stats.
 
-#### Query identifiers and stats
+The `source` property defaults to `kestra`, so the coordinator reports each query with it in `system.runtime.queries` and resource group selectors can match it. `clientTags` refines that routing.
 
-Trino assigns each executed statement an id; the task returns it in the `queryId` of its outputs and logs it with the link to its detail page in the Trino Web UI (`host:port/ui/query.html?<queryId>`). The `Queries` task exposes one per statement: in the `statements` file alongside the duration and affected rows of each statement, and in the queryId of the matching entry of the `outputs` list.
+By default the statements of `Queries` run outside a transaction (`transaction: false`), because catalogs such as `memory` accept writes in autocommit mode only. Set `transaction: true` to run them as one transaction, so a failure rolls the statements back, with catalogs that support it.
 
-The coordinator stats of each query are also emitted as task metrics: `processed.rows`, `processed.bytes`, `peak.memory.bytes`, `physical.written.bytes`, `cpu.time`, `wall.time` and `queued.time`, which lets you track what a workflow actually costs the engine. With the default `fetchType: NONE`, result sets are not drained just to collect stats; the metrics use the latest status available when the result set is discarded and may therefore be incomplete. Use `FETCH` or `STORE`, which read the full result set, when you need final query stats.
+#### Triggers
 
-#### Transactions
-
-By default the statements of a `Queries` task run outside a transaction (`transaction: false`), because Trino requires writes to happen in autocommit mode. Set `transaction: true` to have the statements run as one transaction so a failure rolls the file back, with catalogs that support it.
+`Trigger` runs a query on an interval and starts a flow when it returns rows. It accepts the same connection and authentication properties as the tasks.
