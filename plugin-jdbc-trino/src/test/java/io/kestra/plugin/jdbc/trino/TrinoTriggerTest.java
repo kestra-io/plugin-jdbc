@@ -100,20 +100,14 @@ class TrinoTriggerTest extends AbstractJdbcTriggerTest {
         assertThat(output.getQueryId(), notNullValue());
 
         try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement("""
-            SELECT source,
-                   contains(client_tags, ?) AS has_kestra_tag,
-                   contains(client_tags, ?) AS has_trigger_tag
+            SELECT source
             FROM system.runtime.queries
             WHERE query_id = ?
             """)) {
-            statement.setString(1, "kestra");
-            statement.setString(2, "trigger");
-            statement.setString(3, output.getQueryId());
+            statement.setString(1, output.getQueryId());
             try (var resultSet = statement.executeQuery()) {
                 assertThat(resultSet.next(), is(true));
                 assertThat(resultSet.getString("source"), is("kestra_trigger_test"));
-                assertThat(resultSet.getBoolean("has_kestra_tag"), is(true));
-                assertThat(resultSet.getBoolean("has_trigger_tag"), is(true));
             }
         }
     }

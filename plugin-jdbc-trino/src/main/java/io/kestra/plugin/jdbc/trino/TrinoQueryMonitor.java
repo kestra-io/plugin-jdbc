@@ -8,11 +8,11 @@ import io.trino.jdbc.TrinoResultSet;
 import io.trino.jdbc.TrinoStatement;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Duration;
+import java.util.Arrays;
 
 /**
  * Follows the Trino query of the statements the surrounding task executes, exposes the engine query id
@@ -23,7 +23,7 @@ import java.time.Duration;
  * {@code createStatement}/{@code createPreparedStatement} overrides), so the driver reports status
  * updates while the query runs. Results read by the plugin emit from the result set itself via
  * {@link #emitFromResultSet(ResultSet)}; statements with no result set emit from
- * {@link #emitAfterExecute()}. For discarded result sets, {@link #discardResults(ResultSet)} emits
+ * {@link #emitAfterExecute()}. For discarded result sets, {@link #discardResults()} emits
  * the latest available snapshot without draining rows, so those stats may be incomplete.
  */
 public final class TrinoQueryMonitor {
@@ -63,7 +63,7 @@ public final class TrinoQueryMonitor {
     }
 
     /** Emits the latest available stats without draining a discarded result set. */
-    public void discardResults(ResultSet resultSet) {
+    public void discardResults() {
         emit(collector.latest());
     }
 

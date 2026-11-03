@@ -260,7 +260,7 @@ public class Query extends AbstractJdbcQuery implements TrinoConnectionInterface
 
     @Override
     protected void discardResultSet(ResultSet resultSet) throws SQLException {
-        monitor.discardResults(resultSet);
+        monitor.discardResults();
     }
 
     @Override
