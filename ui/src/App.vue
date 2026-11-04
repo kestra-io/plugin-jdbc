@@ -5,6 +5,6 @@ import { SLOTS } from "@kestra-io/artifact-sdk";
 
 <template>
     <div style="padding: 1rem; font-family: sans-serif">
-        <JdbcTaskModal v-bind="SLOTS['execution-artifact/details'].defaultProps" />
+        <JdbcTaskModal v-bind="SLOTS['execution-artifact'].defaultProps" />
     </div>
 </template>
