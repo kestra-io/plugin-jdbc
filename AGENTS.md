@@ -200,7 +200,7 @@ Infrastructure dependencies (Docker Compose services):
 - `SqlTableExtractor`: tokenizer based detection of the tables read or written by a statement (`tables` output and assets).
 - `ColumnStatsCollector`: per-column statistics computed while rows are read (`columnStats` output).
 - `JdbcAssets`: builds table assets and lineage emitted by the Query, Queries and Batch tasks.
-- `ui/`: Vue details view for every Query, Queries and Batch type, built by Gradle once per sub-plugin module (one federated container per `io.kestra.plugin.jdbc.<package>`) into that module's `plugin-ui/` resources. Every type listed in `ui/jdbc-types.json` is registered only for the `execution-artifact/details` slot (the Artifacts tab and the artifact button on the topology task node) in `ui/vite.config.ts`, served by `JdbcTaskModal.vue`. No topology card, drawer or modal slot is registered.
+- `ui/`: Vue details view (topology, task modal and the `execution-artifact/details` slot behind the Artifacts tab and the artifact button on the topology task node) for every Query, Queries and Batch type, built by Gradle once per sub-plugin module (one federated container per `io.kestra.plugin.jdbc.<package>`) into that module's `plugin-ui/` resources. Every type listed in `ui/jdbc-types.json` is registered for all of these slots in `ui/vite.config.ts`, and `JdbcTaskModal.vue` serves both the task modal and the Artifacts tab. Kestra 2.0.x renders the topology slots; Kestra 2.1+ ignores them and renders `execution-artifact/details`.
 
 ### Project Structure
 
