@@ -17,8 +17,10 @@ if (!classes) {
 }
 const plugin = `io.kestra.plugin.jdbc.${group}`;
 
-// topology-details: 2 rows without execution, 4 rows with one (node base 56px + ~31px per row).
-// heightWithExecution is height + 30 because the host adds a ~30px badge row (artifact count, duration) under the node.
+// topology-details: 2 rows before an execution (node header 56px + ~31px per row, kept as is), 4 rows after one.
+// heightWithExecution is a flat value instead of height + N: the card never exceeds 4 rows, and the measured
+// post-execution layout is 58px header + 4 rows of ~33.5px = 192px, plus 1px margin.
+const POST_EXECUTION_HEIGHT = 193;
 const exposes = Object.fromEntries(
     classes.map((type) => [
         type,
@@ -28,7 +30,7 @@ const exposes = Object.fromEntries(
                 path: "./src/components/JdbcTopologyDetails.vue",
                 additionalProperties: {
                     height: 120,
-                    heightWithExecution: 150,
+                    heightWithExecution: POST_EXECUTION_HEIGHT,
                     customAction: { label: "Show Details", taskProp: "sql", lang: "sql" },
                 },
             },
