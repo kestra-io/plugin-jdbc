@@ -1,15 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.tasks.RunnableTask;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-import org.slf4j.Logger;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -19,6 +9,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.tasks.RunnableTask;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import static io.kestra.plugin.jdbc.SqlSplitter.getQueries;
 
@@ -103,10 +105,13 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
                     case Statement statement -> statement.execute(rSql);
                 };
 
+                output.queryId(afterStatementExecute(runContext, stmt, isResult));
+
                 if (isResult) {
                     try (ResultSet rs = stmt.getResultSet()) {
                         // Populate result from result set
                         switch (fetchType) {
+                            case NONE -> discardResultSet(rs);
                             case FETCH_ONE -> {
                                 var result = fetchResult(rs, cellConverter, conn);
                                 size = result == null ? 0L : 1L;
@@ -153,7 +158,8 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
             if (!this.skipExecutionDetails) {
                 var statement = renderOutputStatement(runContext) ? JdbcExecutionSupport.maskedStatement(runContext, secretTemplate(), rSql) : null;
                 var details = JdbcExecutionSupport.details(
-                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql), this.sqlSyntax()), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri, this.tags(runContext)
+                    runContext, JdbcExecutionSupport.tables(conn, List.of(rSql), this.sqlSyntax()), statement, rowsAffected, bytes, durationNanos, warnings, columnStatsUri,
+                    this.tags(runContext)
                 );
                 AbstractJdbcBaseQuery.Output.applyDetails(output, details);
             }
@@ -238,7 +244,7 @@ public abstract class AbstractJdbcQuery extends AbstractJdbcBaseQuery implements
     }
 
     private static void rollbackIfTransactional(final Connection connection,
-                                                final Savepoint savepoint) throws SQLException {
+        final Savepoint savepoint) throws SQLException {
         if (connection != null) {
             if (savepoint != null) {
                 connection.rollback(savepoint);

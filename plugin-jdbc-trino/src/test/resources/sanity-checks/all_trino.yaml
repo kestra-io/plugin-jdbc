@@ -71,12 +71,31 @@ tasks:
     sql: |
       SELECT * FROM memory.default.test ORDER BY field1
 
+  - id: queries_agg
+    type: io.kestra.plugin.jdbc.trino.Queries
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
+    fetchType: NONE
+    sql: |
+      DROP TABLE IF EXISTS memory.default.test_agg;
+      CREATE TABLE IF NOT EXISTS memory.default.test_agg AS SELECT COUNT(*) AS rows_count FROM memory.default.test
+
+  - id: queries_query
+    type: io.kestra.plugin.jdbc.trino.Queries
+    username: "{{ vars.trino_user }}"
+    url: "jdbc:trino://localhost:{{ outputs.port.value }}"
+    fetchType: FETCH
+    sql: |
+      SELECT * FROM memory.default.test_agg
+
   - id: assert
     type: io.kestra.plugin.core.execution.Assert
     conditions:
       - '{{ outputs.query["rows"]["0"]["field1"] == 1 }}'
       - '{{ outputs.query["rows"]["0"]["field2"] == 2 }}'
       - '{{ outputs.query["rows"]["1"]["field1"] == 3 }}'
+      - '{{ outputs.queries_query["outputs"]["0"]["rows"]["0"]["rows_count"] == 2 }}'
+      - '{{ outputs.queries_query["outputs"]["0"]["queryId"] != "" }}'
 
 finally:
   - id: dockerStop

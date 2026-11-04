@@ -195,6 +195,18 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected abstract AbstractCellConverter getCellConverter(ZoneId zoneId);
 
+    /**
+     * Called right after each statement executes, before its results are read. Returns the engine query id, or null.
+     * Must not call {@code getResultSet()}, as drivers like Pinot track the result state.
+     */
+    protected String afterStatementExecute(RunContext runContext, Statement statement, boolean hasResultSet) throws SQLException {
+        return null;
+    }
+
+    /** Called when a result set is intentionally discarded. */
+    protected void discardResultSet(ResultSet resultSet) throws SQLException {
+    }
+
     protected Statement createStatement(Connection conn) throws SQLException {
         return conn.createStatement(
             ResultSet.TYPE_FORWARD_ONLY,
@@ -603,6 +615,14 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
             description = "Only populated when `columnStats` is true and fetchType is FETCH or STORE; file is stored in ION format"
         )
         private final URI columnStats;
+
+        @Schema(
+            title = "Engine query identifier",
+            description = """
+                The id the engine coordinator assigned to the query, for example the Trino query id.
+                Not set when the engine does not expose one."""
+        )
+        private final String queryId;
 
         // Lets the engine specific outputs that rebuild an Output carry the execution details over.
         public void copyExecutionDetailsTo(OutputBuilder<?, ?> builder) {
