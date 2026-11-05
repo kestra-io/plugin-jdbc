@@ -40,6 +40,11 @@ describe("summaryRows", () => {
         ]);
     });
 
+    it("recognizes Queries behind the Artifacts slot module key", () => {
+        const rows = summaryRows({ task: {}, taskType: "io.kestra.plugin.jdbc.sqlite.Queries/details", hasExecution: false, labels });
+        expect(rows[1].value).toBe("Statements");
+    });
+
     it("uses Statements for Queries and adds rows and duration after execution", () => {
         const rows = summaryRows({
             task: { url: "jdbc:mysql://h/db" },

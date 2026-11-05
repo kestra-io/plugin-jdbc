@@ -36,7 +36,8 @@ export function formatNumber(value?: number): string {
 }
 
 export function isQueries(taskType?: string): boolean {
-    return !!taskType && taskType.endsWith(".Queries");
+    // The Artifacts slot passes a module key such as `...sqlite.Queries/details`.
+    return !!taskType && taskType.split("/")[0].endsWith(".Queries");
 }
 
 export function summaryRows(opts: {
