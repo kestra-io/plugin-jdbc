@@ -3,7 +3,7 @@ import type { KnownSlotProps } from "@kestra-io/artifact-sdk";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { KsTopologyDetails } from "@kestra-io/design-system";
-import { formatBytes, formatDuration, formatNumber } from "../lib/details";
+import { formatBytes, formatDuration, formatNumber, summaryRows } from "../lib/details";
 import { useTaskOutputs } from "../lib/useTaskOutputs";
 import JdbcFiles from "./JdbcFiles.vue";
 import JdbcStatement from "./JdbcStatement.vue";
@@ -22,6 +22,10 @@ const { t } = useI18n({
             storedSize: "Stored size",
             duration: "Duration",
             warnings: "Warnings",
+            database: "Database",
+            fetchType: "Fetch type",
+            statements: "Statements",
+            sql: "SQL",
             noExecution: "No execution yet.",
         },
     },
@@ -44,11 +48,41 @@ const executionRows = computed(() => {
     ];
 });
 
+// Without an execution, summaryRows only returns Database and Fetch type; rows and duration are shown below.
+const taskRows = computed(() =>
+    summaryRows({
+        task: props.task as Record<string, any>,
+        taskType: props.taskType,
+        hasExecution: false,
+        labels: {
+            database: t("database"),
+            fetchType: t("fetchType"),
+            statements: t("statements"),
+            rowsAffected: "",
+            rowsFetched: "",
+            duration: "",
+        },
+    }),
+);
+
+// Shown as is, including an unrendered `{{ ... }}` template.
+const sql = computed(() => {
+    const value = (props.task as Record<string, any> | undefined)?.sql;
+    return typeof value === "string" && value.trim() ? value : undefined;
+});
+
 const state = computed(() => (taskRun.value?.state?.current as string | undefined) ?? undefined);
 </script>
 
 <template>
     <div class="jdbc-modal">
+        <section class="jdbc-modal__section">
+            <KsTopologyDetails :rows="taskRows" />
+            <template v-if="sql">
+                <h4 class="jdbc-modal__title jdbc-modal__title--spaced">{{ t("sql") }}</h4>
+                <pre class="jdbc-modal__code">{{ sql }}</pre>
+            </template>
+        </section>
         <p v-if="!data" class="jdbc-modal__empty">{{ t("noExecution") }}</p>
         <template v-else>
             <section class="jdbc-modal__section">
