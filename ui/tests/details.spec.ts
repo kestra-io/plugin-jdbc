@@ -32,6 +32,14 @@ describe("summaryRows", () => {
         ]);
     });
 
+    it("keeps unrendered templates out of the rows", () => {
+        const rows = summaryRows({ task: { url: "{{ secret('PG_URL') }}", fetchType: "{{ vars.ft }}" }, taskType: "x.Query", hasExecution: false, labels });
+        expect(rows).toEqual([
+            { label: "Database", value: "-" },
+            { label: "Fetch type", value: "NONE" },
+        ]);
+    });
+
     it("uses Statements for Queries and adds rows and duration after execution", () => {
         const rows = summaryRows({
             task: { url: "jdbc:mysql://h/db" },
