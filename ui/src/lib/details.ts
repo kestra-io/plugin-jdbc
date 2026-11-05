@@ -36,7 +36,7 @@ export function formatNumber(value?: number): string {
 }
 
 export function isQueries(taskType?: string): boolean {
-    // The Artifacts slot passes a module key such as `...sqlite.Queries/details`.
+    // Tolerates a module key such as `...sqlite.Queries/details`.
     return !!taskType && taskType.split("/")[0].endsWith(".Queries");
 }
 
@@ -48,7 +48,9 @@ export function summaryRows(opts: {
     labels: Record<"database" | "fetchType" | "statements" | "rowsAffected" | "rowsFetched" | "duration", string>;
 }): Row[] {
     const { task, taskType, outputs, hasExecution, labels } = opts;
-    const fetchType = isQueries(taskType)
+    // The host consumes `taskType` as its lookup key and does not forward it to the component,
+    // so the task's own `type` is the reliable source.
+    const fetchType = isQueries(task?.type ?? taskType)
         ? labels.statements
         : typeof task?.fetchType === "string" && !task.fetchType.includes("{{")
           ? task.fetchType

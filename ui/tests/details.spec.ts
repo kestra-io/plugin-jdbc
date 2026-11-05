@@ -45,6 +45,11 @@ describe("summaryRows", () => {
         expect(rows[1].value).toBe("Statements");
     });
 
+    it("recognizes Queries from task.type when the host passes no taskType", () => {
+        const rows = summaryRows({ task: { type: "io.kestra.plugin.jdbc.sqlite.Queries" }, hasExecution: false, labels });
+        expect(rows[1].value).toBe("Statements");
+    });
+
     it("uses Statements for Queries and adds rows and duration after execution", () => {
         const rows = summaryRows({
             task: { url: "jdbc:mysql://h/db" },
