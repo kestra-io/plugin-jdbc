@@ -67,9 +67,9 @@ import lombok.experimental.SuperBuilder;
                       SELECT COUNT(*) AS rows_count FROM memory.default.orders_agg
                     fetchType: FETCH
 
-                  - id: use_results
-                    type: io.kestra.plugin.core.debug.Return
-                    format: "{{ outputs.transform.outputs[0].rows[0].rows_count }}"
+                  - id: log_results
+                    type: io.kestra.plugin.core.log.Log
+                    message: "{{ outputs.transform.outputs[0].rows[0].rows_count }}"
                 """
         ),
         @Example(
