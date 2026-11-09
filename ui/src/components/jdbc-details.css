@@ -28,6 +28,10 @@
     color: var(--jm-dim);
 }
 
+.jdbc-modal__title--spaced {
+    margin-top: 16px;
+}
+
 .jdbc-modal__empty,
 .jdbc-modal__note {
     margin: 8px 0 0;
