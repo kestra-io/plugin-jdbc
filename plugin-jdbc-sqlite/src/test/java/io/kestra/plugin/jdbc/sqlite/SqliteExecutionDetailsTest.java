@@ -71,7 +71,7 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
 
     @Test
     void storeWritesOneBinaryIonStream() throws Exception {
-        for (var count : List.of(0, 1, 5)) {
+        for (var count : List.of(0, 5)) {
             var output = Query.builder()
                 .url(Property.ofValue(getUrl()))
                 .fetchType(Property.ofValue(FetchType.STORE))

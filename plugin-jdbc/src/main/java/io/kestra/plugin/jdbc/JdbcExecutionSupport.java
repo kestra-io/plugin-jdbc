@@ -2,7 +2,6 @@ package io.kestra.plugin.jdbc;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -22,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.SequenceWriter;
 
 import io.kestra.core.exceptions.IllegalVariableEvaluationException;
 import io.kestra.core.models.executions.metrics.Counter;
@@ -72,21 +68,14 @@ final class JdbcExecutionSupport {
         return new Details(rowsAffected, bytes, duration.toMillis(), warnings, tables, statement, columnStats);
     }
 
-    private static final TypeReference<Map<String, Object>> ROW_TYPE = new TypeReference<>() {
-    };
-
-    // One writer per file: FileSerde.write(OutputStream, Object) re-emits the Ion header and symbol table on every call.
-    static SequenceWriter rowWriter(OutputStream output) throws IOException {
-        return FileSerde.createBinarySequenceWriter(output, ROW_TYPE);
-    }
-
     static URI storeIon(RunContext runContext, List<Map<String, Object>> rows) throws IOException {
         var file = runContext.workingDir().createTempFile(".ion");
-        try (var output = new BufferedOutputStream(Files.newOutputStream(file), FileSerde.BUFFER_SIZE)) {
-            try (var writer = rowWriter(output)) {
-                for (var row : rows) {
-                    writer.write(row);
-                }
+        try (
+            var output = new BufferedOutputStream(Files.newOutputStream(file), FileSerde.BUFFER_SIZE);
+            var writer = IonRowWriter.of(output)
+        ) {
+            for (var row : rows) {
+                writer.write(row);
             }
         }
         return runContext.storage().putFile(file.toFile());

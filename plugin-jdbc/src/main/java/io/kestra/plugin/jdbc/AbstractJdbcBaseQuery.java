@@ -260,7 +260,7 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector)
         throws SQLException, IOException {
-        try (var writer = JdbcExecutionSupport.rowWriter(output)) {
+        try (var writer = IonRowWriter.of(output)) {
             return fetch(stmt, rs, withStats(Rethrow.throwConsumer(writer::write), collector, rs), cellConverter, connection);
         }
     }

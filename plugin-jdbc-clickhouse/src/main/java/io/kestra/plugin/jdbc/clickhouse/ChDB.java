@@ -25,6 +25,7 @@ import io.kestra.core.models.tasks.runners.TaskRunner;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.plugin.jdbc.IonRowWriter;
 import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
 import io.kestra.plugin.scripts.runner.docker.Docker;
 
@@ -313,17 +314,16 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
             var output = new BufferedOutputStream(
                 new FileOutputStream(ionFile),
                 FileSerde.BUFFER_SIZE
-            )
+            );
+            var writer = IonRowWriter.of(output)
         ) {
-            try (var writer = FileSerde.createBinarySequenceWriter(output, MAP_TYPE)) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (line.isBlank()) {
-                        continue;
-                    }
-                    writer.write(JSON_MAPPER.readValue(line, MAP_TYPE));
-                    rows++;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) {
+                    continue;
                 }
+                writer.write(JSON_MAPPER.readValue(line, MAP_TYPE));
+                rows++;
             }
         }
 

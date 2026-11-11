@@ -27,8 +27,8 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
         title = """
             DEPRECATED, please use `fetchType: STORE` instead
-            Whether to fetch data row(s) from the query result to a file in internal storage. File will be saved as Amazon Ion (binary format).\s
-             See <a href="http://amzn.github.io/ion-docs/">Amazon Ion documentation</a> This parameter is evaluated after `fetchOne` but before `fetch`."""
+            Whether to fetch data row(s) from the query result to a file in internal storage. File will be saved as Amazon Ion (binary format).
+            See <a href="http://amzn.github.io/ion-docs/">Amazon Ion documentation</a> This parameter is evaluated after `fetchOne` but before `fetch`."""
     )
     @PluginProperty(dynamic = false)
     boolean isStore();

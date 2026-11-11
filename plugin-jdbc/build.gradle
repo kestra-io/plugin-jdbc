@@ -24,3 +24,8 @@ task testJar(type: Jar) {
 artifacts {
     testOutput testJar
 }
+
+dependencies {
+    compileOnly "com.amazon.ion:ion-java"
+    compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-ion"
+}
