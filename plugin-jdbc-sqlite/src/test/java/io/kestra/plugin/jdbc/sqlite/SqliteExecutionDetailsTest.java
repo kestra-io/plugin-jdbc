@@ -5,11 +5,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -20,6 +21,7 @@ import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.serializers.JacksonMapper;
 import io.kestra.core.tenant.TenantService;
 import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.kestra.plugin.jdbc.IonTestUtils;
 import io.kestra.plugin.jdbc.SqlTableExtractor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,8 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @KestraTest
 class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
-
-    private static final byte[] ION_VERSION_MARKER = { (byte) 0xE0, 0x01, 0x00, (byte) 0xEA };
 
     @SuppressWarnings("unchecked")
     private List<Map<String, Object>> readIon(URI uri) throws Exception {
@@ -69,34 +69,23 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
             .run(runContext);
     }
 
-    @Test
-    void storeWritesOneBinaryIonStream() throws Exception {
-        for (var count : List.of(0, 5)) {
-            var output = Query.builder()
-                .url(Property.ofValue(getUrl()))
-                .fetchType(Property.ofValue(FetchType.STORE))
-                .sql(Property.ofValue("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 5) SELECT i AS id, 'row' || i AS label FROM n WHERE i <= %d".formatted(count)))
-                .build()
-                .run(runContextFactory.of(ImmutableMap.of()));
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 5 })
+    void storeWritesOneBinaryIonStream(int count) throws Exception {
+        var output = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FetchType.STORE))
+            .sql(Property.ofValue("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 5) SELECT i AS id, 'row' || i AS label FROM n WHERE i <= %d".formatted(count)))
+            .build()
+            .run(runContextFactory.of(ImmutableMap.of()));
 
-            var rows = readIon(output.getUri());
-            assertThat(rows, hasSize(count));
-            assertThat(output.getSize(), is((long) count));
+        var rows = readIon(output.getUri());
+        assertThat(rows, hasSize(count));
+        assertThat(output.getSize(), is((long) count));
 
-            try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getUri())) {
-                assertThat(countOccurrences(input.readAllBytes(), ION_VERSION_MARKER), is(count == 0 ? 0 : 1));
-            }
+        try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getUri())) {
+            assertThat(IonTestUtils.countVersionMarkers(input.readAllBytes()), is(count == 0 ? 0 : 1));
         }
-    }
-
-    private static int countOccurrences(byte[] data, byte[] pattern) {
-        var count = 0;
-        for (var i = 0; i <= data.length - pattern.length; i++) {
-            if (Arrays.equals(data, i, i + pattern.length, pattern, 0, pattern.length)) {
-                count++;
-            }
-        }
-        return count;
     }
 
     @Test
