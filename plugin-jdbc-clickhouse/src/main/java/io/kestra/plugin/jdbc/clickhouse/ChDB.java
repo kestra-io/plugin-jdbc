@@ -1,30 +1,8 @@
 package io.kestra.plugin.jdbc.clickhouse;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kestra.core.models.annotations.Example;
-import io.kestra.core.models.annotations.Plugin;
-import io.kestra.core.models.annotations.PluginProperty;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.*;
-import io.kestra.core.models.tasks.runners.TaskRunner;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.plugin.scripts.exec.scripts.models.ScriptOutput;
-import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
-import io.kestra.plugin.scripts.runner.docker.Docker;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -35,10 +13,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.kestra.core.models.annotations.Example;
+import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.*;
+import io.kestra.core.models.tasks.runners.TaskRunner;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.plugin.scripts.exec.scripts.runners.CommandsWrapper;
+import io.kestra.plugin.scripts.runner.docker.Docker;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 /**
  * Embedded ClickHouse query task for lightweight transforms.
  *
- * <p>Exposes the chDB-style API ({@code query} + {@code outputFormat}) and runs the query with
+ * <p>
+ * Exposes the chDB-style API ({@code query} + {@code outputFormat}) and runs the query with
  * the {@code clickhouse-local} binary — not the libchdb native library.
  */
 @SuperBuilder
@@ -315,14 +315,15 @@ public class ChDB extends Task implements RunnableTask<ChDB.Output>, NamespaceFi
                 FileSerde.BUFFER_SIZE
             )
         ) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) {
-                    continue;
+            try (var writer = FileSerde.createBinarySequenceWriter(output, MAP_TYPE)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.isBlank()) {
+                        continue;
+                    }
+                    writer.write(JSON_MAPPER.readValue(line, MAP_TYPE));
+                    rows++;
                 }
-                var row = JSON_MAPPER.readValue(line, MAP_TYPE);
-                FileSerde.write(output, row);
-                rows++;
             }
         }
 

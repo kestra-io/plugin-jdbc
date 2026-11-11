@@ -1,17 +1,8 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.jdbc.SqlTableExtractor.Dialect;
-import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
-import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -31,6 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.SequenceWriter;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Dialect;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
+import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
 
 // Helpers shared by the JDBC tasks to build the post-execution outputs.
 final class JdbcExecutionSupport {
@@ -56,8 +60,7 @@ final class JdbcExecutionSupport {
         long durationNanos,
         int warnings,
         URI columnStats,
-        String... tags
-    ) {
+        String... tags) {
         var duration = Duration.ofNanos(durationNanos);
         runContext.metric(Timer.of("duration", duration, tags));
         if (rowsAffected != null) {
@@ -69,11 +72,21 @@ final class JdbcExecutionSupport {
         return new Details(rowsAffected, bytes, duration.toMillis(), warnings, tables, statement, columnStats);
     }
 
+    private static final TypeReference<Map<String, Object>> ROW_TYPE = new TypeReference<>() {
+    };
+
+    // One writer per file: FileSerde.write(OutputStream, Object) re-emits the Ion header and symbol table on every call.
+    static SequenceWriter rowWriter(OutputStream output) throws IOException {
+        return FileSerde.createBinarySequenceWriter(output, ROW_TYPE);
+    }
+
     static URI storeIon(RunContext runContext, List<Map<String, Object>> rows) throws IOException {
         var file = runContext.workingDir().createTempFile(".ion");
         try (var output = new BufferedOutputStream(Files.newOutputStream(file), FileSerde.BUFFER_SIZE)) {
-            for (var row : rows) {
-                FileSerde.write(output, row);
+            try (var writer = rowWriter(output)) {
+                for (var row : rows) {
+                    writer.write(row);
+                }
             }
         }
         return runContext.storage().putFile(file.toFile());
