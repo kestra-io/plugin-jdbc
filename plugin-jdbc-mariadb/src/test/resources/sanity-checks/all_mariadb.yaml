@@ -43,6 +43,11 @@ tasks:
         sql: SELECT 1
         fetchType: FETCH_ONE
         allowFailure: true
+        # The loop does the retrying: an inherited task retry would delay the next ping by minutes.
+        retry:
+          type: constant
+          interval: PT1S
+          maxAttempts: 1
 
   - id: create_table
     type: io.kestra.plugin.jdbc.mariadb.Query
