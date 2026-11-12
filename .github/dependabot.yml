@@ -57,6 +57,28 @@ updates:
         update-types: ["minor", "patch"]
         patterns: ["*"]
 
+  # Maintain base images of the Dockerfiles in dockerfiles/
+  - package-ecosystem: "docker"
+    directory: "/dockerfiles"
+    schedule:
+      interval: "daily"
+      timezone: "Europe/Paris"
+      time: "06:00"
+    # cooldown never delays security updates
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "build(deps)"
+    open-pull-requests-limit: 20
+    labels: ["dependency-upgrade", "area/plugin"]
+    groups:
+      security-updates:
+        applies-to: security-updates
+        patterns: ["*"]
+      docker:
+        applies-to: version-updates
+        patterns: ["*"]
+
   # Maintain dependencies for NPM modules (plugin UI)
   - package-ecosystem: "npm"
     directory: "/ui"
