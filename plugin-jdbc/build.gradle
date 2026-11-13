@@ -27,4 +27,5 @@ artifacts {
 
 dependencies {
     compileOnly "com.fasterxml.jackson.dataformat:jackson-dataformat-ion"
+    compileOnly "com.amazon.ion:ion-java"
 }

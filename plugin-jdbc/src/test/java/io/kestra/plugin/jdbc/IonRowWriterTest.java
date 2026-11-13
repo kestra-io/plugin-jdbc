@@ -34,4 +34,29 @@ class IonRowWriterTest {
         FileSerde.read(new ByteArrayInputStream(bytes), rows::add);
         assertThat(rows, hasSize(ROWS));
     }
+
+    @Test
+    void leavesCallerStreamOpenAndFlushedAfterClose() throws Exception {
+        var closed = new boolean[1];
+        var sink = new ByteArrayOutputStream() {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        try (var writer = IonRowWriter.of(sink)) {
+            writer.write(Map.of("id", 1));
+            writer.write(Map.of("id", 2));
+        }
+
+        assertThat(closed[0], is(false));
+
+        var rows = new ArrayList<Object>();
+        FileSerde.read(new ByteArrayInputStream(sink.toByteArray()), rows::add);
+        assertThat(rows, hasSize(2));
+
+        var before = sink.size();
+        sink.write(0x0A);
+        assertThat(sink.size(), is(before + 1));
+    }
 }
