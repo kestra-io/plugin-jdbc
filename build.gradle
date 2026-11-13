@@ -39,7 +39,7 @@ allprojects {
     configurations.configureEach {
         resolutionStrategy.capabilitiesResolution
             .withCapability("org.lz4:lz4-java") {
-                select("at.yawk.lz4:lz4-java:1.12.1")
+                select("at.yawk.lz4:lz4-java:1.13.0")
                 because("ClickHouse JDBC expects at.yawk.lz4 implementation; avoid capability conflict")
             }
     }
@@ -144,7 +144,7 @@ subprojects {
         testImplementation group: 'com.h2database', name: 'h2'
         testImplementation group: 'commons-codec', name: 'commons-codec', version: '1.23.0'
 
-        testImplementation "io.kestra.plugin:plugin-docker:1.8.2" // for sanity checks
+        testImplementation "io.kestra.plugin:plugin-docker:1.8.5" // for sanity checks
     }
 }
 
