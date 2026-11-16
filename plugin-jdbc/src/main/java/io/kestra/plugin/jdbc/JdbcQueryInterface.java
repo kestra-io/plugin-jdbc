@@ -1,13 +1,13 @@
 package io.kestra.plugin.jdbc;
 
+import java.util.Map;
+
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-
-import java.util.Map;
-
 
 public interface JdbcQueryInterface extends JdbcStatementInterface {
     @Schema(
@@ -25,12 +25,10 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     boolean isFetch();
 
     @Schema(
-        title = "DEPRECATED, please use `fetchType: STORE` instead" + "\n" +
-            "Whether to fetch data row(s) from the query result to a file in internal storage." +
-            " File will be saved as Amazon Ion (text format)." +
-            " \n" +
-            " See <a href=\"http://amzn.github.io/ion-docs/\">Amazon Ion documentation</a>" +
-            " This parameter is evaluated after `fetchOne` but before `fetch`."
+        title = """
+            DEPRECATED, please use `fetchType: STORE` instead
+            Whether to fetch data row(s) from the query result to a file in internal storage. File will be saved as Amazon Ion (binary format).
+            See <a href="http://amzn.github.io/ion-docs/">Amazon Ion documentation</a> This parameter is evaluated after `fetchOne` but before `fetch`."""
     )
     @PluginProperty(dynamic = false)
     boolean isStore();
@@ -54,11 +52,12 @@ public interface JdbcQueryInterface extends JdbcStatementInterface {
     Property<Integer> getFetchSize();
 
     @Schema(
-            title = "The way you want to store data",
-            description = "FETCH_ONE - output the first row.\n"
-                    + "FETCH - output all rows as output variable.\n"
-                    + "STORE - store all rows to a file.\n"
-                    + "NONE - do nothing."
+        title = "The way you want to store data",
+        description = """
+            FETCH_ONE - output the first row.
+            FETCH - output all rows as output variable.
+            STORE - store all rows to a file.
+            NONE - do nothing."""
     )
     @NotNull
     @PluginProperty(group = "main")

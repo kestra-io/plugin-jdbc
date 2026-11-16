@@ -17,7 +17,6 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.models.tasks.common.FetchType;
 import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
 import io.kestra.core.utils.Rethrow;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -261,13 +260,9 @@ public abstract class AbstractJdbcBaseQuery extends Task implements JdbcQueryInt
 
     protected long fetchToFile(Statement stmt, ResultSet rs, OutputStream output, AbstractCellConverter cellConverter, Connection connection, ColumnStatsCollector collector)
         throws SQLException, IOException {
-        return fetch(
-            stmt,
-            rs,
-            withStats(Rethrow.throwConsumer(map -> FileSerde.write(output, map)), collector, rs),
-            cellConverter,
-            connection
-        );
+        try (var writer = IonRowWriter.of(output)) {
+            return fetch(stmt, rs, withStats(Rethrow.throwConsumer(writer::write), collector, rs), cellConverter, connection);
+        }
     }
 
     private static Consumer<Map<String, Object>> withStats(Consumer<Map<String, Object>> consumer, ColumnStatsCollector collector, ResultSet rs) throws SQLException {

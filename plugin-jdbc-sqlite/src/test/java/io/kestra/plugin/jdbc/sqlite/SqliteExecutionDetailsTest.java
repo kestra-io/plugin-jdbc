@@ -1,17 +1,5 @@
 package io.kestra.plugin.jdbc.sqlite;
 
-import com.google.common.collect.ImmutableMap;
-import io.kestra.core.junit.annotations.KestraTest;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.models.tasks.common.FetchType;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.core.serializers.JacksonMapper;
-import io.kestra.core.tenant.TenantService;
-import io.kestra.plugin.jdbc.AbstractJdbcQueries;
-import io.kestra.plugin.jdbc.AbstractRdbmsTest;
-import io.kestra.plugin.jdbc.SqlTableExtractor;
-import org.junit.jupiter.api.Test;
-
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,6 +7,22 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import com.google.common.collect.ImmutableMap;
+
+import io.kestra.core.junit.annotations.KestraTest;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.models.tasks.common.FetchType;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.core.serializers.JacksonMapper;
+import io.kestra.core.tenant.TenantService;
+import io.kestra.plugin.jdbc.AbstractRdbmsTest;
+import io.kestra.plugin.jdbc.IonTestUtils;
+import io.kestra.plugin.jdbc.SqlTableExtractor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -63,6 +67,25 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
             .sql(Property.ofValue("DELETE FROM lite_types WHERE id = 1001"))
             .build()
             .run(runContext);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = { 0, 5 })
+    void storeWritesOneBinaryIonStream(int count) throws Exception {
+        var output = Query.builder()
+            .url(Property.ofValue(getUrl()))
+            .fetchType(Property.ofValue(FetchType.STORE))
+            .sql(Property.ofValue("WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 5) SELECT i AS id, 'row' || i AS label FROM n WHERE i <= %d".formatted(count)))
+            .build()
+            .run(runContextFactory.of(ImmutableMap.of()));
+
+        var rows = readIon(output.getUri());
+        assertThat(rows, hasSize(count));
+        assertThat(output.getSize(), is((long) count));
+
+        try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getUri())) {
+            assertThat(IonTestUtils.countVersionMarkers(input.readAllBytes()), is(count == 0 ? 0 : 1));
+        }
     }
 
     @Test
@@ -126,11 +149,15 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
 
     @Test
     void statementMasksSecretsAndOutputsNeverContainCredentials() throws Exception {
-        var runContext = runContextFactory.of(Map.of("flow", Map.of(
-            "id", "secret_flow",
-            "namespace", "io.kestra.tests",
-            "tenantId", TenantService.MAIN_TENANT
-        )));
+        var runContext = runContextFactory.of(
+            Map.of(
+                "flow", Map.of(
+                    "id", "secret_flow",
+                    "namespace", "io.kestra.tests",
+                    "tenantId", TenantService.MAIN_TENANT
+                )
+            )
+        );
 
         var output = Query.builder()
             .url(Property.ofValue(getUrl()))
@@ -152,11 +179,15 @@ class SqliteExecutionDetailsTest extends AbstractRdbmsTest {
 
     @Test
     void statementMasksNamespacedSecretsAndTheirBase64Form() throws Exception {
-        var runContext = runContextFactory.of(Map.of("flow", Map.of(
-            "id", "secret_flow",
-            "namespace", "io.kestra.tests",
-            "tenantId", TenantService.MAIN_TENANT
-        )));
+        var runContext = runContextFactory.of(
+            Map.of(
+                "flow", Map.of(
+                    "id", "secret_flow",
+                    "namespace", "io.kestra.tests",
+                    "tenantId", TenantService.MAIN_TENANT
+                )
+            )
+        );
 
         var output = Query.builder()
             .url(Property.ofValue(getUrl()))

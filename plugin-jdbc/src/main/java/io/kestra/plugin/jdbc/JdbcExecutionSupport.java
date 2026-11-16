@@ -1,15 +1,5 @@
 package io.kestra.plugin.jdbc;
 
-import io.kestra.core.exceptions.IllegalVariableEvaluationException;
-import io.kestra.core.models.executions.metrics.Counter;
-import io.kestra.core.models.executions.metrics.Timer;
-import io.kestra.core.models.property.Property;
-import io.kestra.core.runners.RunContext;
-import io.kestra.core.serializers.FileSerde;
-import io.kestra.plugin.jdbc.SqlTableExtractor.Dialect;
-import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
-import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
-
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -31,6 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
+
+import io.kestra.core.exceptions.IllegalVariableEvaluationException;
+import io.kestra.core.models.executions.metrics.Counter;
+import io.kestra.core.models.executions.metrics.Timer;
+import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
+import io.kestra.core.serializers.FileSerde;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Dialect;
+import io.kestra.plugin.jdbc.SqlTableExtractor.Syntax;
+import io.kestra.plugin.jdbc.SqlTableExtractor.TableReference;
 
 // Helpers shared by the JDBC tasks to build the post-execution outputs.
 final class JdbcExecutionSupport {
@@ -56,8 +56,7 @@ final class JdbcExecutionSupport {
         long durationNanos,
         int warnings,
         URI columnStats,
-        String... tags
-    ) {
+        String... tags) {
         var duration = Duration.ofNanos(durationNanos);
         runContext.metric(Timer.of("duration", duration, tags));
         if (rowsAffected != null) {
@@ -71,9 +70,12 @@ final class JdbcExecutionSupport {
 
     static URI storeIon(RunContext runContext, List<Map<String, Object>> rows) throws IOException {
         var file = runContext.workingDir().createTempFile(".ion");
-        try (var output = new BufferedOutputStream(Files.newOutputStream(file), FileSerde.BUFFER_SIZE)) {
+        try (
+            var output = new BufferedOutputStream(Files.newOutputStream(file), FileSerde.BUFFER_SIZE);
+            var writer = IonRowWriter.of(output)
+        ) {
             for (var row : rows) {
-                FileSerde.write(output, row);
+                writer.write(row);
             }
         }
         return runContext.storage().putFile(file.toFile());
