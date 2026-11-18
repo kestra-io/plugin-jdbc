@@ -13,7 +13,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.apache.arrow:flight-sql-jdbc-driver:19.0.0")
+    implementation("org.apache.arrow:flight-sql-jdbc-core:19.0.0")
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
