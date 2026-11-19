@@ -21,6 +21,12 @@ dependencies {
     }
     implementation project(':plugin-jdbc')
 
+    constraints {
+        implementation('org.asynchttpclient:async-http-client:3.0.14') {
+            because 'Pinot 1.6.0 brings 3.0.13, which is vulnerable to CVE-2026-107226, CVE-2026-107227, CVE-2026-107228 and CVE-2026-107230'
+        }
+    }
+
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
     testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
 }
