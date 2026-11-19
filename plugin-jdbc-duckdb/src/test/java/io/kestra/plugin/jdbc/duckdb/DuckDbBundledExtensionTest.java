@@ -62,6 +62,12 @@ class DuckDbBundledExtensionTest {
              var statement = connection.createStatement()) {
             assertThat(DuckDbConnectionSetup.loadBundledExtension(connection, taskDirectory, "ion", platform), is(true));
 
+            // The bundled install must not leave extension repositories open for the flow author's SQL.
+            try (var result = statement.executeQuery("SELECT current_setting('allow_extension_repositories')")) {
+                assertThat(result.next(), is(true));
+                assertThat(result.getString(1), is("forbidden"));
+            }
+
             try (var resultSet = statement.executeQuery("SELECT loaded FROM duckdb_extensions() WHERE extension_name = 'ion'")) {
                 assertThat(resultSet.next(), is(true));
                 assertThat(resultSet.getBoolean("loaded"), is(true));

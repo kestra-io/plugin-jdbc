@@ -140,11 +140,17 @@ final class DuckDbConnectionSetup {
 
             String publicKeys = String.join(", ", bundledPublicKeys().stream()
                 .map(key -> "'" + escapeSqlLiteral(key) + "'").toList());
+            // Only allow extension repositories for the bundled install, then lock them with 'forbidden'
+            // (DuckDB cannot go back to 'undecided') so the flow author's SQL cannot register their own repository and keys.
             execute(connection, "SET allow_extension_repositories = 'allowed';");
-            execute(connection, "CREATE OR REPLACE EXTENSION REPOSITORY " + BUNDLED_REPOSITORY +
-                " WITH PREFIX '" + escapeSqlLiteral(repository.toAbsolutePath().toString()) +
-                "' USING PUBLIC KEYS " + publicKeys + ";");
-            execute(connection, "INSTALL AND LOAD " + extension + " FROM " + BUNDLED_REPOSITORY + ";");
+            try {
+                execute(connection, "CREATE OR REPLACE EXTENSION REPOSITORY " + BUNDLED_REPOSITORY +
+                    " WITH PREFIX '" + escapeSqlLiteral(repository.toAbsolutePath().toString()) +
+                    "' USING PUBLIC KEYS " + publicKeys + ";");
+                execute(connection, "INSTALL AND LOAD " + extension + " FROM " + BUNDLED_REPOSITORY + ";");
+            } finally {
+                execute(connection, "SET allow_extension_repositories = 'forbidden';");
+            }
             return true;
         }
     }
