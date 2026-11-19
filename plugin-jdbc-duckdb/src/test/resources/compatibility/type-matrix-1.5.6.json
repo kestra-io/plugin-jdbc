@@ -1,0 +1,1503 @@
+{
+  "engine": "v1.5.6",
+  "FETCH": {
+    "__wide__": {
+      "class": "java.sql.SQLException",
+      "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"main.TIMESTAMP_NS\"?\n\nLINE 1: ...'::TIME_NS AS \"time_ns\",'2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS \"timestamptz_ns\",'2024-07-01 12:34:56...\n                                                                          ^"
+    },
+    "boolean": {
+      "jdbcType": "BOOLEAN",
+      "jdbcClass": "java.lang.Boolean",
+      "rows": [
+        {
+          "value": true
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "tinyint": {
+      "jdbcType": "TINYINT",
+      "jdbcClass": "java.lang.Byte",
+      "rows": [
+        {
+          "value": 127
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "smallint": {
+      "jdbcType": "SMALLINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 32767
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "integer": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 2147483647
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "bigint": {
+      "jdbcType": "BIGINT",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 9223372036854775807
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "hugeint": {
+      "jdbcType": "HUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "170141183460469231731687303715884105727"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "utinyint": {
+      "jdbcType": "UTINYINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 255
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "usmallint": {
+      "jdbcType": "USMALLINT",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 65535
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uinteger": {
+      "jdbcType": "UINTEGER",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 4294967295
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "ubigint": {
+      "jdbcType": "UBIGINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "18446744073709551615"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uhugeint": {
+      "jdbcType": "UHUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "340282366920938463463374607431768211455"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "bignum": {
+      "jdbcType": "BIGNUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1234567890123456789012345678901234567890"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "float": {
+      "jdbcType": "FLOAT",
+      "jdbcClass": "java.lang.Float",
+      "rows": [
+        {
+          "value": 1.25
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "double": {
+      "jdbcType": "DOUBLE",
+      "jdbcClass": "java.lang.Double",
+      "rows": [
+        {
+          "value": 1.25
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "decimal": {
+      "jdbcType": "DECIMAL(30,9)",
+      "jdbcClass": "java.math.BigDecimal",
+      "rows": [
+        {
+          "value": 123456789012345.12
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "date": {
+      "jdbcType": "DATE",
+      "jdbcClass": "java.time.LocalDate",
+      "rows": [
+        {
+          "value": "2024-07-01"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "time": {
+      "jdbcType": "TIME",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timetz": {
+      "jdbcType": "TIME WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetTime",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.time.OffsetTime' for column 'value' is not supported, the column type is 'TIME WITH TIME ZONE'"
+      }
+    },
+    "timestamp": {
+      "jdbcType": "TIMESTAMP",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_s": {
+      "jdbcType": "TIMESTAMP_S",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.000000Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_ms": {
+      "jdbcType": "TIMESTAMP_MS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123000Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_ns": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamptz": {
+      "jdbcType": "TIMESTAMP WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetDateTime",
+      "rows": [
+        {
+          "value": "2024-07-01T10:34:56.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "interval": {
+      "jdbcType": "INTERVAL",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1 month 2 days 03:04:05.123456"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uuid": {
+      "jdbcType": "UUID",
+      "jdbcClass": "java.util.UUID",
+      "rows": [
+        {
+          "value": "123e4567-e89b-12d3-a456-426614174000"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "blob": {
+      "jdbcType": "BLOB",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'BLOB'"
+      }
+    },
+    "bit": {
+      "jdbcType": "BIT",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "10101"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "enum": {
+      "jdbcType": "ENUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "ok"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "varchar": {
+      "jdbcType": "VARCHAR",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "O'Brien: {quoted}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "list": {
+      "jdbcType": "INTEGER[]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            null,
+            3
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "array": {
+      "jdbcType": "INTEGER[3]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "nested_list": {
+      "jdbcType": "INTEGER[][]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            [
+              1,
+              2
+            ],
+            null,
+            [
+              3
+            ]
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "struct": {
+      "jdbcType": "STRUCT(id INTEGER, \"name\" VARCHAR, missing INTEGER)",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'id': 1, 'name': Alice, 'missing': NULL}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "escaped_struct": {
+      "jdbcType": "STRUCT(\"name\" VARCHAR, tags VARCHAR[])",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'name': 'O\\'Brien', 'tags': [a, NULL]}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "map": {
+      "jdbcType": "MAP(VARCHAR, INTEGER)",
+      "jdbcClass": "java.util.LinkedHashMap",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.util.LinkedHashMap' for column 'value' is not supported, the column type is 'MAP(VARCHAR, INTEGER)'"
+      }
+    },
+    "union": {
+      "jdbcType": "UNION(i INTEGER)",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 42
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "json": {
+      "jdbcType": "JSON",
+      "jdbcClass": "org.duckdb.JsonNode",
+      "rows": [
+        {
+          "value": {
+            "id": 1,
+            "tags": [
+              "a",
+              null
+            ]
+          }
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "variant": {
+      "jdbcType": "VARIANT",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{id=1, tags=[a, null]}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "geometry": {
+      "jdbcType": "GEOMETRY",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'GEOMETRY'"
+      }
+    },
+    "null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "typed_null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "time_ns": {
+      "jdbcType": "TIME_NS",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456789"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamptz_ns": {
+      "metadataError": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      },
+      "error": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      }
+    },
+    "timestamp_ns_positive": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    }
+  },
+  "FETCH_ONE": {
+    "__wide__": {
+      "class": "java.sql.SQLException",
+      "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"main.TIMESTAMP_NS\"?\n\nLINE 1: ...'::TIME_NS AS \"time_ns\",'2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS \"timestamptz_ns\",'2024-07-01 12:34:56...\n                                                                          ^"
+    },
+    "boolean": {
+      "jdbcType": "BOOLEAN",
+      "jdbcClass": "java.lang.Boolean",
+      "rows": [
+        {
+          "value": true
+        }
+      ]
+    },
+    "tinyint": {
+      "jdbcType": "TINYINT",
+      "jdbcClass": "java.lang.Byte",
+      "rows": [
+        {
+          "value": 127
+        }
+      ]
+    },
+    "smallint": {
+      "jdbcType": "SMALLINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 32767
+        }
+      ]
+    },
+    "integer": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 2147483647
+        }
+      ]
+    },
+    "bigint": {
+      "jdbcType": "BIGINT",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 9223372036854775807
+        }
+      ]
+    },
+    "hugeint": {
+      "jdbcType": "HUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "170141183460469231731687303715884105727"
+        }
+      ]
+    },
+    "utinyint": {
+      "jdbcType": "UTINYINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 255
+        }
+      ]
+    },
+    "usmallint": {
+      "jdbcType": "USMALLINT",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 65535
+        }
+      ]
+    },
+    "uinteger": {
+      "jdbcType": "UINTEGER",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 4294967295
+        }
+      ]
+    },
+    "ubigint": {
+      "jdbcType": "UBIGINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "18446744073709551615"
+        }
+      ]
+    },
+    "uhugeint": {
+      "jdbcType": "UHUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "340282366920938463463374607431768211455"
+        }
+      ]
+    },
+    "bignum": {
+      "jdbcType": "BIGNUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1234567890123456789012345678901234567890"
+        }
+      ]
+    },
+    "float": {
+      "jdbcType": "FLOAT",
+      "jdbcClass": "java.lang.Float",
+      "rows": [
+        {
+          "value": 1.25
+        }
+      ]
+    },
+    "double": {
+      "jdbcType": "DOUBLE",
+      "jdbcClass": "java.lang.Double",
+      "rows": [
+        {
+          "value": 1.25
+        }
+      ]
+    },
+    "decimal": {
+      "jdbcType": "DECIMAL(30,9)",
+      "jdbcClass": "java.math.BigDecimal",
+      "rows": [
+        {
+          "value": 123456789012345.12
+        }
+      ]
+    },
+    "date": {
+      "jdbcType": "DATE",
+      "jdbcClass": "java.time.LocalDate",
+      "rows": [
+        {
+          "value": "2024-07-01"
+        }
+      ]
+    },
+    "time": {
+      "jdbcType": "TIME",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456"
+        }
+      ]
+    },
+    "timetz": {
+      "jdbcType": "TIME WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetTime",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.time.OffsetTime' for column 'value' is not supported, the column type is 'TIME WITH TIME ZONE'"
+      }
+    },
+    "timestamp": {
+      "jdbcType": "TIMESTAMP",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        }
+      ]
+    },
+    "timestamp_s": {
+      "jdbcType": "TIMESTAMP_S",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.000000Z"
+        }
+      ]
+    },
+    "timestamp_ms": {
+      "jdbcType": "TIMESTAMP_MS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123000Z"
+        }
+      ]
+    },
+    "timestamp_ns": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        }
+      ]
+    },
+    "timestamptz": {
+      "jdbcType": "TIMESTAMP WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetDateTime",
+      "rows": [
+        {
+          "value": "2024-07-01T10:34:56.123456Z"
+        }
+      ]
+    },
+    "interval": {
+      "jdbcType": "INTERVAL",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1 month 2 days 03:04:05.123456"
+        }
+      ]
+    },
+    "uuid": {
+      "jdbcType": "UUID",
+      "jdbcClass": "java.util.UUID",
+      "rows": [
+        {
+          "value": "123e4567-e89b-12d3-a456-426614174000"
+        }
+      ]
+    },
+    "blob": {
+      "jdbcType": "BLOB",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'BLOB'"
+      }
+    },
+    "bit": {
+      "jdbcType": "BIT",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "10101"
+        }
+      ]
+    },
+    "enum": {
+      "jdbcType": "ENUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "ok"
+        }
+      ]
+    },
+    "varchar": {
+      "jdbcType": "VARCHAR",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "O'Brien: {quoted}"
+        }
+      ]
+    },
+    "list": {
+      "jdbcType": "INTEGER[]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            null,
+            3
+          ]
+        }
+      ]
+    },
+    "array": {
+      "jdbcType": "INTEGER[3]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            2,
+            3
+          ]
+        }
+      ]
+    },
+    "nested_list": {
+      "jdbcType": "INTEGER[][]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            [
+              1,
+              2
+            ],
+            null,
+            [
+              3
+            ]
+          ]
+        }
+      ]
+    },
+    "struct": {
+      "jdbcType": "STRUCT(id INTEGER, \"name\" VARCHAR, missing INTEGER)",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'id': 1, 'name': Alice, 'missing': NULL}"
+        }
+      ]
+    },
+    "escaped_struct": {
+      "jdbcType": "STRUCT(\"name\" VARCHAR, tags VARCHAR[])",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'name': 'O\\'Brien', 'tags': [a, NULL]}"
+        }
+      ]
+    },
+    "map": {
+      "jdbcType": "MAP(VARCHAR, INTEGER)",
+      "jdbcClass": "java.util.LinkedHashMap",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.util.LinkedHashMap' for column 'value' is not supported, the column type is 'MAP(VARCHAR, INTEGER)'"
+      }
+    },
+    "union": {
+      "jdbcType": "UNION(i INTEGER)",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 42
+        }
+      ]
+    },
+    "json": {
+      "jdbcType": "JSON",
+      "jdbcClass": "org.duckdb.JsonNode",
+      "rows": [
+        {
+          "value": {
+            "id": 1,
+            "tags": [
+              "a",
+              null
+            ]
+          }
+        }
+      ]
+    },
+    "variant": {
+      "jdbcType": "VARIANT",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{id=1, tags=[a, null]}"
+        }
+      ]
+    },
+    "geometry": {
+      "jdbcType": "GEOMETRY",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'GEOMETRY'"
+      }
+    },
+    "null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        }
+      ]
+    },
+    "typed_null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        }
+      ]
+    },
+    "time_ns": {
+      "jdbcType": "TIME_NS",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456789"
+        }
+      ]
+    },
+    "timestamptz_ns": {
+      "metadataError": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      },
+      "error": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      }
+    },
+    "timestamp_ns_positive": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123456Z"
+        }
+      ]
+    }
+  },
+  "STORE": {
+    "__wide__": {
+      "class": "java.sql.SQLException",
+      "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"main.TIMESTAMP_NS\"?\n\nLINE 1: ...'::TIME_NS AS \"time_ns\",'2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS \"timestamptz_ns\",'2024-07-01 12:34:56...\n                                                                          ^"
+    },
+    "boolean": {
+      "jdbcType": "BOOLEAN",
+      "jdbcClass": "java.lang.Boolean",
+      "rows": [
+        {
+          "value": true
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "tinyint": {
+      "jdbcType": "TINYINT",
+      "jdbcClass": "java.lang.Byte",
+      "rows": [
+        {
+          "value": 127
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "smallint": {
+      "jdbcType": "SMALLINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 32767
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "integer": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 2147483647
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "bigint": {
+      "jdbcType": "BIGINT",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 9223372036854775807
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "hugeint": {
+      "jdbcType": "HUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "170141183460469231731687303715884105727"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "utinyint": {
+      "jdbcType": "UTINYINT",
+      "jdbcClass": "java.lang.Short",
+      "rows": [
+        {
+          "value": 255
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "usmallint": {
+      "jdbcType": "USMALLINT",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 65535
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uinteger": {
+      "jdbcType": "UINTEGER",
+      "jdbcClass": "java.lang.Long",
+      "rows": [
+        {
+          "value": 4294967295
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "ubigint": {
+      "jdbcType": "UBIGINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "18446744073709551615"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uhugeint": {
+      "jdbcType": "UHUGEINT",
+      "jdbcClass": "java.math.BigInteger",
+      "rows": [
+        {
+          "value": "340282366920938463463374607431768211455"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "bignum": {
+      "jdbcType": "BIGNUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1234567890123456789012345678901234567890"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "float": {
+      "jdbcType": "FLOAT",
+      "jdbcClass": "java.lang.Float",
+      "rows": [
+        {
+          "value": 1.25
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "double": {
+      "jdbcType": "DOUBLE",
+      "jdbcClass": "java.lang.Double",
+      "rows": [
+        {
+          "value": 1.25
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "decimal": {
+      "jdbcType": "DECIMAL(30,9)",
+      "jdbcClass": "java.math.BigDecimal",
+      "rows": [
+        {
+          "value": 123456789012345.12
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "date": {
+      "jdbcType": "DATE",
+      "jdbcClass": "java.time.LocalDate",
+      "rows": [
+        {
+          "value": "2024-07-01"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "time": {
+      "jdbcType": "TIME",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timetz": {
+      "jdbcType": "TIME WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetTime",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.time.OffsetTime' for column 'value' is not supported, the column type is 'TIME WITH TIME ZONE'"
+      }
+    },
+    "timestamp": {
+      "jdbcType": "TIMESTAMP",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_s": {
+      "jdbcType": "TIMESTAMP_S",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.000000Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_ms": {
+      "jdbcType": "TIMESTAMP_MS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123000Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamp_ns": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "1969-12-31T23:59:59.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamptz": {
+      "jdbcType": "TIMESTAMP WITH TIME ZONE",
+      "jdbcClass": "java.time.OffsetDateTime",
+      "rows": [
+        {
+          "value": "2024-07-01T10:34:56.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "interval": {
+      "jdbcType": "INTERVAL",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "1 month 2 days 03:04:05.123456"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "uuid": {
+      "jdbcType": "UUID",
+      "jdbcClass": "java.util.UUID",
+      "rows": [
+        {
+          "value": "123e4567-e89b-12d3-a456-426614174000"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "blob": {
+      "jdbcType": "BLOB",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'BLOB'"
+      }
+    },
+    "bit": {
+      "jdbcType": "BIT",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "10101"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "enum": {
+      "jdbcType": "ENUM",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "ok"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "varchar": {
+      "jdbcType": "VARCHAR",
+      "jdbcClass": "java.lang.String",
+      "rows": [
+        {
+          "value": "O'Brien: {quoted}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "list": {
+      "jdbcType": "INTEGER[]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            null,
+            3
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "array": {
+      "jdbcType": "INTEGER[3]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "nested_list": {
+      "jdbcType": "INTEGER[][]",
+      "jdbcClass": "org.duckdb.DuckDBArray",
+      "rows": [
+        {
+          "value": [
+            [
+              1,
+              2
+            ],
+            null,
+            [
+              3
+            ]
+          ]
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "struct": {
+      "jdbcType": "STRUCT(id INTEGER, \"name\" VARCHAR, missing INTEGER)",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'id': 1, 'name': Alice, 'missing': NULL}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "escaped_struct": {
+      "jdbcType": "STRUCT(\"name\" VARCHAR, tags VARCHAR[])",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{'name': 'O\\'Brien', 'tags': [a, NULL]}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "map": {
+      "jdbcType": "MAP(VARCHAR, INTEGER)",
+      "jdbcClass": "java.util.LinkedHashMap",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class java.util.LinkedHashMap' for column 'value' is not supported, the column type is 'MAP(VARCHAR, INTEGER)'"
+      }
+    },
+    "union": {
+      "jdbcType": "UNION(i INTEGER)",
+      "jdbcClass": "java.lang.Integer",
+      "rows": [
+        {
+          "value": 42
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "json": {
+      "jdbcType": "JSON",
+      "jdbcClass": "org.duckdb.JsonNode",
+      "rows": [
+        {
+          "value": {
+            "id": 1,
+            "tags": [
+              "a",
+              null
+            ]
+          }
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "variant": {
+      "jdbcType": "VARIANT",
+      "jdbcClass": "org.duckdb.DuckDBStruct",
+      "rows": [
+        {
+          "value": "{id=1, tags=[a, null]}"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "geometry": {
+      "jdbcType": "GEOMETRY",
+      "jdbcClass": "org.duckdb.DuckDBResultSet$DuckDBBlobResult",
+      "error": {
+        "class": "java.lang.IllegalArgumentException",
+        "message": "Data of type 'class org.duckdb.DuckDBResultSet$DuckDBBlobResult' for column 'value' is not supported, the column type is 'GEOMETRY'"
+      }
+    },
+    "null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "typed_null": {
+      "jdbcType": "INTEGER",
+      "jdbcClass": null,
+      "rows": [
+        {
+          "value": null
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "time_ns": {
+      "jdbcType": "TIME_NS",
+      "jdbcClass": "java.time.LocalTime",
+      "rows": [
+        {
+          "value": "12:34:56.123456789"
+        },
+        {
+          "value": null
+        }
+      ]
+    },
+    "timestamptz_ns": {
+      "metadataError": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      },
+      "error": {
+        "class": "java.sql.SQLException",
+        "message": "Invalid Input Error: Attempting to execute an unsuccessful or closed pending query result\nError: Catalog Error: Type with name TIMESTAMPTZ_NS does not exist!\nDid you mean \"JSON\"?\n\nLINE 1: SELECT '2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS AS value UNION ALL SELECT NULL AS value\n                                                      ^"
+      }
+    },
+    "timestamp_ns_positive": {
+      "jdbcType": "TIMESTAMP_NS",
+      "jdbcClass": "java.sql.Timestamp",
+      "rows": [
+        {
+          "value": "2024-07-01T12:34:56.123456Z"
+        },
+        {
+          "value": null
+        }
+      ]
+    }
+  }
+}

@@ -45,6 +45,21 @@ import java.util.Map;
     examples = {
         @Example(
             full = true,
+            title = "Return a structured VARIANT value with DuckDB 2.0.",
+            code = """
+                id: duckdb_variant
+                namespace: company.team
+
+                tasks:
+                  - id: variant
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    sql: |
+                      SELECT {'id': 1, 'tags': ['a', 'b']}::VARIANT AS payload;
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            full = true,
             title = "Run a query that exports results to a file, which is automatically captured and uploaded to internal storage.",
             code = """
                 id: duckdb_export
@@ -192,7 +207,9 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     protected Property<String> databaseUri;
 
     @Schema(
-        title = "Whether to store or not the database file in the internal storage"
+        title = "Whether to store or not the database file in the internal storage",
+        description = "New databases use DuckDB 2.0 storage format 69 and cannot be opened by DuckDB 1.x. " +
+            "Databases loaded via databaseUri retain their existing storage format."
     )
     @Builder.Default
     @PluginProperty(group = "source")

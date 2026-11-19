@@ -2,10 +2,12 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Properties;
 
 public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     List<String> DEFAULT_COMMUNITY_EXTENSIONS = List.of("ion");
@@ -72,24 +74,36 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
 
     @Schema(
         title = "Database URI",
-        description = "Kestra's URI to an existing Duck DB database file"
+        description = "Kestra's URI to an existing DuckDB database file. DuckDB 2.0 can read and update 1.x files, preserving their storage format. " +
+            "New databases created by DuckDB 2.0 use storage format 69 and cannot be opened by DuckDB 1.x."
     )
     @PluginProperty(group = "advanced")
     Property<String> getDatabaseUri();
 
     @Schema(
         title = "Output the database file",
-        description = "This property lets you define if you want to output the in-memory database as a file for further processing."
+        description = "Upload the database file to internal storage for further processing. New databases created by DuckDB 2.0 use storage format 69, " +
+            "which DuckDB 1.x cannot open. All consumers, including other workers and external tools, must use a compatible version. " +
+            "A database loaded via databaseUri retains its existing storage format."
     )
     @PluginProperty(group = "advanced")
     Property<Boolean> getOutputDbFile();
 
     @Schema(
         title = "DuckDB community extensions to install and load before running the SQL",
-        description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
+        description = "Defaults to `[\"ion\"]`. On supported Linux platforms, bundled extensions are installed from a task-local repository " +
+            "pinned with DuckDB's community public keys, keeping signature validation enabled. Otherwise Kestra uses `INSTALL <ext> FROM community` " +
+            "followed by `LOAD <ext>`. If bundled loading fails, the community install is attempted. If installation or loading fails, Kestra logs a warning and continues."
     )
     @PluginProperty(group = "advanced")
     Property<List<String>> getCommunityExtensions();
+
+    @Override
+    default Properties connectionProperties(RunContext runContext) throws Exception {
+        Properties properties = JdbcConnectionInterface.super.connectionProperties(runContext);
+        DuckDbConnectionSetup.configureConnectionProperties(properties, runContext.workingDir().path());
+        return properties;
+    }
 
     @Override
     default String getScheme() {

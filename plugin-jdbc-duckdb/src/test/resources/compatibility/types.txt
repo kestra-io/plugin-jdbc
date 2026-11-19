@@ -1,0 +1,44 @@
+boolean|true
+tinyint|127::TINYINT
+smallint|32767::SMALLINT
+integer|2147483647::INTEGER
+bigint|9223372036854775807::BIGINT
+hugeint|170141183460469231731687303715884105727::HUGEINT
+utinyint|255::UTINYINT
+usmallint|65535::USMALLINT
+uinteger|4294967295::UINTEGER
+ubigint|18446744073709551615::UBIGINT
+uhugeint|340282366920938463463374607431768211455::UHUGEINT
+bignum|'1234567890123456789012345678901234567890'::BIGNUM
+float|1.25::FLOAT
+double|1.25::DOUBLE
+decimal|123456789012345.123456789::DECIMAL(30,9)
+date|DATE '2024-07-01'
+time|TIME '12:34:56.123456'
+timetz|TIMETZ '12:34:56.123456+02:00'
+timestamp|TIMESTAMP '1969-12-31 23:59:59.123456'
+timestamp_s|'2024-07-01 12:34:56'::TIMESTAMP_S
+timestamp_ms|'2024-07-01 12:34:56.123'::TIMESTAMP_MS
+timestamp_ns|'1969-12-31 23:59:59.123456789'::TIMESTAMP_NS
+timestamptz|TIMESTAMPTZ '2024-07-01 12:34:56.123456+02:00'
+interval|INTERVAL '1 month 2 days 03:04:05.123456'
+uuid|'123e4567-e89b-12d3-a456-426614174000'::UUID
+blob|from_hex('0001ff')
+bit|'10101'::BIT
+enum|'ok'::ENUM('sad','ok','happy')
+varchar|'O''Brien: {quoted}'
+list|[1, NULL, 3]
+array|[1,2,3]::INTEGER[3]
+nested_list|[[1,2],NULL,[3]]
+struct|{'id': 1, 'name': 'Alice', 'missing': NULL}
+escaped_struct|{'name': 'O''Brien', 'tags': ['a', NULL]}
+map|map(['a','b'],[1,NULL])
+union|union_value(i := 42)
+json|'{"id":1,"tags":["a",null]}'::JSON
+variant|'{"id":1,"tags":["a",null]}'::JSON::VARIANT
+geometry|'POINT(1 2)'::GEOMETRY
+null|NULL
+typed_null|NULL::INTEGER
+time_ns|'12:34:56.123456789'::TIME_NS
+timestamptz_ns|'2024-07-01 12:34:56.123456789+02:00'::TIMESTAMPTZ_NS
+timestamp_ns_positive|'2024-07-01 12:34:56.123456789'::TIMESTAMP_NS

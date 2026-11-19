@@ -6,13 +6,22 @@ import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
 import org.duckdb.DuckDBArray;
 import org.duckdb.DuckDBStruct;
+import org.duckdb.JsonNode;
 
+import java.math.BigInteger;
+import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class DuckDbCellConverter extends AbstractCellConverter {
     public DuckDbCellConverter(ZoneId zoneId) {
@@ -29,6 +38,24 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         }
 
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
+
+        if ("VARIANT".equalsIgnoreCase(columnTypeName)) {
+            return processVariant(data);
+        }
+
+        if ("TIMESTAMPTZ_NS".equalsIgnoreCase(columnTypeName)) {
+            // The 2.0 JDBC driver exposes this new type as a string. Parsing it
+            // directly preserves nanoseconds that getTimestamp() would truncate.
+            String value = rs.getString(columnIndex);
+            if ("infinity".equals(value) || "-infinity".equals(value)) {
+                return value;
+            }
+            String iso = value.replace(' ', 'T');
+            if (iso.matches(".*[+-]\\d{2}$")) {
+                iso += ":00";
+            }
+            return OffsetDateTime.parse(iso).withOffsetSameInstant(ZoneOffset.UTC);
+        }
 
         if (data instanceof OffsetDateTime odt) {
             return odt.withOffsetSameInstant(ZoneOffset.UTC);
@@ -82,6 +109,59 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    // VARIANT is returned as the value's native JDBC type, including nested JDBC
+    // arrays and structs. Materialize those while the result set is still open.
+    private Object processVariant(Object value) throws SQLException, JsonProcessingException {
+        if (value instanceof DuckDBStruct struct) {
+            return processVariant(struct.getMap());
+        }
+        if (value instanceof Map<?, ?> map) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            for (var entry : map.entrySet()) {
+                result.put(entry.getKey().toString(), processVariant(entry.getValue()));
+            }
+            return result;
+        }
+        if (value instanceof Array array) {
+            Object[] elements = (Object[]) array.getArray();
+            var result = new ArrayList<>(elements.length);
+            for (Object element : elements) {
+                result.add(processVariant(element));
+            }
+            return result;
+        }
+        if (value instanceof JsonNode json) {
+            return JacksonMapper.toObject(json.toString());
+        }
+        if (value instanceof Blob blob) {
+            return readBlob(blob);
+        }
+        if (value instanceof Byte number) {
+            return number.intValue();
+        }
+        if (value instanceof BigInteger integer) {
+            // JSON-derived VARIANT integers arrive as HUGEINT even for small
+            // values. Keep JSON-like numeric values instead of stringifying them.
+            if (integer.bitLength() < 32) {
+                return integer.intValue();
+            }
+            if (integer.bitLength() < 64) {
+                return integer.longValue();
+            }
+            return integer;
+        }
+        if (value instanceof UUID) {
+            return value.toString();
+        }
+        if (value instanceof OffsetDateTime dateTime) {
+            return dateTime.withOffsetSameInstant(ZoneOffset.UTC);
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime().atZone(zoneId);
+        }
+        return value;
     }
 
     private Object processDuckDbArray(DuckDBArray duckDBArray) throws SQLException {

@@ -4,7 +4,9 @@ Write standard DuckDB SQL in the task `sql` property. For self-contained workflo
 
 #### Bundled Ion extension
 
-This plugin also bundles the DuckDB `ion` extension, so Amazon Ion files can be read with `read_ion(...)` without installing anything separately.
+This plugin bundles the DuckDB `ion` extension for Linux AMD64 and ARM64, so Amazon Ion files can be read with `read_ion(...)` without a network download on these platforms.
+
+For DuckDB 2.0, the bundled files are loaded through a local repository pinned with the matching DuckDB release's community public keys. Signature validation stays enabled. Repository definitions and installed extensions are kept in the task's temporary directory. On other platforms, or if bundled loading fails, the plugin attempts to install Ion from the community repository and logs a warning if installation or loading fails.
 
 This is useful in Kestra because some task outputs and internal data exchanges use Ion-compatible files, which can then be queried directly from DuckDB tasks.
 
@@ -92,3 +94,37 @@ tasks:
       COPY (SELECT * FROM read_csv_auto('{{ workingDir }}/data.csv'))
       TO '{{ workingDir }}/results.csv' (HEADER, DELIMITER ',');
 ```
+
+#### Upgrading to DuckDB 2.0
+
+Review the [DuckDB migration guide](https://duckdb.org/docs/2.0/operations_manual/migration)
+before upgrading existing flows.
+
+- New database files use format 69, unreadable by 1.x. Existing files retain
+  their format. Check all consumers of `outputDbFile` and keep original inputs
+  for rollback. The plugin adds no `storageVersion` property; use an existing
+  compatible file through `databaseUri` when sharing with older consumers.
+- Replace `x -> x + 1` with `lambda x : x + 1`. Temporarily, use
+  `SET lambda_syntax = 'enable_single_arrow'`.
+- Integer `//` and `%` by zero throw. Use `TRY(...)` or
+  `SET error_on_division_by_zero=false` for NULL results.
+- Use DuckDB secrets for S3 credentials instead of URL parameters.
+- For parser regressions, use `INSTALL AND LOAD legacy_parser;` followed by
+  `SET enable_legacy_parser = true;`.
+- Review regex matching, factorial precedence, binary literals, transaction
+  errors, duplicate-source MERGE operations, untyped NULLs, identifier case,
+  and profiling/logging settings in the migration guide.
+
+Use `Queries` for session setup followed by SQL; `afterSQL` runs after the query.
+`VARIANT` results are exposed as maps, lists and scalar values in `FETCH`,
+`FETCH_ONE` and `STORE`.
+
+#### MotherDuck compatibility
+
+Check [MotherDuck's supported client versions](https://motherduck.com/docs/troubleshooting/version-lifecycle-schedules/)
+before upgrading a flow that uses `jdbc:duckdb:md:`. As of November 19, 2026,
+MotherDuck lists DuckDB 1.5.6 as its maximum supported engine and JDBC 1.5.6.0
+as its supported Java client. DuckDB 2.0 is outside that published range. Keep
+MotherDuck workflows on a plugin release with a supported driver until
+MotherDuck announces 2.0 support. The upgrade has no authenticated MotherDuck
+validation.

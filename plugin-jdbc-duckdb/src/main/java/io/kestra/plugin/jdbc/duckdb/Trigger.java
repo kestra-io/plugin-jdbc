@@ -11,8 +11,6 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.duckdb.DuckDBDriver;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
@@ -49,16 +47,13 @@ import java.util.List;
                     type: io.kestra.plugin.jdbc.duckdb.Trigger
                     interval: "PT5M"
                     url: 'jdbc:duckdb:'
-                    sql: "SELECT * FROM my_table"
+                    sql: "SELECT current_timestamp AS checked_at"
                     fetchType: FETCH
                 """
         )
     }
 )
 public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface {
-
-    @Getter(AccessLevel.NONE)
-    private transient Path databaseFile;
 
     protected Object inputFiles;
     protected Property<List<String>> outputFiles;
@@ -81,14 +76,11 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
 
     @Override
     public Property<String> getUrl() {
-        return Property.ofValue("jdbc:duckdb:" + databaseFile);
+        return super.getUrl() == null ? Property.ofValue("jdbc:duckdb:") : super.getUrl();
     }
 
     @Override
     protected AbstractJdbcQuery.Output runQuery(RunContext runContext) throws Exception {
-        this.databaseFile = runContext.workingDir().createTempFile();
-        Files.delete(this.databaseFile);
-
         additionalVars.put("workingDir", runContext.workingDir().path().toAbsolutePath().toString());
 
         var query = Query.builder()

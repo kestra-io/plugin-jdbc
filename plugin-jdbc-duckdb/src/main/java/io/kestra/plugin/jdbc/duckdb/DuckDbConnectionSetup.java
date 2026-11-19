@@ -7,11 +7,13 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
@@ -21,9 +23,18 @@ final class DuckDbConnectionSetup {
     private static final Pattern EXTENSION_NAME = Pattern.compile("[A-Za-z0-9_]+");
     private static final String BUNDLED_EXTENSIONS_ROOT = "duckdb-community-extensions";
     private static final String BUNDLED_EXTENSIONS_METADATA = "duckdb-community-extensions.properties";
+    private static final String BUNDLED_PUBLIC_KEYS = "duckdb-community-public-keys.pem";
+    private static final String BUNDLED_REPOSITORY = "kestra_bundled";
     private static final Properties BUNDLED_EXTENSION_PROPERTIES = loadBundledExtensionProperties();
 
     private DuckDbConnectionSetup() {
+    }
+
+    static void configureConnectionProperties(Properties properties, Path workingDirectory) throws IOException {
+        Path base = workingDirectory.resolve(".duckdb_extensions");
+        // Repository definitions can only be relocated at connection startup.
+        properties.putIfAbsent("extension_repository_directory", Files.createDirectories(base.resolve("repositories")).toString());
+        properties.putIfAbsent("extension_directory", Files.createDirectories(base.resolve("installed")).toString());
     }
 
     static void configureSession(
@@ -46,10 +57,8 @@ final class DuckDbConnectionSetup {
             }
 
             try {
-                if (!tryLoadBundledExtension(runContext, connection, workingDirectory, extension)) {
-                    // DuckDB caches installed community extensions under ~/.duckdb/extensions/<version>/<platform> by default.
-                    // Deployments can override that cache location with:
-                    //   SET extension_directory = '/path/to/duckdb/extensions';
+                if (!tryLoadBundledExtension(runContext, connection, extension)) {
+                    // The connection properties keep this fallback's cache in the task directory too.
                     // Installed/loaded extensions can be inspected with:
                     //   SELECT extension_name, installed, loaded, install_path FROM duckdb_extensions();
                     execute(connection, "INSTALL " + extension + " FROM community;");
@@ -80,7 +89,6 @@ final class DuckDbConnectionSetup {
     private static boolean tryLoadBundledExtension(
         RunContext runContext,
         Connection connection,
-        String workingDirectory,
         String extension
     ) {
         String platform = bundledPlatform();
@@ -88,9 +96,8 @@ final class DuckDbConnectionSetup {
             return false;
         }
 
-        String resourcePath = bundledResourcePath(extension, platform);
-        try (InputStream inputStream = DuckDbConnectionSetup.class.getClassLoader().getResourceAsStream(resourcePath)) {
-            if (inputStream == null) {
+        try {
+            if (!loadBundledExtension(connection, runContext.workingDir().path(), extension, platform)) {
                 runContext.logger().debug(
                     "Bundled DuckDB extension '{}' is not available for platform '{}'; falling back to community install.",
                     extension,
@@ -99,8 +106,6 @@ final class DuckDbConnectionSetup {
                 return false;
             }
 
-            Path extractedExtension = extractBundledExtension(inputStream, workingDirectory, extension, platform);
-            execute(connection, "LOAD '" + escapeSqlLiteral(extractedExtension.toAbsolutePath().toString()) + "';");
             runContext.logger().debug(
                 "Loaded DuckDB extension '{}' from bundled {} binary.",
                 extension,
@@ -114,6 +119,51 @@ final class DuckDbConnectionSetup {
                 e.getMessage()
             );
             return false;
+        }
+    }
+
+    // Kept separate from the best-effort online fallback so tests can prove the
+    // bundled path works by itself, with signature checks and networking disabled.
+    static boolean loadBundledExtension(Connection connection, Path workingDirectory, String extension, String platform)
+        throws IOException, SQLException {
+        if (!EXTENSION_NAME.matcher(extension).matches()) {
+            throw new IllegalArgumentException("Invalid DuckDB extension name: " + extension);
+        }
+        try (InputStream input = DuckDbConnectionSetup.class.getClassLoader().getResourceAsStream(bundledResourcePath(extension, platform))) {
+            if (input == null) {
+                return false;
+            }
+            Path repository = workingDirectory.resolve(".duckdb_extensions").resolve("bundled");
+            Path extensionDirectory = repository.resolve(bundledDuckDbVersion()).resolve(platform);
+            Files.createDirectories(extensionDirectory);
+            Files.copy(input, extensionDirectory.resolve(extension + ".duckdb_extension"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            String publicKeys = String.join(", ", bundledPublicKeys().stream()
+                .map(key -> "'" + escapeSqlLiteral(key) + "'").toList());
+            execute(connection, "SET allow_extension_repositories = 'allowed';");
+            execute(connection, "CREATE OR REPLACE EXTENSION REPOSITORY " + BUNDLED_REPOSITORY +
+                " WITH PREFIX '" + escapeSqlLiteral(repository.toAbsolutePath().toString()) +
+                "' USING PUBLIC KEYS " + publicKeys + ";");
+            execute(connection, "INSTALL AND LOAD " + extension + " FROM " + BUNDLED_REPOSITORY + ";");
+            return true;
+        }
+    }
+
+    static List<String> bundledPublicKeys() throws IOException {
+        try (InputStream input = DuckDbConnectionSetup.class.getClassLoader().getResourceAsStream(BUNDLED_PUBLIC_KEYS)) {
+            if (input == null) {
+                throw new IOException("Missing bundled DuckDB community public keys");
+            }
+            String pem = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            var matcher = Pattern.compile("-----BEGIN PUBLIC KEY-----.*?-----END PUBLIC KEY-----", Pattern.DOTALL).matcher(pem);
+            List<String> keys = new ArrayList<>();
+            while (matcher.find()) {
+                keys.add(matcher.group());
+            }
+            if (keys.isEmpty()) {
+                throw new IOException("No bundled DuckDB community public keys found");
+            }
+            return keys;
         }
     }
 
@@ -137,22 +187,6 @@ final class DuckDbConnectionSetup {
         }
 
         return properties;
-    }
-
-    private static Path extractBundledExtension(
-        InputStream inputStream,
-        String workingDirectory,
-        String extension,
-        String platform
-    ) throws IOException {
-        Path baseDir = workingDirectory == null
-            ? Files.createTempDirectory("kestra-duckdb-extension-")
-            : Path.of(workingDirectory).resolve(".duckdb_extensions").resolve(platform);
-        Files.createDirectories(baseDir);
-
-        Path extractedExtension = baseDir.resolve(extension + ".duckdb_extension");
-        Files.copy(inputStream, extractedExtension, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        return extractedExtension;
     }
 
     static String bundledPlatform() {

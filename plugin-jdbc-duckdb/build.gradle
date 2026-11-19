@@ -28,8 +28,38 @@ tasks.register("bundleDuckDbCommunityExtensions") {
         def metadataFile = bundledDuckDbExtensionsMetadataFile.get().asFile
         metadataFile.parentFile.mkdirs()
 
+        // Pin the keys shipped by the same engine release as the extension, including
+        // all rotation keys. Path-based LOAD only trusts core keys starting in 2.0.
+        def sourceUrl = new URL("https://api.github.com/repos/duckdb/duckdb/contents/src/main/extension/extension_helper.cpp?ref=${duckdbVersion}")
+        def sourceConnection = sourceUrl.openConnection()
+        sourceConnection.setRequestProperty("Accept", "application/vnd.github.raw+json")
+        sourceConnection.connectTimeout = 15000
+        sourceConnection.readTimeout = 60000
+        def source = sourceConnection.inputStream.withCloseable { it.getText("UTF-8") }
+        def keyArray = source =~ /(?s)community_public_keys\[\]\s*=\s*\{(.*?)\};/
+        if (!keyArray.find()) {
+            throw new GradleException("Cannot find DuckDB community public keys in ${sourceUrl}")
+        }
+        def keys = (keyArray.group(1) =~ /(?s)-----BEGIN PUBLIC KEY-----.*?-----END PUBLIC KEY-----/)
+            .collect { it.replace("\r\n", "\n") }
+        if (keys.isEmpty()) {
+            throw new GradleException("No DuckDB community public keys found in ${sourceUrl}")
+        }
+        // Reject malformed source extraction during the build, before shipping trust anchors.
+        keys.each { pem ->
+            def encoded = pem.replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "").replaceAll(/\s/, "")
+            java.security.KeyFactory.getInstance("RSA").generatePublic(
+                new java.security.spec.X509EncodedKeySpec(Base64.decoder.decode(encoded))
+            )
+        }
+        new File(metadataFile.parentFile, "duckdb-community-public-keys.pem").setText(
+            "# DuckDB community keys from ${sourceUrl}\n" + keys.join("\n") + "\n", "UTF-8"
+        )
+
         def properties = new Properties()
         properties.setProperty("duckdb.version", duckdbVersion)
+        properties.setProperty("community.keys.count", keys.size().toString())
         properties.setProperty("bundled.extensions", bundledDuckDbExtensions.keySet().join(","))
         bundledDuckDbExtensions.each { extensionName, platforms ->
             properties.setProperty("bundled.extensions.${extensionName}", platforms.join(","))
@@ -96,7 +126,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.duckdb:duckdb_jdbc:1.5.6.0")
+    implementation("org.duckdb:duckdb_jdbc:2.0.0.1")
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
