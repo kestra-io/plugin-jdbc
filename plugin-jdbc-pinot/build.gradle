@@ -16,6 +16,8 @@ dependencies {
     implementation("org.apache.pinot:pinot-jdbc-client:1.6.0") {
         exclude group: 'org.slf4j'
         exclude group: 'com.fasterxml.jackson.core'
+        // pinot-spi 1.6.0 pulls the POM-only groovy-all aggregator, which breaks shadowJar; the JDBC client does not use Groovy
+        exclude group: 'org.codehaus.groovy', module: 'groovy-all'
     }
     implementation project(':plugin-jdbc')
 
