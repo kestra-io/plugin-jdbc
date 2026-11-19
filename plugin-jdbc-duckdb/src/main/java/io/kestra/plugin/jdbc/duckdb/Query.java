@@ -145,8 +145,10 @@ import java.util.Map;
         ),
         @Example(
             full = true,
-            title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
+            title = "Query MotherDuck and export CSV (requires MotherDuck support for DuckDB 2.0)",
             code = """
+                # Requires a MotherDuck release that supports this plugin's DuckDB 2.0 client.
+                # Check MotherDuck's supported versions before running this example.
                 id: motherduck
                 namespace: company.team
 
@@ -208,8 +210,10 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
 
     @Schema(
         title = "Whether to store or not the database file in the internal storage",
-        description = "New databases use DuckDB 2.0 storage format 69 and cannot be opened by DuckDB 1.x. " +
-            "Databases loaded via databaseUri retain their existing storage format."
+        description = """
+            New databases use DuckDB 2.0 storage format 69 and cannot be opened by DuckDB 1.x. \
+            Databases loaded via databaseUri retain their existing storage format.
+            """
     )
     @Builder.Default
     @PluginProperty(group = "source")

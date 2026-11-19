@@ -284,8 +284,15 @@ class DuckDbUpgradeCompatibilityTest {
     }
 
     @Test
-    void queryAndQueriesKeepExtensionFilesInTheirTaskDirectory() throws Exception {
-        String sql = """
+    void queryAndQueriesKeepRepositoriesLocalAndPreserveWorkerCache() throws Exception {
+        var defaultCache = "";
+        try (var connection = DriverManager.getConnection("jdbc:duckdb:");
+             var statement = connection.createStatement();
+             var result = statement.executeQuery("SELECT current_setting('extension_directory')")) {
+            assertThat(result.next(), is(true));
+            defaultCache = result.getString(1);
+        }
+        var sql = """
             SELECT current_setting('extension_repository_directory') AS repositories,
                    current_setting('extension_directory') AS extensions,
                    current_setting('allow_unsigned_extensions') AS unsigned
@@ -297,7 +304,7 @@ class DuckDbUpgradeCompatibilityTest {
             .fetchType(Property.ofValue(FetchType.FETCH_ONE))
             .build().run(queryContext);
         assertThat(Path.of(query.getRow().get("repositories").toString()).startsWith(queryContext.workingDir().path()), is(true));
-        assertThat(Path.of(query.getRow().get("extensions").toString()).startsWith(queryContext.workingDir().path()), is(true));
+        assertThat(query.getRow().get("extensions"), is(defaultCache));
         assertThat(query.getRow().get("unsigned"), is(false));
 
         var queriesContext = runContextFactory.of(Map.of());
@@ -308,7 +315,7 @@ class DuckDbUpgradeCompatibilityTest {
             .build().run(queriesContext);
         var row = queries.getOutputs().getFirst().getRow();
         assertThat(Path.of(row.get("repositories").toString()).startsWith(queriesContext.workingDir().path()), is(true));
-        assertThat(Path.of(row.get("extensions").toString()).startsWith(queriesContext.workingDir().path()), is(true));
+        assertThat(row.get("extensions"), is(defaultCache));
         assertThat(row.get("unsigned"), is(false));
     }
 

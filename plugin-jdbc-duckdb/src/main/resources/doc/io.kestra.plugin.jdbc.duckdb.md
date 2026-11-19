@@ -6,7 +6,7 @@ Write standard DuckDB SQL in the task `sql` property. For self-contained workflo
 
 This plugin bundles the DuckDB `ion` extension for Linux AMD64 and ARM64, so Amazon Ion files can be read with `read_ion(...)` without a network download on these platforms.
 
-For DuckDB 2.0, the bundled files are loaded through a local repository pinned with the matching DuckDB release's community public keys. Signature validation stays enabled. Repository definitions and installed extensions are kept in the task's temporary directory. On other platforms, or if bundled loading fails, the plugin attempts to install Ion from the community repository and logs a warning if installation or loading fails.
+For DuckDB 2.0, the bundled files are loaded through a local repository pinned with the matching DuckDB release's community public keys. Signature validation stays enabled. Repository definitions, bundled source files and bundled installations are kept in the task's temporary directory. Bundled installation temporarily selects a task-local extension cache, then restores DuckDB's worker cache before user SQL runs. Community and autoloaded extensions retain the default cache, including pre-provisioned `~/.duckdb/extensions`, and can be reused across tasks. Repository changes are forbidden after the bundled installation. On other platforms, or if bundled loading fails, the plugin attempts to install Ion from the community repository and logs a warning if installation or loading fails.
 
 This is useful in Kestra because some task outputs and internal data exchanges use Ion-compatible files, which can then be queried directly from DuckDB tasks.
 
@@ -109,6 +109,10 @@ before upgrading existing flows.
 - Integer `//` and `%` by zero throw. Use `TRY(...)` or
   `SET error_on_division_by_zero=false` for NULL results.
 - Use DuckDB secrets for S3 credentials instead of URL parameters.
+- Only bundled installations use a temporary task-local cache, populated from the
+  shipped binary without a network download. The worker's extension cache is
+  restored before user SQL, so pre-provisioned, community and autoloaded extensions
+  remain reusable across tasks; httpfs is not downloaded again for each task.
 - For parser regressions, use `INSTALL AND LOAD legacy_parser;` followed by
   `SET enable_legacy_parser = true;`.
 - Review regex matching, factorial precedence, binary literals, transaction

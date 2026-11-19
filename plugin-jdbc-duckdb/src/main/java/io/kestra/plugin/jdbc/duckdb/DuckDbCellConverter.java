@@ -22,8 +22,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class DuckDbCellConverter extends AbstractCellConverter {
+    private static final Pattern HOUR_ONLY_OFFSET = Pattern.compile("[+-]\\d{2}$");
+
     public DuckDbCellConverter(ZoneId zoneId) {
         super(zoneId);
     }
@@ -44,14 +47,13 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         }
 
         if ("TIMESTAMPTZ_NS".equalsIgnoreCase(columnTypeName)) {
-            // The 2.0 JDBC driver exposes this new type as a string. Parsing it
-            // directly preserves nanoseconds that getTimestamp() would truncate.
-            String value = rs.getString(columnIndex);
+            // Parse the 2.0 driver's TIMESTAMPTZ_NS text without losing nanoseconds.
+            var value = rs.getString(columnIndex);
             if ("infinity".equals(value) || "-infinity".equals(value)) {
                 return value;
             }
-            String iso = value.replace(' ', 'T');
-            if (iso.matches(".*[+-]\\d{2}$")) {
+            var iso = value.replace(' ', 'T');
+            if (HOUR_ONLY_OFFSET.matcher(iso).find()) {
                 iso += ":00";
             }
             return OffsetDateTime.parse(iso).withOffsetSameInstant(ZoneOffset.UTC);
@@ -111,23 +113,22 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         return super.convert(columnIndex, rs);
     }
 
-    // VARIANT is returned as the value's native JDBC type, including nested JDBC
-    // arrays and structs. Materialize those while the result set is still open.
+    // Materialize native VARIANT containers before closing the result set.
     private Object processVariant(Object value) throws SQLException, JsonProcessingException {
         if (value instanceof DuckDBStruct struct) {
             return processVariant(struct.getMap());
         }
         if (value instanceof Map<?, ?> map) {
-            Map<String, Object> result = new LinkedHashMap<>();
+            var result = new LinkedHashMap<String, Object>();
             for (var entry : map.entrySet()) {
                 result.put(entry.getKey().toString(), processVariant(entry.getValue()));
             }
             return result;
         }
         if (value instanceof Array array) {
-            Object[] elements = (Object[]) array.getArray();
+            var elements = (Object[]) array.getArray();
             var result = new ArrayList<>(elements.length);
-            for (Object element : elements) {
+            for (var element : elements) {
                 result.add(processVariant(element));
             }
             return result;
@@ -142,8 +143,7 @@ public class DuckDbCellConverter extends AbstractCellConverter {
             return number.intValue();
         }
         if (value instanceof BigInteger integer) {
-            // JSON-derived VARIANT integers arrive as HUGEINT even for small
-            // values. Keep JSON-like numeric values instead of stringifying them.
+            // Keep JSON-derived HUGEINT values numeric, narrowing only when lossless.
             if (integer.bitLength() < 32) {
                 return integer.intValue();
             }
