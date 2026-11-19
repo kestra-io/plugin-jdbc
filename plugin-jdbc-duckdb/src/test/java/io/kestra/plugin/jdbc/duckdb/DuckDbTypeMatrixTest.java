@@ -1,6 +1,6 @@
 package io.kestra.plugin.jdbc.duckdb;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.common.FetchType;
@@ -53,14 +53,14 @@ class DuckDbTypeMatrixTest {
     void preservesLegacyTypeValuesAndMaterializesVariants(FetchType mode) throws Exception {
         var baseline = JacksonMapper.ofJson().readTree(resource("type-matrix-1.5.6.json")).get(mode.name());
         var expected = JacksonMapper.ofJson().readTree(resource("type-matrix-2.0.0.json")).get(mode.name());
-        Map<String, String> types = new LinkedHashMap<>();
-        for (String line : resource("types.txt").lines().toList()) {
-            String[] parts = line.split("\\|", 2);
+        var types = new LinkedHashMap<String, String>();
+        for (var line : resource("types.txt").lines().toList()) {
+            var parts = line.split("\\|", 2);
             types.put(parts[0], parts[1]);
         }
         for (var type : types.entrySet()) {
-            String name = type.getKey();
-            String sql = "SELECT " + type.getValue() + " AS value UNION ALL SELECT NULL AS value";
+            var name = type.getKey();
+            var sql = "SELECT " + type.getValue() + " AS value UNION ALL SELECT NULL AS value";
             var task = Query.builder()
                 .communityExtensions(Property.ofValue(List.of()))
                 .timeZoneId(Property.ofValue("UTC"))
@@ -68,8 +68,7 @@ class DuckDbTypeMatrixTest {
                 .fetchType(Property.ofValue(mode))
                 .build();
             if (expected.get(name).has("error")) {
-                // Four types were already unsupported on 1.5.6. Keep their
-                // limitations explicit rather than treating a new failure as a pass.
+                // Preserve the four unsupported-type errors already observed on 1.5.6.
                 assertEquals(baseline.get(name).get("error"), expected.get(name).get("error"), name);
                 var failure = assertThrows(IllegalArgumentException.class,
                     () -> task.run(runContextFactory.of(Map.of())), name);
@@ -81,20 +80,20 @@ class DuckDbTypeMatrixTest {
                 assertEquals(baseline.get(name).get("rows"), expected.get(name).get("rows"), name);
             }
             var output = task.run(runContextFactory.of(Map.of()));
-            Object rows;
-            if (mode == FetchType.STORE) {
-                try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getUri())) {
-                    rows = FileSerde.readAll(input).collectList().block();
+            var rows = switch (mode) {
+                case STORE -> {
+                    try (var input = storageInterface.get(TenantService.MAIN_TENANT, null, output.getUri())) {
+                        yield FileSerde.readAll(input).collectList().block();
+                    }
                 }
-            } else {
-                rows = mode == FetchType.FETCH_ONE ? List.of(output.getRow()) : output.getRows();
-            }
-            // A JSON wire-format comparison retains numeric precision and nulls,
-            // while avoiding irrelevant Float-vs-Double JsonNode class differences.
+                case FETCH_ONE -> List.of(output.getRow());
+                default -> output.getRows();
+            };
+            // Compare JSON values without numeric node-class differences.
             var mapper = JacksonMapper.ofJson().copy()
                 .setTimeZone(TimeZone.getTimeZone("UTC"))
-                .setSerializationInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.ALWAYS);
-            JsonNode actual = mapper.readTree(mapper.writeValueAsString(rows));
+                .setSerializationInclusion(JsonInclude.Include.ALWAYS);
+            var actual = mapper.readTree(mapper.writeValueAsString(rows));
             assertEquals(expected.get(name).get("rows"), actual, name + " / " + mode);
         }
     }

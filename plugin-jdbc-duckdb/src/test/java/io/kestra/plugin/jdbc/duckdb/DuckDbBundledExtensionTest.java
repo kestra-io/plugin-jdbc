@@ -1,10 +1,12 @@
 package io.kestra.plugin.jdbc.duckdb;
 
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyFactory;
 import java.security.spec.X509EncodedKeySpec;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Base64;
 import java.util.Properties;
 
@@ -35,7 +37,7 @@ class DuckDbBundledExtensionTest {
     void shouldBundleValidCommunityPublicKeys() throws Exception {
         var keys = DuckDbConnectionSetup.bundledPublicKeys();
         assertThat(keys, not(empty()));
-        for (String pem : keys) {
+        for (var pem : keys) {
             var body = pem.replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "").replaceAll("\\s", "");
             assertThat(KeyFactory.getInstance("RSA").generatePublic(
@@ -100,14 +102,14 @@ class DuckDbBundledExtensionTest {
         }
 
         // A fresh session must reject an installed file with a modified signature.
-        try (var file = new java.io.RandomAccessFile(installed.toFile(), "rw")) {
-            int firstByte = file.read();
+        try (var file = new RandomAccessFile(installed.toFile(), "rw")) {
+            var firstByte = file.read();
             file.seek(0);
             file.write(firstByte ^ 1);
         }
         try (var connection = DriverManager.getConnection("jdbc:duckdb:", properties);
              var statement = connection.createStatement()) {
-            var failure = assertThrows(java.sql.SQLException.class,
+            var failure = assertThrows(SQLException.class,
                 () -> statement.execute("LOAD ion FROM kestra_bundled"));
             assertThat(failure.getMessage(), containsString("signature"));
         }
@@ -173,7 +175,7 @@ class DuckDbBundledExtensionTest {
         DuckDbConnectionSetup.configureConnectionProperties(properties, tempDir);
         properties.setProperty("allow_extension_repositories", "forbidden");
         try (var connection = DriverManager.getConnection("jdbc:duckdb:", properties)) {
-            assertThrows(java.sql.SQLException.class,
+            assertThrows(SQLException.class,
                 () -> DuckDbConnectionSetup.loadBundledExtension(connection, tempDir, "ion", platform));
         }
     }

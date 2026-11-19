@@ -15,10 +15,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.math.BigInteger;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Files;
+import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -45,9 +48,9 @@ class DuckDbUpgradeCompatibilityTest {
     @ParameterizedTest
     @ValueSource(strings = {"1.4.5", "1.5.6"})
     void legacyDatabaseCanBeReadModifiedAndExported(String version) throws Exception {
-        URI source;
+        var source = URI.create("/" + IdUtils.create());
         try (var input = Objects.requireNonNull(getClass().getResourceAsStream("/db/duckdb-" + version + ".db"))) {
-            source = storageInterface.put(TenantService.MAIN_TENANT, null, URI.create("/" + IdUtils.create()), input);
+            source = storageInterface.put(TenantService.MAIN_TENANT, null, source, input);
         }
 
         var before = Query.builder()
@@ -91,8 +94,8 @@ class DuckDbUpgradeCompatibilityTest {
 
     @Test
     void recoversCommittedRowsFromLegacyWal(@TempDir Path directory) throws Exception {
-        Path database = directory.resolve("recovered.db");
-        for (String suffix : List.of("", ".wal")) {
+        var database = directory.resolve("recovered.db");
+        for (var suffix : List.of("", ".wal")) {
             try (var input = Objects.requireNonNull(getClass().getResourceAsStream("/db/duckdb-1.5.6-wal.db" + suffix))) {
                 Files.copy(input, Path.of(database + suffix));
             }
@@ -182,10 +185,10 @@ class DuckDbUpgradeCompatibilityTest {
             .fetchType(Property.ofValue(fetchType))
             .build().run(runContextFactory.of(Map.of()));
 
-        Map<String, Object> nested = new LinkedHashMap<>();
+        var nested = new LinkedHashMap<String, Object>();
         nested.put("text", "O'Brien: {quoted}");
         nested.put("missing", null);
-        Map<String, Object> expected = new LinkedHashMap<>();
+        var expected = new LinkedHashMap<String, Object>();
         expected.put("payload", Map.of("id", 1, "tags", List.of("a", "b"), "nested", nested));
         expected.put("items", Arrays.asList(1, null, 3));
         expected.put("number", 42);
@@ -193,7 +196,7 @@ class DuckDbUpgradeCompatibilityTest {
         expected.put("text", "plain text");
         expected.put("missing", null);
         expected.put("json_numbers", Map.of("id", 1, "large", 2147483648L,
-            "huge", new java.math.BigInteger("18446744073709551615")));
+            "huge", new BigInteger("18446744073709551615")));
 
         switch (fetchType) {
             case FETCH_ONE -> assertThat(output.getRow(), is(expected));
@@ -211,8 +214,8 @@ class DuckDbUpgradeCompatibilityTest {
     void migrationSqlChangesAndWorkaroundsAreExplicit() throws Exception {
         try (var connection = DriverManager.getConnection("jdbc:duckdb:");
              var statement = connection.createStatement()) {
-            assertThrows(java.sql.SQLException.class, () -> execute(connection, "SELECT 1 // 0"));
-            assertThrows(java.sql.SQLException.class, () -> execute(connection, "SELECT 1 % 0"));
+            assertThrows(SQLException.class, () -> execute(connection, "SELECT 1 // 0"));
+            assertThrows(SQLException.class, () -> execute(connection, "SELECT 1 % 0"));
             try (var result = statement.executeQuery("SELECT TRY(1 // 0), TRY(1 % 0), 'abc' ~ 'b'")) {
                 assertThat(result.next(), is(true));
                 assertThat(result.getObject(1), nullValue());
@@ -225,7 +228,7 @@ class DuckDbUpgradeCompatibilityTest {
                 assertThat(result.getObject(1), nullValue());
                 assertThat(result.getObject(2), nullValue());
             }
-            assertThrows(java.sql.SQLException.class,
+            assertThrows(SQLException.class,
                 () -> execute(connection, "SELECT list_transform([1,2], x -> x + 1)"));
             statement.execute("SET lambda_syntax='enable_single_arrow'");
             try (var result = statement.executeQuery("SELECT list_transform([1,2], x -> x + 1)")) {
@@ -241,8 +244,8 @@ class DuckDbUpgradeCompatibilityTest {
              var statement = connection.createStatement()) {
             statement.execute("CREATE TABLE transaction_events(id INTEGER)");
             connection.setAutoCommit(false);
-            assertThrows(java.sql.SQLException.class, () -> execute(connection, "SELECT CAST('bad' AS INTEGER)"));
-            assertThrows(java.sql.SQLException.class, () -> execute(connection, "INSERT INTO transaction_events VALUES (1)"));
+            assertThrows(SQLException.class, () -> execute(connection, "SELECT CAST('bad' AS INTEGER)"));
+            assertThrows(SQLException.class, () -> execute(connection, "INSERT INTO transaction_events VALUES (1)"));
             connection.rollback();
             statement.execute("INSERT INTO transaction_events VALUES (2)");
             connection.commit();
@@ -254,9 +257,8 @@ class DuckDbUpgradeCompatibilityTest {
         }
     }
 
-    private static void execute(java.sql.Connection connection, String sql) throws java.sql.SQLException {
-        // DuckDB closes a statement after an execution error. Use a fresh one
-        // so subsequent assertions check connection/transaction behavior.
+    private static void execute(Connection connection, String sql) throws SQLException {
+        // Use fresh statements after errors to check connection and transaction behavior.
         try (var statement = connection.createStatement()) {
             statement.execute(sql);
         }
@@ -264,7 +266,7 @@ class DuckDbUpgradeCompatibilityTest {
 
     @Test
     void triggerPollsConfiguredDatabaseAndRunsAfterSql(@TempDir Path directory) throws Exception {
-        String url = "jdbc:duckdb:" + directory.resolve("events.db");
+        var url = "jdbc:duckdb:" + directory.resolve("events.db");
         try (var connection = DriverManager.getConnection(url);
              var statement = connection.createStatement()) {
             statement.execute("CREATE TABLE events AS SELECT 1 AS id, false AS processed");
@@ -370,7 +372,7 @@ class DuckDbUpgradeCompatibilityTest {
 
     @Test
     void jdbcSupportsMemoryFileAndReadOnlyConnections(@TempDir Path directory) throws Exception {
-        String url = "jdbc:duckdb:" + directory.resolve("modes.duckdb");
+        var url = "jdbc:duckdb:" + directory.resolve("modes.duckdb");
         var properties = new Properties();
         properties.setProperty("extension_directory", directory.resolve("extensions").toString());
         properties.setProperty("preserve_identifier_case", "true");
@@ -384,7 +386,7 @@ class DuckDbUpgradeCompatibilityTest {
              var result = statement.executeQuery("SELECT id FROM events")) {
             assertThat(result.next(), is(true));
             assertThat(result.getInt(1), is(1));
-            assertThrows(java.sql.SQLException.class, () -> statement.execute("INSERT INTO events VALUES (2)"));
+            assertThrows(SQLException.class, () -> statement.execute("INSERT INTO events VALUES (2)"));
         }
     }
 
