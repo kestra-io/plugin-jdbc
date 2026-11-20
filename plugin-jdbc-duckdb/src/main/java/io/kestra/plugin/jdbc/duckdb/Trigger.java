@@ -2,6 +2,7 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.AbstractJdbcQuery;
@@ -62,6 +63,9 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
     @Builder.Default
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
+    @PluginProperty(group = "advanced")
+    protected Property<String> storageVersion;
+
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
@@ -102,6 +106,7 @@ public class Trigger extends AbstractJdbcTrigger implements DuckDbQueryInterface
             .parameters(this.getParameters())
             .databaseUri(this.getDatabaseUri())
             .outputDbFile(this.getOutputDbFile())
+            .storageVersion(this.getStorageVersion())
             .inputFiles(this.getInputFiles())
             .outputFiles(this.getOutputFiles())
             .communityExtensions(this.getCommunityExtensions())

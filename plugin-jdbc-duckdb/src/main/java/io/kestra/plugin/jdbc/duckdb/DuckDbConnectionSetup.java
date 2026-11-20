@@ -29,6 +29,15 @@ final class DuckDbConnectionSetup {
     private DuckDbConnectionSetup() {
     }
 
+    static void warnIfMotherDuck(RunContext runContext, String url) {
+        if (url.startsWith("jdbc:duckdb:md:")) {
+            runContext.logger().warn(
+                "MotherDuck compatibility with this plugin's DuckDB 2.0 client has not been validated. " +
+                    "Confirm that your MotherDuck release supports DuckDB 2.0 before running this flow."
+            );
+        }
+    }
+
     static void configureConnectionProperties(Properties properties, Path workingDirectory) throws IOException {
         var base = workingDirectory.resolve(".duckdb_extensions");
         // Repository definitions can only be relocated at connection startup.

@@ -102,8 +102,15 @@ before upgrading existing flows.
 
 - New database files use format 69, unreadable by 1.x. Existing files retain
   their format. Check all consumers of `outputDbFile` and keep original inputs
-  for rollback. The plugin adds no `storageVersion` property; use an existing
-  compatible file through `databaseUri` when sharing with older consumers.
+  for rollback. Set `storageVersion: v1.5.6` before creating a new database for
+  DuckDB 1.5.6 consumers, or `storageVersion: v1.4.5` for DuckDB 1.4.5 consumers.
+  The property is available on Query, Queries and Trigger, supports expressions,
+  and is applied before the connection creates the file. Omitting it keeps the
+  DuckDB default. `latest` explicitly selects the newest supported format.
+  Existing files keep their format: this property does not downgrade a 2.0 file
+  loaded via `databaseUri`. Use export/import into a newly created compatible
+  database when conversion is required. Features unavailable in the selected
+  storage format may fail when persisted.
 - Replace `x -> x + 1` with `lambda x : x + 1`. Temporarily, use
   `SET lambda_syntax = 'enable_single_arrow'`.
 - Integer `//` and `%` by zero throw. Use `TRY(...)` or
@@ -115,11 +122,38 @@ before upgrading existing flows.
   remain reusable across tasks; httpfs is not downloaded again for each task.
 - For parser regressions, use `INSTALL AND LOAD legacy_parser;` followed by
   `SET enable_legacy_parser = true;`.
+- Bundled Ion installation locks extension repository changes for the session.
+  SQL that changes `custom_extension_repository` or custom repository trust
+  configuration after that installation may fail and must be reviewed.
 - Review regex matching, factorial precedence, binary literals, transaction
   errors, duplicate-source MERGE operations, untyped NULLs, identifier case,
   and profiling/logging settings in the migration guide.
 
-Use `Queries` for session setup followed by SQL; `afterSQL` runs after the query.
+This upgrade is a breaking change and must be released as a major version.
+See the [DuckDB release notes](https://github.com/kestra-io/plugin-jdbc/blob/main/plugin-jdbc-duckdb/CHANGELOG.md)
+for the release impact and migration checklist.
+
+For a database exported to an older consumer:
+
+```yaml
+id: duckdb-compatible-export
+namespace: company.team
+
+vars:
+  reader_version: v1.5.6
+
+tasks:
+  - id: create_database
+    type: io.kestra.plugin.jdbc.duckdb.Query
+    storageVersion: "{{ vars.reader_version }}"
+    sql: CREATE TABLE events AS SELECT 42 AS id;
+    fetchType: NONE
+    outputDbFile: true
+```
+
+`storageVersion` controls file compatibility, not SQL semantics or MotherDuck
+support. Use `Queries` for session setup followed by SQL; `afterSQL` runs after
+the query.
 `VARIANT` results are exposed as maps, lists and scalar values in `FETCH`,
 `FETCH_ONE` and `STORE`.
 
@@ -131,4 +165,5 @@ MotherDuck lists DuckDB 1.5.6 as its maximum supported engine and JDBC 1.5.6.0
 as its supported Java client. DuckDB 2.0 is outside that published range. Keep
 MotherDuck workflows on a plugin release with a supported driver until
 MotherDuck announces 2.0 support. The upgrade has no authenticated MotherDuck
-validation.
+validation. Query, Queries and Trigger log a warning before connecting to rendered
+`jdbc:duckdb:md:` URLs; the warning never includes the URL or authentication token.
