@@ -233,7 +233,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     @Schema(
         title = "Whether to store or not the database file in the internal storage",
         description = """
-            New databases use DuckDB 2.0 storage format 69 by default, which DuckDB 1.x cannot open. \
+            New databases use the DuckDB 2.0 storage format by default, which DuckDB 1.x cannot open. \
             Set `storageVersion`, for example `v1.5.6`, when creating a file for older consumers. \
             Databases loaded via databaseUri retain their existing format and are not downgraded.
             """

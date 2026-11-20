@@ -76,7 +76,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
         title = "Database URI",
         description = """
             Kestra's URI to an existing DuckDB database file. DuckDB 2.0 can read and update 1.x files, preserving their storage format. \
-            New databases use DuckDB 2.0 storage format 69 by default; set `storageVersion` to target an older reader for newly created files.
+            New databases use the DuckDB 2.0 storage format by default; set `storageVersion` to target an older reader for newly created files.
             """
     )
     @PluginProperty(group = "advanced")
@@ -85,7 +85,7 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     @Schema(
         title = "Output the database file",
         description = """
-            Upload the database file to internal storage for further processing. New databases use DuckDB 2.0 storage format 69 by default, \
+            Upload the database file to internal storage for further processing. New databases use the DuckDB 2.0 storage format by default, \
             which DuckDB 1.x cannot open. Set `storageVersion`, for example `v1.5.6`, before creating a file for older consumers. \
             A database loaded via databaseUri retains its existing format; this setting does not downgrade an existing file.
             """
@@ -124,11 +124,11 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     default Properties connectionProperties(RunContext runContext) throws Exception {
         var properties = JdbcConnectionInterface.super.connectionProperties(runContext);
         if (getStorageVersion() != null) {
-            var version = runContext.render(getStorageVersion()).as(String.class).orElse("");
-            if (version.isBlank()) {
+            var rStorageVersion = runContext.render(getStorageVersion()).as(String.class).orElse("");
+            if (rStorageVersion.isBlank()) {
                 throw new IllegalArgumentException("storageVersion must resolve to a DuckDB version, such as v1.5.6, or latest");
             }
-            properties.setProperty("storage_compatibility_version", version);
+            properties.setProperty("storage_compatibility_version", rStorageVersion);
         }
         DuckDbConnectionSetup.configureConnectionProperties(properties, runContext.workingDir().path());
         return properties;

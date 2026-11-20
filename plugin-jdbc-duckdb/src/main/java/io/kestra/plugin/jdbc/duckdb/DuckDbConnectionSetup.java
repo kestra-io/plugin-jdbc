@@ -30,7 +30,7 @@ final class DuckDbConnectionSetup {
     }
 
     static void warnIfMotherDuck(RunContext runContext, String url) {
-        if (url.startsWith("jdbc:duckdb:md:")) {
+        if (url.startsWith("jdbc:duckdb:md:") || url.startsWith("jdbc:duckdb:motherduck:")) {
             runContext.logger().warn(
                 "MotherDuck compatibility with this plugin's DuckDB 2.0 client has not been validated. " +
                     "Confirm that your MotherDuck release supports DuckDB 2.0 before running this flow."

@@ -97,41 +97,20 @@ tasks:
 
 #### Upgrading to DuckDB 2.0
 
-Review the [DuckDB migration guide](https://duckdb.org/docs/2.0/operations_manual/migration)
-before upgrading existing flows.
+Review the [DuckDB migration guide](https://duckdb.org/docs/2.0/operations_manual/migration) before upgrading existing flows.
 
-- New database files use format 69, unreadable by 1.x. Existing files retain
-  their format. Check all consumers of `outputDbFile` and keep original inputs
-  for rollback. Set `storageVersion: v1.5.6` before creating a new database for
-  DuckDB 1.5.6 consumers, or `storageVersion: v1.4.5` for DuckDB 1.4.5 consumers.
-  The property is available on Query, Queries and Trigger, supports expressions,
-  and is applied before the connection creates the file. Omitting it keeps the
-  DuckDB default. `latest` explicitly selects the newest supported format.
-  Existing files keep their format: this property does not downgrade a 2.0 file
-  loaded via `databaseUri`. Use export/import into a newly created compatible
-  database when conversion is required. Features unavailable in the selected
-  storage format may fail when persisted.
-- Replace `x -> x + 1` with `lambda x : x + 1`. Temporarily, use
-  `SET lambda_syntax = 'enable_single_arrow'`.
-- Integer `//` and `%` by zero throw. Use `TRY(...)` or
-  `SET error_on_division_by_zero=false` for NULL results.
+- New database files use the DuckDB 2.0 storage format by default, which DuckDB 1.x cannot open. Existing files retain their format. Check all consumers of `outputDbFile` and keep original inputs for rollback.
+- Set `storageVersion: v1.5.6` before creating a new database for DuckDB 1.5.6 consumers, or `storageVersion: v1.4.5` for DuckDB 1.4.5 consumers. The property is available on Query, Queries and Trigger, supports expressions, and is applied before the connection creates the file. Omitting it keeps the DuckDB default; `latest` explicitly selects the newest supported format. Features unavailable in the selected storage format may fail when persisted.
+- `storageVersion` does not downgrade an existing 2.0 file loaded via `databaseUri`. Use export/import into a newly created compatible database when conversion is required.
+- Replace `x -> x + 1` with `lambda x : x + 1`. Temporarily, use `SET lambda_syntax = 'enable_single_arrow'`.
+- Integer `//` and `%` by zero throw. Use `TRY(...)` or `SET error_on_division_by_zero=false` for NULL results.
 - Use DuckDB secrets for S3 credentials instead of URL parameters.
-- Only bundled installations use a temporary task-local cache, populated from the
-  shipped binary without a network download. The worker's extension cache is
-  restored before user SQL, so pre-provisioned, community and autoloaded extensions
-  remain reusable across tasks; httpfs is not downloaded again for each task.
-- For parser regressions, use `INSTALL AND LOAD legacy_parser;` followed by
-  `SET enable_legacy_parser = true;`.
-- Bundled Ion installation locks extension repository changes for the session.
-  SQL that changes `custom_extension_repository` or custom repository trust
-  configuration after that installation may fail and must be reviewed.
-- Review regex matching, factorial precedence, binary literals, transaction
-  errors, duplicate-source MERGE operations, untyped NULLs, identifier case,
-  and profiling/logging settings in the migration guide.
-
-This upgrade is a breaking change and must be released as a major version.
-See the [DuckDB release notes](https://github.com/kestra-io/plugin-jdbc/blob/main/plugin-jdbc-duckdb/CHANGELOG.md)
-for the release impact and migration checklist.
+- Only bundled installations use a temporary task-local cache, populated from the shipped binary without a network download. The worker's extension cache is restored before user SQL, so pre-provisioned, community and autoloaded extensions remain reusable across tasks; httpfs is not downloaded again for each task.
+- For parser regressions, use `INSTALL AND LOAD legacy_parser;` followed by `SET enable_legacy_parser = true;`.
+- Bundled Ion installation locks extension repository changes for the session. SQL that changes `custom_extension_repository` or custom repository trust configuration after that installation may fail and must be reviewed.
+- `VARIANT` results are now maps, lists and scalar values instead of opaque strings. `TIMESTAMPTZ_NS` values retain nanoseconds and are returned in UTC. Untyped NULL metadata changes from `INTEGER` to `"NULL"`; the values remain null.
+- Trigger now honors its configured/rendered `url`; earlier versions ignored it and polled a temporary database instead.
+- Review regex matching, factorial precedence, binary literals, transaction errors, duplicate-source MERGE operations, untyped NULLs, identifier case, and profiling/logging settings in the migration guide.
 
 For a database exported to an older consumer:
 
@@ -151,19 +130,15 @@ tasks:
     outputDbFile: true
 ```
 
-`storageVersion` controls file compatibility, not SQL semantics or MotherDuck
-support. Use `Queries` for session setup followed by SQL; `afterSQL` runs after
-the query.
-`VARIANT` results are exposed as maps, lists and scalar values in `FETCH`,
-`FETCH_ONE` and `STORE`.
+To inspect a database's compatibility target, use DuckDB metadata rather than its raw file header:
+
+```sql
+SELECT database_name, tags['storage_version'] AS storage_version
+FROM duckdb_databases();
+```
+
+`storageVersion` controls file compatibility, not SQL semantics or MotherDuck support. Use `Queries` for session setup followed by SQL; `afterSQL` runs after the query.
 
 #### MotherDuck compatibility
 
-Check [MotherDuck's supported client versions](https://motherduck.com/docs/troubleshooting/version-lifecycle-schedules/)
-before upgrading a flow that uses `jdbc:duckdb:md:`. As of November 19, 2026,
-MotherDuck lists DuckDB 1.5.6 as its maximum supported engine and JDBC 1.5.6.0
-as its supported Java client. DuckDB 2.0 is outside that published range. Keep
-MotherDuck workflows on a plugin release with a supported driver until
-MotherDuck announces 2.0 support. The upgrade has no authenticated MotherDuck
-validation. Query, Queries and Trigger log a warning before connecting to rendered
-`jdbc:duckdb:md:` URLs; the warning never includes the URL or authentication token.
+Check [MotherDuck's supported client versions](https://motherduck.com/docs/troubleshooting/version-lifecycle-schedules/) before upgrading a flow that uses `jdbc:duckdb:md:` or `jdbc:duckdb:motherduck:`. As of November 19, 2026, MotherDuck lists DuckDB 1.5.6 as its maximum supported engine and JDBC 1.5.6.0 as its supported Java client. DuckDB 2.0 is outside that published range. Keep MotherDuck workflows on a plugin release with a supported driver until MotherDuck announces 2.0 support. The upgrade has no authenticated MotherDuck validation. Query, Queries and Trigger log a warning before connecting to either rendered URL prefix; the warning never includes the URL or authentication token.

@@ -165,11 +165,11 @@ class DuckDbConnectionSettingsTest {
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void warnsForRenderedMotherDuckUrlsBeforeConnectingWithoutLoggingTheToken(boolean multiQuery) throws Exception {
+    @CsvSource({"false, md:", "true, md:", "false, motherduck:", "true, motherduck:"})
+    void warnsForRenderedMotherDuckUrlsBeforeConnectingWithoutLoggingTheToken(boolean multiQuery, String prefix) throws Exception {
         var logger = mock(Logger.class);
         var context = spy(runContextFactory.of(Map.of("vars", Map.of(
-            "url", "jdbc:duckdb:md:example?motherduck_token=token-must-stay-private"
+            "url", "jdbc:duckdb:" + prefix + "example?motherduck_token=token-must-stay-private"
         ))));
         doReturn(logger).when(context).logger();
         var url = Property.<String>ofExpression("{{ vars.url }}");
