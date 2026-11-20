@@ -305,6 +305,13 @@ tasks.register('npmInstallUI', com.github.gradle.node.npm.task.NpmTask) {
     outputs.dir(file('ui/node_modules'))
 }
 
+// Each buildUI is a full Vite build; running several at once next to the test JVMs and the Docker databases
+// starves the CI runner of memory, so they share a service that lets only one run at a time.
+abstract class UiBuildLimiter implements org.gradle.api.services.BuildService<org.gradle.api.services.BuildServiceParameters.None> {}
+def uiBuildLimiter = gradle.sharedServices.registerIfAbsent('uiBuildLimiter', UiBuildLimiter) {
+    maxParallelUsages = 1
+}
+
 subprojects { subproject ->
     def pkgDir = subproject.file('src/main/java/io/kestra/plugin/jdbc')
     def group = pkgDir.exists() ? pkgDir.list().find { uiGroups.contains(it) } : null
@@ -314,6 +321,7 @@ subprojects { subproject ->
 
         subproject.tasks.register('buildUI', com.github.gradle.node.npm.task.NpmTask) {
             dependsOn rootProject.tasks.named('npmInstallUI')
+            usesService(uiBuildLimiter)
             args = ['run', 'build', '--', '--outDir', outputDir.asFile.absolutePath, '--emptyOutDir']
             workingDir = uiDir
             environment = ['JDBC_UI_GROUP': group]
