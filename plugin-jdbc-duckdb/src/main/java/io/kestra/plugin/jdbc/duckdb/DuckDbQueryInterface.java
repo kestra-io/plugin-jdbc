@@ -2,10 +2,12 @@ package io.kestra.plugin.jdbc.duckdb;
 
 import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
+import io.kestra.core.runners.RunContext;
 import io.kestra.plugin.jdbc.JdbcConnectionInterface;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.Properties;
 
 public interface DuckDbQueryInterface extends JdbcConnectionInterface {
     List<String> DEFAULT_COMMUNITY_EXTENSIONS = List.of("ion");
@@ -72,24 +74,65 @@ public interface DuckDbQueryInterface extends JdbcConnectionInterface {
 
     @Schema(
         title = "Database URI",
-        description = "Kestra's URI to an existing Duck DB database file"
+        description = """
+            Kestra's URI to an existing DuckDB database file. DuckDB 2.0 can read and update 1.x files, preserving their storage format. \
+            New databases use the DuckDB 2.0 storage format by default; set `storageVersion` to target an older reader for newly created files.
+            """
     )
     @PluginProperty(group = "advanced")
     Property<String> getDatabaseUri();
 
     @Schema(
         title = "Output the database file",
-        description = "This property lets you define if you want to output the in-memory database as a file for further processing."
+        description = """
+            Upload the database file to internal storage for further processing. New databases use the DuckDB 2.0 storage format by default, \
+            which DuckDB 1.x cannot open. Set `storageVersion`, for example `v1.5.6`, before creating a file for older consumers. \
+            A database loaded via databaseUri retains its existing format; this setting does not downgrade an existing file.
+            """
     )
     @PluginProperty(group = "advanced")
     Property<Boolean> getOutputDbFile();
 
     @Schema(
+        title = "Storage compatibility version",
+        description = """
+            Optional DuckDB storage compatibility target, such as `v1.5.6` or `latest`. Applied at connection startup before a new database file is created. \
+            Set `v1.5.6` when the exported database must remain readable by DuckDB 1.5.6. DuckDB validates supported version strings. \
+            When omitted, new files use DuckDB 2.0's default storage format; existing files retain their format. This property does not convert existing files, \
+            restore older SQL behavior, or enable MotherDuck compatibility. Features that cannot be stored in the selected format may fail.
+            """,
+        example = "v1.5.6"
+    )
+    @PluginProperty(group = "advanced")
+    Property<String> getStorageVersion();
+
+    @Schema(
         title = "DuckDB community extensions to install and load before running the SQL",
-        description = "Defaults to `[\"ion\"]`. Each extension is attempted on a best-effort basis using `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If installation or loading fails, Kestra logs a warning and continues."
+        description = """
+            Defaults to `["ion"]`. On supported Linux platforms, bundled extensions are installed from a task-local repository \
+            pinned with DuckDB's community public keys, keeping signature validation enabled. Repository changes are forbidden after bundled installation. \
+            Bundled installation uses a temporary task-local cache; Kestra restores DuckDB's worker cache before user SQL runs. \
+            Community and autoloaded extensions retain the worker cache, preserving pre-provisioned extensions and reuse across tasks. \
+            Otherwise Kestra uses `INSTALL <ext> FROM community` followed by `LOAD <ext>`. If bundled loading fails, the community install is attempted. \
+            If installation or loading fails, Kestra logs a warning and continues.
+            """
     )
     @PluginProperty(group = "advanced")
     Property<List<String>> getCommunityExtensions();
+
+    @Override
+    default Properties connectionProperties(RunContext runContext) throws Exception {
+        var properties = JdbcConnectionInterface.super.connectionProperties(runContext);
+        if (getStorageVersion() != null) {
+            var rStorageVersion = runContext.render(getStorageVersion()).as(String.class).orElse("");
+            if (rStorageVersion.isBlank()) {
+                throw new IllegalArgumentException("storageVersion must resolve to a DuckDB version, such as v1.5.6, or latest");
+            }
+            properties.setProperty("storage_compatibility_version", rStorageVersion);
+        }
+        DuckDbConnectionSetup.configureConnectionProperties(properties, runContext.workingDir().path());
+        return properties;
+    }
 
     @Override
     default String getScheme() {

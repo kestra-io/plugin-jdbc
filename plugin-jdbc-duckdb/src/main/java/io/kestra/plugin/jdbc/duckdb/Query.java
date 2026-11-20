@@ -45,6 +45,21 @@ import java.util.Map;
     examples = {
         @Example(
             full = true,
+            title = "Return a structured VARIANT value with DuckDB 2.0.",
+            code = """
+                id: duckdb_variant
+                namespace: company.team
+
+                tasks:
+                  - id: variant
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    sql: |
+                      SELECT {'id': 1, 'tags': ['a', 'b']}::VARIANT AS payload;
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            full = true,
             title = "Run a query that exports results to a file, which is automatically captured and uploaded to internal storage.",
             code = """
                 id: duckdb_export
@@ -130,8 +145,32 @@ import java.util.Map;
         ),
         @Example(
             full = true,
-            title = "Run a SQL query with DuckDB on MotherDuck and get the result as a CSV file",
+            title = "Create a database file readable by DuckDB 1.5.6 and reuse it in a later task.",
             code = """
+                id: duckdb_compatible_database
+                namespace: company.team
+
+                tasks:
+                  - id: export_database
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    storageVersion: v1.5.6
+                    sql: CREATE TABLE events AS SELECT 42 AS id;
+                    fetchType: NONE
+                    outputDbFile: true
+
+                  - id: read_database
+                    type: io.kestra.plugin.jdbc.duckdb.Query
+                    databaseUri: "{{ outputs.export_database.databaseUri }}"
+                    sql: SELECT id FROM events;
+                    fetchType: FETCH_ONE
+                """
+        ),
+        @Example(
+            full = true,
+            title = "Query MotherDuck and export CSV (requires MotherDuck support for DuckDB 2.0)",
+            code = """
+                # Requires a MotherDuck release that supports this plugin's DuckDB 2.0 client.
+                # Check MotherDuck's supported versions before running this example.
                 id: motherduck
                 namespace: company.team
 
@@ -192,11 +231,19 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
     protected Property<String> databaseUri;
 
     @Schema(
-        title = "Whether to store or not the database file in the internal storage"
+        title = "Whether to store or not the database file in the internal storage",
+        description = """
+            New databases use the DuckDB 2.0 storage format by default, which DuckDB 1.x cannot open. \
+            Set `storageVersion`, for example `v1.5.6`, when creating a file for older consumers. \
+            Databases loaded via databaseUri retain their existing format and are not downgraded.
+            """
     )
     @Builder.Default
     @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
+
+    @PluginProperty(group = "advanced")
+    protected Property<String> storageVersion;
 
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
@@ -234,6 +281,7 @@ public class Query extends AbstractJdbcQuery implements DuckDbQueryInterface {
         Map<String, String> outputFiles = null;
 
         var rUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        DuckDbConnectionSetup.warnIfMotherDuck(runContext, rUrl);
         if (!DEFAULT_URL.equals(rUrl) && this.databaseFile == null) {
             String filePath = rUrl.replace("jdbc:duckdb:", "");
 

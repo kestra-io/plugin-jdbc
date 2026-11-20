@@ -10,6 +10,11 @@ def duckdbCommunityExtensionVersion = providers.provider {
     }
     "v${driver.version.tokenize(".").take(3).join(".")}"
 }
+// SHA-256 of the canonical PEM block (LF-separated keys, including the final LF).
+def duckdbCommunityPublicKeyDigests = [
+    'v2.0.0': '3990bfe47373e2313cb73af869d12d16107d3b634d7994a607847982028f1ac6'
+]
+def duckdbCommunityPublicKeysFile = layout.projectDirectory.file("src/main/resources/duckdb-community-public-keys.pem")
 def bundledDuckDbExtensionsDir = layout.buildDirectory.dir("generated/duckdb-community-extensions")
 def bundledDuckDbExtensions = [
     ion: ["linux_amd64", "linux_arm64"]
@@ -18,18 +23,46 @@ def bundledDuckDbExtensionsMetadataFile = bundledDuckDbExtensionsDir.map { it.fi
 
 tasks.register("bundleDuckDbCommunityExtensions") {
     inputs.property("duckdbVersion", duckdbCommunityExtensionVersion)
+    inputs.property("communityPublicKeyDigests", duckdbCommunityPublicKeyDigests)
+    inputs.file(duckdbCommunityPublicKeysFile)
     outputs.dir(bundledDuckDbExtensionsDir)
 
     doLast {
         def duckdbVersion = duckdbCommunityExtensionVersion.get()
-        // Start clean: the task only reruns when the driver version changes, and no truncated extension from an interrupted run is reused.
+        // Start clean so interrupted extension downloads are never reused.
         project.delete(bundledDuckDbExtensionsDir)
 
         def metadataFile = bundledDuckDbExtensionsMetadataFile.get().asFile
         metadataFile.parentFile.mkdirs()
 
+        // Pin the community trust anchors for this engine release.
+        def expectedKeyDigest = duckdbCommunityPublicKeyDigests[duckdbVersion]
+        if (expectedKeyDigest == null) {
+            throw new GradleException("No pinned community public key digest for DuckDB ${duckdbVersion}")
+        }
+        def keys = (duckdbCommunityPublicKeysFile.asFile.getText("UTF-8") =~ /(?s)-----BEGIN PUBLIC KEY-----.*?-----END PUBLIC KEY-----/)
+            .collect { it.replace("\r\n", "\n") }
+        if (keys.isEmpty()) {
+            throw new GradleException("No DuckDB community public keys found in ${duckdbCommunityPublicKeysFile.asFile}")
+        }
+        def keyBlock = keys.join("\n") + "\n"
+        def keyDigest = java.security.MessageDigest.getInstance("SHA-256")
+            .digest(keyBlock.getBytes("UTF-8")).encodeHex().toString()
+        if (keyDigest != expectedKeyDigest) {
+            throw new GradleException("DuckDB ${duckdbVersion} community public key digest mismatch: expected ${expectedKeyDigest}, got ${keyDigest}")
+        }
+        // Reject malformed trust anchors before packaging.
+        keys.each { pem ->
+            def encoded = pem.replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "").replaceAll(/\s/, "")
+            java.security.KeyFactory.getInstance("RSA").generatePublic(
+                new java.security.spec.X509EncodedKeySpec(Base64.decoder.decode(encoded))
+            )
+        }
+
         def properties = new Properties()
         properties.setProperty("duckdb.version", duckdbVersion)
+        properties.setProperty("community.keys.count", keys.size().toString())
         properties.setProperty("bundled.extensions", bundledDuckDbExtensions.keySet().join(","))
         bundledDuckDbExtensions.each { extensionName, platforms ->
             properties.setProperty("bundled.extensions.${extensionName}", platforms.join(","))
@@ -96,7 +129,7 @@ jar {
 }
 
 dependencies {
-    implementation("org.duckdb:duckdb_jdbc:1.5.6.0")
+    implementation("org.duckdb:duckdb_jdbc:2.0.0.1")
     implementation project(':plugin-jdbc')
 
     testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')

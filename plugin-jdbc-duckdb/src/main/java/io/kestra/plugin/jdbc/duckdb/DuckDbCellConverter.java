@@ -6,15 +6,27 @@ import io.kestra.plugin.jdbc.AbstractCellConverter;
 import lombok.SneakyThrows;
 import org.duckdb.DuckDBArray;
 import org.duckdb.DuckDBStruct;
+import org.duckdb.JsonNode;
 
+import java.math.BigInteger;
+import java.sql.Array;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 public class DuckDbCellConverter extends AbstractCellConverter {
+    private static final Pattern HOUR_ONLY_OFFSET = Pattern.compile("[+-]\\d{2}$");
+
     public DuckDbCellConverter(ZoneId zoneId) {
         super(zoneId);
     }
@@ -29,6 +41,23 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         }
 
         String columnTypeName = rs.getMetaData().getColumnTypeName(columnIndex);
+
+        if ("VARIANT".equalsIgnoreCase(columnTypeName)) {
+            return processVariant(data);
+        }
+
+        if ("TIMESTAMPTZ_NS".equalsIgnoreCase(columnTypeName)) {
+            // Parse the 2.0 driver's TIMESTAMPTZ_NS text without losing nanoseconds.
+            var value = rs.getString(columnIndex);
+            if ("infinity".equals(value) || "-infinity".equals(value)) {
+                return value;
+            }
+            var iso = value.replace(' ', 'T');
+            if (HOUR_ONLY_OFFSET.matcher(iso).find()) {
+                iso += ":00";
+            }
+            return OffsetDateTime.parse(iso).withOffsetSameInstant(ZoneOffset.UTC);
+        }
 
         if (data instanceof OffsetDateTime odt) {
             return odt.withOffsetSameInstant(ZoneOffset.UTC);
@@ -82,6 +111,57 @@ public class DuckDbCellConverter extends AbstractCellConverter {
         }
 
         return super.convert(columnIndex, rs);
+    }
+
+    // Materialize native VARIANT containers before closing the result set.
+    private Object processVariant(Object value) throws SQLException, JsonProcessingException {
+        if (value instanceof DuckDBStruct struct) {
+            return processVariant(struct.getMap());
+        }
+        if (value instanceof Map<?, ?> map) {
+            var result = new LinkedHashMap<String, Object>();
+            for (var entry : map.entrySet()) {
+                result.put(entry.getKey().toString(), processVariant(entry.getValue()));
+            }
+            return result;
+        }
+        if (value instanceof Array array) {
+            var elements = (Object[]) array.getArray();
+            var result = new ArrayList<>(elements.length);
+            for (var element : elements) {
+                result.add(processVariant(element));
+            }
+            return result;
+        }
+        if (value instanceof JsonNode json) {
+            return JacksonMapper.toObject(json.toString());
+        }
+        if (value instanceof Blob blob) {
+            return readBlob(blob);
+        }
+        if (value instanceof Byte number) {
+            return number.intValue();
+        }
+        if (value instanceof BigInteger integer) {
+            // Keep JSON-derived HUGEINT values numeric, narrowing only when lossless.
+            if (integer.bitLength() < 32) {
+                return integer.intValue();
+            }
+            if (integer.bitLength() < 64) {
+                return integer.longValue();
+            }
+            return integer;
+        }
+        if (value instanceof UUID) {
+            return value.toString();
+        }
+        if (value instanceof OffsetDateTime dateTime) {
+            return dateTime.withOffsetSameInstant(ZoneOffset.UTC);
+        }
+        if (value instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime().atZone(zoneId);
+        }
+        return value;
     }
 
     private Object processDuckDbArray(DuckDBArray duckDBArray) throws SQLException {

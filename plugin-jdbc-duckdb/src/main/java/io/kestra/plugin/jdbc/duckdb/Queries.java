@@ -148,6 +148,9 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
     @PluginProperty(group = "source")
     protected Property<Boolean> outputDbFile = Property.ofValue(false);
 
+    @PluginProperty(group = "advanced")
+    protected Property<String> storageVersion;
+
     @Builder.Default
     protected Property<List<String>> communityExtensions = Property.ofValue(DEFAULT_COMMUNITY_EXTENSIONS);
 
@@ -206,6 +209,7 @@ public class Queries extends AbstractJdbcQueries implements DuckDbQueryInterface
         Map<String, String> outputFiles = null;
 
         var rUrl = runContext.render(this.url).as(String.class).orElseThrow();
+        DuckDbConnectionSetup.warnIfMotherDuck(runContext, rUrl);
         if (!DEFAULT_URL.equals(rUrl) && this.databaseFile == null) {
             String filePath = rUrl.replace("jdbc:duckdb:", "");
 
