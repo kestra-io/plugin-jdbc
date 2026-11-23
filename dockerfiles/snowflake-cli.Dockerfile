@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.15-slim
 LABEL org.opencontainers.image.source=https://github.com/kestra-io/plugin-jdbc
 LABEL org.opencontainers.image.description="Image with the latest snowflake-cli package"
 RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
