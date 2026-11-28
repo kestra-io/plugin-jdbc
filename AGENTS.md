@@ -15,7 +15,7 @@
 
 ### Architecture
 
-This is a **multi-module** plugin with 23 submodules:
+This is a **multi-module** plugin with 24 submodules:
 
 - `plugin-jdbc`
 - `plugin-jdbc-access`
@@ -30,6 +30,7 @@ This is a **multi-module** plugin with 23 submodules:
 - `plugin-jdbc-hana`
 - `plugin-jdbc-mariadb`
 - `plugin-jdbc-mysql`
+- `plugin-jdbc-openedge`
 - `plugin-jdbc-oracle`
 - `plugin-jdbc-pinot`
 - `plugin-jdbc-postgres`
@@ -69,6 +70,12 @@ Infrastructure dependencies (Docker Compose services):
 - `trino`
 
 ### Key Plugin Classes
+
+**plugin-jdbc-openedge:**
+
+- `io.kestra.plugin.jdbc.openedge.Queries`
+- `io.kestra.plugin.jdbc.openedge.Query`
+- `io.kestra.plugin.jdbc.openedge.Trigger`
 
 **plugin-jdbc-access:**
 

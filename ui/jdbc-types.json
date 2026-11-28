@@ -51,6 +51,10 @@
     "Queries",
     "Query"
   ],
+  "openedge": [
+    "Queries",
+    "Query"
+  ],
   "oracle": [
     "Batch",
     "Queries",

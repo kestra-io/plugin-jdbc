@@ -1,0 +1,21 @@
+project.description = 'Query Progress OpenEdge databases using the Kestra JDBC plugin.'
+
+jar {
+    manifest {
+        attributes(
+            "X-Kestra-Name": project.name,
+            "X-Kestra-Title": "OpenEdge",
+            "X-Kestra-Group": project.group + ".jdbc.openedge",
+            "X-Kestra-Description": project.description,
+            "X-Kestra-Version": project.version
+        )
+    }
+}
+
+dependencies {
+    // The proprietary Progress DataDirect driver is supplied by the OpenEdge licensee.
+    // Do not add or redistribute vendor binaries from this project.
+    implementation project(':plugin-jdbc')
+    testImplementation project(path: ':plugin-jdbc', configuration: 'testOutput')
+    testRuntimeOnly project(path: ':plugin-jdbc', configuration: 'shadow')
+}
