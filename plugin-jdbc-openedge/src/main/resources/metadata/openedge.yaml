@@ -1,0 +1,8 @@
+group: io.kestra.plugin.jdbc.openedge
+name: "openedge"
+title: "Progress OpenEdge"
+description: "Tasks that connect to Progress OpenEdge through the DataDirect JDBC driver."
+body: "Use the OpenEdge DataDirect JDBC URL, database credentials, and SQL statements to query tables and views. The proprietary driver is not bundled and must be provided by the OpenEdge licensee."
+videos: []
+createdBy: "Kestra Core Team"
+managedBy: "Kestra Core Team"
