@@ -57,13 +57,7 @@ class OpenEdgeConnectionInterfaceTest {
     @Test
     void registersDriverThroughJdbcServiceProvider() throws SQLException {
         OpenEdgeConnectionInterface connection = mock(OpenEdgeConnectionInterface.class, CALLS_REAL_METHODS);
-        var previouslyRegistered = DriverManager.drivers()
-            .filter(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName()))
-            .toList();
-
-        for (Driver driver : previouslyRegistered) {
-            DriverManager.deregisterDriver(driver);
-        }
+        deregisterOpenEdgeDrivers();
 
         try {
             connection.registerDriver();
@@ -71,23 +65,15 @@ class OpenEdgeConnectionInterfaceTest {
             assertTrue(DriverManager.drivers()
                 .anyMatch(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName())));
         } finally {
-            DriverManager.drivers()
-                .filter(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName()))
-                .toList()
-                .forEach(driver -> {
-                    try {
-                        DriverManager.deregisterDriver(driver);
-                    } catch (SQLException e) {
-                        throw new IllegalStateException("Could not clean up the test JDBC driver", e);
-                    }
-                });
+            deregisterOpenEdgeDrivers();
         }
     }
 
     @Test
-    void reportsMissingVendorDriverClearly() {
+    void reportsMissingVendorDriverClearly() throws SQLException {
         OpenEdgeConnectionInterface connection = mock(OpenEdgeConnectionInterface.class, CALLS_REAL_METHODS);
         ClassLoader previous = Thread.currentThread().getContextClassLoader();
+        deregisterOpenEdgeDrivers();
 
         try {
             // The platform classloader cannot see application/plugin jars, including the
@@ -100,6 +86,15 @@ class OpenEdgeConnectionInterfaceTest {
             assertTrue(exception.getMessage().contains("openedge.jar"));
         } finally {
             Thread.currentThread().setContextClassLoader(previous);
+            deregisterOpenEdgeDrivers();
+        }
+    }
+
+    private static void deregisterOpenEdgeDrivers() throws SQLException {
+        for (Driver driver : DriverManager.drivers()
+            .filter(candidate -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(candidate.getClass().getName()))
+            .toList()) {
+            DriverManager.deregisterDriver(driver);
         }
     }
 }
