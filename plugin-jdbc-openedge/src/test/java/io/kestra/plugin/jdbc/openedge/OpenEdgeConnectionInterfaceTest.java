@@ -6,6 +6,8 @@ import io.kestra.core.runners.RunContextFactory;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +52,36 @@ class OpenEdgeConnectionInterfaceTest {
         );
 
         assertTrue(exception.getMessage().contains("jdbc:datadirect:openedge"));
+    }
+
+    @Test
+    void registersDriverThroughJdbcServiceProvider() throws SQLException {
+        OpenEdgeConnectionInterface connection = mock(OpenEdgeConnectionInterface.class, CALLS_REAL_METHODS);
+        var previouslyRegistered = DriverManager.drivers()
+            .filter(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName()))
+            .toList();
+
+        for (Driver driver : previouslyRegistered) {
+            DriverManager.deregisterDriver(driver);
+        }
+
+        try {
+            connection.registerDriver();
+
+            assertTrue(DriverManager.drivers()
+                .anyMatch(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName())));
+        } finally {
+            DriverManager.drivers()
+                .filter(driver -> OpenEdgeConnectionInterface.DRIVER_CLASS.equals(driver.getClass().getName()))
+                .toList()
+                .forEach(driver -> {
+                    try {
+                        DriverManager.deregisterDriver(driver);
+                    } catch (SQLException e) {
+                        throw new IllegalStateException("Could not clean up the test JDBC driver", e);
+                    }
+                });
+        }
     }
 
     @Test
