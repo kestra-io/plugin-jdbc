@@ -12,7 +12,7 @@ There is intentionally no `Batch` task: the requested use case is extracting dat
 
 The Progress DataDirect OpenEdge JDBC driver is proprietary and is **not bundled** with this plugin or published as a dependency from this project. Obtain the driver from Progress under the applicable OpenEdge license and maintenance terms.
 
-The driver class is `com.ddtek.jdbc.openedge.OpenEdgeDriver`. Progress documents `Class.forName("com.ddtek.jdbc.openedge.OpenEdgeDriver")` as the supported loading and registration mechanism. This module uses that fixed class name and checks `DriverManager` first to avoid registering the same driver more than once.
+The driver class is `com.ddtek.jdbc.openedge.OpenEdgeDriver`. The module discovers this fixed driver through the standard JDBC service-provider mechanism using the OpenEdge plugin classloader, then registers the discovered driver with `DriverManager`. It does not use reflective class loading and does not accept a configurable driver class name or filesystem path. Progress documents automatic driver registration for Java SE 6 and later; the supplied driver must expose its standard JDBC service-provider entry.
 
 For self-hosted Kestra, place the licensed driver JARs in the same plugin directory as this module so that they are loaded by the same plugin classloader. For example:
 
@@ -26,12 +26,13 @@ plugins/
 
 Use the companion JARs required by the exact DataDirect/OpenEdge release you have installed. Do not put the driver JARs directly in the top-level `plugins/` directory as separate plugins. This approach uses the normal plugin classloader and does not require a Kestra Enterprise feature.
 
-If the driver is missing or one of its required classes cannot be linked, the task fails with an actionable `SQLException` identifying the required driver JARs.
+If the driver is missing, does not expose the JDBC service-provider entry, or one of its required classes cannot be linked, the task fails with an actionable `SQLException` identifying the required driver JARs.
 
 Official references:
 
 - [Progress: Connect from a Java application using a URL](https://docs.progress.com/bundle/openedge-sql-development/page/Connect-from-a-Java-application-using-a-URL.html)
 - [Progress: Configure the JDBC driver](https://docs.progress.com/bundle/openedge-sql-quickstart/page/Configure-the-JDBC-driver.html)
+- [Progress: DataDirect JDBC driver registration](https://docs.progress.com/bundle/datadirect-connect-jdbc-51/page/two.-Registering-the-Drivers.html)
 - [Progress: Supported OpenEdge SQL data types](https://docs.progress.com/bundle/openedge-sql-reference/page/Supported-data-types.html)
 
 ## Connection
